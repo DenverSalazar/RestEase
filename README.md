@@ -1,7 +1,7 @@
 # RestEase
 ## Detailed Instructions
 
-1. git clone [<https://github.com/DenverSalazar/RestEase.git>]
+1. git clone <https://github.com/DenverSalazar/RestEase.git>
 2. git pull origin main
 3. git checkout -b <branchname> (branchname)
 4. git status
