@@ -9,19 +9,28 @@
   <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div>
-      <h4 class="text-center">RestEase</h4>
-      <a href="/AdminSide/AdminHome.html"><i class="fas fa-home"></i> Home</a>
-      <a href="/AdminSide/reports.html"><i class="fas fa-chart-bar"></i> Reports</a>
-      <a href="/AdminSide/forms.html"><i class="fas fa-file-alt"></i> Forms</a>
-      <a href="/AdminSide/mapping.html" data-bs-toggle="collapse" class="dropdown-toggle">
-        <i class="fas fa-map-marker-alt"></i> Mapping
-      </a>
-      <a href="/AdminSide/payment.html"><i class="fas fa-credit-card"></i> Payment Details</a>
+   <!-- Navbar -->
+   <nav class="navbar">
+    <button class="menu-button" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="right-icons">
+      <button class="notification-bell">
+        <i class="fas fa-bell"></i>
+        <span class="badge">5</span>
+      </button>
     </div>
-    <a href="/login.html" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div>
+      <img src="/assets/RE Logo White.png" alt="RestEase Logo" class="sidebar-logo">
+      <a href="/AdminSide/AdminHome.html"><i class="fas fa-home"></i> <span class="sidebar-text">Home</span></a>
+      <a href="/AdminSide/reports.html"><i class="fas fa-chart-bar"></i> <span class="sidebar-text">Reports</span></a>
+      <a href="/AdminSide/forms.html"><i class="fas fa-file-alt"></i> <span class="sidebar-text">Forms</span></a>
+      <a href="/AdminSide/mapping.html"><i class="fas fa-map-marker-alt"></i> <span class="sidebar-text">Mapping</span></a>
+      <a href="/AdminSide/payment.html"><i class="fas fa-credit-card"></i> <span class="sidebar-text">Payment</span></a>
+    </div>
+    <a href="/login.html" class="logout"><i class="fas fa-sign-out-alt"></i> <span class="sidebar-text">Logout</span></a>
   </div>
 
   <!-- Main Content -->
@@ -32,5 +41,45 @@
       <p>&copy; 2025 Apartment Management System. All rights reserved.</p>
     </footer>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let sidebar = document.getElementById("sidebar");
+        let navbar = document.querySelector(".navbar");
+        let content = document.querySelector(".content");
+        let menuToggle = document.getElementById("menuToggle");
+
+        // Retrieve the sidebar state from localStorage
+        if (localStorage.getItem("sidebarCollapsed") === "true") {
+            sidebar.classList.add("collapsed");
+        }
+
+        // Apply correct styles based on the state
+        updateLayout();
+
+        menuToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("collapsed");
+
+            // Save the current state to localStorage
+            localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
+
+            updateLayout();
+        });
+
+        function updateLayout() {
+            if (sidebar.classList.contains("collapsed")) {
+                navbar.style.left = "60px";
+                navbar.style.width = "calc(100% - 60px)";
+                content.style.marginLeft = "60px";
+                content.style.width = "calc(100% - 60px)";
+            } else {
+                navbar.style.left = "250px";
+                navbar.style.width = "calc(100% - 250px)";
+                content.style.marginLeft = "250px";
+                content.style.width = "calc(100% - 250px)";
+            }
+        }
+    });
+</script>
 </body>
 </html>
