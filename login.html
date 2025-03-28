@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kada Hardware - Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&amp;family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #fff;
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .login-container {
+            min-height: 100vh;
+        }
+
+        .left-section {
+            background-color: #FFD700;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .curved-shape {
+            position: absolute;
+            top: 0;
+            right: -50%;
+            width: 150%;
+            height: 100%;
+            background-color: #FFD700;
+            border-radius: 0 0 0 100%;
+            transform: rotate(-5deg);
+            transform-origin: left bottom;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .illustration-container {
+            position: relative;
+            z-index: 1;
+            padding: 4rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .illustration-container img {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .form-section {
+            padding: 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-control {
+            background-color: #f8f8f8;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-control::placeholder {
+            color: #999;
+        }
+
+        .btn-login {
+            background-color: #FFD700;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem;
+            width: 100%;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+
+        .remember-me {
+            margin: 1rem 0;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .signup-link a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        @media (max-width: 991px) {
+            .left-section {
+                display: none;
+            }
+            
+            .form-section {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0 login-container">
+            <!-- Left Section with Illustration -->
+            <div class="col-lg-7 left-section">
+                <div class="curved-shape"></div>
+                <div class="brand-name">RestEase Cemetery</div>
+                <div class="illustration-container">
+                    <img src="img/bg.png" alt="RestEase">
+                </div>
+            </div>
+
+            <!-- Right Section with Login Form -->
+            <div class="col-lg-5 form-section">
+                <div class="form-wrapper" style="max-width: 400px; margin: 0 auto;">
+                    <h2>Sign in</h2>
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Password" required>
+                        </div>
+                        <div class="remember-me">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">
+                                    Remember me.
+                                </label>
+                            </div>
+                        </div>
+                       
+                        <a href="index.html">Login</a>
+                        <div class="signup-link">
+                            Don't have an account? <a href="register.html">Sign up.</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-white pb-4 text-center text-md-start" id="footer" style="margin-top: 100px; background-color: #1a1a1a;">
+
+        <!-- Logo and Social Media -->
+        <div class="footer-orgdesc row mx-0 px-4 justify-content-between gap-4">
+    
+            <div class="col-md-3">
+                <h2 class="mb-4" style="font-weight: 700;">OrgReserve Space</h2>
+                <p>Reservation and inventory management for BSU-TNEU Lipa, boosting efficiency and reducing errors.</p>
+            </div>
+    
+            <!-- Company Links -->
+            <div class="link-footer col-md-2 mb-4 mt-2">
+                <h5 class="fw-bold mb-4">COMPANY</h5>
+                <ul class="footer-list list-unstyled">
+                    <li><a href="./about-us.php" class="text-decoration-none ">About Us</a></li>
+                    <li><a href="./footer-legal-information.php" class="text-decoration-none">Legal Information</a></li>
+                    <li><a href="./footer-contact-us.php" class="text-decoration-none">Contact Us</a></li>
+                    <li><a href="./footer-blogs.php" class="text-decoration-none">Blogs</a></li>
+                </ul>
+            </div>
+    
+            <!-- Help Center Links -->
+            <div class="link-footer col-md-2 mb-4 mt-2">
+                <h5 class="fw-bold mb-4">HELP CENTER</h5>
+                <ul class="footer-list list-unstyled">
+                    <li><a href="./footer-find-apparel.php" class="text-decoration-none">Find an Apparel?</a></li>
+                    <li><a href="./footer-how-to-reserve.php" class="text-decoration-none">How to Reserve?</a></li>
+                    <li><a href="./footer-why-us.php" class="text-decoration-none">Why Us?</a></li>
+                    <li><a href="./footer-faqs.php" class="ttext-decoration-none">FAQs</a></li>
+                    <li><a href="./footer-reserve-guides.php" class="text-decoration-none">Reserve Guides</a></li>
+                </ul>
+            </div>
+    
+            <!-- Contact Info -->
+            <div class="col-md-3 mb-4 mt-2">
+                <h5 class="fw-bold mb-4">CONTACT INFO</h5>
+                <ul class="footer-list list-unstyled">
+                    <li>Phone: 1234567890</li>
+                    <li>Email: orgreserve_space@email.com</li>
+                    <li>Location: Lipa Batangas</li>
+                </ul>
+                <div class="d-flex justify-content-center justify-content-md-start fw-semibold mt-5">
+                    <a href="#" class="me-3" style="color: #4267B2;"><i class="fab fa-facebook fa-lg"></i></a>
+                    <a href="#" class="me-3" style="color:#e1306c"><i class="fab fa-instagram fa-lg"></i></a>
+                    <a href="#" class="me-3" style="color:#405de6"><i class="fab fa-linkedin fa-lg"></i></a>
+                </div>
+            </div>
+    
+        </div>
+    
+        <!-- Footer Bottom -->
+        <hr class="bg-white">
+    <div class="text-center text-md-start pt-3 d-flex justify-content-between px-3">
+        <p class="small-text mb-0" style="color: white;">© 2024 - OrgReserve Space</p>
+        <p class="small-text mb-0" style="color: white;">Designed &amp; Developed by UIX Architexts</p>
+    </div>
+    
+    
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kada Hardware - Sign Up</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .signup-container {
+            min-height: 100vh;
+        }
+
+        .form-section {
+            padding: 2rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .form-section h2 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+
+        .form-control {
+            background-color: #f8f8f8;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-control::placeholder {
+            color: #999;
+        }
+
+        .btn-signup {
+            background-color: #FFD700;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem;
+            width: 100%;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+
+        .signin-link {
+            text-align: center;
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .signin-link a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .right-section {
+            background-color: #FFD700;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .curved-shape {
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 150%;
+            height: 100%;
+            background-color: #FFD700;
+            border-radius: 0 100% 0 0;
+            transform: rotate(5deg);
+            transform-origin: right bottom;
+        }
+
+        .illustration-container {
+            position: relative;
+            z-index: 1;
+            padding: 4rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .illustration-container img {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        @media (max-width: 991px) {
+            .right-section {
+                display: none;
+            }
+            
+            .form-section {
+                padding: 2rem;
+            }
+
+            .form-wrapper {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0 signup-container">
+            <!-- Left Section with Form -->
+            <div class="col-lg-5 form-section">
+                <div class="form-wrapper" style="max-width: 400px; margin: 0 auto;">
+                    <div class="brand-name">KADA HARDWARE</div>
+                    <h2>Sign up</h2>
+                    <form>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control" placeholder="+64" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Password" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" class="form-control" placeholder="Confirm Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-signup">SIGN UP</button>
+                        <div class="signin-link">
+                            Already have an account? <a href="login.html">Sign in.</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Section with Illustration -->
+            <div class="col-lg-7 right-section">
+                <div class="curved-shape"></div>
+                <div class="illustration-container">
+                    <img src="img/bg.png" alt="RestEase">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
