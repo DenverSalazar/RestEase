@@ -223,7 +223,7 @@
         }
 
         .service-card {
-            background-color: #f8f9fa; /* Light gray background for the cards */
+            background-color: #D9D9D9; /* Light gray background for the cards */
             border-radius: 10px; /* Rounded corners */
             padding: 20px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for the cards */
