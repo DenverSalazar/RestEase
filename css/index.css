@@ -1,4 +1,4 @@
-       body {
+body {
             font-family: 'Poppins', Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -274,4 +274,8 @@
                 width: 40px; /* Slightly smaller icons for smaller screens */
                 height: 40px;
             }
+        }
+        
+        .mt-10 {
+            margin-top: 10rem; /* Adjust as needed */
         }
