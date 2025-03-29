@@ -1,14 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RestEase Cemetery Management System</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestEase</title>
+    <!-- Add Google Fonts for Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif; /* Changed font to Poppins */
+            margin: 0;
+            padding: 0;
+        }
+        .hero {
+            background: url('/assets/garcia.jpg') center/cover no-repeat;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Align content to the bottom */
+            align-items: center;
+            text-align: center;
+            color: black;
+            position: relative;
+            padding: 20px;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6); /* Semi-transparent overlay */
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.2); /* Glass effect */
+            backdrop-filter: blur(10px); /* Adds blur for glass effect */
+            width: 1240px; /* Fixed width */
+            height: 57px; /* Fixed height */
+            padding: 0 20px; /* Adjust padding for content alignment */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto; /* Centers the navbar horizontally */
+            border-radius: 10px; /* Adds rounded corners */
+            display: flex;
+            align-items: center; /* Vertically centers content */
+            position: absolute; /* Places the navbar inside the hero section */
+            top: 20px; /* Adjusts the vertical position */
+            left: 50%; /* Centers the navbar horizontally */
+            transform: translateX(-50%);
+            z-index: 10; /* Ensures it appears above the hero background */
+        }
+        .navbar-brand {
+            font-weight: 600; /* Slightly bolder font weight */
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+        .navbar-brand img {
+            height: 30px;
+            margin-right: 10px;
+        }
+        .navbar-nav {
+            display: flex;
+            align-items: center; /* Ensures all items are vertically aligned */
+        }
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            margin: 0 15px;
+            color: black;
+            transition: color 0.3s;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #5c779a;
+        }
+        .navbar-nav .btn {
+            background-color: #5c779a;
+            color: white;
+            border-radius: 5px; /* Slightly rounded corners */
+            padding: 5px 20px; /* Adjust padding for rectangular shape */
+            font-size: 0.9rem;
+            border: none; /* Removes border for a clean look */
+            margin-left: 15px; /* Adds spacing between the Login button and other items */
+        }
+        .navbar-nav .btn:hover {
+            background-color: #4a5f7a; /* Darker shade on hover */
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin-bottom: 50px; /* Adds spacing above the Associated By section */
+        }
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        .btn-custom {
+            margin: 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 150px; /* Ensures both buttons have the same width */
+        }
+        .btn-primary {
+            background-color: #5c779a; /* Matches the Login button color */
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #4a5f7a; /* Darker shade on hover */
+        }
+        .btn-dark {
+            background-color: black; /* Black color for Explore button */
+            color: white;
+            border: none;
+        }
+        .btn-dark:hover {
+            background-color: #333; /* Slightly lighter black on hover */
+        }
+        .associated-by {
+            text-align: center;
+            margin-top: 20px;
+            position: relative;
+            z-index: 2; /* Ensures it appears above the overlay */
+            color: black; /* Ensures text is vibrant */
+            width: 1240px; /* Aligns with the navbar width */
+            margin: 0 auto; /* Centers the section */
+        }
+        .footer-icons {
+            display: flex;
+            justify-content: space-between; /* Ensures even spacing between logos */
+            align-items: center;
+            margin-top: 10px;
+            width: 1240px; /* Aligns with the navbar width */
+        }
+        .footer-icons img {
+            width: 60px; /* Slightly larger logos for better visibility */
+        }
+    </style>
 </head>
 <body>
-  
+    <section class="hero">
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img src="/assets/RE Logo New.png" alt="Logo">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">About Us</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Contact Us</a></li>
+                        <li class="nav-item"><a class="btn" href="#">Login</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="hero-content">
+            <h1>RestEase: Web-Based Cemetery Records & Certificate Management of Padre Garcia</h1>
+            <p>Designed for managing ossuary vault records and certificates in Padre Garcia, Batangas. It simplifies tracking vaults, renewals, and documents. The system also includes a front-view vault mapping for easy reference without real-world tracking.</p>
+            <a href="#" class="btn btn-primary btn-custom">Reserve Now</a>
+            <a href="#" class="btn btn-dark btn-custom">Explore</a>
+        </div>
+        <div class="associated-by">
+            <p><b>Associated By:</b></p>
+            <div class="footer-icons">
+                <img src="/assets/Logo garcia.png" alt="Logo 1">
+                <img src="icon2.png" alt="Logo 2">
+                <img src="icon3.png" alt="Logo 3">
+                <img src="icon4.png" alt="Logo 4">
+                <img src="icon5.png" alt="Logo 5">
+            </div>
+        </div>
+    </section>
 </body>
-</html> 
+</html>

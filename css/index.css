@@ -1,0 +1,13 @@
+@layer theme, base, components, utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@layer base {
+  html,body {
+    font-family: "Poppins", sans-serif !important;
+    /* overflow-x: hidden !important; */
+  }
+  section .text-5xl{
+    font-size: 50px !important;
+  }
+}
