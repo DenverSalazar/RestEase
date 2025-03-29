@@ -11,4 +11,6 @@
 8. git checkout main
 9. Punta sa GitHub, create pull request tas si totoy na bahala mag merge
 
-[Visit RestEase](https://DenverSalazar.github.io/RestEase/)
+## Live Demo 🚀
+[Click here to see the live demo](https://denversalazar.github.io/RestEase/)
+
