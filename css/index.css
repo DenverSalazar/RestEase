@@ -4,7 +4,7 @@
             padding: 0;
         }
         .hero {
-            background: url('/assets/garcia.jpg') center/cover no-repeat;
+            background: url('../assets/garcia.jpg') center/cover no-repeat;
             height: 100vh;
             display: flex;
             flex-direction: column;
