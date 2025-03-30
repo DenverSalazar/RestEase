@@ -34,19 +34,19 @@
         <div class="hero-content">
             <h1>RestEase: Web-Based Cemetery Records & <br> Certificate Management of Padre Garcia Batangas</h1>
             <p>Designed for managing ossuary vault records and certificates in Padre Garcia, Batangas. It simplifies tracking vaults, renewals, and documents. The system also includes a front-view vault mapping for easy reference without real-world tracking.</p>
-            <div class="btn-container">
+            <div class="btn-container mb-5">
                 <a href="#" class="btn btn-primary btn-custom">Reserve Now</a>
                 <a href="#" class="btn btn-dark btn-custom">Explore</a>
             </div>
         </div>
-        <div class="associated-by">
-            <p><b>Associated By:</b></p>
-            <div class="footer-icons">
-                <img src="assets/Logo garcia.png" alt="Logo 1">
-                <img src="assets/Logo garcia.png" alt="Logo 2">
-                <img src="assets/Logo garcia.png" alt="Logo 3">
-                <img src="assets/Logo garcia.png" alt="Logo 4">
-                <img src="assets/Logo garcia.png" alt="Logo 5">
+        <div class="associated-by mt-4">
+            <p class="text-center"><b>Associated By:</b></p>
+            <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
+                <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 60px; width: auto;">
+                <img src="assets/Logo garcia.png" alt="Logo 2" style="height: 60px; width: auto;">
+                <img src="assets/Logo garcia.png" alt="Logo 3" style="height: 60px; width: auto;">
+                <img src="assets/Logo garcia.png" alt="Logo 4" style="height: 60px; width: auto;">
+                <img src="assets/Logo garcia.png" alt="Logo 5" style="height: 60px; width: auto;">
             </div>
         </div>
     </section>
@@ -153,12 +153,12 @@
                 <div class="col-md-6 mt-10">
                     <div class="p-4 rounded background-color: #D9D9D9;">
                         <h4>Address</h4>
-                        <p class="text-muted">V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
+                        <p>V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
                         <h4>Contact</h4>
-                        <p class="text-muted">Phone: +0123-456-789</p>
-                        <p class="text-muted">Email: restease@gmail.com</p>
+                        <p>Phone: +0123-456-789</p>
+                        <p>Email: restease@gmail.com</p>
                         <h4>Open Time</h4>
-                        <p class="text-muted">Monday - Sunday : 8:00am - 10:00pm</p>
+                        <p>Monday - Sunday : 8:00am - 10:00pm</p>
                     </div>
                 </div>
             </div>
@@ -181,30 +181,45 @@
             </div>
         </div>
     </section>
-     <footer class="footer py-4 d-flex align-items-center" style="background-color: #506C84; color: white; height: 345px;">
+    <footer class="footer py-4 d-flex align-items-center" style="background-color: #506C84; color: white; height: 345px;">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-3 pb-5">
-                <div>
-                    <img src="assets/RE Logo New.png" alt="RestEase Logo" style="height: 50px;">
+            <!-- Logo and Navigation Links -->
+            <div class="row mb-4">
+                <!-- Logo -->
+                <div class="col-12 col-md-3 text-center text-md-start mb-3 mb-md-0">
+                    <img src="assets/RE Logo New White.png" alt="RestEase Logo" style="height: 31px;">
                 </div>
-                <div class="d-flex justify-content-center">
-                    <a href="#" class="text-white mx-3">Home</a>
-                    <a href="#" class="text-white mx-3">About Us</a>
-                    <a href="#" class="text-white mx-3">Terms & Condition</a>
-                    <a href="#" class="text-white mx-3">Data Privacy & Policy</a>
+                <!-- Navigation Links -->
+                <div class="col-12 col-md-6 text-center mb-3 mb-md-0">
+                    <div class="d-flex flex-column flex-md-row justify-content-center gap-2 gap-md-3">
+                        <a href="#" class="text-white text-decoration-none">Home</a>
+                        <a href="#" class="text-white text-decoration-none">About Us</a>
+                        <a href="#" class="text-white text-decoration-none">Terms & Condition</a>
+                        <a href="#" class="text-white text-decoration-none">Data Privacy & Policy</a>
+                    </div>
                 </div>
-                <div>
-                    <a href="#" class="text-white mx-2"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="text-white mx-2"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="text-white mx-2"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="text-white mx-2"><i class="fab fa-linkedin"></i></a>
-                    <a href="#" class="text-white mx-2"><i class="fab fa-youtube"></i></a>
+                <!-- Social Media Icons -->
+                <div class="col-12 col-md-3 text-center mb-3 mb-md-0">
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
+                    </div>
                 </div>
             </div>
-            <hr style="border: 1px solid white; margin-top: 20px;">
-            <div class="d-flex justify-content-between pt-3">
-                <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
-                <p class="mb-0">Designed By: Biringan IT Corps.</p>
+
+            <hr style="border: 1px solid white;">
+
+            <!-- Copyright and Credits -->
+            <div class="row pt-3">
+                <div class="col-12 col-md-6 text-center text-md-start mb-2 mb-md-0">
+                    <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
+                </div>
+                <div class="col-12 col-md-6 text-center text-md-end">
+                    <p class="mb-0">Designed By: Biringan IT Corps.</p>
+                </div>
             </div>
         </div>
     </footer> 
