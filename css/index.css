@@ -77,6 +77,19 @@ body {
         .navbar-nav .btn:hover {
             background-color: #4a5f7a;
         }
+        .navbar-toggler {
+            border: none; /* Removes the default border */
+            background-color: transparent; /* Makes the button background transparent */
+            position: absolute; /* Ensures the button stays outside the navbar */
+            right: 20px; /* Adjusts the position to the right */
+            top: 15px; /* Adjusts the position vertically */
+            z-index: 1050; /* Ensures the button is above other elements */
+        }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba%280, 0, 0, 0.5%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+            width: 25px; /* Adjusts the size of the icon */
+            height: 25px;
+        }
         .hero-content {
             position: relative;
             z-index: 1;
@@ -161,6 +174,22 @@ body {
             }
             .footer-icons {
                 justify-content: center;
+            }
+            .navbar {
+                padding: 10px 20px; /* Adjusts padding for smaller screens */
+            }
+            .navbar-collapse {
+                background-color: #D9D9D9; /* Adds a background color to the collapsed menu */
+                border-radius: 10px; /* Adds rounded corners */
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+                position: absolute; /* Ensures the menu stays outside the navbar */
+                top: 60px; /* Adjusts the position below the navbar */
+                right: 20px; /* Aligns the menu to the right */
+                width: calc(100% - 40px); /* Ensures the menu fits within the screen */
+                z-index: 1040; /* Ensures the menu is above other elements */
+            }
+            .navbar-collapse.show {
+                display: block; /* Ensures the menu is visible when expanded */
             }
         }
         .who-we-are {
@@ -278,4 +307,63 @@ body {
         
         .mt-10 {
             margin-top: 10rem; /* Adjust as needed */
+        }
+
+        /* Contact Us Section Styling */
+        .contact-us {
+            background-color: #ffffff; /* White background for the section */
+            padding: 60px 20px; /* Adds spacing around the section */
+        }
+
+        /* Input Fields and Textarea Styling */
+        .contact-us .form-control {
+            background-color: #D9D9D9; /* Matches the service card background */
+            border: none; /* Removes border */
+            border-radius: 10px; /* Adds rounded corners */
+            padding: 10px; /* Adds padding inside the fields */
+            color: #333; /* Text color */
+            font-size: 1rem; /* Font size */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+        }
+
+        .contact-us .form-control::placeholder {
+            color: #777; /* Placeholder text color */
+        }
+
+        .contact-us .form-control:focus {
+            outline: none; /* Removes focus outline */
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2); /* Adds a subtle shadow on focus */
+        }
+
+        /* Button Styling */
+        .contact-us button {
+            background-color: #5c779a; /* Matches the button color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .contact-us button:hover {
+            background-color: #4a5f7a; /* Darker shade on hover */
+        }
+
+        /* Contact Information Section Styling */
+        .contact-us .p-4 {
+            background-color: #D9D9D9; /* Matches the service card background */
+            border-radius: 10px; /* Adds rounded corners */
+            padding: 20px; /* Adds padding inside the container */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for depth */
+        }
+
+        .contact-us .p-4 h4 {
+            font-weight: 600; /* Makes the headings bold */
+            margin-bottom: 10px; /* Adds spacing below the headings */
+        }
+
+        .contact-us .p-4 p {
+            margin-bottom: 15px; /* Adds spacing below each paragraph */
+            color: #555; /* Slightly darker text for better readability */
         }
