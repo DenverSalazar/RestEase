@@ -14,6 +14,7 @@ body {
             color: black;
             position: relative;
             padding: 20px;
+            padding-top: 80px; /* Add padding to prevent overlap with the navbar */
         }
         .hero::before {
             content: "";
@@ -29,7 +30,7 @@ body {
             backdrop-filter: blur(10px);
             width: 90%;
             max-width: 1240px;
-            height: 57px;
+            height: 57px; /* Keep the height consistent */
             padding: 0 20px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             margin: 0 auto;
@@ -179,6 +180,7 @@ body {
             }
             .navbar {
                 padding: 10px 20px; /* Adjusts padding for smaller screens */
+                height: 57px; /* Maintain the same height in mobile view */
             }
             .navbar-collapse {
                 background-color: #D9D9D9; /* Adds a background color to the collapsed menu */
@@ -193,6 +195,11 @@ body {
             }
             .navbar-collapse.show {
                 display: block; /* Ensures the menu is visible when expanded */
+            }
+            .hero {
+                height: auto;
+                padding: 20px;
+                padding-top: 100px; /* Increase padding for smaller screens */
             }
         }
         .who-we-are {
@@ -378,6 +385,7 @@ body {
                 align-items: flex-start;
                 height: auto;
                 padding: 10px;
+                height: 57px; /* Maintain the same height in mobile view */
             }
             .navbar-brand {
                 margin-bottom: 10px;
@@ -397,6 +405,7 @@ body {
             .hero {
                 height: auto;
                 padding: 20px;
+                padding-top: 100px; /* Increase padding for smaller screens */
             }
             .hero h1 {
                 font-size: 1.8rem;
