@@ -72,7 +72,9 @@ body {
             padding: 5px 20px;
             font-size: 0.9rem;
             border: none;
-            margin-left: 15px;
+            margin: 0; /* Removes extra margin */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds box-shadow for consistency */
+            align-self: center; /* Centers the button vertically */
         }
         .navbar-nav .btn:hover {
             background-color: #4a5f7a;
@@ -187,6 +189,7 @@ body {
                 right: 20px; /* Aligns the menu to the right */
                 width: calc(100% - 40px); /* Ensures the menu fits within the screen */
                 z-index: 1040; /* Ensures the menu is above other elements */
+                padding-bottom: 13px;
             }
             .navbar-collapse.show {
                 display: block; /* Ensures the menu is visible when expanded */
