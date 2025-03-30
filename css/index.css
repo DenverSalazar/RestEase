@@ -371,4 +371,104 @@ body {
             color: #555; /* Slightly darker text for better readability */
         }
 
-      
+        @media (max-width: 768px) {
+            /* Navbar adjustments */
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                height: auto;
+                padding: 10px;
+            }
+            .navbar-brand {
+                margin-bottom: 10px;
+            }
+            .navbar-nav {
+                flex-direction: column;
+                width: 100%;
+            }
+            .navbar-nav .nav-link,
+            .navbar-nav .btn {
+                width: 100%;
+                text-align: left;
+                margin: 5px 0;
+            }
+
+            /* Hero section adjustments */
+            .hero {
+                height: auto;
+                padding: 20px;
+            }
+            .hero h1 {
+                font-size: 1.8rem;
+                text-align: center;
+            }
+            .hero p {
+                font-size: 1rem;
+                text-align: center;
+            }
+            .btn-container {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .btn-custom {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            /* Who We Are section */
+            .who-we-are {
+                text-align: center;
+            }
+            .who-we-are .section-title {
+                font-size: 2rem;
+            }
+            .who-we-are .section-description {
+                font-size: 1rem;
+            }
+            .who-we-are .btn-read-more {
+                margin-top: 20px;
+            }
+            .who-we-are .img-fluid {
+                margin-top: 20px;
+            }
+
+            /* Our Services section */
+            .our-services .service-card {
+                margin-bottom: 20px;
+            }
+            .our-services .service-card .icon img {
+                width: 40px;
+                height: 40px;
+            }
+
+            /* Contact Us section */
+            .contact-us .row {
+                flex-direction: column;
+            }
+            .contact-us .col-md-6 {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .contact-us .form-control {
+                width: 100%;
+            }
+
+            /* Footer adjustments */
+            .footer {
+                flex-direction: column;
+                text-align: center;
+                height: auto;
+                padding: 20px;
+            }
+            .footer .d-flex {
+                flex-direction: column;
+                align-items: center;
+            }
+            .footer .d-flex a {
+                margin: 5px 0;
+            }
+            .footer-icons {
+                justify-content: center;
+            }
+        }
