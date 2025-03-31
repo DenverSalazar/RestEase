@@ -1,0 +1,216 @@
+/* About Hero Section */
+.about-hero {
+    background-color: #506C84;
+    color: white;
+    padding: 60px 0;
+    text-align: center;
+    height: 590px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.about-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.about-hero p {
+    font-size: 1.2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Team Photos Grid */
+.team-photos {
+    margin-top: 100px; /* Pull photos up into the hero section */
+    padding: 0 0 60px 0;
+    position: relative;
+    z-index: 2;
+}
+
+.team-photo {
+    background-color: #D9D9D9;
+    height: 200px;
+    border-radius: 10px;
+    width: 100%;
+}
+
+/* Section Titles and Content */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #D9D9D9;
+    margin-bottom: 20px;
+}
+
+/* Who We Are Section */
+.who-we-are-section {
+    padding: 40px 0;
+}
+
+.who-we-are-section h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.who-we-are-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.main-description {
+    margin-bottom: 40px;
+    color: #333;
+    line-height: 1.6;
+    font-size: 1.1rem;
+}
+
+/* Mission and Vision */
+.mission-vision {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 60px;
+}
+
+.mission-vision h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #D9D9D9;
+    margin-bottom: 20px;
+}
+
+/* What We Do Section */
+.what-we-do-section {
+    padding: 40px 0;
+}
+
+.what-we-do-section h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.divider {
+    height: 1px;
+    background-color: #D9D9D9;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.content-section {
+    margin-bottom: 30px;
+}
+
+.content-section h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.content-section p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.image-text-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    margin-top: 30px;
+    margin-bottom: 40px;
+}
+
+.image-box {
+    background-color: #D9D9D9;
+    border-radius: 10px;
+    height: 200px;
+    width: 100%;
+}
+
+.text-content {
+    display: flex;
+    align-items: center;
+}
+
+/* Meet Our Team Section */
+.meet-team-section {
+    padding: 60px 0;
+}
+
+.meet-team-section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin: 0 auto;
+    max-width: 1240px;
+}
+
+.team-member {
+    text-align: center;
+}
+
+.member-photo {
+    background-color: #D9D9D9;
+    height: 250px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.team-member h4 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Container width adjustment */
+.container {
+    max-width: 1240px;
+    padding: 0 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .about-hero {
+        height: 250px;
+    }
+
+    .team-photos {
+        margin-top: -50px;
+    }
+
+    .mission-vision {
+        grid-template-columns: 1fr;
+    }
+
+    .image-text-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .image-box {
+        height: 180px;
+    }
+
+    .team-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .member-photo {
+        height: 200px;
+    }
+}
