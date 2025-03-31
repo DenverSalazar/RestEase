@@ -377,3 +377,40 @@ body {
             margin-bottom: 15px; /* Adds spacing below each paragraph */
             color: white; /* Slightly darker text for better readability */
         }
+
+        /* These styles are already in your index.css, just make sure about-us.html is linking to index.css */
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .footer .container {
+            width: 90%;
+            max-width: 1240px;
+            padding: 0 20px;
+        }
+
+        .footer .row {
+            width: 100%;
+            margin: 0;
+        }
+
+        .footer hr {
+            margin: 20px 0;
+        }
+
+        .footer .nav-link {
+            padding: 0;
+        }
+
+        @media (max-width: 768px) {
+            .footer {
+                height: auto !important;
+                padding: 30px 0;
+            }
+            
+            .footer .container {
+                padding: 0 15px;
+            }
+        }
