@@ -2,12 +2,18 @@
 .about-hero {
     background-color: #506C84;
     color: white;
-    padding: 60px 0;
+    padding: 60px 20px;
     text-align: center;
-    height: 590px;
+    min-height: 535px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.about-hero .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-top: 40px;
 }
 
 .about-hero h1 {
@@ -20,12 +26,13 @@
     font-size: 1.2rem;
     max-width: 800px;
     margin: 0 auto;
+    line-height: 1.6;
 }
 
 /* Team Photos Grid */
 .team-photos {
-    margin-top: 100px; /* Pull photos up into the hero section */
-    padding: 0 0 60px 0;
+    margin-top: -100px;
+    padding: 0 20px 60px;
     position: relative;
     z-index: 2;
 }
@@ -35,6 +42,21 @@
     height: 200px;
     border-radius: 10px;
     width: 100%;
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.team-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.team-photo:hover {
+    transform: scale(1.02);
 }
 
 /* Section Titles and Content */
@@ -48,7 +70,7 @@
 
 /* Who We Are Section */
 .who-we-are-section {
-    padding: 40px 0;
+    padding: 40px 20px;
 }
 
 .who-we-are-section h2 {
@@ -185,32 +207,91 @@
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .about-hero {
-        height: 250px;
+        min-height: 300px;
+        padding: 80px 20px 100px;
+    }
+
+    .about-hero h1 {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .about-hero p {
+        font-size: 1rem;
+        padding: 0 15px;
     }
 
     .team-photos {
         margin-top: -50px;
+        padding: 0 15px 40px;
+    }
+
+    .team-photo {
+        height: 180px;
+        margin-bottom: 15px;
     }
 
     .mission-vision {
         grid-template-columns: 1fr;
+        gap: 30px;
     }
 
-    .image-text-layout {
-        grid-template-columns: 1fr;
-        gap: 20px;
+    .who-we-are-section {
+        padding: 30px 20px;
     }
 
-    .image-box {
-        height: 180px;
+    .who-we-are-section h2 {
+        font-size: 1.8rem;
     }
 
-    .team-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
+    .main-description {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-hero {
+        min-height: 250px;
+        padding: 60px 15px 80px;
     }
 
-    .member-photo {
-        height: 200px;
+    .about-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .about-hero p {
+        font-size: 0.95rem;
+    }
+
+    .team-photos {
+        margin-top: -30px;
+        padding: 0 10px 30px;
+    }
+
+    .team-photo {
+        height: 150px;
+        margin-bottom: 20px;
+    }
+
+    .who-we-are-section {
+        padding: 20px 15px;
+    }
+
+    .who-we-are-section h2 {
+        font-size: 1.6rem;
+    }
+
+    .who-we-are-section h3 {
+        font-size: 1.3rem;
+    }
+
+    .main-description {
+        font-size: 0.95rem;
+        margin-bottom: 25px;
+    }
+
+    .mission-vision {
+        gap: 25px;
     }
 }

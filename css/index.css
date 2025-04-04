@@ -1,418 +1,418 @@
 body {
-            font-family: 'Poppins', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .hero {
-            background: url('../assets/garcia.jpg') center/cover no-repeat;
-            position: relative;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* Centers content vertically */
-            align-items: center; /* Centers content horizontally */
-            text-align: center;
-            color: black;
-            padding: 20px;
-            padding-top: 80px; /* Add padding to prevent overlap with the navbar */
-        }
-        .hero::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.6); /* Semi-transparent overlay */
-        }
-        .navbar {
-            background: rgba(255, 255, 255, 0.2); /* Glass effect */
-            backdrop-filter: blur(10px);
-            width: 90%;
-            max-width: 1240px;
-            height: 57px; /* Keep the height consistent */
-            padding: 0 20px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            margin: 0 auto;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-        .navbar-brand {
-            font-weight: 600;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-        }
-        .navbar-brand img {
-            height: 30px;
-            margin-right: 10px;
-        }
-        .navbar-nav {
-            display: flex;
-            align-items: center;
-        }
-        .navbar-nav .nav-link {
-            font-weight: 500;
-            margin: 0 15px;
-            color: black;
-            transition: color 0.3s;
-        }
-        .navbar-nav .nav-link:hover {
-            color: #506C84;
-        }
-        .navbar-nav .btn {
-            background-color: #506C84;
-            color: white;
-            border-radius: 5px;
-            padding: 5px 20px;
-            font-size: 0.9rem;
-            border: none;
-            margin: 0; /* Removes extra margin */
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds box-shadow for consistency */
-            align-self: center; /* Centers the button vertically */
-        }
-        .navbar-nav .btn:hover {
-            background-color: #4a5f7a;
-        }
-        .navbar-toggler {
-            border: none; /* Removes the default border */
-            background-color: transparent; /* Makes the button background transparent */
-            position: absolute; /* Ensures the button stays outside the navbar */
-            right: 20px; /* Adjusts the position to the right */
-            top: 15px; /* Adjusts the position vertically */
-            z-index: 1050; /* Ensures the button is above other elements */
-        }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba%280, 0, 0, 0.5%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-            width: 25px; /* Adjusts the size of the icon */
-            height: 25px;
-        }
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            width: 90%;
-            max-width: 1108px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding-top: 80px;
-        }
-        .hero h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: #000;
-        }
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        .btn-container {
-            display: flex;
-            gap: 20px; /* Adds spacing between buttons */
-        }
-        .btn-custom {
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1rem;
-            width: 150px;
-        }
-        .btn-primary {
-            background-color: #506C84;
-            color: white;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #4a5f7a;
-        }
-        .btn-dark {
-            background-color: black;
-            color: white;
-            border: none;
-        }
-        .btn-dark:hover {
-            background-color: #333;
-        }
-        .associated-by {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            right: 0;
-            width: 100%;
-            z-index: 1;
-        }
-        .footer-icons {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 30px;
-        }
-        .footer-icons img {
-            width: 60px;
-        }
-        @media (max-width: 768px) {
-            .hero {
-                height: auto;
-                min-height: 100vh;
-            }
-            .hero h1 {
-                font-size: 2rem;
-            }
-            .hero p {
-                font-size: 1rem;
-            }
-            .btn-container {
-                flex-direction: column; /* Stacks buttons vertically on smaller screens */
-                gap: 10px;
-            }
-            .btn-custom {
-                width: 100%;
-                max-width: 200px;
-            }
-            .footer-icons {
-                justify-content: center;
-            }
-            .navbar {
-                padding: 10px 20px; /* Adjusts padding for smaller screens */
-                height: 57px; /* Maintain the same height in mobile view */
-            }
-            .navbar-collapse {
-                background-color: #D9D9D9; /* Adds a background color to the collapsed menu */
-                border-radius: 10px; /* Adds rounded corners */
-                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
-                position: absolute; /* Ensures the menu stays outside the navbar */
-                top: 60px; /* Adjusts the position below the navbar */
-                right: 20px; /* Aligns the menu to the right */
-                width: calc(100% - 40px); /* Ensures the menu fits within the screen */
-                z-index: 1040; /* Ensures the menu is above other elements */
-                padding-bottom: 13px;
-            }
-            .navbar-collapse.show {
-                display: block; /* Ensures the menu is visible when expanded */
-            }
-            .associated-by {
-                position: relative;
-                margin-top: 20px;
-                bottom: auto;
-            }
-        }
-        .who-we-are {
-            padding: 60px 20px; /* Adds spacing around the section */
-            background-color: #f8f9fa; /* Light background color */
-        }
+    font-family: 'Poppins', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.hero {
+    background: url('../assets/cemetery\ bg.jpg') center/cover no-repeat;
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centers content vertically */
+    align-items: center; /* Centers content horizontally */
+    text-align: center;
+    color: black;
+    padding: 20px;
+    padding-top: 80px; /* Add padding to prevent overlap with the navbar */
+}
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6); /* Semi-transparent overlay */
+}
+.navbar {
+    background: rgba(255, 255, 255, 0.2); /* Glass effect */
+    backdrop-filter: blur(10px);
+    width: 90%;
+    max-width: 1240px;
+    height: 57px; /* Keep the height consistent */
+    padding: 0 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+}
+.navbar-brand img {
+    height: 30px;
+    margin-right: 10px;
+}
+.navbar-nav {
+    display: flex;
+    align-items: center;
+}
+.navbar-nav .nav-link {
+    font-weight: 500;
+    margin: 0 15px;
+    color: black;
+    transition: color 0.3s;
+}
+.navbar-nav .nav-link:hover {
+    color: #506C84;
+}
+.navbar-nav .btn {
+    background-color: #506C84;
+    color: white;
+    border-radius: 5px;
+    padding: 5px 20px;
+    font-size: 0.9rem;
+    border: none;
+    margin: 0; /* Removes extra margin */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds box-shadow for consistency */
+    align-self: center; /* Centers the button vertically */
+}
+.navbar-nav .btn:hover {
+    background-color: #4a5f7a;
+}
+.navbar-toggler {
+    border: none; /* Removes the default border */
+    background-color: transparent; /* Makes the button background transparent */
+    position: absolute; /* Ensures the button stays outside the navbar */
+    right: 20px; /* Adjusts the position to the right */
+    top: 15px; /* Adjusts the position vertically */
+    z-index: 1050; /* Ensures the button is above other elements */
+}
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba%280, 0, 0, 0.5%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    width: 25px; /* Adjusts the size of the icon */
+    height: 25px;
+}
+.hero-content {
+    position: relative;
+    z-index: 1;
+    width: 90%;
+    max-width: 1108px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-top: 45px;
+}
+.hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #000;
+}
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+.btn-container {
+    display: flex;
+    gap: 20px; /* Adds spacing between buttons */
+}
+.btn-custom {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+    width: 150px;
+}
+.btn-primary {
+    background-color: #506C84;
+    color: white;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: #4a5f7a;
+}
+.btn-dark {
+    background-color: black;
+    color: white;
+    border: none;
+}
+.btn-dark:hover {
+    background-color: #333;
+}
+.associated-by {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1;
+}
+.footer-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+}
+.footer-icons img {
+    width: 60px;
+}
+@media (max-width: 768px) {
+    .hero {
+        height: auto;
+        min-height: 100vh;
+    }
+    .hero h1 {
+        font-size: 2rem;
+    }
+    .hero p {
+        font-size: 1rem;
+    }
+    .btn-container {
+        flex-direction: column; /* Stacks buttons vertically on smaller screens */
+        gap: 10px;
+    }
+    .btn-custom {
+        width: 100%;
+        max-width: 200px;
+    }
+    .footer-icons {
+        justify-content: center;
+    }
+    .navbar {
+        padding: 10px 20px; /* Adjusts padding for smaller screens */
+        height: 57px; /* Maintain the same height in mobile view */
+    }
+    .navbar-collapse {
+        background-color: #D9D9D9; /* Adds a background color to the collapsed menu */
+        border-radius: 10px; /* Adds rounded corners */
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+        position: absolute; /* Ensures the menu stays outside the navbar */
+        top: 60px; /* Adjusts the position below the navbar */
+        right: 20px; /* Aligns the menu to the right */
+        width: calc(100% - 40px); /* Ensures the menu fits within the screen */
+        z-index: 1040; /* Ensures the menu is above other elements */
+        padding-bottom: 13px;
+    }
+    .navbar-collapse.show {
+        display: block; /* Ensures the menu is visible when expanded */
+    }
+    .associated-by {
+        position: relative;
+        margin-top: 20px;
+        bottom: auto;
+    }
+}
+.who-we-are {
+    padding: 60px 20px; /* Adds spacing around the section */
+    background-color: #f8f9fa; /* Light background color */
+}
 
-        .section-title {
-            font-size: 2.5rem; /* Larger font size for the title */
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #333;
-        }
+.section-title {
+    font-size: 2.5rem; /* Larger font size for the title */
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+}
 
-        .section-description {
-            font-size: 1.1rem; /* Slightly larger font size for the description */
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 40px;
-        }
+.section-description {
+    font-size: 1.1rem; /* Slightly larger font size for the description */
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 40px;
+}
 
-        .btn-read-more {
-            background-color: #506C84;
-            color: white;
-            padding: 10px 25px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-        }
+.btn-read-more {
+    background-color: #506C84;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
 
-        .btn-read-more:hover {
-            background-color: #4a5f7a;
-        }
+.btn-read-more:hover {
+    background-color: #4a5f7a;
+}
 
-        .img-fluid {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px; /* Adds rounded corners to the image */
-        }
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px; /* Adds rounded corners to the image */
+}
 
-        @media (max-width: 768px) {
-            .who-we-are {
-                text-align: center; /* Center-align text for smaller screens */
-            }
+@media (max-width: 768px) {
+    .who-we-are {
+        text-align: center; /* Center-align text for smaller screens */
+    }
 
-            .btn-read-more {
-                display: inline-block;
-                margin-top: 20px;
-            }
+    .btn-read-more {
+        display: inline-block;
+        margin-top: 20px;
+    }
 
-            .img-fluid {
-                margin-top: 20px;
-            }
-        }
+    .img-fluid {
+        margin-top: 20px;
+    }
+}
 
-        .our-services {
-            padding: 80px 20px; /* Adds spacing around the section */
-            background-color: #ffffff; /* White background for the section */
-        }
+.our-services {
+    padding: 80px 20px; /* Adds spacing around the section */
+    background-color: #ffffff; /* White background for the section */
+}
 
-        .service-card {
-            background-color: #94B2CC; /* Light gray background for the cards */
-            border-radius: 10px; /* Rounded corners */
-            padding: 20px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for the cards */
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Ensures content is spaced evenly */
-        }
+.service-card {
+    background-color: #94B2CC; /* Light gray background for the cards */
+    border-radius: 10px; /* Rounded corners */
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for the cards */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Ensures content is spaced evenly */
+}
 
-        .service-card:hover {
-            transform: translateY(-10px); /* Slight lift effect on hover */
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
-        }
+.service-card:hover {
+    transform: translateY(-10px); /* Slight lift effect on hover */
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+}
 
-        .service-card .d-flex {
-            margin-bottom: 15px; /* Adds spacing between the header and description */
-        }
+.service-card .d-flex {
+    margin-bottom: 15px; /* Adds spacing between the header and description */
+}
 
-        .service-card .icon {
-            margin-left: 10px; /* Adds spacing between the title and the icon */
-        }
+.service-card .icon {
+    margin-left: 10px; /* Adds spacing between the title and the icon */
+}
 
-        .service-card .icon img {
-            width: 50px; /* Icon size */
-            height: 50px;
-        }
+.service-card .icon img {
+    width: 50px; /* Icon size */
+    height: 50px;
+}
 
-        .service-title {
-            font-size: 1.5rem; /* Title font size */
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0; /* Removes extra margin below the title */
-        }
+.service-title {
+    font-size: 1.5rem; /* Title font size */
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0; /* Removes extra margin below the title */
+}
 
-        .service-description {
-            font-size: 1rem; /* Description font size */
-            line-height: 1.6;
-            color: #555;
-            margin-top: 10px; /* Adds spacing between the description and the header */
-        }
+.service-description {
+    font-size: 1rem; /* Description font size */
+    line-height: 1.6;
+    color: #555;
+    margin-top: 10px; /* Adds spacing between the description and the header */
+}
 
-        @media (max-width: 768px) {
-            .service-card {
-                margin-bottom: 20px; /* Adds spacing between cards on smaller screens */
-            }
+@media (max-width: 768px) {
+    .service-card {
+        margin-bottom: 20px; /* Adds spacing between cards on smaller screens */
+    }
 
-            .service-card .icon img {
-                width: 40px; /* Slightly smaller icons for smaller screens */
-                height: 40px;
-            }
-        }
-        
-        .mt-10 {
-            margin-top: 10rem; /* Adjust as needed */
-        }
+    .service-card .icon img {
+        width: 40px; /* Slightly smaller icons for smaller screens */
+        height: 40px;
+    }
+}
 
-        /* Contact Us Section Styling */
-        .contact-us {
-            background-color: #ffffff; /* White background for the section */
-            padding: 60px 20px; /* Adds spacing around the section */
-        }
+.mt-10 {
+    margin-top: 10rem; /* Adjust as needed */
+}
 
-        /* Input Fields and Textarea Styling */
-        .contact-us .form-control {
-            border: none; /* Removes border */
-            border-radius: 10px; /* Adds rounded corners */
-            padding: 10px; /* Adds padding inside the fields */
-            color: #333; /* Text color */
-            font-size: 1rem; /* Font size */
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
-        }
+/* Contact Us Section Styling */
+.contact-us {
+    background-color: #ffffff; /* White background for the section */
+    padding: 60px 20px; /* Adds spacing around the section */
+}
 
-        .contact-us .form-control::placeholder {
-            color: #777; /* Placeholder text color */
-        }
+/* Input Fields and Textarea Styling */
+.contact-us .form-control {
+    border: none; /* Removes border */
+    border-radius: 10px; /* Adds rounded corners */
+    padding: 10px; /* Adds padding inside the fields */
+    color: #333; /* Text color */
+    font-size: 1rem; /* Font size */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+}
 
-        .contact-us .form-control:focus {
-            outline: none; /* Removes focus outline */
-            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2); /* Adds a subtle shadow on focus */
-        }
+.contact-us .form-control::placeholder {
+    color: #777; /* Placeholder text color */
+}
 
-        /* Button Styling */
-        .contact-us button {
-            background-color: #506C84; /* Matches the button color */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-        }
+.contact-us .form-control:focus {
+    outline: none; /* Removes focus outline */
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2); /* Adds a subtle shadow on focus */
+}
 
-        .contact-us button:hover {
-            background-color: #4a5f7a; /* Darker shade on hover */
-        }
+/* Button Styling */
+.contact-us button {
+    background-color: #506C84; /* Matches the button color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
 
-        /* Contact Information Section Styling */
-        .contact-us .p-4 {
-            background-color: #506C84; /* Matches the service card background */
-            border-radius: 10px; /* Adds rounded corners */
-            padding: 20px; /* Adds padding inside the container */
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for depth */
-        }
+.contact-us button:hover {
+    background-color: #4a5f7a; /* Darker shade on hover */
+}
 
-        .contact-us .p-4 h4 {
-            font-weight: 600; /* Makes the headings bold */
-            margin-bottom: 10px;
-            color: white; /* Adds spacing below the headings */
-        }
+/* Contact Information Section Styling */
+.contact-us .p-4 {
+    background-color: #506C84; /* Matches the service card background */
+    border-radius: 10px; /* Adds rounded corners */
+    padding: 20px; /* Adds padding inside the container */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for depth */
+}
 
-        .contact-us .p-4 p {
-            margin-bottom: 15px; /* Adds spacing below each paragraph */
-            color: white; /* Slightly darker text for better readability */
-        }
+.contact-us .p-4 h4 {
+    font-weight: 600; /* Makes the headings bold */
+    margin-bottom: 10px;
+    color: white; /* Adds spacing below the headings */
+}
 
-        /* These styles are already in your index.css, just make sure about-us.html is linking to index.css */
-        .footer {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
+.contact-us .p-4 p {
+    margin-bottom: 15px; /* Adds spacing below each paragraph */
+    color: white; /* Slightly darker text for better readability */
+}
 
-        .footer .container {
-            width: 90%;
-            max-width: 1240px;
-            padding: 0 20px;
-        }
+/* These styles are already in your index.css, just make sure about-us.html is linking to index.css */
+.footer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
 
-        .footer .row {
-            width: 100%;
-            margin: 0;
-        }
+.footer .container {
+    width: 90%;
+    max-width: 1240px;
+    padding: 0 20px;
+}
 
-        .footer hr {
-            margin: 20px 0;
-        }
+.footer .row {
+    width: 100%;
+    margin: 0;
+}
 
-        .footer .nav-link {
-            padding: 0;
-        }
+.footer hr {
+    margin: 20px 0;
+}
 
-        @media (max-width: 768px) {
-            .footer {
-                height: auto !important;
-                padding: 30px 0;
-            }
-            
-            .footer .container {
-                padding: 0 15px;
-            }
-        }
+.footer .nav-link {
+    padding: 0;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        height: auto !important;
+        padding: 30px 0;
+    }
+    
+    .footer .container {
+        padding: 0 15px;
+    }
+}
