@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Add Google Sign-In Meta Tag -->
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
 </head>
 <body>
     <!-- Navbar -->
@@ -19,7 +21,7 @@
             <a class="navbar-brand" href="#">
                 <img src="assets/RE Logo New.png" alt="Logo">
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
@@ -48,9 +50,9 @@
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Sign In</h2>
-                        <form>
+                        <form id="loginForm">
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email">
+                                <input type="email" class="form-control" placeholder="Email" id="email">
                             </div>
                             <div class="mb-3 password-container">
                                 <input type="password" class="form-control" placeholder="Password" id="password">
@@ -78,9 +80,9 @@
                                 <span>or</span>
                             </div>
 
-                            <button type="button" class="btn btn-google w-100">
+                            <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
                                 <img src="assets/google-icon.png" alt="Google">
-                                Sign in with google
+                                Sign in with Google
                             </button>
 
                             <p class="signup-text mt-4 text-center">
@@ -95,22 +97,60 @@
 
     <!-- reCAPTCHA Script -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Google Sign-In API -->
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Add this script -->
+    
     <script>
+        // Password toggle functionality
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');
 
         togglePassword.addEventListener('click', function (e) {
-            // toggle the type attribute
             const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
             password.setAttribute('type', type);
-            
-            // toggle the eye icon
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
+
+        // Initialize Google Sign-In
+        function init() {
+            gapi.load('auth2', function() {
+                gapi.auth2.init({
+                    client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'
+                });
+            });
+        }
+
+        // Handle Google Sign-In
+        function handleGoogleSignIn() {
+            const auth2 = gapi.auth2.getAuthInstance();
+            auth2.signIn().then(function(googleUser) {
+                // Get user profile information
+                const profile = googleUser.getBasicProfile();
+                const id_token = googleUser.getAuthResponse().id_token;
+                
+                // Here you would typically send the id_token to your server
+                // for verification and to create a session
+                console.log('ID Token:', id_token);
+                console.log('User ID:', profile.getId());
+                console.log('Name:', profile.getName());
+                console.log('Email:', profile.getEmail());
+                
+                // Redirect to dashboard or handle the sign-in as needed
+                // window.location.href = 'dashboard.html';
+            }).catch(function(error) {
+                console.error('Error:', error);
+            });
+        }
+
+        // Handle regular form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Add your regular login form handling here
+        });
     </script>
+    <script>init();</script>
 </body>
 </html>
