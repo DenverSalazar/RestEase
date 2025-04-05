@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RestEase Admin Dashboard</title>
+  <title>RestEase Admin Dashboard - Settings</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/Settings.css">
 </head>
 <body>
   <!-- Sidebar -->
@@ -15,33 +15,33 @@
       <img src="../assets/RE Logo New.png" alt="RestEase Logo">
     </div>
     <nav class="nav-links">
-      <a href="#" class="nav-item active">
+      <a href="Dashboard.html" class="nav-item">
         <i class="fas fa-th-large"></i>
         Dashboard
       </a>
-      <a href="#" class="nav-item">
+      <a href="Analytics.html" class="nav-item">
         <i class="fas fa-chart-line"></i>
         Analytics
       </a>
-      <a href="#" class="nav-item">
+      <a href="Mapping.html" class="nav-item">
         <i class="fas fa-map-marker-alt"></i>
         Mapping
       </a>
-      <a href="#" class="nav-item">
+      <a href="Transaction.html" class="nav-item">
         <i class="fas fa-exchange-alt"></i>
         Transaction
       </a>
-      <a href="#" class="nav-item">
+      <a href="Renewals.html" class="nav-item">
         <i class="fas fa-sync"></i>
         Renewals
       </a>
-      <a href="#" class="nav-item">
+      <a href="Reports.html" class="nav-item">
         <i class="fas fa-file-alt"></i>
         Reports
       </a>
     </nav>
     <div style="margin-top: auto;">
-      <a href="#" class="nav-item">
+      <a href="Settings.html" class="nav-item active">
         <i class="fas fa-cog"></i>
         Settings
       </a>
@@ -78,34 +78,28 @@
         </div>
       </div>
     </header>
-    <h1 style="margin-left: 230px;">GINALAWAN KO YUNG LENG PERD ARAW KUPO</h1>
-    <!-- Dashboard Content -->
-    <div class="dashboard-grid">
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
+
+    <!-- Settings Section -->
+    <section class="settings-section">
+      <h1>Settings</h1>
+      <div class="dashboard-grid">
+        <div class="card">
+          <h3>User Preferences</h3>
+          <p>Manage your personal preferences, such as theme and language.</p>
+          <button class="btn btn-primary">Edit Preferences</button>
+        </div>
+        <div class="card">
+          <h3>Notifications</h3>
+          <p>Control how you receive notifications and alerts always.</p>
+          <button class="btn btn-primary">Manage Notifications</button>
+        </div>
+        <div class="card">
+          <h3>Account Security</h3>
+          <p>Update your password and enable two-factor authentication.</p>
+          <button class="btn btn-primary">Update Security</button>
+        </div>
       </div>
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
-      </div>
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
-      </div>
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
-      </div>
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
-      </div>
-      <div class="card">
-        <img src="../assets/testimony-image.png" alt="">
-        <!-- Dashboard card content will go here -->
-      </div>
-    </div>
+    </section>
   </main>
 
   <script>
