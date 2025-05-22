@@ -188,7 +188,3 @@
         .leaflet-popup-pane {
             z-index: 700;
         }
-        .leaflet-control-layers-expanded .leaflet-control-layers-toggle {
-            display: none;
-        }
-        

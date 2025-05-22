@@ -4,7 +4,7 @@ body {
     padding: 0;
 }
 .hero {
-    background: url('../assets/cemetery\ bg.jpg') center/cover no-repeat;
+    background: url('../assets/cemetery bg.jpg') center/cover no-repeat;
     position: relative;
     height: 100vh;
     display: flex;
