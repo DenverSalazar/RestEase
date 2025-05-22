@@ -12,68 +12,6 @@
     background-color: #fff;
   }
   
-  /* Sidebar Styles */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: var(--sidebar-width);
-    background-color: #f8f9fa;
-    padding: 16px;
-    border-right: 1px solid #eee;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000; /* Ensures the sidebar stays on top */
-  }
-  
-  .logo {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    margin-bottom: 30px;
-  }
-  
-  .logo img {
-    height: 32px;
-    width: auto;
-  }
-  
-  .nav-links {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  
-  .nav-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    color: #666;
-    text-decoration: none;
-    border-radius: var(--border-radius);
-    transition: all 0.2s;
-    font-size: 14px;
-  }
-  
-  .nav-item:hover {
-    background-color: #f0f0f0;
-    color: var(--primary-color);
-  }
-  
-  .nav-item.active {
-    background-color: #e8e8e8;
-    color: var(--primary-color);
-    font-weight: 500;
-  }
-  
-  .nav-item i {
-    margin-right: 12px;
-    font-size: 16px;
-    width: 20px;
-    text-align: center;
-  }
-  
   /* Main Content Area */
   .main-content {
     margin-left: var(--sidebar-width); /* Ensures the content starts after the sidebar */
@@ -234,10 +172,6 @@
 
   /* Responsive Fixes */
   @media (max-width: 768px) {
-    .sidebar {
-        width: 200px; /* Adjusts the sidebar width for smaller screens */
-    }
-
     .main-content {
         margin-left: 200px; /* Matches the sidebar width */
     }
