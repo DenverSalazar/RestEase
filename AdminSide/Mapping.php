@@ -45,50 +45,88 @@
           left: 50%;
           transform: translate(-50%, -50%);
           background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          padding: 32px 32px 50px 32px;
+          border-radius: 6px;
+          box-shadow: 0 2px 16px rgba(0,0,0,0.12);
           z-index: 1000;
-          min-width: 300px;
+          width: 300px;
           display: none;
+          font-family: 'Inter', sans-serif;
       }
       .custom-popup.active {
           display: block;
       }
-      .custom-popup table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 20px;
+      .popup-form-label {
+          font-size: 15px;
+          font-weight: 500;
+          margin-bottom: 4px;
+          color: #222;
       }
-      .custom-popup th, .custom-popup td {
-          padding: 8px;
-          text-align: left;
-          border-bottom: 1px solid #ddd;
+      .popup-form-id-label {
+          font-size: 18px;
+          font-weight: 700;
+          margin-bottom: 0;
+          color: #222;
       }
-      .custom-popup th {
-          font-weight: bold;
-          width: 30%;
+      .popup-form-id-value {
+          font-size: 16px;
+          color: #b0b0b0;
+          margin-bottom: 18px;
+          margin-top: 2px;
+          font-weight: 500;
+          letter-spacing: 1px;
+      }
+      .popup-form-group {
+          margin-bottom: 18px;
+      }
+      .popup-form-input {
+          width: 90%;
+          padding: 8px 12px;
+          border: 1px solid #e0e0e0;
+          border-radius: 6px;
+          background: #f7f7f7;
+          font-size: 15px;
+          color: #444;
+          margin-top: 2px;
+          margin-bottom: 0;
+          outline: none;
+      }
+      .popup-form-input[readonly] {
+          background: #f7f7f7;
+          color: #888;
       }
       .popup-buttons {
           display: flex;
           justify-content: flex-end;
           gap: 10px;
-          margin-top: 15px;
+          margin-top: 10px;
       }
       .popup-button {
-          padding: 8px 16px;
+          padding: 10px 28px;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
           cursor: pointer;
-          font-weight: 500;
+          font-weight: 600;
+          font-size: 16px;
+          transition: background 0.2s;
+      }
+      .edit-button,
+      .cancel-button {
+          width: 120px;
       }
       .edit-button {
-          background-color: #4CAF50;
+          background-color: #19d64c;
           color: white;
+      }
+      .edit-button:hover {
+          background-color: #13b53e;
       }
       .cancel-button {
           background-color: #f44336;
           color: white;
+      }
+      .cancel-button:hover {
+          background-color: #d32f2f;
       }
       .popup-overlay {
           position: fixed;
@@ -96,7 +134,7 @@
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0,0,0,0.5);
+          background: rgba(0,0,0,0.18);
           z-index: 999;
           display: none;
       }
@@ -116,9 +154,9 @@
    <!-- Custom Popup -->
    <div class="popup-overlay" id="popupOverlay"></div>
    <div class="custom-popup" id="customPopup">
-       <table id="popupContent">
+       <div id="popupContent">
            <!-- Content will be dynamically inserted here -->
-       </table>
+       </div>
        <div class="popup-buttons">
            <button class="popup-button edit-button" id="editButton">Edit</button>
            <button class="popup-button cancel-button" id="cancelButton">Cancel</button>
@@ -267,22 +305,27 @@
                 },
                 mouseover: highlightFeature,
                 click: function(e) {
-                    var popupContent = '<tr><td colspan="2"><strong>nicheID</strong><br />' + 
-                        (feature.properties['nicheID'] !== null ? autolinker.link(String(feature.properties['nicheID']).replace(/'/g, '\'').toLocaleString()) : '') + 
-                        '</td></tr>' +
-                        '<tr><td colspan="2"><strong>Name</strong><br />' + 
-                        (feature.properties['Name'] !== null ? autolinker.link(String(feature.properties['Name']).replace(/'/g, '\'').toLocaleString()) : '') + 
-                        '</td></tr>' +
-                        '<tr><th scope="row">Born</th><td>' + 
-                        (feature.properties['Born'] !== null ? autolinker.link(String(feature.properties['Born']).replace(/'/g, '\'').toLocaleString()) : '') + 
-                        '</td></tr>' +
-                        '<tr><th scope="row">Died</th><td>' + 
-                        (feature.properties['Died'] !== null ? autolinker.link(String(feature.properties['Died']).replace(/'/g, '\'').toLocaleString()) : '') + 
-                        '</td></tr>';
-
-                    document.getElementById('popupContent').innerHTML = popupContent;
-                    document.getElementById('popupOverlay').classList.add('active');
-                    document.getElementById('customPopup').classList.add('active');
+                    var popupContent = `
+        <div class="popup-form-group">
+            <div class="popup-form-id-label">nicheID</div>
+            <div class="popup-form-id-value">${feature.properties['nicheID'] !== null ? feature.properties['nicheID'] : ''}</div>
+        </div>
+        <div class="popup-form-group">
+            <label class="popup-form-label">Name:</label>
+            <input class="popup-form-input" type="text" value="${feature.properties['Name'] !== null ? feature.properties['Name'] : ''}" readonly>
+        </div>
+        <div class="popup-form-group">
+            <label class="popup-form-label">Born:</label>
+            <input class="popup-form-input" type="text" value="${feature.properties['Born'] !== null ? feature.properties['Born'] : ''}" readonly>
+        </div>
+        <div class="popup-form-group">
+            <label class="popup-form-label">Date Died:</label>
+            <input class="popup-form-input" type="text" value="${feature.properties['Died'] !== null ? feature.properties['Died'] : ''}" readonly>
+        </div>
+    `;
+    document.getElementById('popupContent').innerHTML = popupContent;
+    document.getElementById('popupOverlay').classList.add('active');
+    document.getElementById('customPopup').classList.add('active');
                 }
             });
         }
@@ -445,13 +488,11 @@
         });
 
         document.getElementById('editButton').addEventListener('click', function() {
-            // Get the niche information from the popup
-            var nicheID = document.querySelector('#popupContent tr:first-child td').textContent.trim();
-            var name = document.querySelector('#popupContent tr:nth-child(2) td').textContent.trim();
-            var born = document.querySelector('#popupContent tr:nth-child(3) td').textContent.trim();
-            var died = document.querySelector('#popupContent tr:nth-child(4) td').textContent.trim();
+            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
+            var name = document.querySelectorAll('.popup-form-input')[0].value.trim();
+            var born = document.querySelectorAll('.popup-form-input')[1].value.trim();
+            var died = document.querySelectorAll('.popup-form-input')[2].value.trim();
 
-            // Create URL parameters
             var params = new URLSearchParams({
                 nicheID: nicheID,
                 name: name,
@@ -459,7 +500,6 @@
                 died: died
             });
 
-            // Redirect to Niches.php with the parameters
             window.location.href = 'Niches.php?' + params.toString();
         });
 
