@@ -152,7 +152,7 @@
                 
                 <div class="col-lg-5">
                     <div class="contact-info">
-                        <h3>Address</h3>
+                        <h3>Addresss</h3>
                         <p>
                             <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
                                target="_blank" 
