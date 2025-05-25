@@ -12,10 +12,6 @@ $clients_pages = ['Clients.php', 'ClientsRequest.php'];
         <i class="fas fa-pie-chart"></i>
         Dashboard
       </a>
-      <a href="Analytics.php" class="nav-item<?php if($current_page == 'Analytics.php') echo ' active'; ?>">
-        <i class="fas fa-line-chart"></i>
-        Analytics
-      </a>
       <a href="Mapping.php" class="nav-item<?php if($current_page == 'Mapping.php') echo ' active'; ?>">
         <i class="fas fa-map-marker-alt"></i>
         Mapping
@@ -31,10 +27,6 @@ $clients_pages = ['Clients.php', 'ClientsRequest.php'];
       <a href="Clients.php" class="nav-item<?php if(in_array($current_page, $clients_pages)) echo ' active'; ?>">
         <i class="fas fa-users"></i>
         Clients
-      </a>
-      <a href="Transaction.php" class="nav-item<?php if($current_page == 'Transaction.php') echo ' active'; ?>">
-        <i class="fas fa-exchange-alt"></i>
-        Transaction
       </a>
       <a href="Renewals.php" class="nav-item<?php if($current_page == 'Renewals.php') echo ' active'; ?>">
         <i class="fas fa-sync"></i>
