@@ -122,23 +122,21 @@
             </div>
         </div>
     </section>
-    <section class="contact-us py-5">
+
+    <!-- Contact Form Section -->
+    <section class="contact-section">
         <div class="container">
-            <div class="row ">
-                <!-- Contact Information and Description -->
-                <div class="col-md-6">
-                    <div class="mb-4">
-                        <h2 class="section-title text-start">Contact Us</h2>
-                        <p class="section-description text-start">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod dolore magna aliqua.
-                        </p>
-                    </div>
+            <div class="row">
+                <div class="col-lg-7">
+                    <h2>Contact Us</h2>
+                    <p class="mb-4">Connect with us for more information or assistance. Whether you have concerns, suggestions, or need help, we're just a message away!</p>
+                    
                     <form>
                         <div class="row mb-3">
-                            <div class="col">
+                            <div class="col-md-6">
                                 <input type="text" class="form-control" placeholder="Name">
                             </div>
-                            <div class="col">
+                            <div class="col-md-6">
                                 <input type="text" class="form-control" placeholder="Contact">
                             </div>
                         </div>
@@ -146,21 +144,30 @@
                             <input type="email" class="form-control" placeholder="Email Address">
                         </div>
                         <div class="mb-3">
-                            <textarea class="form-control" rows="5" placeholder="Message"></textarea>
+                            <textarea class="form-control" rows="6" placeholder="Message"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">Get In Touch</button>
+                        <button type="submit" class="submit-btn">Submit</button>
                     </form>
                 </div>
-                <!-- Contact Information -->
-                <div class="col-md-6 mt-10">
-                    <div class="p-4 rounded background-color: #D9D9D9;">
-                        <h4>Address</h4>
-                        <p>V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
-                        <h4>Contact</h4>
-                        <p>Phone: +0123-456-789</p>
+                
+                <div class="col-lg-5">
+                    <div class="contact-info">
+                        <h3>Address</h3>
+                        <p>
+                            <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               style="text-decoration: none; color: inherit;">
+                                V6MF+8JH, Banaba, Padre Garcia, Batangas
+                            </a>
+                        </p>
+                        
+                        <h3>Contact</h3>
+                        <p>Phone: +0923-456-789</p>
                         <p>Email: restease@gmail.com</p>
-                        <h4>Open Time</h4>
-                        <p>Monday - Sunday : 8:00am - 10:00pm</p>
+                        
+                        <h3>Open Time</h3>
+                        <p>Monday - Sunday : 8:00am - 5:00pm</p>
                     </div>
                 </div>
             </div>
