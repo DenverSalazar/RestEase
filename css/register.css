@@ -117,10 +117,10 @@ body {
 }
 
 .login-form {
-    max-width: 400px;
+    max-width: 500px;
+    width: 100%;
     margin: 0 auto;
     padding: 20px;
-    width: 100%;
 }
 
 .login-form h2 {

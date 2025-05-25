@@ -69,7 +69,7 @@
                             </div>
                             
                             <!-- reCAPTCHA -->
-                            <div class="mb-3">
+                            <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey="your_site_key"></div>
                             </div>
 

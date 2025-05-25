@@ -117,7 +117,8 @@ body {
 }
 
 .login-form {
-    max-width: 400px;
+    max-width: 500px;
+    width: 100%;
     margin: 0 auto;
     padding: 20px;
 }
@@ -275,4 +276,12 @@ body {
 /* Update form-control padding to prevent text behind icon */
 .password-container .form-control {
     padding-right: 45px;
-} 
+}
+
+/* reCAPTCHA styles */
+.recaptcha-fullwidth .g-recaptcha {
+    width: 100% !important;
+    min-width: 100%;
+    display: flex;
+    justify-content: center;
+}
