@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="../css/leaflet.css">
   <link rel="stylesheet" href="../css/L.Control.Layers.Tree.css">
   <link rel="stylesheet" href="../css/qgis2web.css">
-  <link rel="stylesheet" href="../css/fontawesome-all.min.css">
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/sidebar.css">
   <style>
