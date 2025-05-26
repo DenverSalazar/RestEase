@@ -2,6 +2,8 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 // Add this line to treat both as active for Clients
 $clients_pages = ['Clients.php', 'ClientsRequest.php'];
+// Add this line to treat both as active for Mapping
+$mapping_pages = ['Mapping.php', 'Niches.php'];
 ?>
 <aside class="sidebar">
     <div class="logo">
@@ -12,13 +14,9 @@ $clients_pages = ['Clients.php', 'ClientsRequest.php'];
         <i class="fas fa-pie-chart"></i>
         Dashboard
       </a>
-      <a href="Mapping.php" class="nav-item<?php if($current_page == 'Mapping.php') echo ' active'; ?>">
+      <a href="Mapping.php" class="nav-item<?php if(in_array($current_page, $mapping_pages)) echo ' active'; ?>">
         <i class="fas fa-map-marker-alt"></i>
         Mapping
-      </a>
-      <a href="Niches.php" class="nav-item<?php if($current_page == 'Niches.php') echo ' active'; ?>">
-        <i class="fas fa-th"></i>
-        Niches
       </a>
       <a href="Records.php" class="nav-item<?php if($current_page == 'Records.php') echo ' active'; ?>">
         <i class="fas fa-file-alt"></i>

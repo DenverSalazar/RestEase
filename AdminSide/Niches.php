@@ -84,8 +84,7 @@
       </div>
     </header>
     
-    <h1 style="margin-left: 230px;">Edit Niche(DITO SIGURO AY MGA LIST TYPE NG NICHES NA MAY VIEW PARA MAEDIT)</h1>
-    <h1 style="margin-left: 230px;">PWEDE DIN TONG ALSIN NA SABI NI TOTOY</h1>
+    <h1 style="margin-left: 230px;">Edit Niche</h1>
     <!-- Edit Form -->
     <div class="edit-form">
       <form id="editNicheForm" method="POST" action="update_niche.php">
