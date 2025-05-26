@@ -110,7 +110,6 @@
       </table>
     </div>
     <div class="clients-pagination-bar">
-      <span>Page 1 of 3</span>
       <div class="pagination">
         <button class="page-btn"><i class="fas fa-angle-left"></i></button>
         <button class="page-btn">1</button>
@@ -119,6 +118,10 @@
         <button class="page-btn"><i class="fas fa-angle-right"></i></button>
       </div>
     </div>
+    <div>
+        <span> Page 1 of 3
+          </span>
+        </div>
   </main>
 
 </body>

@@ -33,24 +33,39 @@
       flex-wrap: wrap;
       gap: 10px;
     }
-    .cemetery-masterlist-search {
-      width: 300px;
-      position: relative;
+    .search-container {
+      flex: 1 1 320px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 10px;
+      border: 1.5px solid #bfc8d2; /* Faded, lighter border */
+      padding: 0 16px;
+      height: 40px;
+      min-width: 320px;
+      box-shadow: 0 1px 4px rgba(60,72,88,0.03);
     }
-    .cemetery-masterlist-search input {
+    .search-container i {
+      color: #b0b0b0;
+      margin-right: 8px;
+      font-size: 1.1rem;
+    }
+    .search-container input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 1.04rem;
       width: 100%;
-      padding: 8px 32px 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 1rem;
-      background: #fafbfc;
+      color: #222;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
     }
-    .cemetery-masterlist-search i {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #aaa;
+    .search-container input::placeholder {
+      color: #b0b0b0;
+      font-weight: 400;
+      opacity: 1;
     }
     .cemetery-masterlist-actions button {
       background: #fff;
@@ -165,10 +180,10 @@
       </div>
       <div class="cemetery-masterlist-desc">View all Records Information.</div>
       <div class="cemetery-masterlist-controls">
-        <div class="cemetery-masterlist-search" style="display: flex; align-items: center;">
-          <input type="text" placeholder="Search">
-          <i class="fas fa-search" style="margin-left: 8px;"></i>
-        </div>
+         <div class="search-container">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search">
+      </div>
         <div class="cemetery-masterlist-actions">
           <button><i class="fas fa-file-export"></i> Export</button>
           <button><i class="fas fa-filter"></i> Filter</button>
