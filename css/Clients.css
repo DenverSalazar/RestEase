@@ -16,7 +16,7 @@ body {
 
 .main-content {
   margin-left: 260px;
-  padding: 32px 40px 0 40px;
+  padding: 32px 40px 80px 60px; /* increased bottom padding */
 }
 
 .clients-header h1 {
@@ -251,6 +251,27 @@ body {
 }
 .page-btn i {
   font-size: 1.1rem;
+}
+
+/* --- BUTTONS --- */
+.btn-view, .view-btn, button.view-btn, button.btn-view {
+  background: #94b2cc;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 20px;
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: none;
+  outline: none;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+.btn-view:hover, .view-btn:hover, button.view-btn:hover, button.btn-view:hover {
+  background: #7fa0bb;
+  color: #fff;
 }
 
 /* --- RESPONSIVE --- */
