@@ -330,6 +330,18 @@
         }
 
         function style_Floor1_2_0(feature) {
+            if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
+                return {
+                    pane: 'pane_Floor1_2',
+                    color: 'rgba(96, 125, 139, 1.0)',
+                    weight: 0,
+                    fill: true,
+                    //fillColor: 'rgba(60,60,60,1.0)',
+                    //fillColor: 'rgba(96, 125, 139, 1.0)',
+                    fillOpacity: 1,
+                    interactive: false
+                };
+            }
             switch(String(feature.properties['Status'])) {
                 case 'vacant':
                     return {
@@ -463,7 +475,12 @@
                 feature: layer.feature,
                 variables: {}
             };
-            layer.bindTooltip((layer.feature.properties['nicheID'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['nicheID']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Floor1_2'});
+            if (layer.feature.properties['nicheID']) {
+                layer.bindTooltip(
+                    String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['nicheID']) + '</div>',
+                    {permanent: true, offset: [-0, -16], className: 'css_Floor1_2'}
+                );
+            }
             labels.push(layer);
             totalMarkers += 1;
               layer.added = true;
