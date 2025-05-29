@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Settings.css">
-   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
 </head>
 <body>
    <!-- Sidebar -->
@@ -15,49 +15,244 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Header -->
-    <header class="header">
-      <div class="search-bar">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Tap to search">
-      </div>
-      <div class="user-profile">
-        <div class="notification-icon">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge">1</span>
+    <div class="cemetery-masterlist-container" style="margin-left: -50px; margin-top: 0px; padding: 0 32px; font-family: 'Inter', sans-serif;">
+      <!-- Header -->
+      <header class="header" style="margin-bottom: 0;">
+        <h1 style="margin: 0 0 6px 0;">Settings</h1>
+      </header>
+      <div style="color: #888; font-size: 1rem; margin-bottom: 18px;">
+          Manage your account and preferences
         </div>
-        <div class="profile-info">
-          <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
-          <div>
-            <div class="profile-name">Sybau</div>
-            <div class="profile-role">Admin</div>
+      <!-- Settings Section -->
+      <section class="settings-section" style="margin-top: 0; padding: 0;">
+        <div class="settings-tabs">
+          <div class="settings-tab active" data-tab="account">Account</div>
+          <div class="settings-tab" data-tab="archive">Archive</div>
+          <div class="settings-tab" data-tab="notification">Notification</div>
+        </div>
+        <div class="settings-card" id="accountTab">
+          <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Account</div>
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
+            Real-time information and activities of your property.
+          </div>
+          <div class="settings-account-header">
+            <img src="../assets/Default Image.jpg" alt="Profile" class="settings-profile-img">
+            <div class="settings-profile-info">
+              <div class="settings-profile-name">Sybau</div>
+              <div class="settings-profile-email">sybau@gmail.com</div>
+            </div>
+            <div class="settings-profile-actions" style="flex-direction: row; gap: 8px; margin-left: auto;">
+              <button id="uploadPicBtn" style="border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.10);">Upload new picture</button>
+              <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
+              <button class="delete-btn" style="border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.10);">Delete</button>
+            </div>
+          </div>
+          <div class="settings-section-title">Personal Information</div>
+          <div class="settings-fields-row">
+            <div class="settings-field-group">
+              <label for="displayName">Display Name</label>
+              <input type="text" id="displayName" value="Sybau">
+            </div>
+            <div class="settings-field-group">
+              <label for="firstName">First Name</label>
+              <input type="text" id="firstName" value="Kierra">
+            </div>
+            <div class="settings-field-group">
+              <label for="lastName">Last Name</label>
+              <input type="text" id="lastName" value="Vaccaro">
+            </div>
+          </div>
+          <hr style="margin: 5px 0;">
+          <div class="settings-section-title">Contact Email</div>
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 10px;">
+            Manage your contact email address here
+          </div>
+          <div class="settings-fields-row">
+            <div class="settings-field-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" value="sybau@gmail.com" readonly>
+            </div>
+            <div class="settings-field-group">
+              <label for="phone">Phone Number</label>
+              <input type="text" id="phone" value="+935 734 6817">
+            </div>
+            <div class="settings-field-group">
+              <label for="role">Role</label>
+              <input type="text" id="role" value="Admin" readonly>
+            </div>
+          </div>
+          <hr style="margin: 5px 0;">
+          <div class="settings-section-title">Password</div>
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 10px;">
+            Modify your password
+          </div>
+          <div class="settings-fields-row" style="max-width: 350px;">
+            <div class="settings-field-group" style="width: 100%;">
+              <label for="currentPassword">Current password</label>
+              <div style="position: relative;">
+                <input type="password" id="currentPassword" value="passwordpassword" style="width: 100%; padding-right: 38px;">
+                <span id="togglePassword" style="position: absolute; right: -40px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;">
+                  <i class="fa fa-eye"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+          <!-- Fixed Save Button inside card -->
+          <button id="cardSaveBtn" style="position:absolute;right:32px;bottom:32px;z-index:10;background:#2ecc71;color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:1.1rem;font-weight:600;box-shadow:0 4px 16px rgba(46,204,113,0.15);cursor:pointer;display:none;">
+            Save Changes
+          </button>
+        </div>
+        <div class="settings-card" id="archiveTab" style="display:none;">
+          <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Archive</div>
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
+            Archive settings and information will be shown here.
           </div>
         </div>
-      </div>
-    </header>
-
-    <!-- Settings Section -->
-    <section class="settings-section">
-      <h1>Settings</h1>
-      <div class="dashboard-grid">
-        <div class="card">
-          <h3>User Preferences</h3>
-          <p>Manage your personal preferences, such as theme and language.</p>
-          <button class="btn btn-primary">Edit Preferences</button>
+        <div class="settings-card" id="notificationTab" style="display:none;">
+          <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
+            Notification settings and preferences will be shown here.
+          </div>
         </div>
-        <div class="card">
-          <h3>Notifications</h3>
-          <p>Control how you receive notifications and alerts always.</p>
-          <button class="btn btn-primary">Manage Notifications</button>
+        <!-- Unsaved changes bar -->
+        <div class="settings-unsaved-bar" id="unsavedBar" style="display: none;">
+          <span>Careful — you have unsaved changes!</span>
+          <span class="reset-link" id="resetLink">Reset</span>
+          <button class="save-btn" id="saveBtn">Save Changes</button>
         </div>
-        <div class="card">
-          <h3>Account Security</h3>
-          <p>Update your password and enable two-factor authentication.</p>
-          <button class="btn btn-primary">Update Security</button>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
+  <script>
+    // Track if there are unsaved changes
+    let unsaved = false;
+    // Store original values for reset
+    const originalValues = {};
+    document.querySelectorAll('.settings-card input').forEach(input => {
+      originalValues[input.id] = input.value;
+    });
 
+    // Mark as unsaved on input change
+    document.querySelectorAll('.settings-card input').forEach(input => {
+      input.addEventListener('input', () => { unsaved = true; });
+    });
+
+    // Tab switching logic
+    const tabs = document.querySelectorAll('.settings-tab');
+    const tabContents = {
+      account: document.getElementById('accountTab'),
+      archive: document.getElementById('archiveTab'),
+      notification: document.getElementById('notificationTab')
+    };
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function(e) {
+        if (!this.classList.contains('active')) {
+          if (unsaved) {
+            document.getElementById('unsavedBar').style.display = 'flex';
+            e.preventDefault();
+          } else {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            Object.values(tabContents).forEach(tc => tc.style.display = 'none');
+            tabContents[this.dataset.tab].style.display = '';
+          }
+        }
+      });
+    });
+
+    // Prevent sidebar navigation if unsaved changes
+    document.querySelectorAll('.sidebar a').forEach(link => {
+      link.addEventListener('click', function(e) {
+        if (unsaved) {
+          document.getElementById('unsavedBar').style.display = 'flex';
+          e.preventDefault();
+        }
+      });
+    });
+
+    // Save and reset handlers
+    document.getElementById('saveBtn').onclick = function() {
+      unsaved = false;
+      document.getElementById('unsavedBar').style.display = 'none';
+      // ...add save logic here...
+    };
+    document.getElementById('resetLink').onclick = function() {
+      // Restore original values
+      document.querySelectorAll('.settings-card input').forEach(input => {
+        if (originalValues.hasOwnProperty(input.id)) {
+          input.value = originalValues[input.id];
+        }
+      });
+      unsaved = false;
+      document.getElementById('unsavedBar').style.display = 'none';
+      updateCardSaveBtn && updateCardSaveBtn();
+      // ...add reset logic here...
+    };
+
+    // Card Save Button logic
+    const cardSaveBtn = document.getElementById('cardSaveBtn');
+    function updateCardSaveBtn() {
+      cardSaveBtn.style.display = unsaved ? 'block' : 'none';
+    }
+    document.querySelectorAll('.settings-card input').forEach(input => {
+      input.addEventListener('input', () => {
+        unsaved = true;
+        updateCardSaveBtn();
+      });
+    });
+    document.getElementById('saveBtn').onclick = function() {
+      unsaved = false;
+      document.getElementById('unsavedBar').style.display = 'none';
+      updateCardSaveBtn();
+      // ...add save logic here...
+    };
+    cardSaveBtn.onclick = function() {
+      unsaved = false;
+      updateCardSaveBtn();
+      // ...add save logic here...
+    };
+    document.getElementById('resetLink').onclick = function() {
+      // Restore original values
+      document.querySelectorAll('.settings-card input').forEach(input => {
+        if (originalValues.hasOwnProperty(input.id)) {
+          input.value = originalValues[input.id];
+        }
+      });
+      unsaved = false;
+      document.getElementById('unsavedBar').style.display = 'none';
+      updateCardSaveBtn && updateCardSaveBtn();
+      // ...add reset logic here...
+    };
+
+    // Profile picture upload logic
+    const uploadPicBtn = document.getElementById('uploadPicBtn');
+    const profilePicInput = document.getElementById('profilePicInput');
+    const profileImg = document.querySelector('.settings-profile-img');
+    uploadPicBtn.onclick = function(e) {
+      e.preventDefault();
+      profilePicInput.click();
+    };
+    profilePicInput.onchange = function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          profileImg.src = ev.target.result;
+          unsaved = true;
+          updateCardSaveBtn && updateCardSaveBtn();
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    // Password show/hide logic
+    const currentPasswordInput = document.getElementById('currentPassword');
+    const togglePassword = document.getElementById('togglePassword');
+    togglePassword.onclick = function() {
+      const isHidden = currentPasswordInput.type === 'password';
+      currentPasswordInput.type = isHidden ? 'text' : 'password';
+      this.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
+    };
+  </script>
 </body>
 </html>
