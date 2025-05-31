@@ -200,113 +200,89 @@
               <th>Informant Name</th>
               <th>Date Died</th>
               <th>Date Internment</th>
-              <th>Vadlity</th>
+              <th>Validity</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>1F-0A1</td>
-              <td>Calzoni, Omar</td>
-              <td>Poblacion</td>
-              <td>Rayna Dias</td>
-              <td>03-14-09</td>
-              <td>03-19-09</td>
-              <td>03-19-09</td>
-            </tr>
-            <tr>
-              <td>1F-0A2</td>
-              <td>Dokidis, Kaiya</td>
-              <td>Poblacion</td>
-              <td>Wilson Aminoff</td>
-              <td>07-22-15</td>
-              <td>07-27-15</td>
-              <td>07-27-15</td>
-            </tr>
-            <tr>
-              <td>1F-0A3</td>
-              <td>Donin, Lincoln</td>
-              <td>Poblacion</td>
-              <td>Brandon Saris</td>
-              <td>11-05-02</td>
-              <td>11-10-02</td>
-              <td>11-10-02</td>
-            </tr>
-            <tr>
-              <td>1F-0A4</td>
-              <td>Geidt, Kaylynn</td>
-              <td>Poblacion</td>
-              <td>Zain Philips</td>
-              <td>08-17-19</td>
-              <td>08-22-19</td>
-              <td>08-22-19</td>
-            </tr>
-            <tr>
-              <td>1F-0A5</td>
-              <td>Herwitz, Ahmad</td>
-              <td>Poblacion</td>
-              <td>Wilson Lubin</td>
-              <td>01-09-07</td>
-              <td>01-16-07</td>
-              <td>01-16-07</td>
-            </tr>
-            <tr>
-              <td>1F-0A6</td>
-              <td>Press, Gustavo</td>
-              <td>Poblacion</td>
-              <td>Wilson Culhane</td>
-              <td>04-28-13</td>
-              <td>04-24-13</td>
-              <td>04-24-13</td>
-            </tr>
-            <tr>
-              <td>1F-0A7</td>
-              <td>Schleifer, Tiana</td>
-              <td>Poblacion</td>
-              <td>Adison Vetrovs</td>
-              <td>10-31-04</td>
-              <td>10-36-04</td>
-              <td>10-36-04</td>
-            </tr>
-            <tr>
-              <td>1F-0A8</td>
-              <td>Siphorn, Jordyn</td>
-              <td>Poblacion</td>
-              <td>Jocelyn Mango</td>
-              <td>06-03-21</td>
-              <td>06-07-21</td>
-              <td>06-07-21</td>
-            </tr>
-            <tr>
-              <td>1F-0A9</td>
-              <td>Torff, Skylar</td>
-              <td>Poblacion</td>
-              <td>Craig Workman</td>
-              <td>12-11-06</td>
-              <td>12-28-06</td>
-              <td>12-28-06</td>
-            </tr>
-            <tr>
-              <td>1F-0A10</td>
-              <td>Westervelt, Haylie</td>
-              <td>Poblacion</td>
-              <td>Jakob Bator</td>
-              <td>09-25-18</td>
-              <td>09-30-18</td>
-              <td>09-30-18</td>
-            </tr>
+            <?php
+            // Database connection (adjust credentials as needed)
+            $conn = new mysqli("localhost", "root", "", "cemeterydb");
+            if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+            $perPage = 10;
+            $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+            if ($page < 1) $page = 1;
+
+            // Get total records
+            $totalResult = $conn->query("SELECT COUNT(*) as total FROM deceased");
+            $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
+            $totalPages = $totalRows > 0 ? ceil($totalRows / $perPage) : 1;
+            if ($page > $totalPages) $page = $totalPages;
+
+            $offset = ($page - 1) * $perPage;
+
+            $result = $conn->query("SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
+            if ($result && $result->num_rows > 0) {
+              while ($row = $result->fetch_assoc()) {
+                $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
+                $apt = htmlspecialchars($row['nicheID']);
+                $residency = htmlspecialchars($row['residency']);
+                $informant = htmlspecialchars($row['informantName']);
+                $dateDied = htmlspecialchars($row['dateDied']);
+                $dateInternment = htmlspecialchars($row['dateInternment']);
+                // Calculate validity: 5 years after dateInternment
+                $validity = '';
+                if ($dateInternment && $dateInternment !== '0000-00-00') {
+                  $dt = new DateTime($dateInternment);
+                  $dt->modify('+5 years');
+                  $validity = $dt->format('Y-m-d');
+                }
+                echo "<tr>
+                  <td>{$apt}</td>
+                  <td>{$name}</td>
+                  <td>{$residency}</td>
+                  <td>{$informant}</td>
+                  <td>{$dateDied}</td>
+                  <td>{$dateInternment}</td>
+                  <td>{$validity}</td>
+                </tr>";
+              }
+            } else {
+              echo '<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>';
+            }
+            $conn->close();
+            ?>
           </tbody>
         </table>
       </div>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
-        <button disabled>&lt;</button>
-        <button>1</button>
-        <button class="active">2</button>
-        <button>3</button>
-        <button>&gt;</button>
+        <?php
+        $baseUrl = strtok($_SERVER["REQUEST_URI"], '?');
+        // Define as a closure so $baseUrl is available
+        $pageLink = function($p, $label, $active = false, $disabled = false) use ($baseUrl) {
+          $class = $active ? 'active' : '';
+          $disabledAttr = $disabled ? 'disabled' : '';
+          $url = $disabled ? '#' : htmlspecialchars($baseUrl . '?page=' . $p);
+          echo "<button class='$class' $disabledAttr onclick='if(this.hasAttribute(\"disabled\"))return false;window.location=\"$url\";'>$label</button>";
+        };
+        // Previous button
+        $pageLink($page-1, '&lt;', false, $page <= 1);
+        // Page numbers (show up to 5 pages)
+        $start = max(1, $page - 2);
+        $end = min($totalPages, $page + 2);
+        if ($start > 1) $pageLink(1, '1', $page == 1);
+        if ($start > 2) echo "<span>...</span>";
+        for ($i = $start; $i <= $end; $i++) {
+          $pageLink($i, $i, $page == $i);
+        }
+        if ($end < $totalPages - 1) echo "<span>...</span>";
+        if ($end < $totalPages) $pageLink($totalPages, $totalPages, $page == $totalPages);
+        // Next button
+        $pageLink($page+1, '&gt;', false, $page >= $totalPages);
+        ?>
       </div>
-
       <div>
-        <span>Page 1 of 3</span>
+        <span>Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
       </div>
     </div>
   </main>
