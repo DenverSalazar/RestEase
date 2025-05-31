@@ -4,6 +4,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $clients_pages = ['Clients.php', 'ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
 $mapping_pages = ['Mapping.php', 'Niches.php'];
+$records_pages = ['Records.php', 'Insert.php'];
 ?>
 <aside class="sidebar">
     <div class="logo">
@@ -18,7 +19,7 @@ $mapping_pages = ['Mapping.php', 'Niches.php'];
         <i class="fas fa-map-marker-alt"></i>
         Mapping
       </a>
-      <a href="Records.php" class="nav-item<?php if($current_page == 'Records.php') echo ' active'; ?>">
+      <a href="Records.php" class="nav-item<?php  if(in_array($current_page, $records_pages)) echo ' active'; ?>">
         <i class="fas fa-file-alt"></i>
         Records
       </a>
