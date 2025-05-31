@@ -1,3 +1,15 @@
+<?php
+// Database connection (adjust credentials as needed)
+$conn = new mysqli("localhost", "root", "", "cemeterydb");
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+// Fetch all deceased records indexed by nicheID
+$deceasedData = [];
+$result = $conn->query("SELECT nicheID, firstName, lastName, born, dateDied FROM deceased");
+while ($row = $result->fetch_assoc()) {
+    $deceasedData[$row['nicheID']] = $row;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,6 +153,10 @@
           display: block;
       }
   </style>
+  <script>
+    // Pass PHP deceased data to JS
+    var deceasedData = <?php echo json_encode($deceasedData); ?>;
+  </script>
 </head>
 <body>
    <!-- Sidebar -->
@@ -304,40 +320,80 @@
                 },
                 mouseover: highlightFeature,
                 click: function(e) {
-                    var popupContent = `
+                    // Add this block for niche picker mode
+                    if (window.location.search.includes('pickNiche=1')) {
+                        if (window.opener) {
+                            window.opener.postMessage({ nicheID: feature.properties['nicheID'] }, '*');
+                            window.close();
+                        }
+                        return;
+                    }
+                    var nicheID = feature.properties['nicheID'];
+                    var deceased = deceasedData[nicheID];
+                    var popupContent = '';
+                    if (deceased) {
+                        popupContent = `
         <div class="popup-form-group">
             <div class="popup-form-id-label">nicheID</div>
-            <div class="popup-form-id-value">${feature.properties['nicheID'] !== null ? feature.properties['nicheID'] : ''}</div>
+            <div class="popup-form-id-value">${nicheID}</div>
         </div>
         <div class="popup-form-group">
             <label class="popup-form-label">Name:</label>
-            <input class="popup-form-input" type="text" value="${feature.properties['Name'] !== null ? feature.properties['Name'] : ''}" readonly>
+            <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
         </div>
         <div class="popup-form-group">
             <label class="popup-form-label">Born:</label>
-            <input class="popup-form-input" type="text" value="${feature.properties['Born'] !== null ? feature.properties['Born'] : ''}" readonly>
+            <input class="popup-form-input" type="text" value="${deceased.born}" readonly>
         </div>
         <div class="popup-form-group">
             <label class="popup-form-label">Date Died:</label>
-            <input class="popup-form-input" type="text" value="${feature.properties['Died'] !== null ? feature.properties['Died'] : ''}" readonly>
+            <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
         </div>
-    `;
-    document.getElementById('popupContent').innerHTML = popupContent;
-    document.getElementById('popupOverlay').classList.add('active');
-    document.getElementById('customPopup').classList.add('active');
+                  `;
+                    } else {
+                        popupContent = `
+        <div class="popup-form-group">
+            <div class="popup-form-id-label">nicheID</div>
+            <div class="popup-form-id-value">${nicheID}</div>
+        </div>
+        <div class="popup-form-group">
+            <label class="popup-form-label">Status:</label>
+            <input class="popup-form-input" type="text" value="Vacant" readonly>
+        </div>
+                  `;
+                    }
+                    document.getElementById('popupContent').innerHTML = popupContent;
+                    document.getElementById('popupOverlay').classList.add('active');
+                    document.getElementById('customPopup').classList.add('active');
                 }
             });
         }
 
         function style_Floor1_2_0(feature) {
+            // Check if this nicheID has a deceased record
+            var nicheID = feature.properties && feature.properties['nicheID'];
+            if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
+                // Use "sold" color if there is data
+                return {
+                    pane: 'pane_Floor1_2',
+                    opacity: 1,
+                    color: 'rgba(35,35,35,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 1.0, 
+                    fill: true,
+                    fillOpacity: 1,
+                    fillColor: 'rgba(251,154,153,1.0)', // Sold color
+                    interactive: true,
+                };
+            }
             if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
                 return {
                     pane: 'pane_Floor1_2',
                     color: 'rgba(96, 125, 139, 1.0)',
                     weight: 0,
                     fill: true,
-                    //fillColor: 'rgba(60,60,60,1.0)',
-                    //fillColor: 'rgba(96, 125, 139, 1.0)',
                     fillOpacity: 1,
                     interactive: false
                 };
