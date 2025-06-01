@@ -337,3 +337,26 @@
       margin-left: 0;
     }
   }
+
+  /* Archive Search Bar Styles */
+  .archive-search-bar {
+    position: relative;
+    display: inline-block;
+  }
+  .archive-search-bar input[type="text"] {
+    padding: 8px 14px 8px 36px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    width: 260px;
+    font-size: 1rem;
+    background: #fafafa;
+  }
+  .archive-search-bar .fa-search {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 1em;
+    pointer-events: none;
+  }

@@ -103,9 +103,86 @@
           </button>
         </div>
         <div class="settings-card" id="archiveTab" style="display:none;">
-          <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Archive</div>
-          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
-            Archive settings and information will be shown here.
+          
+          <!-- Archive Sub-tabs -->
+          <div style="border-bottom:1px solid #e0e0e0; margin-bottom: 10px; margin-top: 18px;">
+            <div id="archiveSubTabs" style="display:flex;gap:32px;">
+              <div class="archive-subtab active" data-archivetab="clients" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">Archive Clients</div>
+              <div class="archive-subtab" data-archivetab="records" style="padding-bottom:6px;cursor:pointer;color:#888;">Archive Records</div>
+            </div>
+          </div>
+          <!-- Archive Clients Table -->
+          <div id="archiveClientsTab">
+            <div style="margin-bottom:12px;">
+              <span class="archive-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search Clients">
+              </span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+                <thead>
+                  <tr style="background:#fafbfc;">
+                    <th style="padding:10px 8px;text-align:left;">Client Name</th>
+                    <th style="padding:10px 8px;text-align:left;">Email</th>
+                    <th style="padding:10px 8px;text-align:left;">Contact</th>
+                    <th style="padding:10px 8px;text-align:left;">Status</th>
+                    <th style="padding:10px 8px;text-align:left;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Example rows, replace with PHP loop for real data -->
+                  <tr style="background:#fff;">
+                    <td style="padding:8px 8px;">
+                      <img src="../assets/Default Image.jpg" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+                      Cooper Herwitz
+                    </td>
+                    <td style="padding:8px 8px;">Cooper@gmail.com</td>
+                    <td style="padding:8px 8px;">0917 234 5678</td>
+                    <td style="padding:8px 8px;">
+                      <span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>
+                    </td>
+                    <td style="padding:8px 8px;">
+                      <button class="restore-btn" title="Restore" style="background:none;border:none;color:#2ecc71;font-size:1.1em;cursor:pointer;margin-right:8px;"><i class="fa fa-undo"></i></button>
+                      <button class="delete-btn" title="Delete" style="background:none;border:none;color:#c0392b;font-size:1.1em;cursor:pointer;"><i class="fa fa-trash"></i></button>
+                    </td>
+                  </tr>
+                  <!-- ...repeat for other clients... -->
+                  <tr style="background:#fff;">
+                    <td style="padding:8px 8px;">
+                      <img src="../assets/Default Image.jpg" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+                      Kadin Rhiel Madsen
+                    </td>
+                    <td style="padding:8px 8px;">Kadin@gmail.com</td>
+                    <td style="padding:8px 8px;">0998 111 2233</td>
+                    <td style="padding:8px 8px;">
+                      <span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>
+                    </td>
+                    <td style="padding:8px 8px;">
+                      <button class="restore-btn" title="Restore" style="background:none;border:none;color:#2ecc71;font-size:1.1em;cursor:pointer;margin-right:8px;"><i class="fa fa-undo"></i></button>
+                      <button class="delete-btn" title="Delete" style="background:none;border:none;color:#c0392b;font-size:1.1em;cursor:pointer;"><i class="fa fa-trash"></i></button>
+                    </td>
+                  </tr>
+                  <!-- ...add more rows as needed... -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination (static example) -->
+             
+              <div style="margin-top:18px;display:flex;align-items:center;gap:8px;font-size:0.97em;color:#888;justify-content:center;position:relative;min-height:36px;">
+                <span style="position:absolute;left:0;top:50%;transform:translateY(-50%);">Page 1 of 3</span>
+                <div>
+                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;" disabled>&lt;</button>
+                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">1</button>
+                  <button style="border:none;background:#6c8ebf;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;">2</button>
+                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">3</button>
+                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">&gt;</button>
+                </div>
+              </div>
+          </div>
+          <!-- Archive Records Placeholder -->
+          <div id="archiveRecordsTab" style="display:none;">
+            <div style="color:#888;font-size:1.05em;margin:32px 0;">Archive records will be shown here.</div>
           </div>
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
@@ -253,6 +330,39 @@
       currentPasswordInput.type = isHidden ? 'text' : 'password';
       this.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
     };
+
+    // Archive sub-tab switching
+    const archiveTabs = document.querySelectorAll('.archive-subtab');
+    const archiveTabContents = {
+      clients: document.getElementById('archiveClientsTab'),
+      records: document.getElementById('archiveRecordsTab')
+    };
+    archiveTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        if (!this.classList.contains('active')) {
+          archiveTabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          Object.values(archiveTabContents).forEach(tc => tc.style.display = 'none');
+          archiveTabContents[this.dataset.archivetab].style.display = '';
+        }
+      });
+    });
+
+    // Action buttons in archive clients table (restore and delete)
+    document.querySelectorAll('.restore-btn').forEach(btn => {
+      btn.onclick = function() {
+        const row = this.closest('tr');
+        row.parentNode.removeChild(row);
+        // ...add restore logic here...
+      };
+    });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.onclick = function() {
+        const row = this.closest('tr');
+        row.parentNode.removeChild(row);
+        // ...add delete logic here...
+      };
+    });
   </script>
 </body>
 </html>
