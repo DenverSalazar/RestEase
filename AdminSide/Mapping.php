@@ -174,6 +174,7 @@ while ($row = $result->fetch_assoc()) {
        </div>
        <div class="popup-buttons">
            <button class="popup-button edit-button" id="editButton">Edit</button>
+           <button class="popup-button edit-button" id="insertButton" style="display:none;">Insert</button>
            <button class="popup-button cancel-button" id="cancelButton">Cancel</button>
        </div>
    </div>
@@ -350,6 +351,10 @@ while ($row = $result->fetch_assoc()) {
             <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
         </div>
                   `;
+                        setTimeout(function() {
+                            document.getElementById('editButton').style.display = '';
+                            document.getElementById('insertButton').style.display = 'none';
+                        }, 0);
                     } else {
                         popupContent = `
         <div class="popup-form-group">
@@ -360,7 +365,11 @@ while ($row = $result->fetch_assoc()) {
             <label class="popup-form-label">Status:</label>
             <input class="popup-form-input" type="text" value="Vacant" readonly>
         </div>
-                  `;
+                        `;
+                        setTimeout(function() {
+                            document.getElementById('editButton').style.display = 'none';
+                            document.getElementById('insertButton').style.display = '';
+                        }, 0);
                     }
                     document.getElementById('popupContent').innerHTML = popupContent;
                     document.getElementById('popupOverlay').classList.add('active');
@@ -573,6 +582,14 @@ while ($row = $result->fetch_assoc()) {
             });
 
             window.location.href = 'Niches.php?' + params.toString();
+        });
+
+        document.getElementById('insertButton').addEventListener('click', function() {
+            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
+            var params = new URLSearchParams({
+                nicheID: nicheID
+            });
+            window.location.href = 'insert.php?' + params.toString();
         });
 
         // Close popup when clicking outside

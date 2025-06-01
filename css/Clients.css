@@ -16,11 +16,11 @@ body {
 
 .main-content {
   margin-left: 260px;
-  padding: 32px 40px 80px 60px; /* increased bottom padding */
+  padding: 12px 40px 80px 60px; /* decreased top padding from 32px to 16px */
 }
 
 .clients-header h1 {
-  font-size: 2.1rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 0px;
 }
@@ -69,7 +69,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin: 18px 0 12px 0;
+  margin: 8px 0 12px 0; /* decreased top margin from 18px to 8px */
   width: 100%;
 }
 
