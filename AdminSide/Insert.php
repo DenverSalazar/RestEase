@@ -177,6 +177,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .popup-error-close:hover, .popup-error-close:focus {
       background: #b52a2a;
     }
+    .btn.upload {
+      background: #27ae60 !important;
+      color: #fff !important;
+      border: none !important;
+      transition: background 0.18s;
+    }
+    .btn.upload:hover, .btn.upload:focus {
+      background: #219150 !important;
+      color: #fff !important;
+    }
   </style>
   <script>
     // Add this script before </body>

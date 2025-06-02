@@ -83,6 +83,16 @@
     .cemetery-masterlist-actions button:hover {
       background: #f2f2f2;
     }
+    .cemetery-masterlist-actions .export-btn {
+      background: #e57373 !important; /* desaturated red */
+      color: #fff !important;
+      border: none !important;
+    }
+    .cemetery-masterlist-actions .export-btn:hover,
+    .cemetery-masterlist-actions .export-btn:focus {
+      background: #d06060 !important;
+      color: #fff !important;
+    }
     .cemetery-masterlist-table {
       width: 100%;
       border-collapse: separate;
@@ -186,7 +196,7 @@
       </div>
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
-          <a href="ExportPDF.php" target="_blank"><button type="button"><i class="fas fa-file-pdf"></i> Export</button></a>
+          <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Export</button></a>
           <button><i class="fas fa-filter"></i> Filter</button>
         </div>
       </div>
