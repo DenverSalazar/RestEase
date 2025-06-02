@@ -311,9 +311,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="page-subtitle">Fill up the masterlist data</div>
     <div class="top-actions">
-      <button type="button" class="btn upload">Upload Excel</button>
+      <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
       <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
     </div>
+    <!-- Excel Import Modal -->
+    <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; padding:32px 24px; border-radius:10px; min-width:320px; max-width:90vw; position:relative;">
+        <button type="button" id="closeModal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+        <h3 style="margin-top:0;">Import Excel File</h3>
+        <form action="ImportExcel.php" method="post" enctype="multipart/form-data">
+          <input type="file" name="excel_file" accept=".xls,.xlsx" required style="margin-bottom:16px;">
+          <br>
+          <button type="submit" style="background:#506C84; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:1rem; cursor:pointer;">Upload</button>
+        </form>
+        <div style="font-size:0.95rem; color:#555; margin-top:10px;">Only .xls or .xlsx files are allowed.</div>
+      </div>
+    </div>
+    <script>
+      document.getElementById('importDataBtn').onclick = function() {
+        document.getElementById('excelModal').style.display = 'flex';
+      };
+      document.getElementById('closeModal').onclick = function() {
+        document.getElementById('excelModal').style.display = 'none';
+      };
+      document.getElementById('excelModal').onclick = function(e) {
+        if (e.target === this) this.style.display = 'none';
+      };
+    </script>
     <div class="form-container">
       <div class="form-section-title">Deceased Information</div>
       <!-- Remove error-alert in form, only keep popup notification -->
