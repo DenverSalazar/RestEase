@@ -186,7 +186,7 @@
       </div>
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
-          <button><i class="fas fa-file-export"></i> Export</button>
+          <a href="ExportPDF.php" target="_blank"><button type="button"><i class="fas fa-file-pdf"></i> Export</button></a>
           <button><i class="fas fa-filter"></i> Filter</button>
         </div>
       </div>
