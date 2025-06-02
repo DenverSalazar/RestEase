@@ -35,50 +35,59 @@ padding: 0;
 flex-shrink: 0;
 }
 .user-profile {
-display: flex;
-align-items: center;
-gap: 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
+
 .notification-icon {
-position: relative;
-margin-right: 12px;
+  position: relative;
+  cursor: pointer;
+  color: #666;
 }
+
 .notification-icon i {
-font-size: 1.25rem;
-color: #2d3a4a;
+  font-size: 20px;
 }
+
 .notification-badge {
-position: absolute;
-top: -6px;
-right: -8px;
-background: #e74c3c;
-color: #fff;
-border-radius: 50%;
-font-size: 0.7rem;
-padding: 2px 6px;
-font-weight: 600;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #ff4444;
+  color: white;
+  border-radius: 50%;
+  padding: 2px;
+  font-size: 10px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .profile-info {
-display: flex;
-align-items: center;
-gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+
 .profile-avatar {
-width: 38px;
-height: 38px;
-border-radius: 50%;
-object-fit: cover;
-border: 2px solid #e3e7ed;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
+
 .profile-name {
-font-weight: 600;
-font-size: 1.05rem;
-color: #2d3a4a;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--primary-color);
 }
+
 .profile-role {
-font-size: 0.93rem;
-color: #b0b8c1;
-margin-top: -2px;
+  color: #666;
+  font-size: 12px;
 }
 .page-subtitle {
 color: #7a8593;
