@@ -581,7 +581,7 @@ while ($row = $result->fetch_assoc()) {
                 died: died
             });
 
-            window.location.href = 'Niches.php?' + params.toString();
+            window.location.href = 'EditNiches.php?' + params.toString();
         });
 
         document.getElementById('insertButton').addEventListener('click', function() {

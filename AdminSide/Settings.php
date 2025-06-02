@@ -107,8 +107,8 @@
           <!-- Archive Sub-tabs -->
           <div style="border-bottom:1px solid #e0e0e0; margin-bottom: 10px; margin-top: 18px;">
             <div id="archiveSubTabs" style="display:flex;gap:32px;">
-              <div class="archive-subtab active" data-archivetab="clients" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">Archive Clients</div>
-              <div class="archive-subtab" data-archivetab="records" style="padding-bottom:6px;cursor:pointer;color:#888;">Archive Records</div>
+              <div class="archive-subtab active" data-archivetab="clients" id="archiveClientsTabBtn" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">Archive Clients</div>
+              <div class="archive-subtab" data-archivetab="records" id="archiveRecordsTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">Archive Records</div>
             </div>
           </div>
           <!-- Archive Clients Table -->
@@ -180,9 +180,85 @@
                 </div>
               </div>
           </div>
-          <!-- Archive Records Placeholder -->
+          <!-- Archive Records Section -->
           <div id="archiveRecordsTab" style="display:none;">
-            <div style="color:#888;font-size:1.05em;margin:32px 0;">Archive records will be shown here.</div>
+            <div class="settings-section">
+              <h2>Archive Records</h2>
+              <div class="archive-table-container">
+                <table class="archive-table">
+                  <thead>
+                    <tr>
+                      <th>First Name</th>
+                      <th>Last Name</th>
+                      <th>Age</th>
+                      <th>Born</th>
+                      <th>Residency</th>
+                      <th>Date Died</th>
+                      <th>Date Internment</th>
+                      <th>Niche ID</th>
+                      <th>Informant Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php
+                    // Database connection (adjust credentials as needed)
+                    $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                    if ($conn->connect_error) {
+                      echo '<tr><td colspan="9">Database connection failed.</td></tr>';
+                    } else {
+                      $result = $conn->query("SELECT * FROM archive_deceased ORDER BY id DESC");
+                      if ($result && $result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                          echo '<tr>';
+                          echo '<td>' . htmlspecialchars($row['firstName']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['lastName']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['age']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['born']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['residency']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['dateDied']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['dateInternment']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['nicheID']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['informantName']) . '</td>';
+                          echo '</tr>';
+                        }
+                      } else {
+                        echo '<tr><td colspan="9">No archived records found.</td></tr>';
+                      }
+                      $conn->close();
+                    }
+                    ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <style>
+            .archive-table-container {
+              margin: 24px 0;
+              overflow-x: auto;
+            }
+            .archive-table {
+              width: 100%;
+              border-collapse: collapse;
+              background: #fff;
+              border-radius: 8px;
+              overflow: hidden;
+              font-size: 0.97rem;
+            }
+            .archive-table th, .archive-table td {
+              padding: 10px 12px;
+              border-bottom: 1px solid #e3e7ed;
+              text-align: left;
+            }
+            .archive-table th {
+              background: #f5f7fa;
+              color: #2d3a4a;
+              font-weight: 600;
+            }
+            .archive-table tr:last-child td {
+              border-bottom: none;
+            }
+            </style>
           </div>
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
@@ -340,8 +416,14 @@
     archiveTabs.forEach(tab => {
       tab.addEventListener('click', function() {
         if (!this.classList.contains('active')) {
-          archiveTabs.forEach(t => t.classList.remove('active'));
+          archiveTabs.forEach(t => {
+            t.classList.remove('active');
+            t.style.color = '#888';
+            t.style.borderBottom = 'none';
+          });
           this.classList.add('active');
+          this.style.color = '#2d72d9';
+          this.style.borderBottom = '2px solid #2d72d9';
           Object.values(archiveTabContents).forEach(tc => tc.style.display = 'none');
           archiveTabContents[this.dataset.archivetab].style.display = '';
         }
