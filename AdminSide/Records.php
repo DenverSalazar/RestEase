@@ -1,3 +1,25 @@
+<?php
+// Handle deletion logic before any output
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
+  $conn = new mysqli("localhost", "root", "", "cemeterydb");
+  if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+  if ($_POST['delete_action'] === 'selected' && !empty($_POST['selected_ids'])) {
+    $ids = array_map('intval', $_POST['selected_ids']);
+    $idList = implode(',', $ids);
+    // Move to archive_deceased
+    $conn->query("INSERT INTO archive_deceased SELECT * FROM deceased WHERE id IN ($idList)");
+    // Delete from deceased
+    $conn->query("DELETE FROM deceased WHERE id IN ($idList)");
+  } elseif ($_POST['delete_action'] === 'all') {
+    $conn->query("INSERT INTO archive_deceased SELECT * FROM deceased");
+    $conn->query("DELETE FROM deceased");
+  }
+  $conn->close();
+  // Redirect to avoid resubmission
+  header("Location: " . strtok($_SERVER["REQUEST_URI"], '?'));
+  exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -198,12 +220,23 @@
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Export</button></a>
           <button><i class="fas fa-filter"></i> Filter</button>
+          <!-- Activation Delete button -->
+          <button type="button" id="activateDeleteBtn" style="background:#e57373;color:#fff;border:none;"><i class="fas fa-trash"></i> Delete</button>
+          <!-- Delete action buttons, hidden by default -->
+          <form id="deleteForm" method="post" style="display:inline;display:none;">
+            <input type="hidden" name="delete_action" id="delete_action" value="">
+            <button type="button" onclick="submitDelete('selected')" style="background:#e57373;color:#fff;border:none;"><i class="fas fa-trash"></i> Delete Selected</button>
+            <button type="button" onclick="if(confirm('Delete ALL records?')) submitDelete('all');" style="background:#b71c1c;color:#fff;border:none;"><i class="fas fa-trash-alt"></i> Delete All</button>
+            <button type="button" id="cancelDeleteBtn" style="background:#888;color:#fff;border:none;"><i class="fas fa-times"></i> Cancel</button>
+          </form>
         </div>
       </div>
       <div style="overflow-x:auto;">
+        <form id="recordsForm" method="post">
         <table class="cemetery-masterlist-table">
           <thead>
             <tr>
+              <th class="delete-col" style="display:none;"><input type="checkbox" id="selectAll"></th>
               <th>Apt No.</th>
               <th>Name of Deceases</th>
               <th>Address of Deceased</th>
@@ -215,7 +248,6 @@
           </thead>
           <tbody>
             <?php
-            // Database connection (adjust credentials as needed)
             $conn = new mysqli("localhost", "root", "", "cemeterydb");
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
@@ -231,7 +263,7 @@
 
             $offset = ($page - 1) * $perPage;
 
-            $result = $conn->query("SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
+            $result = $conn->query("SELECT id, nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
@@ -247,7 +279,9 @@
                   $dt->modify('+5 years');
                   $validity = $dt->format('Y-m-d');
                 }
+                $id = (int)$row['id'];
                 echo "<tr>
+                  <td class='delete-col' style='display:none;'><input type='checkbox' name='selected_ids[]' value='{$id}' class='rowCheckbox'></td>
                   <td>{$apt}</td>
                   <td>{$name}</td>
                   <td>{$residency}</td>
@@ -258,12 +292,13 @@
                 </tr>";
               }
             } else {
-              echo '<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>';
+              echo '<tr><td colspan="8" style="text-align:center;">No records found.</td></tr>';
             }
             $conn->close();
             ?>
           </tbody>
         </table>
+        </form>
       </div>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
         <?php
@@ -296,5 +331,85 @@
       </div>
     </div>
   </main>
+  <script>
+        // Select all checkboxes
+        document.getElementById('selectAll').addEventListener('change', function() {
+          var checked = this.checked;
+          document.querySelectorAll('.rowCheckbox').forEach(function(cb) {
+            cb.checked = checked;
+          });
+        });
+
+        // Delete logic
+        function submitDelete(action) {
+          document.getElementById('delete_action').value = action;
+          if (action === 'selected') {
+            // Move selected checkboxes to deleteForm
+            var form = document.getElementById('deleteForm');
+            var recordsForm = document.getElementById('recordsForm');
+            // Remove old hidden inputs
+            Array.from(form.querySelectorAll('input[name="selected_ids[]"]')).forEach(e => e.remove());
+            // Add checked
+            var checked = recordsForm.querySelectorAll('.rowCheckbox:checked');
+            if (checked.length === 0) {
+              alert('Please select at least one record to delete.');
+              return;
+            }
+            checked.forEach(function(cb) {
+              var input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'selected_ids[]';
+              input.value = cb.value;
+              form.appendChild(input);
+            });
+            if (!confirm('Delete selected records?')) return;
+          }
+          document.getElementById('deleteForm').submit();
+        }
+
+        // Delete mode activation/deactivation
+        document.getElementById('activateDeleteBtn').addEventListener('click', function() {
+          // Show checkboxes
+          document.querySelectorAll('.delete-col').forEach(function(el) {
+            el.style.display = '';
+          });
+          // Show delete action buttons
+          document.getElementById('deleteForm').style.display = 'inline';
+          // Hide activation button
+          document.getElementById('activateDeleteBtn').style.display = 'none';
+        });
+        document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+          // Hide checkboxes
+          document.querySelectorAll('.delete-col').forEach(function(el) {
+            el.style.display = 'none';
+          });
+          // Hide delete action buttons
+          document.getElementById('deleteForm').style.display = 'none';
+          // Uncheck all checkboxes
+          document.getElementById('selectAll').checked = false;
+          document.querySelectorAll('.rowCheckbox').forEach(function(cb) {
+            cb.checked = false;
+          });
+          // Show activation button
+          document.getElementById('activateDeleteBtn').style.display = '';
+        });
+
+        // On page load, ensure delete mode is off
+        window.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('.delete-col').forEach(function(el) {
+            el.style.display = 'none';
+          });
+          document.getElementById('deleteForm').style.display = 'none';
+          document.getElementById('activateDeleteBtn').style.display = '';
+        });
+  </script>
+  <style>
+    /* Add some spacing for the new checkbox column */
+    .cemetery-masterlist-table th.delete-col,
+    .cemetery-masterlist-table td.delete-col {
+      width: 36px;
+      text-align: center;
+    }
+  </style>
 </body>
 </html>
