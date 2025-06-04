@@ -30,159 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Analytics.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/records.css">
   <style>
-    .cemetery-masterlist-container {
-      margin-left: 50px;
-      margin-top: 30px;
-      padding: 0 32px;
-      font-family: 'Inter', sans-serif;
-    }
-    .cemetery-masterlist-title {
-      font-size: 2rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-    .cemetery-masterlist-desc {
-      font-size: 1rem;
-      color: #555;
-      margin-bottom: 1.5rem;
-    }
-    .cemetery-masterlist-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .search-container {
-      flex: 1 1 320px;
-      max-width: 420px;
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border-radius: 10px;
-      border: 1.5px solid #bfc8d2; /* Faded, lighter border */
-      padding: 0 16px;
-      height: 40px;
-      min-width: 320px;
-      box-shadow: 0 1px 4px rgba(60,72,88,0.03);
-    }
-    .search-container i {
-      color: #b0b0b0;
-      margin-right: 8px;
-      font-size: 1.1rem;
-    }
-    .search-container input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 1.04rem;
-      width: 100%;
-      color: #222;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-    }
-    .search-container input::placeholder {
-      color: #b0b0b0;
-      font-weight: 400;
-      opacity: 1;
-    }
-    .cemetery-masterlist-actions button {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 7px 18px;
-      font-size: 1rem;
-      margin-left: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.2s;
-    }
-    .cemetery-masterlist-actions button:hover {
-      background: #f2f2f2;
-    }
-    .cemetery-masterlist-actions .export-btn {
-      background: #e57373 !important; /* desaturated red */
-      color: #fff !important;
-      border: none !important;
-    }
-    .cemetery-masterlist-actions .export-btn:hover,
-    .cemetery-masterlist-actions .export-btn:focus {
-      background: #d06060 !important;
-      color: #fff !important;
-    }
-    .cemetery-masterlist-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-      margin-bottom: 1rem;
-    }
-    .cemetery-masterlist-table th, .cemetery-masterlist-table td {
-      padding: 10px 12px;
-      text-align: left;
-      font-size: 0.98rem;
-      border-bottom: 1px solid #eee;
-      background: #fff;
-    }
-    .cemetery-masterlist-table th {
-      background: #f7f8fa;
-      font-weight: 500;
-      color: #333;
-    }
-    .cemetery-masterlist-table tr:last-child td {
-      border-bottom: none;
-    }
-    .cemetery-masterlist-pagination {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-    .cemetery-masterlist-pagination button {
-      border: 1px solid #ddd;
-      background: #fff;
-      border-radius: 6px;
-      width: 32px;
-      height: 32px;
-      font-size: 1rem;
-      cursor: pointer;
-      color: #506C84;
-      transition: background 0.2s;
-    }
-    .cemetery-masterlist-pagination button.active,
-    .cemetery-masterlist-pagination button:focus {
-      background: #506C84;
-      color: #fff;
-      border-color: #506C84;
-    }
-    .cemetery-masterlist-pagination button:disabled {
-      color: #bbb;
-      border-color: #eee;
-      background: #fafbfc;
-      cursor: not-allowed;
-    }
-    @media (max-width: 900px) {
-      .cemetery-masterlist-container {
-        margin-left: 0;
-        padding: 0 10px;
-      }
-      .cemetery-masterlist-controls {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .cemetery-masterlist-search {
-        width: 100%;
-      }
-    }
+    /* ...existing code... */
+    .clickable-row { cursor: pointer; }
+    .clickable-row:hover { background: #f5f5f5; }
   </style>
 </head>
 <body>
@@ -280,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
                   $validity = $dt->format('Y-m-d');
                 }
                 $id = (int)$row['id'];
-                echo "<tr>
+                echo "<tr class='clickable-row' data-id='{$id}'>
                   <td class='delete-col' style='display:none;'><input type='checkbox' name='selected_ids[]' value='{$id}' class='rowCheckbox'></td>
                   <td>{$apt}</td>
                   <td>{$name}</td>
@@ -402,14 +254,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
           document.getElementById('deleteForm').style.display = 'none';
           document.getElementById('activateDeleteBtn').style.display = '';
         });
+
+        // Make table rows clickable
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('.clickable-row').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+              // Prevent click if clicking on a checkbox
+              if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
+              var id = this.getAttribute('data-id');
+              if (id) {
+                window.location.href = 'EditRecord.php?id=' + id;
+              }
+            });
+          });
+        });
   </script>
-  <style>
-    /* Add some spacing for the new checkbox column */
-    .cemetery-masterlist-table th.delete-col,
-    .cemetery-masterlist-table td.delete-col {
-      width: 36px;
-      text-align: center;
-    }
-  </style>
 </body>
 </html>

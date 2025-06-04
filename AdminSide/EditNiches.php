@@ -120,102 +120,145 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RestEase Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/dashboard.css">
+  <title>Edit Niche</title>
+  <link rel="stylesheet" href="../css/records.css">
   <link rel="stylesheet" href="../css/sidebar.css">
-  <link rel="stylesheet" href="../css/Niches.css">
-  <link rel="stylesheet" href="../css/Insert.css">
-   <style>
-    /* Add this style block inside <head> or in your Insert.css */
-    .niche-picker-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-    }
-    .niche-picker-group input[readonly] {
-      flex: 1 1 0;
-      min-width: 0;
-      background: #f8fafc;
-      border: 1.5px solid #e3e7ed;
-      color: #2d3a4a;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      /* Remove fixed width if any */
-    }
-    .pick-niche-btn {
-      background: #f5f7fa;
-      color: #2d3a4a;
-      border: 1.5px solid #d3dbe2;
-      border-radius: 7px;
-      padding: 8px 14px;
-      min-width: 44px;
-      height: 42px;
-      font-size: 1.1rem;
-      transition: background 0.18s, color 0.18s, border 0.18s;
-      box-shadow: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pick-niche-btn:hover, .pick-niche-btn:focus {
-      background: #e4e9ee;
-      color: #1976d2;
-      border-color: #bfc9d1;
-    }
-    .btn.delete-btn {
-      background: #f8d7da;
-      color: #d9534f;
-      border: none;
-      margin-right: 0;
-      min-width: 90px;
-      font-weight: 500;
-      transition: background 0.18s, color 0.18s;
-      box-shadow: none;
-    }
-    .btn.delete-btn:hover, .btn.delete-btn:focus {
-      background: #f5c6cb;
-      color: #b52a2a;
-    }
-    .btn.save-btn {
-      background: #c8f7d8;
-      color: #2ecc40;
-      border: none;
-      min-width: 90px;
-      font-weight: 500;
-      margin-right: 8px;
-      transition: background 0.18s, color 0.18s;
-      box-shadow: none;
-    }
-    .btn.save-btn:hover, .btn.save-btn:focus {
-      background: #b2f2c9;
-      color: #1e9c31;
-    }
-    .btn.cancel-btn {
-      background: #f8d7da;
-      color: #d9534f;
-      border: none;
-      min-width: 90px;
-      font-weight: 500;
-      text-align: center;
-      display: inline-block;
-      padding: 8px 22px;
-      border-radius: 7px;
-      text-decoration: none;
-      transition: background 0.18s, color 0.18s;
-      box-shadow: none;
-    }
-    .btn.cancel-btn:hover, .btn.cancel-btn:focus {
-      background: #f5c6cb;
-      color: #b52a2a;
-      text-decoration: none;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* Custom modal styles */
+    body, html {
+      font-family: 'Inter', sans-serif;
+    }
+    .edit-card {
+      max-width: 1100px;
+      margin-left: 400px;
+      margin-right: auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 40px 32px;
+      margin-top: 40px;
+      position: relative; /* Added for absolute positioning of delete button */
+    }
+    .delete-btn-card {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      z-index: 2;
+      background: #ffd6d6;
+      color: #b71c1c;
+      border: none;
+      border-radius: 8px;
+      min-width: 90px;
+      padding: 8px 0;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: block;
+    }
+    .delete-btn-card:hover {
+      background: #ffb3b3;
+    }
+    .edit-card h2 {
+      margin-bottom: 32px;
+      font-size: 1.5em;
+      font-weight: 600;
+      color: #2d3846;
+    }
+    .edit-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px 32px;
+    }
+    .edit-form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .edit-form-group label {
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .edit-form-group input,
+    .edit-form-group select {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 1em;
+      color: #222;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .edit-form-group input:focus,
+    .edit-form-group select:focus {
+      border-color: #1976d2;
+    }
+    .edit-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .edit-form-actions button {
+      min-width: 120px;
+      padding: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .edit-form-actions .save-btn {
+      background: #b6f5c3;
+      color: #256029;
+    }
+    .edit-form-actions .save-btn:hover {
+      background: #8ee6a3;
+    }
+    .edit-form-actions .cancel-btn {
+      background: #ffd6d6;
+      color: #b71c1c;
+      display: inline-block;
+      text-align: center;
+      line-height: normal;
+      padding: 10px 0;
+      border-radius: 8px;
+      min-width: 120px;
+      font-size: 1em;
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+    }
+    .edit-form-actions .cancel-btn:hover {
+      background: #ffb3b3;
+    }
+    .apt-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .apt-group .apt-icon {
+      background: #e5e7eb;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 1.1em;
+      color: #1976d2;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      height: 38px;
+    }
+    @media (max-width: 900px) {
+      .edit-form-grid { grid-template-columns: 1fr; }
+      .edit-card { 
+        margin-left: 0; 
+        margin-right: 0;
+      }
+    }
+    /* Modal styles for delete confirmation */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -283,194 +326,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       color: #1976d2;
     }
   </style>
-  <style>
-    /* Error popup styles */
-    .popup-error-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(44, 62, 80, 0.18);
-      z-index: 2000;
-    }
-    .popup-error-modal {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1.5px solid #f5c6cb;
-      border-radius: 12px;
-      padding: 28px 32px 18px 32px;
-      box-shadow: 0 8px 32px rgba(220,53,69,0.13);
-      font-family: 'Inter', sans-serif;
-      min-width: 320px;
-      max-width: 90vw;
-      z-index: 2100;
-      text-align: left;
-      animation: popupErrorPop .18s cubic-bezier(.4,1.4,.6,1.0);
-    }
-    @keyframes popupErrorPop {
-      0% { transform: translate(-50%, -60%) scale(0.92); opacity: 0; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    }
-    .popup-error-header {
-      font-weight: 600;
-      font-size: 1.12em;
-      margin-bottom: 10px;
-      color: #b52a2a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .popup-error-list {
-      margin: 0 0 0 18px;
-      padding: 0;
-      font-size: 1em;
-      line-height: 1.7;
-    }
-    .popup-error-list li {
-      margin-bottom: 2px;
-      list-style: disc;
-    }
-    .popup-error-close {
-      margin-top: 18px;
-      background: #d9534f;
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 8px 28px;
-      font-size: 1em;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.18s;
-      float: right;
-    }
-    .popup-error-close:hover, .popup-error-close:focus {
-      background: #b52a2a;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-   <!-- Sidebar -->
    <?php include '../Includes/sidebar.php'; ?>
-
-  <!-- Error Popup Notification -->
-  <?php if (!empty($errors)): ?>
-    <div class="popup-error-overlay" id="popupErrorOverlay"></div>
-    <div class="popup-error-modal" id="popupErrorModal">
-      <div class="popup-error-header">
-        <i class="fas fa-exclamation-circle"></i> Please fix the following:
+  <!-- Delete button moved inside .edit-card -->
+  <div class="edit-card">
+    <form id="deleteForm" method="post" style="display:inline;">
+      <input type="hidden" name="apartmentNo" value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
+      <input type="hidden" name="delete" value="1">
+      <button type="button" class="btn delete-btn-card" id="deleteBtn">Delete</button>
+    </form>
+    <h2>Deceased Information</h2>
+    <form method="post" autocomplete="off" id="editForm">
+      <div class="edit-form-grid">
+        <div class="edit-form-group">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="age">Age</label>
+          <input type="number" id="age" name="age" placeholder="Age" value="<?php echo htmlspecialchars($deceased['age']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="born">Born</label>
+          <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="residency">Residency</label>
+          <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($deceased['residency']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="dateDied">Date Died</label>
+          <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="dateInternment">Date of Internment</label>
+          <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment']); ?>">
+        </div>
+        <div class="edit-form-group">
+          <label for="apartmentNo">Apartment No.</label>
+          <div class="apt-group">
+            <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
+            <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche" style="background:#f5f7fa;border:1.5px solid #d3dbe2;border-radius:7px;padding:8px 14px;min-width:44px;height:38px;margin-left:4px;display:flex;align-items:center;justify-content:center;">
+              <i class="fas fa-map-marker-alt"></i>
+            </button>
+            <span class="apt-icon" style="display:none;"><i class="fas fa-map-marker-alt"></i></span>
+          </div>
+        </div>
+        <div class="edit-form-group">
+          <label for="informantName">Informant Name</label>
+          <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName']); ?>">
+        </div>
       </div>
-      <ul class="popup-error-list">
-        <?php foreach ($errors as $error): ?>
-          <li><?php echo htmlspecialchars($error); ?></li>
-        <?php endforeach; ?>
-      </ul>
-      <button class="popup-error-close" id="popupErrorCloseBtn">Close</button>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var overlay = document.getElementById('popupErrorOverlay');
-        var modal = document.getElementById('popupErrorModal');
-        var closeBtn = document.getElementById('popupErrorCloseBtn');
-        function closePopup() {
-          if (overlay) overlay.style.display = 'none';
-          if (modal) modal.style.display = 'none';
-        }
-        if (closeBtn) closeBtn.onclick = closePopup;
-        if (overlay) overlay.onclick = closePopup;
-        document.addEventListener('keydown', function(e) {
-          if (e.key === "Escape") closePopup();
-        });
-      });
-    </script>
-  <?php endif; ?>
-
-  <!-- Main Content -->
-  <main class="main-content">
-    <!-- Header -->
-    <header class="header">
-      <div class="search-bar">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Tap to search">
+      <div class="edit-form-actions">
+        <button type="submit" class="save-btn">Save</button>
+        <a href="Mapping.php" class="cancel-btn">Cancel</a>
       </div>
-      <div class="user-profile">
-        <div class="notification-icon">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge">1</span>
-        </div>
-        <div class="profile-info">
-          <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
-          <div>
-            <div class="profile-name">Sybau</div>
-            <div class="profile-role">Admin</div>
-          </div>
-        </div>
-      </div>
-    </header>
-    
-    <div class="top-actions">
-      <form id="deleteForm" method="post" style="display:inline;">
-        <input type="hidden" name="apartmentNo" value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
-        <input type="hidden" name="delete" value="1">
-        <button type="button" class="btn delete-btn" style="margin-left:auto;" id="deleteBtn">Delete</button>
-      </form>
-    </div>
-    <div class="form-container">
-      <div class="form-section-title">Deceased Information</div>
-      <form method="post" autocomplete="off" id="editForm">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">First Name</label>
-            <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName']); ?>">
-          </div>
-          <div class="form-group">
-            <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName']); ?>">
-          </div>
-          <div class="form-group">
-            <label for="age">Age</label>
-            <input type="number" id="age" name="age" placeholder="Age" value="<?php echo htmlspecialchars($deceased['age']); ?>">
-          </div>
-        </div>
-        <div class="form-row-2">
-          <div class="form-group">
-            <label for="born">Born</label>
-            <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born']); ?>">
-          </div>
-          <div class="form-group">
-            <label for="residency">Residency</label>
-            <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($deceased['residency']); ?>">
-          </div>
-          <div class="form-group">
-            <label for="dateDied">Date Died</label>
-            <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied']); ?>">
-          </div>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label for="dateInternment">Date of Internment</label>
-            <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment']); ?>">
-          </div>
-          <div class="form-group">
-            <label for="apartmentNo">Apartment No.</label>
-            <div class="niche-picker-group">
-              <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
-              <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
-                <i class="fas fa-map-marker-alt"></i>
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="informantName">Informant Name</label>
-            <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName']); ?>">
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn save-btn">Save</button>
-          <a href="Mapping.php" class="btn cancel-btn" style="margin-left:12px;">Cancel</a>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
   <!-- Custom Modal for Delete Confirmation -->
   <div class="modal-overlay" id="modalOverlay">
@@ -507,15 +424,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
     modalConfirmBtn.onclick = function() {
       document.getElementById('deleteForm').submit();
     };
-    // Optional: close modal on overlay click
     modalOverlay.onclick = function(e) {
       if (e.target === modalOverlay) modalOverlay.style.display = 'none';
     };
-    // Optional: ESC key closes modal
     document.addEventListener('keydown', function(e) {
       if (e.key === "Escape") modalOverlay.style.display = 'none';
     });
   </script>
-  </main>
 </body>
 </html>
