@@ -22,9 +22,37 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 $conn = new mysqli("localhost", "root", "", "cemeterydb");
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] == UPLOAD_ERR_NO_FILE) {
+        // No file uploaded
+        echo "<script>alert('No file uploaded.'); window.history.back();</script>";
+        exit();
+    }
+
     $fileTmp = $_FILES['excel_file']['tmp_name'];
-    $spreadsheet = IOFactory::load($fileTmp);
+    $fileName = $_FILES['excel_file']['name'];
+    $fileType = $_FILES['excel_file']['type'];
+    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+    // Allow only Excel files (xls, xlsx, mime types)
+    $allowedExts = ['xls', 'xlsx'];
+    $allowedMimeTypes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    if (!in_array($fileExt, $allowedExts) || !in_array($fileType, $allowedMimeTypes)) {
+        echo "<script>alert('Unsupported File! Please upload Excel Files only!'); window.history.back();</script>";
+        exit();
+    }
+
+    try {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($fileTmp);
+    } catch (\Exception $e) {
+        echo "<script>alert('Check the file before uploading'); window.history.back();</script>";
+        exit();
+    }
+
     $sheet = $spreadsheet->getActiveSheet();
     $rows = $sheet->toArray();
 
@@ -67,17 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 
     // Show result for debugging
     if (!empty($errors)) {
-        echo "<h3>Import completed with some issues:</h3>";
-        echo "<p>Rows inserted: $inserted</p>";
-        echo "<ul>";
-        foreach ($errors as $err) echo "<li>" . htmlspecialchars($err) . "</li>";
-        echo "</ul>";
-        echo '<a href="Records.php">Back to Records</a>';
+        echo "<script>alert('Check the file before uploading'); window.history.back();</script>";
+    
         exit();
     } else {
-        header("Location: Records.php?import=success&count=$inserted");
+        echo "<script>alert('Data Successfully Imported'); window.location.href='Records.php?import=success&count=$inserted';</script>";
         exit();
     }
 } else {
-    echo "No file uploaded.";
+    echo "<script>alert('No file uploaded.'); window.history.back();</script>";
 }
