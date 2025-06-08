@@ -14,6 +14,7 @@ if ($conn->connect_error) {
 
 $register_success = false;
 $register_error = "";
+// $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Added secret key
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $first_name = trim($_POST['first_name']);
@@ -22,6 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $terms = isset($_POST['terms']);
+    // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
     // Basic validation
     if (!$first_name || !$last_name || !$email || !$password || !$confirm_password) {
@@ -34,7 +36,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $register_error = "Passwords do not match.";
     } elseif (!$terms) {
         $register_error = "You must agree to the Terms & Conditions.";
+    // } elseif (empty($recaptcha_response)) {
+    //     $register_error = "Please complete the reCAPTCHA.";
     } else {
+        // reCAPTCHA validation
+        // $recaptcha_verify = file_get_contents(
+        //     "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+        // );
+        // $recaptcha_success = json_decode($recaptcha_verify);
+        // if (!$recaptcha_success->success) {
+        //     $register_error = "reCAPTCHA verification failed. Please try again.";
+        // }
+    }
+
+    // Only proceed if no error
+    if (!$register_error) {
         // Check if email already exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
@@ -70,6 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/register.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
 </head>
 <body>
     <!-- Navbar -->
@@ -156,6 +173,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
                                 <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link">Terms & Conditions</a></label>
                             </div>
+                            <!-- reCAPTCHA widget -->
+                            <!--
+                            <div class="mb-3 w-100 recaptcha-fullwidth">
+                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
+                            </div>
+                            -->
                             <button type="submit" class="btn btn-primary w-100">Create Account</button>
                             <p class="signup-text mt-4 text-center">
                                 Already have an account? <a href="login.php">Sign In</a>

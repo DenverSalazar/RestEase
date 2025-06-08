@@ -17,24 +17,25 @@ $login_success = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
-    // 1. Verify reCAPTCHA
-    if (empty($recaptcha_response)) {
-        $login_error = "Please complete the reCAPTCHA.";
+    // Basic validation
+    if (!$email || !$password) {
+        $login_error = "All fields are required.";
+    // } elseif (empty($recaptcha_response)) {
+    //     $login_error = "Please complete the reCAPTCHA.";
     } else {
-        $recaptcha_secret = ''; // <-- Replace with your secret key
-        $recaptcha_verify = file_get_contents(
-            "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-        );
-        $recaptcha_success = json_decode($recaptcha_verify);
-
-        if (!$recaptcha_success->success) {
-            $login_error = "reCAPTCHA verification failed. Please try again.";
-        }
+        // reCAPTCHA validation
+        // $recaptcha_verify = file_get_contents(
+        //     "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+        // );
+        // $recaptcha_success = json_decode($recaptcha_verify);
+        // if (!$recaptcha_success->success) {
+        //     $login_error = "reCAPTCHA verification failed. Please try again.";
+        // }
     }
 
-    // 2. Only proceed if no reCAPTCHA error
+    // Only proceed if no error
     if (!$login_error) {
         if (!$email || !$password) {
             $login_error = "Please enter both email and password.";
@@ -152,10 +153,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
                             
-                            <!-- reCAPTCHA   lagay mo dito yung site key -->
+                            <!-- reCAPTCHA widget -->
+                            <!--
                             <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey=""></div>
+                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
                             </div>
+                            -->
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
                             <div class="divider">
@@ -177,8 +180,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
-    <!-- reCAPTCHA Script -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <!-- Google Sign-In API -->
     <script src="https://apis.google.com/js/platform.js" async defer></script>
     <!-- Bootstrap JS -->
