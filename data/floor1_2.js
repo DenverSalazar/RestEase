@@ -3542,6 +3542,7 @@ var json_Floor1_2 = {"type":"FeatureCollection","name":"Floor1_2","crs":{"type":
 {"type":"Feature","properties":{"nicheID":"1F-71FH","Name":null,"Born":null,"Died":null,"Status":"vacant"},"geometry":{"type":"MultiPolygon","coordinates":[[[[121.22395942617222,13.8835147],[121.22396442617222,13.8835147],[121.22396442617222,13.8835114],[121.22395942617222,13.8835114],[121.22395942617222,13.8835147]]]]}},
 {"type":"Feature","properties":{"nicheID":"1F-72FH","Name":null,"Born":null,"Died":null,"Status":"vacant"},"geometry":{"type":"MultiPolygon","coordinates":[[[[121.22395942617222,13.8835114],[121.22396442617222,13.8835114],[121.22396442617222,13.8835081],[121.22395942617222,13.8835081],[121.22395942617222,13.8835114]]]]}},
 
+
 ]} 
 
 
