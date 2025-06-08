@@ -1,3 +1,47 @@
+<?php
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = ""; // Change if you have a password set for root
+$dbname = "cemeterydb";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$admin_error = "";
+$admin_success = false;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if (!$email || !$password) {
+        $admin_error = "Please enter both email and password.";
+    } else {
+        $stmt = $conn->prepare("SELECT password FROM admin_accounts WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows == 1) {
+            $stmt->bind_result($hashed_password);
+            $stmt->fetch();
+            if (password_verify($password, $hashed_password)) {
+                // Redirect to admin dashboard on successful login
+                header("Location: AdminSide/Dashboard.php");
+                exit;
+            } else {
+                $admin_error = "Incorrect password.";
+            }
+        } else {
+            $admin_error = "No admin account found with that email.";
+        }
+        $stmt->close();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,13 +94,34 @@
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Sign In</h2>
-                         <p class="text-muted">Welcome Admin!</p>
-                        <form id="loginForm">
+                        <p class="text-muted">Welcome Admin!</p>
+                        <!-- Admin login result toast -->
+                        <?php if ($admin_error || $admin_success): ?>
+                        <div id="customToast" class="custom-toast <?php echo $admin_success ? 'success' : 'error'; ?>">
+                            <div class="toast-icon">
+                                <?php if ($admin_success): ?>
+                                    <i class="fas fa-check-circle"></i>
+                                <?php else: ?>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="toast-message">
+                                <?php if ($admin_success): ?>
+                                    Login successful!
+                                <?php else: ?>
+                                    <?php echo $admin_error; ?>
+                                <?php endif; ?>
+                            </div>
+                            <span class="toast-close" onclick="closeToast()">&times;</span>
+                        </div>
+                        <?php endif; ?>
+                        <!-- End Toast -->
+                        <form id="loginForm" method="POST" action="">
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email" id="email">
+                                <input type="email" class="form-control" placeholder="Email" id="email" name="email" required>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Password" id="password">
+                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required>
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>
                                 </span>
@@ -68,27 +133,7 @@
                                 </div>
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
-                            
-                            <!-- reCAPTCHA
-                            <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="your_site_key"></div>
-                            </div> -->
-
-                            <!-- <a href=""></a><button type="submit" class="btn btn-primary w-100">Sign In</button> -->
-                            <a class="btn btn-primary w-100" style="margin-top: 10px;" href="AdminSide/Dashboard.php">Sign in</a>
-
-                            <!-- <div class="divider">
-                                <span>or</span>
-                            </div>
-
-                            <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
-                                <img src="assets/google-icon.png" alt="Google">
-                                Sign in with Google
-                            </button> -->
-
-                            <!-- <p class="signup-text mt-4 text-center">
-                                Don't have an account? <a href="register.php">Sign Up</a>
-                            </p> -->
+                            <button type="submit" class="btn btn-primary w-100" style="margin-top: 10px;">Sign in</button>
                         </form>
                     </div>
                 </div>
@@ -147,11 +192,84 @@
         }
 
         // Handle regular form submission
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Add your regular login form handling here
+        // document.getElementById('loginForm').addEventListener('submit', function(e) {
+        //     e.preventDefault();
+        //     // Add your regular login form handling here
+        // });
+
+        // Custom Toast Logic
+        function closeToast() {
+            document.getElementById('customToast').style.opacity = '0';
+            setTimeout(function() {
+                document.getElementById('customToast').style.display = 'none';
+            }, 300);
+        }
+        <?php if ($admin_error || $admin_success): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toast = document.getElementById('customToast');
+            toast.style.opacity = '1';
+            setTimeout(closeToast, 4000);
         });
+        <?php endif; ?>
     </script>
-    <script>init();</script>
+    <style>
+        /* Custom Toast Styles (upper right corner, like register.php) */
+        .custom-toast {
+            position: fixed !important;
+            top: 40px !important;
+            right: 40px !important;
+            left: auto !important;
+            transform: none !important;
+            min-width: 320px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.1rem 1.5rem;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.08rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .custom-toast.success {
+            border-left: 6px solid #38d39f;
+        }
+        .custom-toast.error {
+            border-left: 6px solid #e74c3c;
+        }
+        .custom-toast .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #38d39f;
+        }
+        .custom-toast.error .toast-icon {
+            color: #e74c3c;
+        }
+        .custom-toast .toast-message {
+            flex: 1;
+        }
+        .custom-toast .toast-close {
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: color 0.2s;
+        }
+        .custom-toast .toast-close:hover {
+            color: #222;
+        }
+        @media (max-width: 600px) {
+            .custom-toast {
+                right: 10px !important;
+                left: 10px !important;
+                min-width: unset;
+                max-width: unset;
+                padding: 1rem;
+            }
+        }
+    </style>
 </body>
 </html>
