@@ -1,3 +1,62 @@
+<?php
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = ""; // Change if you have a password set for root
+$dbname = "cemeterydb"; // Updated database name
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$register_success = false;
+$register_error = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+    $terms = isset($_POST['terms']);
+
+    // Basic validation
+    if (!$first_name || !$last_name || !$email || !$password || !$confirm_password) {
+        $register_error = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $register_error = "Invalid email format.";
+    } elseif (strlen($password) < 8) {
+        $register_error = "Password must be at least 8 characters long.";
+    } elseif ($password !== $confirm_password) {
+        $register_error = "Passwords do not match.";
+    } elseif (!$terms) {
+        $register_error = "You must agree to the Terms & Conditions.";
+    } else {
+        // Check if email already exists
+        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $register_error = "Email already registered.";
+        } else {
+            // Insert new user
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("ssss", $first_name, $last_name, $email, $hashed_password);
+            if ($stmt->execute()) {
+                $register_success = true;
+            } else {
+                $register_error = "Registration failed. Please try again.";
+            }
+        }
+        $stmt->close();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,37 +107,56 @@
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Sign Up</h2>
-                        <form>
+                        <!-- Custom Toast Notification -->
+                        <?php if ($register_success || $register_error): ?>
+                        <div id="customToast" class="custom-toast <?php echo $register_success ? 'success' : 'error'; ?>">
+                            <div class="toast-icon">
+                                <?php if ($register_success): ?>
+                                    <i class="fas fa-check-circle"></i>
+                                <?php else: ?>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="toast-message">
+                                <?php if ($register_success): ?>
+                                    Registration successful!
+                                <?php else: ?>
+                                    <?php echo $register_error; ?>
+                                <?php endif; ?>
+                            </div>
+                            <span class="toast-close" onclick="closeToast()">&times;</span>
+                        </div>
+                        <?php endif; ?>
+                        <!-- End Toast -->
+                        <form method="POST" action="">
                             <div class="row ">
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control" placeholder="First name">
+                                    <input type="text" class="form-control" placeholder="First name" name="first_name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control" placeholder="Last name">
+                                    <input type="text" class="form-control" placeholder="Last name" name="last_name" required>
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email">
+                                <input type="email" class="form-control" placeholder="Email" name="email" required>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Enter you password" id="password">
+                                <input type="password" class="form-control" placeholder="Enter your password" id="password" name="password" required>
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>
                                 </span>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Confirm password" id="confirmPassword">
+                                <input type="password" class="form-control" placeholder="Confirm password" id="confirmPassword" name="confirm_password" required>
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="toggleConfirmPassword"></i>
                                 </span>
                             </div>
                             <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="terms">
+                                <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
                                 <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link">Terms & Conditions</a></label>
                             </div>
-                            
                             <button type="submit" class="btn btn-primary w-100">Create Account</button>
-
                             <p class="signup-text mt-4 text-center">
                                 Already have an account? <a href="login.php">Sign In</a>
                             </p>
@@ -111,6 +189,77 @@
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
+
+        // Custom Toast Logic
+        function closeToast() {
+            document.getElementById('customToast').style.opacity = '0';
+            setTimeout(function() {
+                document.getElementById('customToast').style.display = 'none';
+            }, 300);
+        }
+        <?php if ($register_success || $register_error): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toast = document.getElementById('customToast');
+            toast.style.opacity = '1';
+            setTimeout(closeToast, 5000); // Auto-close after 5 seconds
+        });
+        <?php endif; ?>
     </script>
+    <style>
+        /* Custom Toast Styles */
+        .custom-toast {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            min-width: 320px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.1rem 1.5rem;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.08rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .custom-toast.success {
+            border-left: 6px solid #38d39f;
+        }
+        .custom-toast.error {
+            border-left: 6px solid #e74c3c;
+        }
+        .custom-toast .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #38d39f;
+        }
+        .custom-toast.error .toast-icon {
+            color: #e74c3c;
+        }
+        .custom-toast .toast-message {
+            flex: 1;
+        }
+        .custom-toast .toast-close {
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: color 0.2s;
+        }
+        .custom-toast .toast-close:hover {
+            color: #222;
+        }
+        @media (max-width: 600px) {
+            .custom-toast {
+                right: 10px;
+                left: 10px;
+                min-width: unset;
+                max-width: unset;
+            }
+        }
+    </style>
 </body>
 </html>

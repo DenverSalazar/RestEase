@@ -1,3 +1,66 @@
+<?php
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = ""; // Change if you have a password set for root
+$dbname = "cemeterydb";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$login_error = "";
+$login_success = false;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+
+    // 1. Verify reCAPTCHA
+    if (empty($recaptcha_response)) {
+        $login_error = "Please complete the reCAPTCHA.";
+    } else {
+        $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // <-- Replace with your secret key
+        $recaptcha_verify = file_get_contents(
+            "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+        );
+        $recaptcha_success = json_decode($recaptcha_verify);
+
+        if (!$recaptcha_success->success) {
+            $login_error = "reCAPTCHA verification failed. Please try again.";
+        }
+    }
+
+    // 2. Only proceed if no reCAPTCHA error
+    if (!$login_error) {
+        if (!$email || !$password) {
+            $login_error = "Please enter both email and password.";
+        } else {
+            $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows == 1) {
+                $stmt->bind_result($user_id, $hashed_password);
+                $stmt->fetch();
+                if (password_verify($password, $hashed_password)) {
+                    // Redirect to client home on successful login
+                    header("Location: ClientSide/ClientHome.php");
+                    exit;
+                } else {
+                    $login_error = "Incorrect password.";
+                }
+            } else {
+                $login_error = "No account found with that email.";
+            }
+            $stmt->close();
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,12 +113,33 @@
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Sign In</h2>
-                        <form id="loginForm">
+                        <!-- Login result toast -->
+                        <?php if ($login_error || $login_success): ?>
+                        <div id="customToast" class="custom-toast <?php echo $login_success ? 'success' : 'error'; ?>">
+                            <div class="toast-icon">
+                                <?php if ($login_success): ?>
+                                    <i class="fas fa-check-circle"></i>
+                                <?php else: ?>
+                                    <i class="fas fa-exclamation-circle"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="toast-message">
+                                <?php if ($login_success): ?>
+                                    Login successful!
+                                <?php else: ?>
+                                    <?php echo $login_error; ?>
+                                <?php endif; ?>
+                            </div>
+                            <span class="toast-close" onclick="closeToast()">&times;</span>
+                        </div>
+                        <?php endif; ?>
+                        <!-- End Toast -->
+                        <form id="loginForm" method="POST" action="">
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email" id="email">
+                                <input type="email" class="form-control" placeholder="Email" id="email" name="email" required>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Password" id="password">
+                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required>
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>
                                 </span>
@@ -70,7 +154,7 @@
                             
                             <!-- reCAPTCHA -->
                             <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="your_site_key"></div>
+                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
@@ -143,12 +227,79 @@
             });
         }
 
-        // Handle regular form submission
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Add your regular login form handling here
+        // Custom Toast Logic (same as register.php)
+        function closeToast() {
+            document.getElementById('customToast').style.opacity = '0';
+            setTimeout(function() {
+                document.getElementById('customToast').style.display = 'none';
+            }, 300);
+        }
+        <?php if ($login_error || $login_success): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            var toast = document.getElementById('customToast');
+            toast.style.opacity = '1';
+            setTimeout(closeToast, 4000);
         });
+        <?php endif; ?>
     </script>
-    <script>init();</script>
+    <style>
+        /* Custom Toast Styles (upper right corner, like register.php) */
+        .custom-toast {
+            position: fixed !important;
+            top: 40px !important;
+            right: 40px !important;
+            left: auto !important;
+            transform: none !important;
+            min-width: 320px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.1rem 1.5rem;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.08rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .custom-toast.success {
+            border-left: 6px solid #38d39f;
+        }
+        .custom-toast.error {
+            border-left: 6px solid #e74c3c;
+        }
+        .custom-toast .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #38d39f;
+        }
+        .custom-toast.error .toast-icon {
+            color: #e74c3c;
+        }
+        .custom-toast .toast-message {
+            flex: 1;
+        }
+        .custom-toast .toast-close {
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: color 0.2s;
+        }
+        .custom-toast .toast-close:hover {
+            color: #222;
+        }
+        @media (max-width: 600px) {
+            .custom-toast {
+                right: 10px !important;
+                left: 10px !important;
+                min-width: unset;
+                max-width: unset;
+                padding: 1rem;
+            }
+        }
+    </style>
 </body>
 </html>
