@@ -1,25 +1,3 @@
-<?php
-// Handle deletion logic before any output
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
-  $conn = new mysqli("localhost", "root", "", "cemeterydb");
-  if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
-  if ($_POST['delete_action'] === 'selected' && !empty($_POST['selected_ids'])) {
-    $ids = array_map('intval', $_POST['selected_ids']);
-    $idList = implode(',', $ids);
-    // Move to archive_deceased
-    $conn->query("INSERT INTO archive_deceased SELECT * FROM deceased WHERE id IN ($idList)");
-    // Delete from deceased
-    $conn->query("DELETE FROM deceased WHERE id IN ($idList)");
-  } elseif ($_POST['delete_action'] === 'all') {
-    $conn->query("INSERT INTO archive_deceased SELECT * FROM deceased");
-    $conn->query("DELETE FROM deceased");
-  }
-  $conn->close();
-  // Redirect to avoid resubmission
-  header("Location: " . strtok($_SERVER["REQUEST_URI"], '?'));
-  exit;
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,11 +8,159 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Analytics.css">
   <link rel="stylesheet" href="../css/sidebar.css">
-  <link rel="stylesheet" href="../css/records.css">
   <style>
-    /* ...existing code... */
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover { background: #f5f5f5; }
+    .cemetery-masterlist-container {
+      margin-left: 50px;
+      margin-top: 30px;
+      padding: 0 32px;
+      font-family: 'Inter', sans-serif;
+    }
+    .cemetery-masterlist-title {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .cemetery-masterlist-desc {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    .cemetery-masterlist-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .search-container {
+      flex: 1 1 320px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 10px;
+      border: 1.5px solid #bfc8d2; /* Faded, lighter border */
+      padding: 0 16px;
+      height: 40px;
+      min-width: 320px;
+      box-shadow: 0 1px 4px rgba(60,72,88,0.03);
+    }
+    .search-container i {
+      color: #b0b0b0;
+      margin-right: 8px;
+      font-size: 1.1rem;
+    }
+    .search-container input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 1.04rem;
+      width: 100%;
+      color: #222;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
+    }
+    .search-container input::placeholder {
+      color: #b0b0b0;
+      font-weight: 400;
+      opacity: 1;
+    }
+    .cemetery-masterlist-actions button {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 7px 18px;
+      font-size: 1rem;
+      margin-left: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .cemetery-masterlist-actions button:hover {
+      background: #f2f2f2;
+    }
+    .cemetery-masterlist-actions .export-btn {
+      background: #e57373 !important; /* desaturated red */
+      color: #fff !important;
+      border: none !important;
+    }
+    .cemetery-masterlist-actions .export-btn:hover,
+    .cemetery-masterlist-actions .export-btn:focus {
+      background: #d06060 !important;
+      color: #fff !important;
+    }
+    .cemetery-masterlist-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+    }
+    .cemetery-masterlist-table th, .cemetery-masterlist-table td {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.98rem;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+    }
+    .cemetery-masterlist-table th {
+      background: #f7f8fa;
+      font-weight: 500;
+      color: #333;
+    }
+    .cemetery-masterlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    .cemetery-masterlist-pagination {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .cemetery-masterlist-pagination button {
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #506C84;
+      transition: background 0.2s;
+    }
+    .cemetery-masterlist-pagination button.active,
+    .cemetery-masterlist-pagination button:focus {
+      background: #506C84;
+      color: #fff;
+      border-color: #506C84;
+    }
+    .cemetery-masterlist-pagination button:disabled {
+      color: #bbb;
+      border-color: #eee;
+      background: #fafbfc;
+      cursor: not-allowed;
+    }
+    @media (max-width: 900px) {
+      .cemetery-masterlist-container {
+        margin-left: 0;
+        padding: 0 10px;
+      }
+      .cemetery-masterlist-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .cemetery-masterlist-search {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -72,23 +198,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Print Masterlist</button></a>
           <button><i class="fas fa-filter"></i> Filter</button>
-          <!-- Activation Delete button -->
-          <button type="button" id="activateDeleteBtn" style="background:#e57373;color:#fff;border:none;"><i class="fas fa-trash"></i> Delete</button>
-          <!-- Delete action buttons, hidden by default -->
-          <form id="deleteForm" method="post" style="display:inline;display:none;">
-            <input type="hidden" name="delete_action" id="delete_action" value="">
-            <button type="button" onclick="submitDelete('selected')" style="background:#e57373;color:#fff;border:none;"><i class="fas fa-trash"></i> Delete Selected</button>
-            <button type="button" onclick="if(confirm('Delete ALL records?')) submitDelete('all');" style="background:#b71c1c;color:#fff;border:none;"><i class="fas fa-trash-alt"></i> Delete All</button>
-            <button type="button" id="cancelDeleteBtn" style="background:#888;color:#fff;border:none;"><i class="fas fa-times"></i> Cancel</button>
-          </form>
         </div>
       </div>
       <div style="overflow-x:auto;">
-        <form id="recordsForm" method="post">
         <table class="cemetery-masterlist-table">
           <thead>
             <tr>
-              <th class="delete-col" style="display:none;"><input type="checkbox" id="selectAll"></th>
               <th>Apt No.</th>
               <th>Name of Deceases</th>
               <th>Address of Deceased</th>
@@ -100,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
           </thead>
           <tbody>
             <?php
+            // Database connection (adjust credentials as needed)
             $conn = new mysqli("localhost", "root", "", "cemeterydb");
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
@@ -115,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
 
             $offset = ($page - 1) * $perPage;
 
-            $result = $conn->query("SELECT id, nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
+            $result = $conn->query("SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
@@ -131,9 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
                   $dt->modify('+5 years');
                   $validity = $dt->format('Y-m-d');
                 }
-                $id = (int)$row['id'];
-                echo "<tr class='clickable-row' data-id='{$id}'>
-                  <td class='delete-col' style='display:none;'><input type='checkbox' name='selected_ids[]' value='{$id}' class='rowCheckbox'></td>
+                echo "<tr>
                   <td>{$apt}</td>
                   <td>{$name}</td>
                   <td>{$residency}</td>
@@ -144,13 +258,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
                 </tr>";
               }
             } else {
-              echo '<tr><td colspan="8" style="text-align:center;">No records found.</td></tr>';
+              echo '<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>';
             }
             $conn->close();
             ?>
           </tbody>
         </table>
-        </form>
       </div>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
         <?php
@@ -183,91 +296,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_action'])) {
       </div>
     </div>
   </main>
-  <script>
-        // Select all checkboxes
-        document.getElementById('selectAll').addEventListener('change', function() {
-          var checked = this.checked;
-          document.querySelectorAll('.rowCheckbox').forEach(function(cb) {
-            cb.checked = checked;
-          });
-        });
-
-        // Delete logic
-        function submitDelete(action) {
-          document.getElementById('delete_action').value = action;
-          if (action === 'selected') {
-            // Move selected checkboxes to deleteForm
-            var form = document.getElementById('deleteForm');
-            var recordsForm = document.getElementById('recordsForm');
-            // Remove old hidden inputs
-            Array.from(form.querySelectorAll('input[name="selected_ids[]"]')).forEach(e => e.remove());
-            // Add checked
-            var checked = recordsForm.querySelectorAll('.rowCheckbox:checked');
-            if (checked.length === 0) {
-              alert('Please select at least one record to delete.');
-              return;
-            }
-            checked.forEach(function(cb) {
-              var input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = 'selected_ids[]';
-              input.value = cb.value;
-              form.appendChild(input);
-            });
-            if (!confirm('Delete selected records?')) return;
-          }
-          document.getElementById('deleteForm').submit();
-        }
-
-        // Delete mode activation/deactivation
-        document.getElementById('activateDeleteBtn').addEventListener('click', function() {
-          // Show checkboxes
-          document.querySelectorAll('.delete-col').forEach(function(el) {
-            el.style.display = '';
-          });
-          // Show delete action buttons
-          document.getElementById('deleteForm').style.display = 'inline';
-          // Hide activation button
-          document.getElementById('activateDeleteBtn').style.display = 'none';
-        });
-        document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
-          // Hide checkboxes
-          document.querySelectorAll('.delete-col').forEach(function(el) {
-            el.style.display = 'none';
-          });
-          // Hide delete action buttons
-          document.getElementById('deleteForm').style.display = 'none';
-          // Uncheck all checkboxes
-          document.getElementById('selectAll').checked = false;
-          document.querySelectorAll('.rowCheckbox').forEach(function(cb) {
-            cb.checked = false;
-          });
-          // Show activation button
-          document.getElementById('activateDeleteBtn').style.display = '';
-        });
-
-        // On page load, ensure delete mode is off
-        window.addEventListener('DOMContentLoaded', function() {
-          document.querySelectorAll('.delete-col').forEach(function(el) {
-            el.style.display = 'none';
-          });
-          document.getElementById('deleteForm').style.display = 'none';
-          document.getElementById('activateDeleteBtn').style.display = '';
-        });
-
-        // Make table rows clickable
-        document.addEventListener('DOMContentLoaded', function() {
-          document.querySelectorAll('.clickable-row').forEach(function(row) {
-            row.addEventListener('click', function(e) {
-              // Prevent click if clicking on a checkbox
-              if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
-              var id = this.getAttribute('data-id');
-              if (id) {
-                window.location.href = 'EditRecord.php?id=' + id;
-              }
-            });
-          });
-        });
-  </script>
 </body>
 </html>
