@@ -25,145 +25,93 @@ while ($row = $result->fetch_assoc()) {
   <link rel="stylesheet" href="../css/qgis2web.css">
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/map.css">
   <style>
-      html, body {
-          height: 100%;
-          margin: 0;
-          padding: 0;
-      }
-      .main-content {
-          margin-left: var(--sidebar-width, 240px);
-          padding-left: 32px; /* <-- This adds the gap between sidebar and map */
-          height: 100vh;
-          width: calc(100vw - var(--sidebar-width, 240px) - 32px);
-          box-sizing: border-box;
-      }
-      #map {
-          width: 100%;
-          height: 100vh;
-      }
-      @media (max-width: 700px) {
-        .main-content {
-          margin-left: 0;
-          padding-left: 0;
-          width: 100vw;
-        }
-      }
-      /* Custom Popup Styles */
-      .custom-popup {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: white;
-          padding: 32px 32px 50px 32px;
-          border-radius: 6px;
-          box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-          z-index: 1000;
-          width: 300px;
-          display: none;
-          font-family: 'Inter', sans-serif;
-      }
-      .custom-popup.active {
-          display: block;
-      }
-      .popup-form-label {
-          font-size: 15px;
-          font-weight: 500;
-          margin-bottom: 4px;
-          color: #222;
-      }
-      .popup-form-id-label {
-          font-size: 18px;
-          font-weight: 700;
-          margin-bottom: 0;
-          color: #222;
-      }
-      .popup-form-id-value {
-          font-size: 16px;
-          color: #b0b0b0;
-          margin-bottom: 18px;
-          margin-top: 2px;
-          font-weight: 500;
-          letter-spacing: 1px;
-      }
-      .popup-form-group {
-          margin-bottom: 18px;
-      }
-      .popup-form-input {
-          width: 90%;
-          padding: 8px 12px;
-          border: 1px solid #e0e0e0;
-          border-radius: 6px;
-          background: #f7f7f7;
-          font-size: 15px;
-          color: #444;
-          margin-top: 2px;
-          margin-bottom: 0;
-          outline: none;
-      }
-      .popup-form-input[readonly] {
-          background: #f7f7f7;
-          color: #888;
-      }
-      .popup-buttons {
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px;
-          margin-top: 10px;
-      }
-      .popup-button {
-          padding: 10px 28px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
-          font-size: 16px;
-          transition: background 0.2s;
-      }
-      .edit-button,
-      .cancel-button {
-          width: 120px;
-      }
-      .edit-button {
-          background-color: #19d64c;
-          color: white;
-      }
-      .edit-button:hover {
-          background-color: #13b53e;
-      }
-      .cancel-button {
-          background-color: #f44336;
-          color: white;
-      }
-      .cancel-button:hover {
-          background-color: #d32f2f;
-      }
-      .popup-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.18);
-          z-index: 999;
-          display: none;
-      }
-      .popup-overlay.active {
-          display: block;
-      }
+    /* Add pick-niche-mode styles */
+    body.pick-niche-mode .sidebar {
+      display: none !important;
+    }
+    body.pick-niche-mode .main-content {
+      margin-left: 0 !important;
+      padding: 0 !important;
+      width: 100vw !important;
+      min-height: 100vh !important;
+      background: #fff !important;
+    }
+    body.pick-niche-mode .search-filter-bar {
+      margin: 18px 18px 0 18px !important;
+      left: 0 !important;
+      right: 0 !important;
+      border-radius: 10px !important;
+    }
+    /* Only adjust legend position, not width */
+    body.pick-niche-mode .custom-map-legend {
+      left: 24px !important;
+      right: auto !important;
+      bottom: 18px !important;
+      border-radius: 10px !important;
+      max-width: 260px !important;
+      min-width: 140px !important;
+      width: auto !important;
+    }
+    body.pick-niche-mode #map {
+      margin: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    body.pick-niche-mode .custom-popup,
+    body.pick-niche-mode .popup-overlay {
+      display: none !important;
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
     var deceasedData = <?php echo json_encode($deceasedData); ?>;
+    // Add pick-niche-mode class to body if in pickNiche mode
+    if (window.location.search.includes('pickNiche=1')) {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('pick-niche-mode');
+      });
+    }
   </script>
 </head>
 <body>
    <!-- Sidebar -->
-   <?php include '../Includes/sidebar.php'; ?>
+   <?php if (!isset($_GET['pickNiche'])) include '../Includes/sidebar.php'; ?>
 
    <main class="main-content">
-     <div id="map"></div>
+     <div class="search-filter-bar">
+        <div class="search-input-wrapper">
+            <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
+            <span class="search-input-icon"><i class="fas fa-search"></i></span>
+        </div>
+        <select class="filter-select" id="mapFilterSelect">
+            <option value="all">All</option>
+            <option value="vacant">Vacant</option>
+            <option value="sold">Sold</option>
+            <option value="reserved">Reserved</option>
+        </select>
+     </div>
+     <div id="map">
+        <!-- Custom Legend -->
+        <div class="custom-map-legend" id="customMapLegend">
+            <div class="legend-row">
+                <span class="legend-dot vacant"></span>
+                <span class="legend-label">Vacant</span>
+            </div>
+            <div class="legend-row">
+                <span class="legend-dot sold"></span>
+                <span class="legend-label">Sold</span>
+            </div>
+            <div class="legend-row">
+                <span class="legend-dot reserved"></span>
+                <span class="legend-label">Reserved</span>
+            </div>
+        </div>
+     </div>
    </main>
    
    <!-- Custom Popup -->
@@ -470,7 +418,7 @@ while ($row = $result->fetch_assoc()) {
         bounds_group.addLayer(layer_Floor1_2);
         map.addLayer(layer_Floor1_2);
         var overlaysTree = [
-            {label: 'Floor 1<br /><table><tr><td style="text-align: center;"><img src="../legend/Floor1_2_Vacant0.png" /></td><td>Vacant</td></tr><tr><td style="text-align: center;"><img src="../legend/Floor1_2_Reserved1.png" /></td><td>Reserved</td></tr><tr><td style="text-align: center;"><img src="../legend/Floor1_2_Sold2.png" /></td><td>Sold</td></tr></table>', layer: layer_Floor1_2},
+            {label: 'Floor 1', layer: layer_Floor1_2},
             {label: '<img src="../legend/border_1.png" /> border', layer: layer_border_1},
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},]
         var lay = L.control.layers.tree(null, overlaysTree,{

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Add Google Sign-In Meta Tag -->
-    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <!-- <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"> -->
 </head>
 <body>
     <!-- Navbar -->
@@ -50,6 +50,7 @@
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Sign In</h2>
+                         <p class="text-muted">Welcome Admin!</p>
                         <form id="loginForm">
                             <div class="mb-3">
                                 <input type="email" class="form-control" placeholder="Email" id="email">
@@ -68,24 +69,26 @@
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
                             
-                            <!-- reCAPTCHA -->
+                            <!-- reCAPTCHA
                             <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey="your_site_key"></div>
-                            </div>
+                            </div> -->
 
-                            <button type="submit" class="btn btn-primary w-100">Sign In</button>
-                            <div class="divider">
+                            <!-- <a href=""></a><button type="submit" class="btn btn-primary w-100">Sign In</button> -->
+                            <a class="btn btn-primary w-100" style="margin-top: 10px;" href="AdminSide/Dashboard.php">Sign in</a>
+
+                            <!-- <div class="divider">
                                 <span>or</span>
                             </div>
 
                             <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
                                 <img src="assets/google-icon.png" alt="Google">
                                 Sign in with Google
-                            </button>
+                            </button> -->
 
-                            <p class="signup-text mt-4 text-center">
+                            <!-- <p class="signup-text mt-4 text-center">
                                 Don't have an account? <a href="register.php">Sign Up</a>
-                            </p>
+                            </p> -->
                         </form>
                     </div>
                 </div>

@@ -49,7 +49,7 @@ if (
         <i class="fas fa-cog"></i>
         Settings
       </a>
-      <a href="./../login.php" class="nav-item">
+      <a href="./../AdminLogin.php" class="nav-item">
         <i class="fas fa-sign-out-alt"></i>
         Logout
       </a>

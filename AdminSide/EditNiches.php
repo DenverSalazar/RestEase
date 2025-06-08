@@ -17,10 +17,13 @@ $deceased = [
   'informantName' => ''
 ];
 
+// Get original nicheID from query string
+$originalNicheID = $_GET['nicheID'] ?? '';
+
 // If editing, fetch data for this niche
 if ($nicheID) {
   $stmt = $conn->prepare("SELECT * FROM deceased WHERE nicheID = ? LIMIT 1");
-  $stmt->bind_param("s", $nicheID);
+  $stmt->bind_param("s", $originalNicheID);
   $stmt->execute();
   $result = $stmt->get_result();
   if ($result && $row = $result->fetch_assoc()) {
@@ -77,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   $residency = trim($_POST['residency'] ?? '');
   $dateDied = trim($_POST['dateDied'] ?? '');
   $dateInternment = trim($_POST['dateInternment'] ?? '');
-  $apartmentNo = trim($_POST['apartmentNo'] ?? '');
+  $apartmentNo = trim($_POST['apartmentNo'] ?? ''); // This is the new nicheID
   $informantName = trim($_POST['informantName'] ?? '');
 
   // Simple required validation
@@ -92,27 +95,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   if ($informantName === '') $errors[] = "Informant Name is required.";
 
   if (empty($errors)) {
-    // If record exists, update; else, insert
-    $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
-    $stmt->bind_param("s", $apartmentNo);
-    $stmt->execute();
-    $stmt->store_result();
-    if ($stmt->num_rows > 0) {
-      $stmt->close();
-      $stmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
-      $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
+    // If the nicheID (apartmentNo) was changed, move the record
+    if ($originalNicheID !== $apartmentNo && $originalNicheID !== '') {
+      // Check if new nicheID already exists
+      $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
+      $stmt->bind_param("s", $apartmentNo);
       $stmt->execute();
-      $stmt->close();
+      $stmt->store_result();
+      if ($stmt->num_rows > 0) {
+        $errors[] = "The selected Apartment No. is already occupied.";
+        $stmt->close();
+      } else {
+        $stmt->close();
+        // Update the original record's nicheID to the new one
+        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE nicheID=?");
+        $stmt->bind_param("ssisssssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $originalNicheID);
+        $stmt->execute();
+        $stmt->close();
+        header("Location: Mapping.php");
+        exit();
+      }
     } else {
-      $stmt->close();
-      $stmt = $conn->prepare("INSERT INTO deceased (firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-      $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
+      // If not changed, just update as usual
+      $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
+      $stmt->bind_param("s", $apartmentNo);
       $stmt->execute();
-      $stmt->close();
+      $stmt->store_result();
+      if ($stmt->num_rows > 0) {
+        $stmt->close();
+        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
+        $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
+        $stmt->execute();
+        $stmt->close();
+      } else {
+        $stmt->close();
+        $stmt = $conn->prepare("INSERT INTO deceased (firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
+        $stmt->execute();
+        $stmt->close();
+      }
+      header("Location: Mapping.php");
+      exit();
     }
-
-    header("Location: Mapping.php");
-    exit();
   }
 }
 ?>
