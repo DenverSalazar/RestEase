@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($recaptcha_response)) {
         $login_error = "Please complete the reCAPTCHA.";
     } else {
-        $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // <-- Replace with your secret key
+        $recaptcha_secret = ''; // <-- Replace with your secret key
         $recaptcha_verify = file_get_contents(
             "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
         );
@@ -154,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             
                             <!-- reCAPTCHA -->
                             <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
+                                <div class="g-recaptcha" data-sitekey=""></div>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
