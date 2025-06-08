@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
                             
-                            <!-- reCAPTCHA -->
+                            <!-- reCAPTCHA   lagay mo dito yung site key -->
                             <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey=""></div>
                             </div>
