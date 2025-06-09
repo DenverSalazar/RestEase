@@ -66,6 +66,168 @@ while ($row = $result->fetch_assoc()) {
     body.pick-niche-mode .popup-overlay {
       display: none !important;
     }
+    #sectionToggleBar {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      padding: 8px 12px;
+      align-items: center;
+      min-width: 320px;
+      max-width: 420px;
+      font-family: 'Inter', sans-serif;
+      /* Move to right side */
+      right: 18px !important;
+      left: auto !important;
+      top: 18px !important;
+      margin: 0 !important;
+    }
+    .section-btn {
+      background: #f3f4f6;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 18px;
+      font-size: 15px;
+      color: #222;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+      outline: none;
+    }
+    .section-btn.active, .section-btn:hover {
+      background: #2d8cff;
+      color: #fff;
+    }
+    @media (max-width: 600px) {
+      #sectionToggleBar {
+        min-width: 0;
+        max-width: 100vw;
+        flex-wrap: wrap;
+        font-size: 13px;
+        padding: 6px 4px;
+        right: 4px !important;
+        top: 4px !important;
+      }
+      .section-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+    }
+    /* Add these styles to your existing styles */
+    .layer-control {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        z-index: 1001;
+    }
+
+    .layer-control-btn {
+        background: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: #333;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        transition: all 0.2s ease;
+    }
+
+    .layer-control-btn:hover {
+        background: #f8f9fa;
+    }
+
+    .layer-control-btn i {
+        font-size: 16px;
+    }
+
+    .layer-control-content {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 16px;
+        min-width: 200px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: none;
+    }
+
+    .layer-control.active .layer-control-content {
+        display: block;
+    }
+
+    .layer-section {
+        margin-bottom: 12px;
+    }
+
+    .layer-section h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .section-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .section-btn {
+        background: #f3f4f6;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #222;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s;
+        text-align: left;
+        width: 100%;
+    }
+
+    .section-btn.active, .section-btn:hover {
+        background: #2d8cff;
+        color: #fff;
+    }
+
+    @media (max-width: 600px) {
+        .layer-control {
+            top: 8px;
+            right: 8px;
+        }
+        
+        .layer-control-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        
+        .layer-control-content {
+            min-width: 180px;
+            padding: 12px;
+        }
+    }
+    /* Add to your existing styles */
+    .show-all-btn {
+        margin-top: 8px !important;
+        background: #e9ecef !important;
+        border-top: 1px solid #dee2e6 !important;
+        padding-top: 12px !important;
+    }
+
+    .show-all-btn i {
+        margin-right: 6px;
+    }
+
+    .show-all-btn.active {
+        background: #2d8cff !important;
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -96,6 +258,28 @@ while ($row = $result->fetch_assoc()) {
         </select>
      </div>
      <div id="map">
+        <!-- Layer Control Button -->
+        <div class="layer-control">
+            <button class="layer-control-btn">
+                <i class="fas fa-layer-group"></i>
+                <span>Layers</span>
+            </button>
+            <div class="layer-control-content">
+                <div class="layer-section">
+                    <h4>Sections</h4>
+                    <div class="section-buttons">
+                        <button class="section-btn active" data-section="1">Section 1</button>
+                        <button class="section-btn" data-section="2">Section 2</button>
+                        <button class="section-btn" data-section="3">Section 3</button>
+                        <button class="section-btn" data-section="4">Section 4</button>
+                        <button class="section-btn show-all-btn" data-section="all">
+                            <i class="fas fa-th-large"></i>
+                            Show All Sections
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Custom Legend -->
         <div class="custom-map-legend" id="customMapLegend">
             <div class="legend-row">
@@ -127,19 +311,20 @@ while ($row = $result->fetch_assoc()) {
        </div>
    </div>
    
-        <script src="../js/qgis2web_expressions.js"></script>
-        <script src="../js/leaflet.js"></script>
-        <script src="../js/L.Control.Layers.Tree.min.js"></script>
-        <script src="../js/leaflet.rotatedMarker.js"></script>
-        <script src="../js/leaflet.pattern.js"></script>
-        <script src="../js/leaflet-hash.js"></script>
-        <script src="../js/Autolinker.min.js"></script>
-        <script src="../js/rbush.min.js"></script>
-        <script src="../js/labelgun.min.js"></script>
-        <script src="../js/labels.js"></script>
-        <script src="../data/border_1.js"></script>
-        <script src="../data/Floor1_2.js"></script>
-        <script>
+   <script src="../js/leaflet.js"></script>
+   <script src="../js/L.Control.Layers.Tree.min.js"></script>
+   <script src="../js/leaflet.rotatedMarker.js"></script>
+   <script src="../js/leaflet.pattern.js"></script>
+   <script src="../js/Autolinker.min.js"></script>
+   <script src="../js/rbush.min.js"></script>
+   <script src="../js/labelgun.min.js"></script>
+   <script src="../js/labels.js"></script>
+   <script src="../data/border_1.js"></script>
+   <script src="../data/floor1.js"></script>
+   <script src="../data/floor1_2.js"></script>
+   <script src="../data/floor1_3.js"></script>
+   <script src="../data/floor1_4.js"></script>
+   <script>
         var highlightLayer;
         function highlightFeature(e) {
             highlightLayer = e.target;
@@ -155,11 +340,35 @@ while ($row = $result->fetch_assoc()) {
               });
             }
         }
+        // Remove OpenStreetMap and hash code
+        // Set up map and restrict view to border
         var map = L.map('map', {
-            zoomControl:false, maxZoom:28, minZoom:1
-        }).fitBounds([[13.883513513459492,121.2234865364029],[13.88355206056936,121.22356938136839]]);
-        var hash = new L.Hash(map);
-        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+            zoomControl: false,
+            maxBoundsViscosity: 1.0 // Prevent panning outside bounds
+        });
+        var borderLayer = new L.geoJson(json_border_1);
+        var borderBounds = borderLayer.getBounds();
+        map.fitBounds(borderBounds, {padding: [100, 100]});
+
+        // Expand the max bounds a bit so you can pan around the border and not get stuck in the corner
+        function expandBounds(bounds, factor) {
+            var sw = bounds.getSouthWest();
+            var ne = bounds.getNorthEast();
+            var latDiff = (ne.lat - sw.lat) * (factor - 1) / 2;
+            var lngDiff = (ne.lng - sw.lng) * (factor - 1) / 2;
+            return L.latLngBounds(
+                [sw.lat - latDiff, sw.lng - lngDiff],
+                [ne.lat + latDiff, ne.lng + lngDiff]
+            );
+        }
+        var paddedBounds = expandBounds(borderBounds, 1.2); // 20% larger
+        map.setMaxBounds(paddedBounds);
+
+        // Optionally, set min/max zoom based on border bounds
+        var minZoom = map.getBoundsZoom(borderBounds, false);
+        map.setMinZoom(minZoom - 1); // allow zooming out a bit more
+        map.setMaxZoom(minZoom + 3); // allow zooming in more
+
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         // remove popup's row if "visible-with-data"
         function removeEmptyRowsFromPopupContent(content, feature) {
@@ -195,19 +404,10 @@ while ($row = $result->fetch_assoc()) {
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
-        map.createPane('pane_OpenStreetMap_0');
-        map.getPane('pane_OpenStreetMap_0').style.zIndex = 400;
-        var layer_OpenStreetMap_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            pane: 'pane_OpenStreetMap_0',
-            opacity: 1.0,
-            attribution: '',
-            minZoom: 1,
-            maxZoom: 28,
-            minNativeZoom: 0,
-            maxNativeZoom: 19
-        });
-        layer_OpenStreetMap_0;
-        map.addLayer(layer_OpenStreetMap_0);
+        // After loading border_1.js, fit map to border bounds
+        var borderLayer = new L.geoJson(json_border_1);
+        map.fitBounds(borderLayer.getBounds());
+
         function pop_border_1(feature, layer) {
             layer.on({
                 mouseout: function(e) {
@@ -258,7 +458,7 @@ while ($row = $result->fetch_assoc()) {
         });
         bounds_group.addLayer(layer_border_1);
         map.addLayer(layer_border_1);
-        function pop_Floor1_2(feature, layer) {
+        function pop_Floor1(feature, layer) {
             layer.on({
                 mouseout: function(e) {
                     for (var i in e.target._eventParents) {
@@ -326,13 +526,14 @@ while ($row = $result->fetch_assoc()) {
             });
         }
 
-        function style_Floor1_2_0(feature) {
+        // --- Section Layer Creation ---
+        function style_Floor1_0(feature) {
             // Check if this nicheID has a deceased record
             var nicheID = feature.properties && feature.properties['nicheID'];
             if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
                 // Use "sold" color if there is data
                 return {
-                    pane: 'pane_Floor1_2',
+                    pane: 'pane_Floor1',
                     opacity: 1,
                     color: 'rgba(35,35,35,1.0)',
                     dashArray: '',
@@ -347,7 +548,7 @@ while ($row = $result->fetch_assoc()) {
             }
             if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
                 return {
-                    pane: 'pane_Floor1_2',
+                    pane: 'pane_Floor1',
                     color: 'rgba(96, 125, 139, 1.0)',
                     weight: 0,
                     fill: true,
@@ -358,7 +559,7 @@ while ($row = $result->fetch_assoc()) {
             switch(String(feature.properties['Status'])) {
                 case 'vacant':
                     return {
-                pane: 'pane_Floor1_2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -373,7 +574,7 @@ while ($row = $result->fetch_assoc()) {
                     break;
                 case 'reserved':
                     return {
-                pane: 'pane_Floor1_2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -388,7 +589,7 @@ while ($row = $result->fetch_assoc()) {
                     break;
                 case 'sold':
                     return {
-                pane: 'pane_Floor1_2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -403,114 +604,198 @@ while ($row = $result->fetch_assoc()) {
                     break;
             }
         }
-        map.createPane('pane_Floor1_2');
-        map.getPane('pane_Floor1_2').style.zIndex = 402;
-        map.getPane('pane_Floor1_2').style['mix-blend-mode'] = 'normal';
+        map.createPane('pane_Floor1');
+        map.getPane('pane_Floor1').style.zIndex = 402;
+        map.getPane('pane_Floor1').style['mix-blend-mode'] = 'normal';
+        var layer_Floor1 = new L.geoJson(json_Floor1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor1',
+            layerName: 'layer_Floor1',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1_0,
+        });
+        // Section 2
         var layer_Floor1_2 = new L.geoJson(json_Floor1_2, {
             attribution: '',
             interactive: true,
             dataVar: 'json_Floor1_2',
             layerName: 'layer_Floor1_2',
-            pane: 'pane_Floor1_2',
-            onEachFeature: pop_Floor1_2,
-            style: style_Floor1_2_0,
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1_0,
         });
+        // Section 3
+        var layer_Floor1_3 = new L.geoJson(json_Floor1_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor1_3',
+            layerName: 'layer_Floor1_3',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1_0,
+        });
+        // Section 4
+        var layer_Floor1_4 = new L.geoJson(json_Floor1_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor1_4',
+            layerName: 'layer_Floor1_4',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1_0,
+        });
+
+        bounds_group.addLayer(layer_Floor1);
         bounds_group.addLayer(layer_Floor1_2);
-        map.addLayer(layer_Floor1_2);
-        var overlaysTree = [
-            {label: 'Floor 1', layer: layer_Floor1_2},
-            {label: '<img src="../legend/border_1.png" /> border', layer: layer_border_1},
-            {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},]
-        var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
-            //closedSymbol: '&#8862; &#x1f5c0;',
-            //openedSymbol: '&#8863; &#x1f5c1;',
-            //collapseAll: 'Collapse all',
-            //expandAll: 'Expand all',
-            collapsed: false, 
-        });
-        lay.addTo(map);
-		document.addEventListener("DOMContentLoaded", function() {
-            // set new Layers List height which considers toggle icon
-            function newLayersListHeight() {
-                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
-                if (layerScrollbarElement) {
-                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
-                    var originalHeight = layersListElement.style.height 
-                        || window.getComputedStyle(layersListElement).height;
-                    var newHeight = parseFloat(originalHeight) - 50;
-                    layersListElement.style.height = newHeight + 'px';
+        bounds_group.addLayer(layer_Floor1_3);
+        bounds_group.addLayer(layer_Floor1_4);
+
+        // Only add Section 1 by default
+        map.addLayer(layer_Floor1);
+
+        // --- Section Toggle Button Logic ---
+        function showSection(section) {
+            // Remove all section layers
+            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4].forEach(function(l) {
+                if (map.hasLayer(l)) map.removeLayer(l);
+            });
+            
+            if (section === 'all') {
+                // Add all sections
+                map.addLayer(layer_Floor1);
+                map.addLayer(layer_Floor1_2);
+                map.addLayer(layer_Floor1_3);
+                map.addLayer(layer_Floor1_4);
+                
+                // Add labels for all sections
+                addSectionLabels(layer_Floor1);
+                addSectionLabels(layer_Floor1_2);
+                addSectionLabels(layer_Floor1_3);
+                addSectionLabels(layer_Floor1_4);
+                resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+            } else {
+                // Add selected section
+                switch(section) {
+                    case 1: map.addLayer(layer_Floor1); break;
+                    case 2: map.addLayer(layer_Floor1_2); break;
+                    case 3: map.addLayer(layer_Floor1_3); break;
+                    case 4: map.addLayer(layer_Floor1_4); break;
                 }
             }
-            var isLayersListExpanded = true;
-            var controlLayersElement = document.querySelector('.leaflet-control-layers');
-            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
-            // toggle Collapsed/Expanded and apply new Layers List height
-            toggleLayerControl.addEventListener('click', function() {
-                if (isLayersListExpanded) {
-                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
-                } else {
-                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+        }
+        document.addEventListener("DOMContentLoaded", function() {
+            const layerControlBtn = document.querySelector('.layer-control-btn');
+            const layerControl = document.querySelector('.layer-control');
+            
+            // Toggle layer control
+            layerControlBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                layerControl.classList.toggle('active');
+            });
+
+            // Close layer control when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!layerControl.contains(e.target)) {
+                    layerControl.classList.remove('active');
                 }
-                isLayersListExpanded = !isLayersListExpanded;
-                newLayersListHeight()
-            });	
-			// apply new Layers List height if toggle layerstree
-			if (controlLayersElement) {
-				controlLayersElement.addEventListener('click', function(event) {
-					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
-					if (toggleLayerHeaderPointer) {
-						newLayersListHeight();
-					}
-				});
-			}
-            // Collapsed/Expanded at Start to apply new height
-            setTimeout(function() {
-                toggleLayerControl.click();
-            }, 10);
-            setTimeout(function() {
-                toggleLayerControl.click();
-            }, 10);
-            // Collapsed touch/small screen
-            var isSmallScreen = window.innerWidth < 650;
-            if (isSmallScreen) {
-                setTimeout(function() {
-                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
-                    isLayersListExpanded = !isLayersListExpanded;
-                }, 500);
-            }  
-        });       
-        setBounds();
-        var i = 0;
-        layer_Floor1_2.eachLayer(function(layer) {
-            var context = {
-                feature: layer.feature,
-                variables: {}
-            };
-            if (layer.feature.properties['nicheID']) {
-                layer.bindTooltip(
-                    String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['nicheID']) + '</div>',
-                    {permanent: true, offset: [-0, -16], className: 'css_Floor1_2'}
-                );
-            }
-            labels.push(layer);
-            totalMarkers += 1;
-              layer.added = true;
-              addLabel(layer, i);
-              i++;
+            });
+
+            // Section button click handlers
+            const sectionBtns = document.querySelectorAll('.section-btn');
+            sectionBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    sectionBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const section = btn.getAttribute('data-section');
+                    showSection(section === 'all' ? 'all' : Number(section));
+                    
+                    // Optionally close the layer control after selection
+                    layerControl.classList.remove('active');
+                });
+            });
         });
+        // --- Tooltips and Labels for all sections ---
+function addSectionLabels(sectionLayer) {
+    sectionLayer.eachLayer(function(layer) {
+        if (layer.feature && layer.feature.properties['nicheID']) {
+            // Remove tooltip display completely
+            if (layer.getTooltip()) {
+                layer.unbindTooltip();
+            }
+        }
+        labels.push(layer);
+        totalMarkers += 1;
+        layer.added = true;
+        addLabel(layer, totalMarkers);
+    });
+}
+
+function removeSectionLabels(sectionLayer) {
+    sectionLayer.eachLayer(function(layer) {
+        if (layer.getTooltip()) {
+            layer.unbindTooltip();
+        }
+        var idx = labels.indexOf(layer);
+        if (idx !== -1) labels.splice(idx, 1);
+        layer.added = false;
+    });
+}
+
+// Add labels only for the default visible layer
+addSectionLabels(layer_Floor1);
+resetLabels([layer_Floor1]);
+
+// Listen for layeradd/layerremove and update labels accordingly
+map.on("layeradd", function(e){
+    if (e.layer === layer_Floor1) {
+        addSectionLabels(layer_Floor1);
+        resetLabels([layer_Floor1]);
+    }
+    if (e.layer === layer_Floor1_2) {
+        addSectionLabels(layer_Floor1_2);
         resetLabels([layer_Floor1_2]);
-        map.on("zoomend", function(){
-            resetLabels([layer_Floor1_2]);
-        });
-        map.on("layeradd", function(){
-            resetLabels([layer_Floor1_2]);
-        });
-        map.on("layerremove", function(){
-            resetLabels([layer_Floor1_2]);
-        });
-        // Add event listeners for popup buttons
+    }
+    if (e.layer === layer_Floor1_3) {
+        addSectionLabels(layer_Floor1_3);
+        resetLabels([layer_Floor1_3]);
+    }
+    if (e.layer === layer_Floor1_4) {
+        addSectionLabels(layer_Floor1_4);
+        resetLabels([layer_Floor1_4]);
+    }
+});
+map.on("layerremove", function(e){
+    if (e.layer === layer_Floor1) {
+        removeSectionLabels(layer_Floor1);
+        resetLabels([]);
+    }
+    if (e.layer === layer_Floor1_2) {
+        removeSectionLabels(layer_Floor1_2);
+        resetLabels([]);
+    }
+    if (e.layer === layer_Floor1_3) {
+        removeSectionLabels(layer_Floor1_3);
+        resetLabels([]);
+    }
+    if (e.layer === layer_Floor1_4) {
+        removeSectionLabels(layer_Floor1_4);
+        resetLabels([]);
+    }
+});
+map.on("zoomend", function(){
+    // Only reset labels for visible layers
+    var visibleLayers = [];
+    if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
+    if (map.hasLayer(layer_Floor1_2)) visibleLayers.push(layer_Floor1_2);
+    if (map.hasLayer(layer_Floor1_3)) visibleLayers.push(layer_Floor1_3);
+    if (map.hasLayer(layer_Floor1_4)) visibleLayers.push(layer_Floor1_4);
+    resetLabels(visibleLayers);
+});
+
+// Add event listeners for popup buttons
         document.getElementById('cancelButton').addEventListener('click', function() {
             document.getElementById('popupOverlay').classList.remove('active');
             document.getElementById('customPopup').classList.remove('active');
