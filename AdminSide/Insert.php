@@ -302,107 +302,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
   <?php endif; ?>
 
-  <div class="main-content">
-    <div class="top-bar">
-      <span class="page-title">Insert Data</span>
-      <div class="user-profile">
-        <div class="notification-icon">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge">1</span>
-        </div>
-        <div class="profile-info">
-          <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
-          <div>
-            <div class="profile-name">Sybau</div>
-            <div class="profile-role">Admin</div>
-          </div>
+  <div class="card" style="max-width: 1200px; margin: 36px 100px 36px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(44,62,80,0.09); padding: 24px 8px 24px 18px;">
+    <div class="main-content" style="padding:10px;">
+      <div class="top-bar">
+        <span class="page-title">Insert Data</span>
+      </div>
+      <div class="page-subtitle">Fill up the masterlist data</div>
+      <div class="top-actions" style="padding-right:55px;">
+        <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
+        <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
+      </div>
+      <!-- Excel Import Modal -->
+      <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:10px; min-width:320px; max-width:90vw; position:relative;">
+          <button type="button" id="closeModal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+          <h3 style="margin-top:0;">Import Excel File</h3>
+          <form action="ImportExcel.php" method="post" enctype="multipart/form-data">
+            <input type="file" name="excel_file" accept=".xls,.xlsx" required style="margin-bottom:16px;">
+            <br>
+            <button type="submit" style="background:#506C84; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:1rem; cursor:pointer;">Upload</button>
+          </form>
+          <div style="font-size:0.95rem; color:#555; margin-top:10px;">Only .xls or .xlsx files are allowed.</div>
         </div>
       </div>
-    </div>
-    <div class="page-subtitle">Fill up the masterlist data</div>
-    <div class="top-actions">
-      <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
-      <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
-    </div>
-    <!-- Excel Import Modal -->
-    <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
-      <div style="background:#fff; padding:32px 24px; border-radius:10px; min-width:320px; max-width:90vw; position:relative;">
-        <button type="button" id="closeModal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
-        <h3 style="margin-top:0;">Import Excel File</h3>
-        <form action="ImportExcel.php" method="post" enctype="multipart/form-data">
-          <input type="file" name="excel_file" accept=".xls,.xlsx" required style="margin-bottom:16px;">
-          <br>
-          <button type="submit" style="background:#506C84; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:1rem; cursor:pointer;">Upload</button>
-        </form>
-        <div style="font-size:0.95rem; color:#555; margin-top:10px;">Only .xls or .xlsx files are allowed.</div>
-      </div>
-    </div>
-    <script>
-      document.getElementById('importDataBtn').onclick = function() {
-        document.getElementById('excelModal').style.display = 'flex';
-      };
-      document.getElementById('closeModal').onclick = function() {
-        document.getElementById('excelModal').style.display = 'none';
-      };
-      document.getElementById('excelModal').onclick = function(e) {
-        if (e.target === this) this.style.display = 'none';
-      };
-    </script>
-    <div class="form-container">
-      <div class="form-section-title">Deceased Information</div>
-      <!-- Remove error-alert in form, only keep popup notification -->
-      <form method="post" autocomplete="off">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">First Name</label>
-            <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($_POST['firstName'] ?? ''); ?>">
-          </div>
-          <div class="form-group">
-            <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($_POST['lastName'] ?? ''); ?>">
-          </div>
-          <div class="form-group">
-            <label for="age">Age</label>
-            <input type="number" id="age" name="age" placeholder="Age" value="<?php echo htmlspecialchars($_POST['age'] ?? ''); ?>">
-          </div>
-        </div>
-        <div class="form-row-2">
-          <div class="form-group">
-            <label for="born">Born</label>
-            <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($_POST['born'] ?? ''); ?>">
-          </div>
-          <div class="form-group">
-            <label for="residency">Residency</label>
-            <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($_POST['residency'] ?? ''); ?>">
-          </div>
-          <div class="form-group">
-            <label for="dateDied">Date Died</label>
-            <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($_POST['dateDied'] ?? ''); ?>">
-          </div>
-        </div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label for="dateInternment">Date of Internment</label>
-            <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($_POST['dateInternment'] ?? ''); ?>">
-          </div>
-          <div class="form-group">
-            <label for="apartmentNo">Apartment No.</label>
-            <div class="niche-picker-group">
-              <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo isset($_GET['nicheID']) ? htmlspecialchars($_GET['nicheID']) : (htmlspecialchars($_POST['apartmentNo'] ?? '')); ?>">
-              <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
-                <i class="fas fa-map-marker-alt"></i>
-              </button>
+      <script>
+        document.getElementById('importDataBtn').onclick = function() {
+          document.getElementById('excelModal').style.display = 'flex';
+        };
+        document.getElementById('closeModal').onclick = function() {
+          document.getElementById('excelModal').style.display = 'none';
+        };
+        document.getElementById('excelModal').onclick = function(e) {
+          if (e.target === this) this.style.display = 'none';
+        };
+      </script>
+      <div class="form-container">
+        <div class="form-section-title">Deceased Information</div>
+        <!-- Remove error-alert in form, only keep popup notification -->
+        <form method="post" autocomplete="off">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name</label>
+              <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($_POST['firstName'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name</label>
+              <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($_POST['lastName'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="age">Age</label>
+              <input type="number" id="age" name="age" placeholder="Age" value="<?php echo htmlspecialchars($_POST['age'] ?? ''); ?>">
             </div>
           </div>
-          <div class="form-group">
-            <label for="informantName">Informant Name</label>
-            <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($_POST['informantName'] ?? ''); ?>">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="born">Born</label>
+              <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($_POST['born'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="residency">Residency</label>
+              <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($_POST['residency'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="dateDied">Date Died</label>
+              <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($_POST['dateDied'] ?? ''); ?>">
+            </div>
           </div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn upload">Insert</button>
-        </div>
-      </form>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label for="dateInternment">Date of Internment</label>
+              <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($_POST['dateInternment'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="apartmentNo">Apartment No.</label>
+              <div class="niche-picker-group">
+                <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo isset($_GET['nicheID']) ? htmlspecialchars($_GET['nicheID']) : (htmlspecialchars($_POST['apartmentNo'] ?? '')); ?>">
+                <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
+                  <i class="fas fa-map-marker-alt"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="informantName">Informant Name</label>
+              <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($_POST['informantName'] ?? ''); ?>">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn upload">Insert</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
   <script>
