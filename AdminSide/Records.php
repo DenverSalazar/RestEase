@@ -272,7 +272,21 @@
                   $dt->modify('+5 years');
                   $validity = $dt->format('Y-m-d');
                 }
-                echo "<tr>
+                // Prepare query params for edit
+                $queryParams = http_build_query([
+                  'id' => $row['id'],
+                  'nicheID' => $row['nicheID'],
+                  'lastName' => $row['lastName'],
+                  'firstName' => $row['firstName'],
+                  'age' => $row['age'],
+                  'born' => $row['born'],
+                  'residency' => $row['residency'],
+                  'informantName' => $row['informantName'],
+                  'dateDied' => $row['dateDied'],
+                  'dateInternment' => $row['dateInternment']
+                ]);
+                // Add a data-href attribute for JS navigation
+                echo "<tr class='record-row' data-href='editniches.php?{$queryParams}' style='cursor:pointer;'>
                   <td>{$apt}</td>
                   <td>{$name}</td>
                   <td>{$age}</td>
@@ -478,6 +492,20 @@
           setDeleteMode(false);
           deleteBtn.classList.remove('export-btn');
           deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        });
+
+        // Make table rows clickable for editing
+        document.addEventListener('DOMContentLoaded', function() {
+          // Add click event to each record row (except when clicking a checkbox)
+          document.querySelectorAll('.record-row').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+              // Prevent navigation if clicking on a checkbox
+              if (e.target.classList.contains('delete-checkbox')) return;
+              // Prevent navigation if in delete mode
+              if (deleteMode) return;
+              window.location = row.getAttribute('data-href');
+            });
+          });
         });
       </script>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
