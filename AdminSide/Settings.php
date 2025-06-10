@@ -127,43 +127,42 @@
                     <th style="padding:10px 8px;text-align:left;">Email</th>
                     <th style="padding:10px 8px;text-align:left;">Contact</th>
                     <th style="padding:10px 8px;text-align:left;">Status</th>
-                    <th style="padding:10px 8px;text-align:left;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- Example rows, replace with PHP loop for real data -->
-                  <tr style="background:#fff;">
-                    <td style="padding:8px 8px;">
-                      <img src="../assets/Default Image.jpg" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
-                      Cooper Herwitz
-                    </td>
-                    <td style="padding:8px 8px;">Cooper@gmail.com</td>
-                    <td style="padding:8px 8px;">0917 234 5678</td>
-                    <td style="padding:8px 8px;">
-                      <span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>
-                    </td>
-                    <td style="padding:8px 8px;">
-                      <button class="restore-btn" title="Restore" style="background:none;border:none;color:#2ecc71;font-size:1.1em;cursor:pointer;margin-right:8px;"><i class="fa fa-undo"></i></button>
-                      <button class="delete-btn" title="Delete" style="background:none;border:none;color:#c0392b;font-size:1.1em;cursor:pointer;"><i class="fa fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <!-- ...repeat for other clients... -->
-                  <tr style="background:#fff;">
-                    <td style="padding:8px 8px;">
-                      <img src="../assets/Default Image.jpg" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
-                      Kadin Rhiel Madsen
-                    </td>
-                    <td style="padding:8px 8px;">Kadin@gmail.com</td>
-                    <td style="padding:8px 8px;">0998 111 2233</td>
-                    <td style="padding:8px 8px;">
-                      <span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>
-                    </td>
-                    <td style="padding:8px 8px;">
-                      <button class="restore-btn" title="Restore" style="background:none;border:none;color:#2ecc71;font-size:1.1em;cursor:pointer;margin-right:8px;"><i class="fa fa-undo"></i></button>
-                      <button class="delete-btn" title="Delete" style="background:none;border:none;color:#c0392b;font-size:1.1em;cursor:pointer;"><i class="fa fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <!-- ...add more rows as needed... -->
+                  <?php
+                  // Database connection (adjust credentials as needed)
+                  $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                  if ($conn->connect_error) {
+                    echo '<tr><td colspan="4">Database connection failed.</td></tr>';
+                  } else {
+                    $result = $conn->query("SELECT * FROM archive_clients ORDER BY archived_at DESC");
+                    if ($result && $result->num_rows > 0) {
+                      while ($row = $result->fetch_assoc()) {
+                        $firstName = htmlspecialchars($row['first_name']);
+                        $lastName = htmlspecialchars($row['last_name']);
+                        $name = $firstName . ' ' . $lastName;
+                        $email = htmlspecialchars($row['email']);
+                        $contact = htmlspecialchars($row['contact_no']);
+                        $initials = strtoupper(mb_substr($firstName, 0, 1, 'UTF-8') . mb_substr($lastName, 0, 1, 'UTF-8'));
+                        $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                        $colorClass = "avatar-color-$colorIndex";
+                        echo '<tr style="background:#fff;">';
+                        echo '<td style="padding:8px 8px; display:flex; align-items:center;">';
+                        echo '<div class="avatar-img avatar-google ' . $colorClass . '">' . $initials . '</div>';
+                        echo '<span class="client-name" style="margin-left:4px; display:inline-block;">' . $name . '</span>';
+                        echo '</td>';
+                        echo '<td style="padding:8px 8px;">' . $email . '</td>';
+                        echo '<td style="padding:8px 8px;">' . $contact . '</td>';
+                        echo '<td style="padding:8px 8px;"><span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span></td>';
+                        echo '</tr>';
+                      }
+                    } else {
+                      echo '<tr><td colspan="4">No archived clients found.</td></tr>';
+                    }
+                    $conn->close();
+                  }
+                  ?>
                 </tbody>
               </table>
             </div>

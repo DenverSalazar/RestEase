@@ -264,13 +264,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       <!-- Custom Modal for Delete Confirmation -->
       <div class="modal-overlay" id="modalOverlay">
         <div class="modal-confirm">
-          <h2><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h2>
-          <p>Are you sure you want to delete this record?<br>This action cannot be undone.</p>
+          <h2><i class="fas fa-exclamation-triangle"></i> Confirm Archive</h2>
+          <p>Are you sure you want to archive this record?<br>This action will move the record to the archive section.</p>
           <div class="modal-actions">
-            <button class="modal-btn confirm" id="modalConfirmBtn">Delete</button>
+            <button class="modal-btn confirm" id="modalConfirmBtn">Archive</button>
             <button class="modal-btn cancel" id="modalCancelBtn">Cancel</button>
           </div>
         </div>
+      </div>
+
+      <!-- Success Notification -->
+      <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Record successfully archived.</span>
+        <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
       </div>
     </div>
     <script>
@@ -288,19 +294,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       const deleteBtn = document.getElementById('deleteBtn');
       const modalConfirmBtn = document.getElementById('modalConfirmBtn');
       const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+      // Show notification logic
+      function showSuccessNotification(message) {
+        const notif = document.getElementById('successNotification');
+        notif.querySelector('span').innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
+        notif.style.display = 'flex';
+        notif.style.background = '#2ecc71';
+        
+        // Auto-close after 3 seconds
+        const timeout = setTimeout(() => {
+          notif.style.display = 'none';
+        }, 3000);
+        
+        document.getElementById('closeNotificationBtn').onclick = function() {
+          notif.style.display = 'none';
+          clearTimeout(timeout);
+        };
+      }
+
+      function showErrorNotification(message) {
+        const notif = document.getElementById('successNotification');
+        notif.querySelector('span').innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
+        notif.style.display = 'flex';
+        notif.style.background = '#e74c3c';
+        
+        // Auto-close after 3 seconds
+        const timeout = setTimeout(() => {
+          notif.style.display = 'none';
+        }, 3000);
+        
+        document.getElementById('closeNotificationBtn').onclick = function() {
+          notif.style.display = 'none';
+          clearTimeout(timeout);
+        };
+      }
+
       deleteBtn.onclick = function() {
         modalOverlay.style.display = 'flex';
       };
+
       modalCancelBtn.onclick = function() {
         modalOverlay.style.display = 'none';
       };
+
       modalConfirmBtn.onclick = function() {
-        document.getElementById('deleteForm').submit();
+        const form = document.getElementById('deleteForm');
+        const formData = new FormData(form);
+        
+        // Show loading state
+        modalConfirmBtn.disabled = true;
+        modalConfirmBtn.textContent = 'Archiving...';
+        modalCancelBtn.disabled = true;
+
+        fetch('EditNiches.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(() => {
+          showSuccessNotification('Record successfully archived');
+          modalOverlay.style.display = 'none';
+          // Redirect after a short delay
+          setTimeout(() => {
+            window.location.href = 'Mapping.php';
+          }, 1000);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showErrorNotification('Failed to archive record. Please try again.');
+          // Reset button states
+          modalConfirmBtn.disabled = false;
+          modalConfirmBtn.textContent = 'Archive';
+          modalCancelBtn.disabled = false;
+        });
       };
+
       // Optional: close modal on overlay click
       modalOverlay.onclick = function(e) {
         if (e.target === modalOverlay) modalOverlay.style.display = 'none';
       };
+
       // Optional: ESC key closes modal
       document.addEventListener('keydown', function(e) {
         if (e.key === "Escape") modalOverlay.style.display = 'none';

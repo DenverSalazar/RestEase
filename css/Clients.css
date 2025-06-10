@@ -19,6 +19,57 @@ body {
   padding: 12px 40px 80px 60px; /* decreased top padding from 32px to 16px */
 }
 
+.avatar-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin-right: 10px;
+    text-transform: uppercase;
+    box-shadow: 0 1px 4px rgba(60,60,60,0.10);
+    vertical-align: middle;
+    letter-spacing: 0px;
+    background: #4285f4;
+    padding: 0;
+    /* Remove line-height, use flex for centering */
+    /* Remove any padding or extra spacing */
+    /* Remove line-height and min-width/min-height if not needed */
+    /* Fix font rendering for perfect centering */
+    font-family: 'Inter', Arial, sans-serif;
+    /* Remove border if not needed */
+    border: none;
+}
+
+.avatar-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 2px rgba(60,72,88,0.06);
+}
+
+.avatar-color-1 { background: #4285f4; } /* Blue */
+.avatar-color-2 { background: #ea4335; } /* Red */
+.avatar-color-3 { background: #fbbc05; color: #222; } /* Yellow */
+.avatar-color-4 { background: #34a853; } /* Green */
+.avatar-color-5 { background: #a142f4; } /* Purple */
+.avatar-color-6 { background: #f44292; } /* Pink */
+.avatar-color-7 { background: #00bcd4; } /* Cyan */
+.avatar-color-8 { background: #ff6d00; } /* Orange */
+.avatar-color-9 { background: #6d4c41; } /* Brown */
+.avatar-color-10 { background: #607d8b; } /* Gray */
+
 .clients-header h1 {
   font-size: 2rem;
   font-weight: 700;
@@ -146,7 +197,7 @@ body {
   border-radius: 16px; /* more rounded */
   box-shadow: 0 2px 8px rgba(0,0,0,0.04); /* slightly stronger shadow */
   margin-top: 18px;
-  overflow: hidden;
+  overflow: visible; /* <-- Change from hidden to visible */
   border: 1px solid var(--gray-border);
 }
 .clients-table {
@@ -166,18 +217,6 @@ body {
   color: #b0b0b0;
   font-weight: 600;
   border-bottom: 1px solid var(--gray-border);
-}
-.avatar-img {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background-size: cover;
-  background-position: center;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 12px;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 2px rgba(60,72,88,0.06);
 }
 .clients-table td {
   vertical-align: middle;
@@ -272,6 +311,77 @@ body {
 .btn-view:hover, .view-btn:hover, button.view-btn:hover, button.btn-view:hover {
   background: #7fa0bb;
   color: #fff;
+}
+
+/* --- ACTIONS DROPDOWN --- */
+.actions-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.actions-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    color: #888;
+    transition: background 0.2s;
+    outline: none;
+}
+.actions-btn:hover, .actions-btn:focus {
+    background: #f5f7fa;
+    color: #222;
+}
+.actions-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 36px;
+    min-width: 130px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(60,60,60,0.13);
+    z-index: 100;
+    flex-direction: column;
+    padding: 6px 0;
+    animation: fadeIn 0.18s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+.actions-menu .dropdown-item {
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 10px 22px;
+    font-size: 1.04rem;
+    color: #222;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-radius: 0;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.actions-menu .dropdown-item:hover {
+    background: #f0f4fa;
+    color: #1565c0;
+}
+.actions-menu .dropdown-item.delete {
+    color: #e74c3c;
+}
+.actions-menu .dropdown-item.delete:hover {
+    background: #fdeaea;
+    color: #b71c1c;
+}
+.actions-menu .dropdown-item i {
+    font-size: 1.08rem;
+    opacity: 0.85;
 }
 
 /* --- RESPONSIVE --- */

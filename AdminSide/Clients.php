@@ -43,71 +43,80 @@
             <th>Email</th>
             <th>Contact</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/1.jpg');"></div> Rayna Dias</td>
-            <td>Rayna@gmail.com</td>
-            <td>0917 123 4567</td>
-            <td class="status-approved">Approved</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/2.jpg');"></div> Wilson Aminoff</td>
-            <td>Wilson@gmail.com</td>
-            <td>0995 876 5432</td>
-            <td class="status-approved">Approved</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/3.jpg');"></div> Maren Rosser</td>
-            <td>Maren@gmail.com</td>
-            <td>0908 234 7890</td>
-            <td class="status-pending">Pending</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/4.jpg');"></div> Brandon Saris</td>
-            <td>Brandon@gmail.com</td>
-            <td>0936 321 0987</td>
-            <td class="status-approved">Approved</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/5.jpg');"></div> Zaire Gouse</td>
-            <td>Zaire@gmail.com</td>
-            <td>0927 456 1234</td>
-            <td class="status-denied">Denied</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/6.jpg');"></div> Ann Dias</td>
-            <td>Ann@gmail.com</td>
-            <td>0945 789 6543</td>
-            <td class="status-pending">Pending</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/7.jpg');"></div> Zain Philips</td>
-            <td>Zain@gmail.com</td>
-            <td>0918 567 8901</td>
-            <td class="status-approved">Approved</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/8.jpg');"></div> Alfonso Torff</td>
-            <td>Alfons@gmail.com</td>
-            <td>0956 234 5678</td>
-            <td class="status-pending">Pending</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/9.jpg');"></div> Randy Kenter</td>
-            <td>Randy@gmail.com</td>
-            <td>0906 345 6789</td>
-            <td class="status-denied">Denied</td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/10.jpg');"></div> Wilson Lubin</td>
-            <td>Wilson@gmail.com</td>
-            <td>0931 678 9012</td>
-            <td class="status-approved">Approved</td>
-          </tr>
+        <?php
+        // Connect to the database
+        $conn = new mysqli("localhost", "root", "", "cemeterydb");
+        if ($conn->connect_error) {
+            echo "<tr><td colspan='5'>Database connection failed.</td></tr>";
+        } else {
+            $sql = "SELECT first_name, last_name, email, contact_no FROM users";
+            $result = $conn->query($sql);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $firstName = htmlspecialchars($row['first_name']);
+                    $lastName = htmlspecialchars($row['last_name']);
+                    $name = $firstName . ' ' . $lastName;
+                    $email = htmlspecialchars($row['email']);
+                    $contact = htmlspecialchars($row['contact_no']);
+                    $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                    $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                    $colorClass = "avatar-color-$colorIndex";
+                    echo "<tr>
+    <td>
+        <div class=\"avatar-img avatar-google $colorClass\" style=\"display:inline-flex;\">$initials</div><span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
+    </td>
+    <td>$email</td>
+    <td>$contact</td>
+    <td><span style=\"background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;\">Active</span></td>
+    <td>
+        <div class=\"actions-dropdown\">
+            <button class=\"actions-btn\" onclick=\"toggleActionsMenu(this); return false;\">
+                <i class=\"fas fa-ellipsis-v\"></i>
+            </button>
+            <div class=\"actions-menu\">
+                <button class=\"dropdown-item\"><i class=\"fas fa-user-slash\"></i> Disable</button>
+                <button class=\"dropdown-item delete\"><i class=\"fas fa-archive\"></i> Archive</button>
+            </div>
+        </div>
+    </td>
+</tr>";
+                }
+            } else {
+                echo "<tr><td colspan='5'>No clients found.</td></tr>";
+            }
+            $conn->close();
+        }
+        ?>
         </tbody>
       </table>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
+          <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
+        </div>
+        <div class="modal-body" style="margin:18px 0 24px 0;">
+          <p style="color:#444;font-size:1.07rem;margin:0;">
+            Are you sure you want to archive this client?<br>
+            This action will move the client to the archive section.
+          </p>
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+          <button id="modalDeleteBtn" class="modal-delete-btn">Archive</button>
+          <button id="modalCancelBtn" class="modal-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Success Notification -->
+    <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+      <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Client successfully archived.</span>
+      <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
     </div>
     <div class="clients-pagination-bar">
       <div class="pagination">
@@ -125,4 +134,194 @@
   </main>
 
 </body>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Close all open menus if clicking outside
+    document.addEventListener('click', function(e) {
+        document.querySelectorAll('.actions-menu').forEach(function(menu) {
+            menu.style.display = 'none';
+        });
+    });
+
+    function toggleActionsMenu(btn) {
+        event.stopPropagation();
+        document.querySelectorAll('.actions-menu').forEach(function(menu) {
+            menu.style.display = 'none';
+        });
+        var menu = btn.nextElementSibling;
+        if (menu) {
+            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        }
+    }
+    window.toggleActionsMenu = toggleActionsMenu;
+
+    document.querySelectorAll('.actions-dropdown').forEach(function(drop) {
+        drop.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    let deleteTargetRow = null;
+    let deleteTargetEmail = null;
+
+    // Attach click event to all delete buttons
+    document.querySelectorAll('.dropdown-item.delete').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var row = this.closest('tr');
+            var email = row.querySelector('td:nth-child(2)').textContent.trim();
+            deleteTargetRow = row;
+            deleteTargetEmail = email;
+            document.getElementById('deleteModal').style.display = 'flex';
+        });
+    });
+
+    // Cancel button closes modal
+    document.getElementById('modalCancelBtn').addEventListener('click', function() {
+        document.getElementById('deleteModal').style.display = 'none';
+        deleteTargetRow = null;
+        deleteTargetEmail = null;
+    });
+
+    // Delete button archives client, removes row, and shows notification
+    document.getElementById('modalDeleteBtn').addEventListener('click', function() {
+        if (!deleteTargetEmail || !deleteTargetRow) return;
+        
+        const deleteBtn = this;
+        const modal = document.getElementById('deleteModal');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+        
+        // Show loading state
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Archiving...';
+        cancelBtn.disabled = true;
+        
+        fetch('archive_client.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'archive_client_email=' + encodeURIComponent(deleteTargetEmail)
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                deleteTargetRow.parentNode.removeChild(deleteTargetRow);
+                showSuccessNotification('Client successfully archived');
+                modal.style.display = 'none';
+            } else {
+                showErrorNotification(data.message || 'Failed to archive client');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorNotification('An error occurred while archiving. Please try again.');
+        })
+        .finally(() => {
+            // Reset button states
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Archive';
+            cancelBtn.disabled = false;
+            
+            // Clear references
+            deleteTargetRow = null;
+            deleteTargetEmail = null;
+        });
+    });
+
+    // Show notification logic
+    function showSuccessNotification(message) {
+        const notif = document.getElementById('successNotification');
+        notif.querySelector('span').innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
+        notif.style.display = 'flex';
+        notif.style.background = '#2ecc71';
+        
+        // Auto-close after 3 seconds
+        const timeout = setTimeout(() => {
+            notif.style.display = 'none';
+        }, 3000);
+        
+        document.getElementById('closeNotificationBtn').onclick = function() {
+            notif.style.display = 'none';
+            clearTimeout(timeout);
+        };
+    }
+
+    function showErrorNotification(message) {
+        const notif = document.getElementById('successNotification');
+        notif.querySelector('span').innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
+        notif.style.display = 'flex';
+        notif.style.background = '#e74c3c';
+        
+        // Auto-close after 3 seconds
+        const timeout = setTimeout(() => {
+            notif.style.display = 'none';
+        }, 3000);
+        
+        document.getElementById('closeNotificationBtn').onclick = function() {
+            notif.style.display = 'none';
+            clearTimeout(timeout);
+        };
+    }
+});
+</script>
+<style>
+/* filepath: c:\xampp\htdocs\RestEase\AdminSide\Clients.php (inline style for modal) */
+.modal-overlay {
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(44,62,80,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    padding: 32px 32px 24px 32px;
+    min-width: 340px;
+    max-width: 95vw;
+    text-align: center;
+    position: relative;
+}
+.modal-header h2 {
+    margin: 0;
+}
+.modal-footer {
+    margin-top: 10px;
+}
+.modal-delete-btn {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 1.08rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.modal-delete-btn:hover {
+    background: #c0392b;
+}
+.modal-cancel-btn {
+    background: #f4f6fa;
+    color: #444;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 1.08rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.modal-cancel-btn:hover {
+    background: #e0e0e0;
+}
+</style>
 </html>

@@ -20,16 +20,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $email = trim($_POST['email']);
+    $contact_no = trim($_POST['contact_no']); // New field
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $terms = isset($_POST['terms']);
     // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
     // Basic validation
-    if (!$first_name || !$last_name || !$email || !$password || !$confirm_password) {
+    if (!$first_name || !$last_name || !$email || !$contact_no || !$password || !$confirm_password) {
         $register_error = "All fields are required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $register_error = "Invalid email format.";
+    } elseif (!preg_match('/^[0-9+\-\s]{7,20}$/', $contact_no)) {
+        $register_error = "Invalid contact number format.";
     } elseif (strlen($password) < 8) {
         $register_error = "Password must be at least 8 characters long.";
     } elseif ($password !== $confirm_password) {
@@ -61,8 +64,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             // Insert new user
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $first_name, $last_name, $email, $hashed_password);
+            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, contact_no, password) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $first_name, $last_name, $email, $contact_no, $hashed_password);
             if ($stmt->execute()) {
                 $register_success = true;
             } else {
@@ -156,6 +159,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="mb-3">
                                 <input type="email" class="form-control" placeholder="Email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="Contact No." name="contact_no" required>
                             </div>
                             <div class="mb-3 password-container">
                                 <input type="password" class="form-control" placeholder="Enter your password" id="password" name="password" required>
