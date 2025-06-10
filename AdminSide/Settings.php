@@ -210,15 +210,15 @@
                       if ($result && $result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
                           echo '<tr>';
-                          echo '<td>' . htmlspecialchars($row['firstName']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['lastName']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['age']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['born']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['residency']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['dateDied']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['dateInternment']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['nicheID']) . '</td>';
-                          echo '<td>' . htmlspecialchars($row['informantName']) . '</td>';
+                          echo '<td>' . htmlspecialchars($row['firstName'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['lastName'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['age'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['born'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['residency'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['dateDied'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['dateInternment'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['nicheID'] ?? '') . '</td>';
+                          echo '<td>' . htmlspecialchars($row['informantName'] ?? '') . '</td>';
                           echo '</tr>';
                         }
                       } else {
