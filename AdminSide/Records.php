@@ -215,7 +215,9 @@
               <th>Date Died</th>
               <th>Date Internment</th>
               <th>Validity</th>
-              <th class="delete-checkbox-col" style="display:none;" id="delete-checkbox-header"></th>
+              <th class="delete-checkbox-col" style="display:none;" id="delete-checkbox-header">
+                <input type="checkbox" id="select-all-checkbox" style="display:none;">
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -229,8 +231,8 @@
               $ids = array_map('intval', $_POST['delete_ids']);
               $idsList = implode(',', $ids);
               // Move to archive_deceased
-              $conn->query("INSERT INTO archive_deceased (nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment)
-                SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased WHERE id IN ($idsList)");
+              $conn->query("INSERT INTO archive_deceased (nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment)
+                SELECT nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased WHERE id IN ($idsList)");
               // Delete from deceased
               $conn->query("DELETE FROM deceased WHERE id IN ($idsList)");
               $conn->close();
@@ -301,79 +303,182 @@
           transform: scale(1.2);
           cursor: pointer;
         }
-        /* Confirmation Modal Styles */
-        .modal-confirm-bg {
-          display: none;
+        /* Custom modal styles */
+        .modal-overlay {
           position: fixed;
-          z-index: 9999;
-          left: 0; top: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.35);
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(44, 62, 80, 0.35);
+          z-index: 1000;
+          display: none;
+          align-items: center;
+          justify-content: center;
         }
-        .modal-confirm-box {
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
+        .modal-confirm {
           background: #fff;
           border-radius: 12px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.13);
-          padding: 28px 20px 20px 20px;
-          min-width: 220px;
-          max-width: 320px;
-          width: 95vw;
+          box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+          padding: 32px 28px 24px 28px;
+          max-width: 370px;
+          width: 90%;
           text-align: center;
+          position: relative;
+          animation: modalPop .18s cubic-bezier(.4,1.4,.6,1.0);
         }
-        .modal-confirm-icon {
-          font-size: 2.6rem;
-          color: #e57373;
-          margin-bottom: 12px;
+        @keyframes modalPop {
+          0% { transform: scale(0.85); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
         }
-        .modal-confirm-title {
+        .modal-confirm h2 {
+          margin: 0 0 12px 0;
           font-size: 1.25rem;
+          color: #d9534f;
           font-weight: 600;
-          margin-bottom: 8px;
+          letter-spacing: 0.5px;
         }
-        .modal-confirm-msg {
+        .modal-confirm p {
+          color: #2d3a4a;
+          margin-bottom: 24px;
           font-size: 1rem;
-          color: #444;
-          margin-bottom: 22px;
+          line-height: 1.5;
         }
-        .modal-confirm-actions {
+        .modal-actions {
           display: flex;
+          gap: 12px;
           justify-content: center;
-          gap: 18px;
         }
-        .modal-btn-yes {
-          background: #e57373;
+        .modal-btn {
+          padding: 8px 24px;
+          border-radius: 7px;
+          border: none;
+          font-weight: 500;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background 0.18s, color 0.18s;
+        }
+        .modal-btn.confirm {
+          background: #d9534f;
           color: #fff;
-          border: none;
-          border-radius: 6px;
-          padding: 8px 28px;
-          font-size: 1rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background 0.18s;
         }
-        .modal-btn-yes:hover {
-          background: #d06060;
+        .modal-btn.confirm:hover, .modal-btn.confirm:focus {
+          background: #b52a2a;
         }
-        .modal-btn-no {
-          background: #e0e0e0;
-          color: #444;
-          border: none;
-          border-radius: 6px;
-          padding: 8px 28px;
-          font-size: 1rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background 0.18s;
+        .modal-btn.cancel {
+          background: #f5f7fa;
+          color: #2d3a4a;
         }
-        .modal-btn-no:hover {
-          background: #cccccc;
+        .modal-btn.cancel:hover, .modal-btn.cancel:focus {
+          background: #e4e9ee;
+          color: #1976d2;
         }
       </style>
-      <!-- Confirmation Modal and deletion logic removed -->
+      <!-- Custom Confirmation Modal -->
+      <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-confirm">
+          <h2><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h2>
+          <p>Are you sure you want to delete this record?<br>This action cannot be undone.</p>
+          <div class="modal-actions">
+            <button class="modal-btn confirm" id="modalConfirmBtn">Delete</button>
+            <button class="modal-btn cancel" id="modalCancelBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
       <script>
-        // All deletion logic removed
+        // Toggle delete mode
+        const deleteBtn = document.getElementById('delete-toggle-btn');
+        const table = document.getElementById('records-table');
+        const deleteCheckboxCols = table.querySelectorAll('.delete-checkbox-col');
+        const deleteCheckboxHeader = document.getElementById('delete-checkbox-header');
+        const deleteForm = document.getElementById('delete-form');
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        let deleteMode = false;
+
+        function setDeleteMode(on) {
+          deleteMode = on;
+          // Show/hide checkbox columns
+          deleteCheckboxCols.forEach(col => col.style.display = on ? '' : 'none');
+          if (deleteCheckboxHeader) {
+            deleteCheckboxHeader.style.display = on ? '' : 'none';
+            if (selectAllCheckbox) selectAllCheckbox.style.display = on ? '' : 'none';
+          }
+          // Uncheck all checkboxes when exiting delete mode
+          if (!on) {
+            table.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
+            if (selectAllCheckbox) selectAllCheckbox.checked = false;
+          }
+        }
+
+        // Initial state: hide checkboxes
+        setDeleteMode(false);
+
+        // Select All logic
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = table.querySelectorAll('.delete-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+          });
+          // Keep select-all in sync if user manually checks/unchecks
+          table.addEventListener('change', function(e) {
+            if (e.target.classList.contains('delete-checkbox')) {
+              const checkboxes = table.querySelectorAll('.delete-checkbox');
+              const checked = table.querySelectorAll('.delete-checkbox:checked');
+              selectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
+            }
+          });
+        }
+
+        // Custom modal logic
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        // Update modal text for plural/singular
+        const modalText = modalOverlay.querySelector('p');
+
+        deleteBtn.addEventListener('click', function(e) {
+          if (!deleteMode) {
+            setDeleteMode(true);
+            // Change button style to indicate active delete mode
+            deleteBtn.classList.add('export-btn');
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+          } else {
+            // Check if any checkbox is checked
+            const checked = table.querySelectorAll('.delete-checkbox:checked');
+            if (checked.length === 0) {
+              // Exit delete mode if nothing selected
+              setDeleteMode(false);
+              deleteBtn.classList.remove('export-btn');
+              deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+              return;
+            }
+            // Update modal text for plural/singular
+            if (modalText) {
+              modalText.innerHTML = `Are you sure you want to delete ${checked.length > 1 ? 'these records' : 'this record'}?<br>This action cannot be undone.`;
+            }
+            // Show custom confirmation modal
+            modalOverlay.style.display = 'flex';
+          }
+        });
+
+        modalCancelBtn.addEventListener('click', function() {
+          modalOverlay.style.display = 'none';
+        });
+
+        modalConfirmBtn.addEventListener('click', function() {
+          modalOverlay.style.display = 'none';
+          // Submit the form
+          deleteForm.submit();
+        });
+
+        // Optional: clicking outside modal closes it
+        modalOverlay.addEventListener('click', function(e) {
+          if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+        });
+
+        // Reset delete button and mode after form submit or page reload
+        window.addEventListener('DOMContentLoaded', function() {
+          setDeleteMode(false);
+          deleteBtn.classList.remove('export-btn');
+          deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        });
       </script>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
         <?php
