@@ -198,24 +198,45 @@
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Print Masterlist</button></a>
           <button><i class="fas fa-filter"></i> Filter</button>
+          <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>
+      <form id="delete-form" method="post" style="margin:0;">
       <div style="overflow-x:auto;">
-        <table class="cemetery-masterlist-table">
+        <table class="cemetery-masterlist-table" id="records-table">
           <thead>
             <tr>
               <th>Apt No.</th>
               <th>Name of Deceases</th>
+              <th>Age</th>
+              <th>Date of Birth</th>
               <th>Address of Deceased</th>
               <th>Informant Name</th>
               <th>Date Died</th>
               <th>Date Internment</th>
               <th>Validity</th>
+              <th class="delete-checkbox-col" style="display:none;" id="delete-checkbox-header"></th>
             </tr>
           </thead>
           <tbody>
             <?php
-            // Database connection (adjust credentials as needed)
+            // Handle deletion POST
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_array($_POST['delete_ids'])) {
+              $conn = new mysqli("localhost", "root", "", "cemeterydb");
+              if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+              // Ensure archive_deceased table exists
+              $conn->query("CREATE TABLE IF NOT EXISTS archive_deceased LIKE deceased");
+              $ids = array_map('intval', $_POST['delete_ids']);
+              $idsList = implode(',', $ids);
+              // Move to archive_deceased
+              $conn->query("INSERT INTO archive_deceased (nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment)
+                SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased WHERE id IN ($idsList)");
+              // Delete from deceased
+              $conn->query("DELETE FROM deceased WHERE id IN ($idsList)");
+              $conn->close();
+              echo "<script>window.location.href=window.location.pathname+'?deleted=1';</script>";
+              exit;
+            }
             $conn = new mysqli("localhost", "root", "", "cemeterydb");
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
@@ -231,11 +252,13 @@
 
             $offset = ($page - 1) * $perPage;
 
-            $result = $conn->query("SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
+            $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
                 $apt = htmlspecialchars($row['nicheID']);
+                $age = htmlspecialchars($row['age']);
+                $born = htmlspecialchars($row['born']);
                 $residency = htmlspecialchars($row['residency']);
                 $informant = htmlspecialchars($row['informantName']);
                 $dateDied = htmlspecialchars($row['dateDied']);
@@ -250,21 +273,108 @@
                 echo "<tr>
                   <td>{$apt}</td>
                   <td>{$name}</td>
+                  <td>{$age}</td>
+                  <td>{$born}</td>
                   <td>{$residency}</td>
                   <td>{$informant}</td>
                   <td>{$dateDied}</td>
                   <td>{$dateInternment}</td>
                   <td>{$validity}</td>
+                  <td class='delete-checkbox-col' style='display:none;'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";
               }
             } else {
-              echo '<tr><td colspan="7" style="text-align:center;">No records found.</td></tr>';
+              echo '<tr><td colspan="10" style="text-align:center;">No records found.</td></tr>';
             }
             $conn->close();
             ?>
           </tbody>
         </table>
       </div>
+      </form>
+      <style>
+        .delete-checkbox-col {
+          width: 40px;
+          text-align: center;
+        }
+        .delete-checkbox {
+          transform: scale(1.2);
+          cursor: pointer;
+        }
+        /* Confirmation Modal Styles */
+        .modal-confirm-bg {
+          display: none;
+          position: fixed;
+          z-index: 9999;
+          left: 0; top: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.35);
+        }
+        .modal-confirm-box {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          background: #fff;
+          border-radius: 12px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+          padding: 28px 20px 20px 20px;
+          min-width: 220px;
+          max-width: 320px;
+          width: 95vw;
+          text-align: center;
+        }
+        .modal-confirm-icon {
+          font-size: 2.6rem;
+          color: #e57373;
+          margin-bottom: 12px;
+        }
+        .modal-confirm-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+        .modal-confirm-msg {
+          font-size: 1rem;
+          color: #444;
+          margin-bottom: 22px;
+        }
+        .modal-confirm-actions {
+          display: flex;
+          justify-content: center;
+          gap: 18px;
+        }
+        .modal-btn-yes {
+          background: #e57373;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 28px;
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.18s;
+        }
+        .modal-btn-yes:hover {
+          background: #d06060;
+        }
+        .modal-btn-no {
+          background: #e0e0e0;
+          color: #444;
+          border: none;
+          border-radius: 6px;
+          padding: 8px 28px;
+          font-size: 1rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.18s;
+        }
+        .modal-btn-no:hover {
+          background: #cccccc;
+        }
+      </style>
+      <!-- Confirmation Modal and deletion logic removed -->
+      <script>
+        // All deletion logic removed
+      </script>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
         <?php
         $baseUrl = strtok($_SERVER["REQUEST_URI"], '?');
