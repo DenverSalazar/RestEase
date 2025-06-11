@@ -6,12 +6,12 @@
   <title>RestEase Admin Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/Renewals.css">
+  <link rel="stylesheet" href="../css/Reports.css">
   <link rel="stylesheet" href="../css/sidebar.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <?php include '../Includes/sidebar.php'; ?>
+   <!-- Sidebar -->
+   <?php include '../Includes/sidebar.php'; ?>
 
   <!-- Main Content -->
   <main class="main-content">
@@ -36,8 +36,8 @@
       </div>
     </header>
     
-    <h1 style="margin-left: 230px;">Renewal</h1>
-    <!-- Dashboard Content -->
+    <h1 style="margin-left: 230px;">Certificate</h1>
+    <!-- Reports Content -->
     <div class="dashboard-grid">
       <div class="card">
         <!-- Dashboard card content will go here -->

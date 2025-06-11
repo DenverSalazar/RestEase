@@ -1,0 +1,11 @@
+CREATE TABLE ledger (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ApartmentNo VARCHAR(50) NOT NULL,
+    DatePaid DATE NOT NULL,
+    Payee VARCHAR(100) NOT NULL,
+    Amount DECIMAL(12,2) NOT NULL,
+    Description VARCHAR(255),
+    ORNumber VARCHAR(50),
+    Validity DATE,
+    MCNo VARCHAR(50)
+);
