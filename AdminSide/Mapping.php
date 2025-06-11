@@ -238,6 +238,76 @@ while ($row = $result->fetch_assoc()) {
         document.body.classList.add('pick-niche-mode');
       });
     }
+
+    // Highlight moved/edited niche if redirected from EditNiches.php
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightNicheID = urlParams.get('nicheID');
+      const oldNicheID = urlParams.get('oldNicheID');
+      const highlight = urlParams.get('highlight');
+      const moved = urlParams.get('moved');
+      
+      if (highlightNicheID && highlight === '1') {
+        setTimeout(function() {
+          // Function to highlight a niche on the map
+          function highlightNicheOnMap(nicheID, color, openPopup, forceVacant) {
+            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4].forEach(function(sectionLayer) {
+              sectionLayer.eachLayer(function(layer) {
+                if (
+                  layer.feature &&
+                  layer.feature.properties &&
+                  layer.feature.properties['nicheID'] === nicheID
+                ) {
+                  // If forceVacant, show as vacant (green)
+                  if (forceVacant) {
+                    layer.setStyle({
+                      fillColor: '#7dd591',
+                      fillOpacity: 1,
+                      color: '#7dd591',
+                      weight: 3
+                    });
+                    // Update the layer's properties to show it's vacant
+                    layer.feature.properties.occupied = false;
+                    layer.feature.properties.deceased = null;
+                    layer.feature.properties.Status = 'vacant';
+                  } else {
+                    // Otherwise use the specified color
+                    layer.setStyle({
+                      fillColor: color,
+                      fillOpacity: 1,
+                      color: color,
+                      weight: 3
+                    });
+                    // Update the layer's properties to show it's occupied
+                    layer.feature.properties.occupied = true;
+                    layer.feature.properties.Status = 'sold';
+                  }
+                  if (openPopup) layer.fire('click');
+                  // Reset style after 2 seconds
+                  setTimeout(function() {
+                    sectionLayer.resetStyle(layer);
+                  }, 2000);
+                }
+              });
+            });
+          }
+
+          // If this is a move operation
+          if (moved === '1' && oldNicheID) {
+            // First highlight the old niche in green (vacant)
+            highlightNicheOnMap(oldNicheID, '#7dd591', false, true);
+            
+            // Then highlight the new niche in red (sold)
+            setTimeout(function() {
+              highlightNicheOnMap(highlightNicheID, '#fb9a99', true, false);
+            }, 100);
+          } else {
+            // Just highlight the niche in red (sold)
+            highlightNicheOnMap(highlightNicheID, '#fb9a99', true, false);
+          }
+        }, 600);
+      }
+    });
   </script>
 </head>
 <body>

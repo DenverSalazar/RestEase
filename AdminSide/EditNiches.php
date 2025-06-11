@@ -97,23 +97,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   if (empty($errors)) {
     // If the nicheID (apartmentNo) was changed, move the record
     if ($originalNicheID !== $apartmentNo && $originalNicheID !== '') {
-      // Check if new nicheID already exists
+      // First, get the ID of the record we want to update
       $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
-      $stmt->bind_param("s", $apartmentNo);
+      $stmt->bind_param("s", $originalNicheID);
       $stmt->execute();
-      $stmt->store_result();
-      if ($stmt->num_rows > 0) {
-        $errors[] = "The selected Apartment No. is already occupied.";
-        $stmt->close();
-      } else {
-        $stmt->close();
-        // Update the original record's nicheID to the new one
-        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE nicheID=?");
-        $stmt->bind_param("ssisssssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $originalNicheID);
-        $stmt->execute();
-        $stmt->close();
-        header("Location: Mapping.php");
-        exit();
+      $result = $stmt->get_result();
+      $record = $result->fetch_assoc();
+      $stmt->close();
+
+      if ($record) {
+        $recordId = $record['id'];
+        
+        // Check if new nicheID is already occupied
+        $checkStmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? AND id != ? LIMIT 1");
+        $checkStmt->bind_param("si", $apartmentNo, $recordId);
+        $checkStmt->execute();
+        $checkStmt->store_result();
+        
+        if ($checkStmt->num_rows > 0) {
+          $errors[] = "The selected Apartment No. is already occupied.";
+          $checkStmt->close();
+        } else {
+          $checkStmt->close();
+          
+          // Update the specific record by its ID
+          $updateStmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
+          $updateStmt->bind_param("ssissssssi", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $recordId);
+          $updateStmt->execute();
+          $updateStmt->close();
+          
+          // Redirect without highlight parameter
+          header("Location: Mapping.php");
+          exit();
+        }
       }
     } else {
       // If not changed, just update as usual
@@ -134,6 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         $stmt->execute();
         $stmt->close();
       }
+      // Redirect without highlight parameter
       header("Location: Mapping.php");
       exit();
     }
@@ -291,6 +308,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       </div>
     </div>
     <script>
+      // Add this at the start of your script
+      let isSubmitting = false;
+
+      document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (isSubmitting) {
+          return; // Prevent multiple submissions
+        }
+        
+        // Show save confirmation modal
+        const saveModalOverlay = document.getElementById('saveModalOverlay');
+        const saveModalConfirmBtn = document.getElementById('saveModalConfirmBtn');
+        const saveModalCancelBtn = document.getElementById('saveModalCancelBtn');
+        
+        saveModalOverlay.style.display = 'flex';
+        
+        // Handle save confirmation
+        saveModalConfirmBtn.onclick = function() {
+          if (isSubmitting) {
+            return; // Prevent multiple clicks
+          }
+          
+          isSubmitting = true;
+          saveModalConfirmBtn.disabled = true;
+          saveModalConfirmBtn.textContent = 'Saving...';
+          
+          const formData = new FormData(document.getElementById('editForm'));
+          
+          fetch('EditNiches.php', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => response.text())
+          .then(html => {
+            showSuccessNotification('Record saved successfully!');
+            saveModalOverlay.style.display = 'none';
+            setTimeout(function() {
+              window.location.href = 'Mapping.php';
+            }, 1000);
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showErrorNotification('Error saving record. Please try again.');
+            saveModalOverlay.style.display = 'none';
+            isSubmitting = false;
+            saveModalConfirmBtn.disabled = false;
+            saveModalConfirmBtn.textContent = 'Save';
+          });
+        };
+        
+        // Handle save cancellation
+        saveModalCancelBtn.onclick = function() {
+          saveModalOverlay.style.display = 'none';
+          isSubmitting = false;
+        };
+        
+        // Close save modal on overlay click
+        saveModalOverlay.onclick = function(e) {
+          if (e.target === saveModalOverlay) {
+            saveModalOverlay.style.display = 'none';
+            isSubmitting = false;
+          }
+        };
+        
+        // Close save modal on ESC key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === "Escape") {
+            saveModalOverlay.style.display = 'none';
+            isSubmitting = false;
+          }
+        });
+      });
+
+      // Remove any existing event listeners
+      const oldForm = document.getElementById('editForm');
+      const newForm = oldForm.cloneNode(true);
+      oldForm.parentNode.replaceChild(newForm, oldForm);
+
       document.getElementById('pickNicheBtn').onclick = function() {
         window.open('Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
       };
@@ -394,60 +490,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       // Optional: ESC key closes modal
       document.addEventListener('keydown', function(e) {
         if (e.key === "Escape") modalOverlay.style.display = 'none';
-      });
-
-      // Update form submission
-      document.getElementById('editForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Show save confirmation modal
-        const saveModalOverlay = document.getElementById('saveModalOverlay');
-        const saveModalConfirmBtn = document.getElementById('saveModalConfirmBtn');
-        const saveModalCancelBtn = document.getElementById('saveModalCancelBtn');
-        
-        saveModalOverlay.style.display = 'flex';
-        
-        // Handle save confirmation
-        saveModalConfirmBtn.onclick = function() {
-          const formData = new FormData(document.getElementById('editForm'));
-          
-          fetch('EditNiches.php', {
-            method: 'POST',
-            body: formData
-          })
-          .then(response => response.text())
-          .then(html => {
-            showSuccessNotification('Record saved successfully!');
-            saveModalOverlay.style.display = 'none';
-            setTimeout(function() {
-              window.location.href = 'Mapping.php';
-            }, 1000);
-          })
-          .catch(error => {
-            showErrorNotification('Error saving record. Please try again.');
-            console.error('Error:', error);
-            saveModalOverlay.style.display = 'none';
-          });
-        };
-        
-        // Handle save cancellation
-        saveModalCancelBtn.onclick = function() {
-          saveModalOverlay.style.display = 'none';
-        };
-        
-        // Close save modal on overlay click
-        saveModalOverlay.onclick = function(e) {
-          if (e.target === saveModalOverlay) {
-            saveModalOverlay.style.display = 'none';
-          }
-        };
-        
-        // Close save modal on ESC key
-        document.addEventListener('keydown', function(e) {
-          if (e.key === "Escape") {
-            saveModalOverlay.style.display = 'none';
-          }
-        });
       });
     </script>
   </div>
