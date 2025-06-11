@@ -191,10 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   <?php endif; ?>
 
   <!-- Main Content -->
-  
-    <div class="card" style="max-width: 1200px; margin: 36px 100px 36px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(44,62,80,0.09); padding: 24px 40px 24px 18px;">
-    <div class="main-content">
-     <div class="top-bar">
+  <div class="card" style="width: calc(100% - 280px); margin: 24px 20px 24px 260px; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(44,62,80,0.09); padding: 24px; box-sizing: border-box;">
+    <div class="main-content" style="padding: 10px; width: 100%; box-sizing: border-box;">
+      <div class="top-bar">
         <span class="page-title">Edit Deceased Data</span>
       </div>
       
@@ -205,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           <button type="button" class="btn delete-btn" style="margin-left:auto;" id="deleteBtn">Delete</button>
         </form>
       </div>
-      <div class="form-container">
+      <div class="form-container" style="width: 100%; max-width: 100%; margin: 10px 0; padding: 18px; box-sizing: border-box;">
         <div class="form-section-title">Deceased Information</div>
         <form method="post" autocomplete="off" id="editForm">
           <div class="form-row">
@@ -275,8 +274,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
 
       <!-- Success Notification -->
       <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
-        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Record successfully archived.</span>
+        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Record saved successfully!</span>
         <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
+      </div>
+
+      <!-- Save Confirmation Modal -->
+      <div class="modal-overlay" id="saveModalOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(44,62,80,0.35);z-index:1000;align-items:center;justify-content:center;">
+        <div class="modal-confirm" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:32px 28px 24px 28px;max-width:370px;width:90%;text-align:center;position:relative;animation:modalPop .18s cubic-bezier(.4,1.4,.6,1.0);">
+          <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#27ae60;font-weight:600;letter-spacing:0.5px;"><i class="fas fa-check-circle" style="margin-right:8px;"></i>Confirm Save</h2>
+          <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">Are you sure you want to save these changes?</p>
+          <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
+            <button class="modal-btn confirm" id="saveModalConfirmBtn" style="background:#27ae60;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Save</button>
+            <button class="modal-btn cancel" id="saveModalCancelBtn" style="background:#f5f7fa;color:#2d3a4a;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
     <script>
@@ -383,6 +394,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       // Optional: ESC key closes modal
       document.addEventListener('keydown', function(e) {
         if (e.key === "Escape") modalOverlay.style.display = 'none';
+      });
+
+      // Update form submission
+      document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show save confirmation modal
+        const saveModalOverlay = document.getElementById('saveModalOverlay');
+        const saveModalConfirmBtn = document.getElementById('saveModalConfirmBtn');
+        const saveModalCancelBtn = document.getElementById('saveModalCancelBtn');
+        
+        saveModalOverlay.style.display = 'flex';
+        
+        // Handle save confirmation
+        saveModalConfirmBtn.onclick = function() {
+          const formData = new FormData(document.getElementById('editForm'));
+          
+          fetch('EditNiches.php', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => response.text())
+          .then(html => {
+            showSuccessNotification('Record saved successfully!');
+            saveModalOverlay.style.display = 'none';
+            setTimeout(function() {
+              window.location.href = 'Mapping.php';
+            }, 1000);
+          })
+          .catch(error => {
+            showErrorNotification('Error saving record. Please try again.');
+            console.error('Error:', error);
+            saveModalOverlay.style.display = 'none';
+          });
+        };
+        
+        // Handle save cancellation
+        saveModalCancelBtn.onclick = function() {
+          saveModalOverlay.style.display = 'none';
+        };
+        
+        // Close save modal on overlay click
+        saveModalOverlay.onclick = function(e) {
+          if (e.target === saveModalOverlay) {
+            saveModalOverlay.style.display = 'none';
+          }
+        };
+        
+        // Close save modal on ESC key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === "Escape") {
+            saveModalOverlay.style.display = 'none';
+          }
+        });
       });
     </script>
   </div>

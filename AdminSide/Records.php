@@ -286,7 +286,7 @@
                   'dateInternment' => $row['dateInternment']
                 ]);
                 // Add a data-href attribute for JS navigation
-                echo "<tr class='record-row' data-href='editniches.php?{$queryParams}' style='cursor:pointer;'>
+                echo "<tr class='record-row' data-href='EditNiches.php?{$queryParams}' style='cursor:pointer;'>
                   <td>{$apt}</td>
                   <td>{$name}</td>
                   <td>{$age}</td>

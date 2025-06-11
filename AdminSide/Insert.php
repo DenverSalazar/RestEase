@@ -29,11 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($errors)) {
     $stmt = $conn->prepare("INSERT INTO deceased (firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
-    $stmt->execute();
+    
+    if ($stmt->execute()) {
+      if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        // AJAX request - return JSON response
+        echo json_encode(['success' => true]);
+        exit;
+      } else {
+        // Regular form submission - redirect
+        header("Location: Mapping.php");
+        exit();
+      }
+    } else {
+      if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        // AJAX request - return JSON response
+        echo json_encode(['success' => false, 'error' => 'Database error']);
+        exit;
+      } else {
+        $errors[] = "Database error occurred.";
+      }
+    }
     $stmt->close();
-
-    header("Location: Mapping.php");
-    exit();
   }
 }
 ?>
@@ -188,19 +204,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       color: #fff !important;
     }
   </style>
-  <script>
-    // Add this script before </body>
-    document.getElementById('pickNicheBtn').onclick = function() {
-      window.open('Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
-    };
-
-    // Listen for message from Mapping.php
-    window.addEventListener('message', function(event) {
-      if (event.data && event.data.nicheID) {
-        document.getElementById('apartmentNo').value = event.data.nicheID;
-      }
-    });
-  </script>
 </head>
 <body>
   <!-- Sidebar -->
@@ -302,13 +305,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
   <?php endif; ?>
 
-  <div class="card" style="max-width: 1200px; margin: 36px 100px 36px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(44,62,80,0.09); padding: 24px 8px 24px 18px;">
-    <div class="main-content" style="padding:10px;">
+  <div class="card" style="width: calc(100% - 280px); margin: 24px 20px 24px 260px; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(44,62,80,0.09); padding: 24px; box-sizing: border-box;">
+    <div class="main-content" style="padding: 10px; width: 100%; box-sizing: border-box;">
       <div class="top-bar">
         <span class="page-title">Insert Data</span>
       </div>
       <div class="page-subtitle">Fill up the masterlist data</div>
-      <div class="top-actions" style="padding-right:55px;">
+      <div class="top-actions" style="padding-right: 18px;">
         <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
         <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
       </div>
@@ -325,18 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div style="font-size:0.95rem; color:#555; margin-top:10px;">Only .xls or .xlsx files are allowed.</div>
         </div>
       </div>
-      <script>
-        document.getElementById('importDataBtn').onclick = function() {
-          document.getElementById('excelModal').style.display = 'flex';
-        };
-        document.getElementById('closeModal').onclick = function() {
-          document.getElementById('excelModal').style.display = 'none';
-        };
-        document.getElementById('excelModal').onclick = function(e) {
-          if (e.target === this) this.style.display = 'none';
-        };
-      </script>
-      <div class="form-container">
+      <div class="form-container" style="width: 100%; max-width: 100%; margin: 10px 0; padding: 18px; box-sizing: border-box;">
         <div class="form-section-title">Deceased Information</div>
         <!-- Remove error-alert in form, only keep popup notification -->
         <form method="post" autocomplete="off">
@@ -388,14 +380,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn upload">Insert</button>
+            <button type="submit" class="btn primary" id="insertBtn">Insert</button>
           </div>
         </form>
       </div>
     </div>
+    <!-- Success Notification -->
+    <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+      <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Record saved successfully!</span>
+      <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
+    </div>
+
+    <!-- Insert Confirmation Modal -->
+    <div class="modal-overlay" id="insertModalOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(44,62,80,0.35);z-index:1000;align-items:center;justify-content:center;">
+      <div class="modal-confirm" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:32px 28px 24px 28px;max-width:370px;width:90%;text-align:center;position:relative;animation:modalPop .18s cubic-bezier(.4,1.4,.6,1.0);">
+        <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#27ae60;font-weight:600;letter-spacing:0.5px;"><i class="fas fa-check-circle" style="margin-right:8px;"></i>Confirm Insert</h2>
+        <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">Are you sure you want to insert this record?</p>
+        <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
+          <button class="modal-btn confirm" id="insertModalConfirmBtn" style="background:#27ae60;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Insert</button>
+          <button class="modal-btn cancel" id="insertModalCancelBtn" style="background:#f5f7fa;color:#2d3a4a;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script>
-    // Add this script before </body>
+    // Import Data Modal functionality
+    const importDataBtn = document.getElementById('importDataBtn');
+    const excelModal = document.getElementById('excelModal');
+    const closeModal = document.getElementById('closeModal');
+
+    importDataBtn.onclick = function() {
+      excelModal.style.display = 'flex';
+    };
+
+    closeModal.onclick = function() {
+      excelModal.style.display = 'none';
+    };
+
+    // Close modal when clicking outside
+    excelModal.onclick = function(e) {
+      if (e.target === excelModal) {
+        excelModal.style.display = 'none';
+      }
+    };
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === "Escape") {
+        excelModal.style.display = 'none';
+      }
+    });
+
+    // Niche picker functionality
     document.getElementById('pickNicheBtn').onclick = function() {
       window.open('Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
     };
@@ -405,6 +441,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (event.data && event.data.nicheID) {
         document.getElementById('apartmentNo').value = event.data.nicheID;
       }
+    });
+
+    // Show notification logic
+    function showSuccessNotification(message) {
+      const notif = document.getElementById('successNotification');
+      notif.querySelector('span').innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
+      notif.style.display = 'flex';
+      notif.style.background = '#2ecc71';
+      
+      // Auto-close after 3 seconds
+      const timeout = setTimeout(() => {
+        notif.style.display = 'none';
+      }, 3000);
+      
+      document.getElementById('closeNotificationBtn').onclick = function() {
+        notif.style.display = 'none';
+        clearTimeout(timeout);
+      };
+    }
+
+    function showErrorNotification(message) {
+      const notif = document.getElementById('successNotification');
+      notif.querySelector('span').innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
+      notif.style.display = 'flex';
+      notif.style.background = '#e74c3c';
+      
+      // Auto-close after 3 seconds
+      const timeout = setTimeout(() => {
+        notif.style.display = 'none';
+      }, 3000);
+      
+      document.getElementById('closeNotificationBtn').onclick = function() {
+        notif.style.display = 'none';
+        clearTimeout(timeout);
+      };
+    }
+
+    // Form submission and modal handling
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      const insertModalOverlay = document.getElementById('insertModalOverlay');
+      const insertModalConfirmBtn = document.getElementById('insertModalConfirmBtn');
+      const insertModalCancelBtn = document.getElementById('insertModalCancelBtn');
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        insertModalOverlay.style.display = 'flex';
+      });
+
+      insertModalConfirmBtn.addEventListener('click', function() {
+        const formData = new FormData(form);
+        
+        fetch('Insert.php', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showSuccessNotification('Record inserted successfully!');
+            insertModalOverlay.style.display = 'none';
+            setTimeout(function() {
+              window.location.href = 'Records.php';
+            }, 1000);
+          } else {
+            showErrorNotification(data.error || 'Error inserting record. Please try again.');
+            insertModalOverlay.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          showErrorNotification('Error inserting record. Please try again.');
+          console.error('Error:', error);
+          insertModalOverlay.style.display = 'none';
+        });
+      });
+
+      insertModalCancelBtn.addEventListener('click', function() {
+        insertModalOverlay.style.display = 'none';
+      });
+
+      // Close modal when clicking outside
+      insertModalOverlay.addEventListener('click', function(e) {
+        if (e.target === insertModalOverlay) {
+          insertModalOverlay.style.display = 'none';
+        }
+      });
+
+      // Close modal on ESC key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") {
+          insertModalOverlay.style.display = 'none';
+        }
+      });
     });
   </script>
 </body>

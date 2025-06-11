@@ -4,14 +4,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $clients_pages = ['Clients.php', 'ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
 $mapping_pages = ['Mapping.php', 'EditNiches.php'];
-$records_pages = ['Records.php', 'Insert.php'];
+// Add this line to treat both as active for Records
+$records_pages = ['Records.php', 'Insert.php', 'EditNiches.php'];
 
-// Make Records active if coming from Mapping.php and inserting data
-if (
-    ($current_page === 'Mapping.php' && isset($_GET['nicheID'])) ||
-    ($current_page === 'insert.php') // handle lowercase insert.php as well
-) {
-    $current_page = 'Insert.php';
+// Check if we're in EditNiches.php and determine which section should be active
+if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
+    // Check if we came from Records.php by looking at the referrer
+    $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    if (strpos($referer, 'Records.php') !== false) {
+        $current_page = 'Records.php';
+    } else {
+        $current_page = 'Mapping.php';
+    }
 }
 ?>
 <aside class="sidebar">
@@ -35,13 +39,13 @@ if (
         <i class="fas fa-users"></i>
         Clients
       </a>
-      <a href="Renewals.php" class="nav-item<?php if($current_page == 'Renewals.php') echo ' active'; ?>">
+      <a href="Ledger.php" class="nav-item<?php if($current_page == 'Ledger.php') echo ' active'; ?>">
         <i class="fas fa-sync"></i>
-        Renewals
+        Ledger
       </a>
-      <a href="Reports.php" class="nav-item<?php if($current_page == 'Reports.php') echo ' active'; ?>">
+      <a href="Certificate.php" class="nav-item<?php if($current_page == 'Certificate.php') echo ' active'; ?>">
         <i class="fas fa-th-list"></i>
-        Reports
+        Certificate
       </a>
     </nav>
     <div style="margin-top: auto;">
