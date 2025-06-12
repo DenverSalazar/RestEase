@@ -192,15 +192,70 @@
       <div class="cemetery-masterlist-controls">
          <div class="search-container">
         <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search">
+        <input type="text" id="search-input" placeholder="Search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
       </div>
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Print Masterlist</button></a>
-          <button><i class="fas fa-filter"></i> Filter</button>
+          <button id="filter-btn" type="button"><i class="fas fa-filter"></i> Filter</button>
           <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>
+      <!-- Filter Modal -->
+      <div class="modal-overlay" id="filterModalOverlay" style="display:none;">
+        <div class="modal-confirm" style="max-width:340px;">
+          <h2 style="color:rgb(122, 157, 192);"><i class="fas fa-filter"></i> Filter & Sort</h2>
+          <form id="filterForm" style="margin-top:18px;">
+            <div style="margin-bottom:16px;">
+              <label for="filterField" style="font-weight:500;">Field:</label>
+              <select id="filterField" name="filterField" style="margin-left:8px;padding:4px 8px;">
+                <option value="nicheID">Apt No.</option>
+                <option value="lastName">Last Name</option>
+                <option value="firstName">First Name</option>
+                <option value="age">Age</option>
+                <option value="born">Date of Birth</option>
+                <option value="residency">Address</option>
+                <option value="informantName">Informant Name</option>
+                <option value="dateDied">Date Died</option>
+                <option value="dateInternment">Date Internment</option>
+              </select>
+            </div>
+            <div style="margin-bottom:18px;">
+              <label for="filterOrder" style="font-weight:500;">Order:</label>
+              <select id="filterOrder" name="filterOrder" style="margin-left:8px;padding:4px 8px;">
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+            <div class="modal-actions" style="justify-content:flex-end;">
+              <button type="button" class="modal-btn cancel" id="filterCancelBtn">Cancel</button>
+              <button type="submit" class="modal-btn confirm" style="background:rgb(122, 157, 192);color:#fff;">Apply</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <?php if (isset($_GET['filterField']) && isset($_GET['filterOrder']) && $_GET['filterField'] !== '' && $_GET['filterOrder'] !== ''): ?>
+        <div style="margin: 10px 0 0 0; font-size: 1rem; color:rgb(122, 157, 192); font-weight: 500;">
+          Filtered by: 
+          <?php
+            $fieldLabels = [
+              'nicheID' => 'Apt No.',
+              'lastName' => 'Last Name',
+              'firstName' => 'First Name',
+              'age' => 'Age',
+              'born' => 'Date of Birth',
+              'residency' => 'Address',
+              'informantName' => 'Informant Name',
+              'dateDied' => 'Date Died',
+              'dateInternment' => 'Date Internment'
+            ];
+            $f = $_GET['filterField'];
+            $o = strtolower($_GET['filterOrder']);
+            echo isset($fieldLabels[$f]) ? $fieldLabels[$f] : htmlspecialchars($f);
+          ?>
+          &nbsp;|&nbsp; Order: <?php echo $o === 'asc' ? 'Ascending' : 'Descending'; ?>
+        </div>
+      <?php endif; ?>
       <form id="delete-form" method="post" style="margin:0;">
       <div style="overflow-x:auto;">
         <table class="cemetery-masterlist-table" id="records-table">
@@ -246,15 +301,74 @@
             $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
             if ($page < 1) $page = 1;
 
-            // Get total records
-            $totalResult = $conn->query("SELECT COUNT(*) as total FROM deceased");
-            $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
+            // Search logic
+            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $searchSql = '';
+            $searchParams = [];
+            $searchTypes = '';
+
+            if ($search !== '') {
+              $searchSql = "WHERE (nicheID LIKE ? OR lastName LIKE ? OR firstName LIKE ? OR residency LIKE ? OR informantName LIKE ?)";
+              $searchVal = '%' . $search . '%';
+              $searchParams = [$searchVal, $searchVal, $searchVal, $searchVal, $searchVal];
+              $searchTypes = 'sssss';
+            }
+
+            // Get total records (with search)
+            if ($searchSql) {
+              $stmt = $conn->prepare("SELECT COUNT(*) as total FROM deceased $searchSql");
+              $stmt->bind_param($searchTypes, ...$searchParams);
+              $stmt->execute();
+              $totalResult = $stmt->get_result();
+              $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
+              $stmt->close();
+            } else {
+              $totalResult = $conn->query("SELECT COUNT(*) as total FROM deceased");
+              $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
+            }
             $totalPages = $totalRows > 0 ? ceil($totalRows / $perPage) : 1;
             if ($page > $totalPages) $page = $totalPages;
 
             $offset = ($page - 1) * $perPage;
 
-            $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC LIMIT $perPage OFFSET $offset");
+            // Filter/sort logic
+            $allowedFields = [
+              'nicheID' => 'string',
+              'lastName' => 'string',
+              'firstName' => 'string',
+              'age' => 'number',
+              'born' => 'string',
+              'residency' => 'string',
+              'informantName' => 'string',
+              'dateDied' => 'string',
+              'dateInternment' => 'string'
+            ];
+            // Default order: Apt No. ascending
+            $orderBy = 'nicheID ASC';
+            if (isset($_GET['filterField'], $_GET['filterOrder'])) {
+              $field = $_GET['filterField'];
+              $order = strtolower($_GET['filterOrder']) === 'desc' ? 'DESC' : 'ASC';
+              if (isset($allowedFields[$field])) {
+                // For numbers, cast to +0 for numeric sort
+                if ($allowedFields[$field] === 'number') {
+                  $orderBy = "($field+0) $order";
+                } else {
+                  $orderBy = "$field $order";
+                }
+              }
+            }
+
+            // Fetch records (with search and filter)
+            if ($searchSql) {
+              $stmt = $conn->prepare("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased $searchSql ORDER BY $orderBy LIMIT ? OFFSET ?");
+              $params = array_merge($searchParams, [$perPage, $offset]);
+              $types = $searchTypes . "ii";
+              $stmt->bind_param($types, ...$params);
+              $stmt->execute();
+              $result = $stmt->get_result();
+            } else {
+              $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY $orderBy LIMIT $perPage OFFSET $offset");
+            }
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
@@ -507,6 +621,65 @@
             });
           });
         });
+
+        // Search bar submit on enter or change
+        document.getElementById('search-input').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submitSearch();
+          }
+        });
+        document.getElementById('search-input').addEventListener('change', function() {
+          submitSearch();
+        });
+        function submitSearch() {
+          const val = document.getElementById('search-input').value;
+          const params = new URLSearchParams(window.location.search);
+          if (val) {
+            params.set('search', val);
+            params.set('page', 1); // Reset to first page on new search
+          } else {
+            params.delete('search');
+            params.set('page', 1);
+          }
+          window.location.search = params.toString();
+        }
+
+        // Filter modal logic
+        const filterBtn = document.getElementById('filter-btn');
+        const filterModalOverlay = document.getElementById('filterModalOverlay');
+        const filterCancelBtn = document.getElementById('filterCancelBtn');
+        const filterForm = document.getElementById('filterForm');
+        // Set initial filter values from URL
+        document.addEventListener('DOMContentLoaded', function() {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('filterField')) {
+            document.getElementById('filterField').value = params.get('filterField');
+          }
+          if (params.has('filterOrder')) {
+            document.getElementById('filterOrder').value = params.get('filterOrder');
+          }
+        });
+        filterBtn.onclick = function() {
+          filterModalOverlay.style.display = 'flex';
+        };
+        filterCancelBtn.onclick = function() {
+          filterModalOverlay.style.display = 'none';
+        };
+        filterForm.onsubmit = function(e) {
+          e.preventDefault();
+          const field = document.getElementById('filterField').value;
+          const order = document.getElementById('filterOrder').value;
+          const params = new URLSearchParams(window.location.search);
+          params.set('filterField', field);
+          params.set('filterOrder', order);
+          params.set('page', 1);
+          window.location.search = params.toString();
+        };
+        // Optional: close filter modal on overlay click
+        filterModalOverlay.onclick = function(e) {
+          if (e.target === filterModalOverlay) filterModalOverlay.style.display = 'none';
+        };
       </script>
       <div class="cemetery-masterlist-pagination" style="justify-content: center;">
         <?php
@@ -515,7 +688,9 @@
         $pageLink = function($p, $label, $active = false, $disabled = false) use ($baseUrl) {
           $class = $active ? 'active' : '';
           $disabledAttr = $disabled ? 'disabled' : '';
-          $url = $disabled ? '#' : htmlspecialchars($baseUrl . '?page=' . $p);
+          // Add search param if present
+          $searchParam = isset($_GET['search']) && $_GET['search'] !== '' ? '&search=' . urlencode($_GET['search']) : '';
+          $url = $disabled ? '#' : htmlspecialchars($baseUrl . '?page=' . $p . $searchParam);
           echo "<button class='$class' $disabledAttr onclick='if(this.hasAttribute(\"disabled\"))return false;window.location=\"$url\";'>$label</button>";
         };
         // Previous button
