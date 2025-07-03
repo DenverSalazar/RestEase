@@ -13,222 +13,21 @@ while ($row = $result->fetch_assoc()) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RestEase Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="../css/leaflet.css">
-  <link rel="stylesheet" href="../css/L.Control.Layers.Tree.css">
-  <link rel="stylesheet" href="../css/qgis2web.css">
-  <link rel="stylesheet" href="../css/dashboard.css">
-  <link rel="stylesheet" href="../css/sidebar.css">
-  <link rel="stylesheet" href="../css/map.css">
-  <style>
-    /* Add pick-niche-mode styles */
-    body.pick-niche-mode .sidebar {
-      display: none !important;
-    }
-    body.pick-niche-mode .main-content {
-      margin-left: 0 !important;
-      padding: 0 !important;
-      width: 100vw !important;
-      min-height: 100vh !important;
-      background: #fff !important;
-    }
-    body.pick-niche-mode .search-filter-bar {
-      margin: 18px 18px 0 18px !important;
-      left: 0 !important;
-      right: 0 !important;
-      border-radius: 10px !important;
-    }
-    /* Only adjust legend position, not width */
-    body.pick-niche-mode .custom-map-legend {
-      left: 24px !important;
-      right: auto !important;
-      bottom: 18px !important;
-      border-radius: 10px !important;
-      max-width: 260px !important;
-      min-width: 140px !important;
-      width: auto !important;
-    }
-    body.pick-niche-mode #map {
-      margin: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      border: none !important;
-    }
-    body.pick-niche-mode .custom-popup,
-    body.pick-niche-mode .popup-overlay {
-      display: none !important;
-    }
-    #sectionToggleBar {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      padding: 8px 12px;
-      align-items: center;
-      min-width: 320px;
-      max-width: 420px;
-      font-family: 'Inter', sans-serif;
-      /* Move to right side */
-      right: 18px !important;
-      left: auto !important;
-      top: 18px !important;
-      margin: 0 !important;
-    }
-    .section-btn {
-      background: #f3f4f6;
-      border: none;
-      border-radius: 6px;
-      padding: 7px 18px;
-      font-size: 15px;
-      color: #222;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.18s, color 0.18s;
-      outline: none;
-    }
-    .section-btn.active, .section-btn:hover {
-      background: #2d8cff;
-      color: #fff;
-    }
-    @media (max-width: 600px) {
-      #sectionToggleBar {
-        min-width: 0;
-        max-width: 100vw;
-        flex-wrap: wrap;
-        font-size: 13px;
-        padding: 6px 4px;
-        right: 4px !important;
-        top: 4px !important;
-      }
-      .section-btn {
-        padding: 6px 10px;
-        font-size: 13px;
-      }
-    }
-    /* Add these styles to your existing styles */
-    .layer-control {
-        position: absolute;
-        top: 18px;
-        right: 18px;
-        z-index: 1001;
-    }
-
-    .layer-control-btn {
-        background: #fff;
-        border: none;
-        border-radius: 10px;
-        padding: 8px 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        color: #333;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        transition: all 0.2s ease;
-    }
-
-    .layer-control-btn:hover {
-        background: #f8f9fa;
-    }
-
-    .layer-control-btn i {
-        font-size: 16px;
-    }
-
-    .layer-control-content {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 8px;
-        background: #fff;
-        border-radius: 10px;
-        padding: 16px;
-        min-width: 200px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        display: none;
-    }
-
-    .layer-control.active .layer-control-content {
-        display: block;
-    }
-
-    .layer-section {
-        margin-bottom: 12px;
-    }
-
-    .layer-section h4 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        color: #666;
-        font-weight: 500;
-    }
-
-    .section-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .section-btn {
-        background: #f3f4f6;
-        border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
-        font-size: 13px;
-        color: #222;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.18s, color 0.18s;
-        text-align: left;
-        width: 100%;
-    }
-
-    .section-btn.active, .section-btn:hover {
-        background: #2d8cff;
-        color: #fff;
-    }
-
-    @media (max-width: 600px) {
-        .layer-control {
-            top: 8px;
-            right: 8px;
-        }
-        
-        .layer-control-btn {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-        
-        .layer-control-content {
-            min-width: 180px;
-            padding: 12px;
-        }
-    }
-    /* Add to your existing styles */
-    .show-all-btn {
-        margin-top: 8px !important;
-        background: #e9ecef !important;
-        border-top: 1px solid #dee2e6 !important;
-        padding-top: 12px !important;
-    }
-
-    .show-all-btn i {
-        margin-right: 6px;
-    }
-
-    .show-all-btn.active {
-        background: #2d8cff !important;
-    }
-  </style>
+ <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestEase</title>
+    <!-- Add Google Fonts for Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/clientleaflet.css">
+    <link rel="stylesheet" href="../css/clientL.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="../css/clientqgis2web.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../css/footer.css">
+    <link rel="stylesheet" href="../css/clientmap.css">
+    
   <script>
     // Pass PHP deceased data to JS
     var deceasedData = <?php echo json_encode($deceasedData); ?>;
@@ -311,76 +110,60 @@ while ($row = $result->fetch_assoc()) {
   </script>
 </head>
 <body>
-   <!-- Sidebar -->
-   <?php if (!isset($_GET['pickNiche'])) include '../Includes/sidebar.php'; ?>
+  <?php if (!isset($_GET['embed'])): ?>
+    <?php include '../Includes/navbar.php'; ?>
+  <?php endif; ?>
 
-   <main class="main-content">
-     <div class="search-filter-bar">
-        <div class="search-input-wrapper">
-            <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
-            <span class="search-input-icon"><i class="fas fa-search"></i></span>
-        </div>
-        <select class="filter-select" id="mapFilterSelect">
-            <option value="all">All</option>
-            <option value="vacant">Vacant</option>
-            <option value="sold">Sold</option>
-            <option value="reserved">Reserved</option>
-        </select>
-     </div>
-     <div id="map">
-        <!-- Layer Control Button -->
-        <div class="layer-control">
-            <button class="layer-control-btn">
-                <i class="fas fa-layer-group"></i>
-                <span>Layers</span>
-            </button>
-            <div class="layer-control-content">
-                <div class="layer-section">
-                    <h4>Sections</h4>
-                    <div class="section-buttons">
-                        <button class="section-btn active" data-section="1">Section 1</button>
-                        <button class="section-btn" data-section="2">Section 2</button>
-                        <button class="section-btn" data-section="3">Section 3</button>
-                        <button class="section-btn" data-section="4">Section 4</button>
-                        <button class="section-btn show-all-btn" data-section="all">
-                            <i class="fas fa-th-large"></i>
-                            Show All Sections
-                        </button>
+    <div id="map-wrapper">
+        <div id="map">
+            <!-- Layer Control Button -->
+            <div class="layer-control">
+                <button class="layer-control-btn">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Layers</span>
+                </button>
+                <div class="layer-control-content">
+                    <div class="layer-section">
+                        <h4>Sections</h4>
+                        <div class="section-buttons">
+                            <button class="section-btn active" data-section="1">Section 1</button>
+                            <button class="section-btn" data-section="2">Section 2</button>
+                            <button class="section-btn" data-section="3">Section 3</button>
+                            <button class="section-btn" data-section="4">Section 4</button>
+                            <button class="section-btn show-all-btn" data-section="all">
+                                <i class="fas fa-th-large"></i>
+                                Show All Sections
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Custom Legend -->
-        <div class="custom-map-legend" id="customMapLegend">
-            <div class="legend-row">
-                <span class="legend-dot vacant"></span>
-                <span class="legend-label">Vacant</span>
-            </div>
-            <div class="legend-row">
-                <span class="legend-dot sold"></span>
-                <span class="legend-label">Sold</span>
-            </div>
-            <div class="legend-row">
-                <span class="legend-dot reserved"></span>
-                <span class="legend-label">Reserved</span>
+            <!-- Custom Legend -->
+            <div class="custom-map-legend" id="customMapLegend">
+                <div class="legend-row">
+                    <span class="legend-dot vacant"></span>
+                    <span class="legend-label">Vacant</span>
+                </div>
+                <div class="legend-row">
+                    <span class="legend-dot sold"></span>
+                    <span class="legend-label">Sold</span>
+                </div>
             </div>
         </div>
-     </div>
-   </main>
-   
-   <!-- Custom Popup -->
-   <div class="popup-overlay" id="popupOverlay"></div>
-   <div class="custom-popup" id="customPopup">
-       <div id="popupContent">
-           <!-- Content will be dynamically inserted here -->
-       </div>
-       <div class="popup-buttons">
-           <button class="popup-button edit-button" id="editButton">Edit</button>
-           <button class="popup-button edit-button" id="insertButton" style="display:none;">Insert</button>
-           <button class="popup-button cancel-button" id="cancelButton">Cancel</button>
-       </div>
-   </div>
-   
+    </div>
+
+    <!-- Custom Popup (view-only, no admin buttons) -->
+    <div class="popup-overlay" id="popupOverlay"></div>
+    <div class="custom-popup" id="customPopup">
+        <div id="popupContent">
+            <!-- Content will be dynamically inserted here -->
+        </div>
+        <!-- Admin popup-buttons removed for client view-only -->
+    </div>
+
+  <?php if (!isset($_GET['embed'])): ?>
+    <?php include '../Includes/footer.php'; ?>
+  <?php endif; ?>
    <script src="../js/leaflet.js"></script>
    <script src="../js/L.Control.Layers.Tree.min.js"></script>
    <script src="../js/leaflet.rotatedMarker.js"></script>
@@ -539,55 +322,40 @@ while ($row = $result->fetch_assoc()) {
                 },
                 mouseover: highlightFeature,
                 click: function(e) {
-                    // Add this block for niche picker mode
-                    if (window.location.search.includes('pickNiche=1')) {
-                        if (window.opener) {
-                            window.opener.postMessage({ nicheID: feature.properties['nicheID'] }, '*');
-                            window.close();
-                        }
-                        return;
-                    }
+                    // Remove admin-only functionality: niche picker, edit, insert
                     var nicheID = feature.properties['nicheID'];
                     var deceased = deceasedData[nicheID];
                     var popupContent = '';
                     if (deceased) {
                         popupContent = `
-        <div class="popup-form-group">
-            <div class="popup-form-id-label">nicheID</div>
-            <div class="popup-form-id-value">${nicheID}</div>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Name:</label>
-            <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Born:</label>
-            <input class="popup-form-input" type="text" value="${deceased.born}" readonly>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Date Died:</label>
-            <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
-        </div>
+                    <div class="popup-form-group">
+                        <div class="popup-form-id-label">nicheID</div>
+                        <div class="popup-form-id-value">${nicheID}</div>
+                    </div>
+                    <div class="popup-form-group">
+                        <label class="popup-form-label">Name:</label>
+                        <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
+                    </div>
+                    <div class="popup-form-group">
+                        <label class="popup-form-label">Born:</label>
+                        <input class="popup-form-input" type="text" value="${deceased.born}" readonly>
+                    </div>
+                    <div class="popup-form-group">
+                        <label class="popup-form-label">Date Died:</label>
+                        <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
+                    </div>
                   `;
-                        setTimeout(function() {
-                            document.getElementById('editButton').style.display = '';
-                            document.getElementById('insertButton').style.display = 'none';
-                        }, 0);
                     } else {
                         popupContent = `
-        <div class="popup-form-group">
-            <div class="popup-form-id-label">nicheID</div>
-            <div class="popup-form-id-value">${nicheID}</div>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Status:</label>
-            <input class="popup-form-input" type="text" value="Vacant" readonly>
-        </div>
-                        `;
-                        setTimeout(function() {
-                            document.getElementById('editButton').style.display = 'none';
-                            document.getElementById('insertButton').style.display = '';
-                        }, 0);
+                    <div class="popup-form-group">
+                        <div class="popup-form-id-label">nicheID</div>
+                        <div class="popup-form-id-value">${nicheID}</div>
+                    </div>
+                    <div class="popup-form-group">
+                        <label class="popup-form-label">Status:</label>
+                        <input class="popup-form-input" type="text" value="Vacant" readonly>
+                    </div>
+                                    `;
                     }
                     document.getElementById('popupContent').innerHTML = popupContent;
                     document.getElementById('popupOverlay').classList.add('active');
@@ -873,41 +641,13 @@ map.on("zoomend", function(){
     resetLabels(visibleLayers);
 });
 
-// Add event listeners for popup buttons
-        document.getElementById('cancelButton').addEventListener('click', function() {
-            document.getElementById('popupOverlay').classList.remove('active');
-            document.getElementById('customPopup').classList.remove('active');
-        });
-
-        document.getElementById('editButton').addEventListener('click', function() {
-            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
-            var name = document.querySelectorAll('.popup-form-input')[0].value.trim();
-            var born = document.querySelectorAll('.popup-form-input')[1].value.trim();
-            var died = document.querySelectorAll('.popup-form-input')[2].value.trim();
-
-            var params = new URLSearchParams({
-                nicheID: nicheID,
-                name: name,
-                born: born,
-                died: died
-            });
-
-            window.location.href = 'EditNiches.php?' + params.toString();
-        });
-
-        document.getElementById('insertButton').addEventListener('click', function() {
-            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
-            var params = new URLSearchParams({
-                nicheID: nicheID
-            });
-            window.location.href = 'insert.php?' + params.toString();
-        });
-
-        // Close popup when clicking outside
-        document.getElementById('popupOverlay').addEventListener('click', function() {
-            document.getElementById('popupOverlay').classList.remove('active');
-            document.getElementById('customPopup').classList.remove('active');
-        });
+// Remove all admin popup button event listeners for client view
+// Only keep close popup on overlay click
+document.getElementById('popupOverlay').addEventListener('click', function() {
+    document.getElementById('popupOverlay').classList.remove('active');
+    document.getElementById('customPopup').classList.remove('active');
+});
         </script>
 </body>
 </html>
+
