@@ -1,7 +1,7 @@
 <?php
 // Remove the "use TCPDF;" line, not needed for TCPDF global class
 
-$conn = new mysqli("localhost", "root", "", "cemeterydb");
+include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $result = $conn->query("SELECT nicheID, lastName, firstName, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY id DESC");

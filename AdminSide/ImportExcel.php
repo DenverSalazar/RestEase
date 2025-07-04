@@ -19,7 +19,7 @@ if (!$autoloadFound) {
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-$conn = new mysqli("localhost", "root", "", "cemeterydb");
+include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {

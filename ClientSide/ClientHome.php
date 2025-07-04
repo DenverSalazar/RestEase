@@ -25,46 +25,52 @@
     </div>
 
     <div class="container">
-        <div class="portal-section">
-            <div class="portal-title mb-1">Your Portal</div>
-            <div class="portal-desc">
+        <!-- Your Portal Section -->
+        <div class="pt-4 pb-2">
+            <div class="portal-title mb-1" style="font-size:1.45rem;font-weight:500;">Your Portal</div>
+            <div class="portal-desc mb-4" style="color:#444;font-size:1.04rem;">
                 Easily view your profile, view cemetery, and request important documents—all in one convenient area.
             </div>
             <div class="row g-4">
-                <!-- Profile Card -->
-                <div class="col-lg-5">
-                    <div class="profile-card">
-                        <div class="profile-info">
-                            <img src="https://ui-avatars.com/api/?name=Dy+sania&background=4d8fd3&color=fff&rounded=true&size=64" alt="Avatar" class="profile-avatar">
-                            <div>
-                                <div style="font-weight: 500;">Dy sania</div>
-                                <div style="font-size: 0.97rem; color: #6c757d;">dysania@gmail.com</div>
-                            </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                        <div style="font-weight:500;font-size:1.08rem;">Submit Request</div>
+                        <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
+                            Easily send your request for services or updates through the system.
                         </div>
-                        <div class="profile-details">
-                            <div><strong>Status:</strong> <span style="color: #28a745;">Approved</span></div>
-                            <div><strong>Location:</strong> Biningan City</div>
-                            <div><strong>Registered Since:</strong> April 21, 2020</div>
-                        </div>
-                        <button class="btn-view-profile">View Profile</button>
+                        <a href="clientrequest.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
-                <!-- Request Card -->
-                <div class="col-lg-7">
-                    <div class="request-card">
-                        <div>
-                            <h5>Click Here to Fill Up a Request</h5>
-                            <p>
-                                Need a certificate, renewal, or niche assistance? We're here to help. Click the button below to access the request form. Fill out the required details, upload any supporting documents, and submit your request in just a few steps.
-                            </p>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                        <div style="font-weight:500;font-size:1.08rem;">Records</div>
+                        <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
+                            Easily send your request for services or updates through the system.
                         </div>
-                        <div>
-                            <button class="btn-request">Request Now</button>
+                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                        <div style="font-weight:500;font-size:1.08rem;">Certificate</div>
+                        <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
+                            Easily send your request for services or updates through the system.
                         </div>
+                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                        <div style="font-weight:500;font-size:1.08rem;">Billing and Processing</div>
+                        <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
+                            Easily send your request for services or updates through the system.
+                        </div>
+                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- End Your Portal Section -->
 
         <!-- Map Section -->
         <section class="map-section">
