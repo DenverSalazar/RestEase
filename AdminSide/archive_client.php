@@ -6,12 +6,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_client_email'
     
     try {
         $email = $_POST['archive_client_email'];
-        $conn = new mysqli("localhost", "root", "", "cemeterydb");
+        include_once '../Includes/db.php';
         
-        if ($conn->connect_error) {
-            throw new Exception("Database connection failed");
-        }
-
         // Start transaction
         $conn->begin_transaction();
 
@@ -85,4 +81,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_client_email'
     echo json_encode($response);
     exit;
 }
-?> 
+?>

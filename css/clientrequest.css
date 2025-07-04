@@ -1,0 +1,157 @@
+body {
+font-family: 'Poppins', Arial, sans-serif;
+background: #f4f7fa;
+}
+.client-request-outer {
+max-width: 1200px;
+margin: 48px auto; /* Same gap top and bottom */
+padding: 0 24px;
+}
+.client-request-card {
+background: transparent !important;
+border-radius: 18px;
+box-shadow: none;
+display: flex;
+gap: 32px;
+padding: 36px 32px 36px 32px;
+align-items: stretch;
+flex-wrap: wrap;
+}
+.client-request-form-card {
+flex: 1 1 320px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+max-width: 520px;
+min-width: 260px;
+height: auto;
+min-height: 100%;
+}
+.client-request-form-card h2 {
+font-size: 2rem;
+font-weight: 600;
+margin-bottom: 6px;
+}
+.client-request-form-card p {
+font-size: 1.08rem;
+color: #444;
+margin-bottom: 28px;
+}
+.client-request-form-card label {
+font-size: 1rem;
+font-weight: 500;
+margin-bottom: 4px;
+}
+.client-request-form-card .form-control {
+background: #fafbfc;
+border-radius: 6px;
+border: 1px solid #e0e0e0;
+font-size: 1rem;
+padding: 8px 12px;
+}
+.client-request-form-card .section-title {
+font-weight: 600;
+margin: 22px 0 12px 0;
+font-size: 1.13rem;
+}
+.client-request-form-card .upload-area {
+border: 2px dashed #bfc9d1;
+border-radius: 10px;
+padding: 28px 0;
+text-align: center;
+color: #888;
+margin-bottom: 8px;
+background: #fafbfc;
+transition: border-color 0.2s;
+}
+.client-request-form-card .upload-area input[type="file"] {
+display: none;
+}
+.client-request-form-card .upload-label {
+cursor: pointer;
+color: #444;
+font-size: 1.07rem;
+font-weight: 500;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+.client-request-form-card .upload-icon {
+font-size: 1.5rem;
+margin-bottom: 6px;
+}
+.client-request-form-card .file-note {
+font-size: 0.95rem;
+color: #888;
+margin-bottom: 20px;
+}
+.client-request-form-card .submit-btn {
+width: 100%;
+background: #3973f4;
+color: #fff;
+border: none;
+border-radius: 6px;
+padding: 12px 0;
+font-size: 1.08rem;
+font-weight: 500;
+cursor: pointer;
+margin-top: 10px;
+transition: background 0.2s;
+}
+.client-request-form-card .submit-btn:hover {
+background: #2656b6;
+}
+.client-request-image {
+flex: 1 1 320px;
+display: flex;
+align-items: stretch;
+justify-content: center;
+min-width: 260px;
+height: auto;
+min-height: 100%;
+}
+.client-request-image img {
+width: 100%;
+height: 100%;
+border-radius: 16px;
+object-fit: cover;
+box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+display: block;
+max-width: 430px;
+min-width: 180px;
+min-height: 260px;
+}
+@media (max-width: 991px) {
+.client-request-card {
+flex-direction: column;
+gap: 24px;
+padding: 24px 8px;
+}
+.client-request-form-card,
+.client-request-image {
+max-width: 100%;
+min-width: 0;
+width: 100%;
+height: auto;
+min-height: unset;
+}
+.client-request-image img {
+max-width: 100%;
+min-width: 0;
+min-height: 180px;
+height: 320px;
+}
+}
+@media (max-width: 600px) {
+.client-request-card {
+padding: 10px 2px;
+gap: 14px;
+}
+.client-request-form-card {
+padding: 0;
+}
+.client-request-image img {
+height: 200px;
+min-height: 120px;
+}
+}

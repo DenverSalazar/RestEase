@@ -1,13 +1,7 @@
 <?php
 // Database connection
-$servername = "localhost";
-$username = "root";
-$password = ""; // Change if you have a password set for root
-$dbname = "cemeterydb"; // Updated database name
+include_once 'Includes/db.php';
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -286,6 +280,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 right: 10px;
                 left: 10px;
                 min-width: unset;
+                max-width: unset;
+            }
+        }
+    </style>
+</body>
+</html>
                 max-width: unset;
             }
         }

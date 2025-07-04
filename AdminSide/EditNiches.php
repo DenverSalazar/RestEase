@@ -1,6 +1,6 @@
 <?php
 // Database connection (adjust credentials as needed)
-$conn = new mysqli("localhost", "root", "", "cemeterydb");
+include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // Get nicheID from query string
