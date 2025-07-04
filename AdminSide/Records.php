@@ -279,7 +279,7 @@
             <?php
             // Handle deletion POST
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_array($_POST['delete_ids'])) {
-              $conn = new mysqli("localhost", "root", "", "cemeterydb");
+              include_once '../Includes/db.php';
               if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
               // Ensure archive_deceased table exists
               $conn->query("CREATE TABLE IF NOT EXISTS archive_deceased LIKE deceased");
@@ -294,7 +294,7 @@
               echo "<script>window.location.href=window.location.pathname+'?deleted=1';</script>";
               exit;
             }
-            $conn = new mysqli("localhost", "root", "", "cemeterydb");
+            include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
             $perPage = 10;

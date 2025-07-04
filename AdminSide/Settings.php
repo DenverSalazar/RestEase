@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+< lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -200,8 +200,7 @@
                   </thead>
                   <tbody>
                     <?php
-                    // Database connection (adjust credentials as needed)
-                    $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                    include_once '../Includes/db.php';
                     if ($conn->connect_error) {
                       echo '<tr><td colspan="9">Database connection failed.</td></tr>';
                     } else {

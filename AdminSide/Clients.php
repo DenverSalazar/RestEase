@@ -49,7 +49,7 @@
         <tbody>
         <?php
         // Connect to the database
-        $conn = new mysqli("localhost", "root", "", "cemeterydb");
+        include_once '../Includes/db.php';
         if ($conn->connect_error) {
             echo "<tr><td colspan='5'>Database connection failed.</td></tr>";
         } else {

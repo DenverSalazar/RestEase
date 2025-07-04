@@ -243,7 +243,7 @@
         <?php
         // Handle insert
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ApartmentNo'])) {
-          $conn = new mysqli("localhost", "root", "", "cemeterydb");
+          include_once '../Includes/db.php';
           if (!$conn->connect_error) {
             $stmt = $conn->prepare("INSERT INTO ledger (ApartmentNo, DatePaid, Payee, Amount, Description, ORNumber, Validity, MCNo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->bind_param(
@@ -307,7 +307,7 @@
           </thead>
           <tbody>
           <?php
-          $conn = new mysqli("localhost", "root", "", "cemeterydb");
+          $conn = include_once '../Includes/db.php';
           if ($conn->connect_error) {
               echo "<tr><td colspan='8'>Database connection failed.</td></tr>";
           } else {
