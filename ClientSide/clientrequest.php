@@ -5,6 +5,9 @@ include_once '../Includes/db.php';
 $success = '';
 $error = '';
 
+// Check if this is an API request (e.g., by a custom header or a query param)
+$isApi = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data
     $type = $_POST['type'] ?? '';
@@ -43,6 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Database error: " . $conn->error;
         }
         $stmt->close();
+    }
+
+    // If API request, return JSON and exit
+    if ($isApi) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $success,
+            'error' => $error
+        ]);
+        exit;
     }
 }
 ?>
