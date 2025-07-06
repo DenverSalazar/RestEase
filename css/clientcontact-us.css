@@ -1,8 +1,13 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f6f8fa;
+}
+
 /* Contact Hero Section */
 .contact-hero {
     background-color: #506C84;
     color: white;
-    padding: 60px 20px;
+    padding: 100px 20px 60px 20px;
     text-align: center;
     min-height: 400px;
     display: flex;
@@ -45,7 +50,7 @@
     margin-bottom: 30px;
 }
 
-.form-control {
+.contact-section .form-control {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid #ddd;

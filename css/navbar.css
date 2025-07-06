@@ -113,10 +113,10 @@
         gap: 0;
         position: relative;
     }
-    .custom-navbar .search-group {
+    /*.custom-navbar .search-group {
         width: 340px;
         transition: width 0.2s;
-    }
+    }*/
     .custom-navbar .status-dropdown {
         margin-left: 12px;
     }
@@ -175,3 +175,6 @@
         margin-left: 6px;
     }
 }
+
+
+

@@ -27,12 +27,12 @@
                 </form>
                 <div class="dropdown status-dropdown">
                     <button class="status-btn dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        Status
+                        Select
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="statusDropdown">
-                        <li><a class="dropdown-item" href="#">Approved</a></li>
-                        <li><a class="dropdown-item" href="#">Pending</a></li>
-                        <li><a class="dropdown-item" href="#">Rejected</a></li>
+                        <li><a class="dropdown-item" href="#">My Profile</a></li>
+                        <li><a class="dropdown-item" href="../login.php">Logout</a></li>
+                      
                     </ul>
                 </div>
             </div>

@@ -17,7 +17,7 @@
    <?php include '../Includes/navbar.php'; ?>
    
     <!-- Contact Hero Section -->
-    <section class="contact-hero" style="padding-top: 110px;">
+    <section class="contact-hero">
         <div class="container">
             <h1>Contact Us</h1>
             <p>Have questions or need assistance? We're here to help! Reach out to us for any inquiries about our system, services, or support.</p>

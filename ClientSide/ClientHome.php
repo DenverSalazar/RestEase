@@ -92,7 +92,7 @@
                 </button>
             </a>
         </section>
-    </div>
+    </div> 
     <style>
     /* Themed button for View Cemetery Maps */
     .btn-map-themed {
