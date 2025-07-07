@@ -19,27 +19,6 @@
         </div>
     </div>
     <div class="navbar-overlay" onclick="toggleMobileMenu()"></div>
-    <div class="navbar-bottom">
-        <div class="container d-flex align-items-center justify-content-between flex-wrap">
-            <form class="d-flex flex-grow-1" role="search">
-                <div class="input-group search-group">
-                    <span class="input-group-text">
-                        <i class="fas fa-search" style="color: #6c757d;"></i>
-                    </span>
-                    <input class="form-control" type="search" placeholder="Search anything..." aria-label="Search">
-                </div>
-            </form>
-            <div class="dropdown status-dropdown">
-                <button class="status-btn dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    Select
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="statusDropdown">
-                    <li><a class="dropdown-item" href="../ClientSide/clientprofile.php">My Profile</a></li>
-                    <li><a class="dropdown-item" href="../login.php">Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
 </nav>
 <!-- End Custom Navbar -->
 <script>

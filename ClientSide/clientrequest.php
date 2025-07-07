@@ -1,10 +1,8 @@
 <?php
-// Include DB connection
+session_start();
 include_once '../Includes/db.php';
-
 $success = '';
 $error = '';
-
 // Check if this is an API request (e.g., by a custom header or a query param)
 $isApi = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
@@ -38,14 +36,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Insert into database if no error
     if (!$error) {
-        $stmt = $conn->prepare("INSERT INTO client_requests (type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssisssss", $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload);
-        if ($stmt->execute()) {
-            $success = "Request submitted successfully!";
+        if (!isset($_SESSION['user_id'])) {
+            $error = "User not logged in.";
         } else {
-            $error = "Database error: " . $conn->error;
+            $user_id = $_SESSION['user_id'];
+            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("issssisssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload);
+            if ($stmt->execute()) {
+                $success = "Request submitted successfully!";
+            } else {
+                $error = "Database error: " . $conn->error;
+            }
+            $stmt->close();
         }
-        $stmt->close();
     }
 
     // If API request, return JSON and exit

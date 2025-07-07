@@ -47,7 +47,7 @@
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Easily send your request for services or updates through the system.
                         </div>
-                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientrecords.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
@@ -56,7 +56,7 @@
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Easily send your request for services or updates through the system.
                         </div>
-                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientcert.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
@@ -65,7 +65,7 @@
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Easily send your request for services or updates through the system.
                         </div>
-                        <a href="#" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientbilling.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
             </div>

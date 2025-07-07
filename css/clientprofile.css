@@ -1,0 +1,207 @@
+body {
+    background: #f7f9fa;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-container {
+    max-width: 900px;
+    margin: 32px auto 32px auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: none;
+    border: 1px solid #e3e8ee;
+}
+
+.profile-header {
+    height: 90px;
+    background: linear-gradient(90deg, #94B2CC 20%, #617E96 86%, #506C84 100%);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: none;
+    border-bottom: none;
+}
+
+.profile-content {
+    padding: 48px 48px 32px 48px;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.2em;
+}
+.subtitle {
+    color: #8a99a8;
+    font-size: 1rem;
+    margin-bottom: 2em;
+}
+
+.profile-main {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    position: relative;
+}
+
+.profile-avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 32px;
+}
+
+.profile-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #b2c9db;
+}
+
+.profile-info {
+    flex: 1;
+}
+.profile-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.profile-email {
+    color: #8a99a8;
+    font-size: 0.98rem;
+}
+
+.profile-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-left: auto;
+}
+.btn-upload {
+    background: #fff;
+    color: #3a4d5c;
+    border: 1px solid #e3e8ee;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 0.98rem;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.btn-upload:hover {
+    background: #e3e8ee;
+}
+.btn-delete {
+    background: #f8b6b6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 0.98rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.btn-delete:hover {
+    background: #e57373;
+}
+
+.profile-form {
+    margin-top: 8px;
+}
+.form-section {
+    margin-bottom: 28px;
+}
+.form-section > label {
+    font-weight: 500;
+    font-size: 1.05rem;
+    display: block;
+    margin-bottom: 2px;
+}
+.form-desc {
+    color: #8a99a8;
+    font-size: 0.93rem;
+    margin-bottom: 8px;
+    display: block;
+}
+.form-row {
+    display: flex;
+    gap: 24px;
+}
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+.form-group label {
+    font-size: 0.98rem;
+    margin-bottom: 4px;
+    color: #3a4d5c;
+}
+.form-group input {
+    padding: 8px 12px;
+    border: 1px solid #e3e8ee;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #f7f9fa;
+    transition: border 0.2s;
+}
+.form-group input:focus {
+    border: 1.5px solid #94B2CC;
+    outline: none;
+}
+.password-group {
+    max-width: 350px;
+}
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.password-wrapper input {
+    width: 100%;
+    padding-right: 36px;
+}
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #8a99a8;
+    font-size: 1.1rem;
+}
+.toggle-password:hover {
+    color: #3a4d5c;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #e3e8ee;
+    margin: 24px 0 18px 0;
+}
+
+@media (max-width: 700px) {
+    .profile-container {
+        max-width: 98vw;
+        margin: 10px;
+    }
+    .profile-content {
+        padding: 18px 6px 18px 6px;
+    }
+    .profile-main {
+        padding: 0;
+    }
+    .profile-avatar-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+} 

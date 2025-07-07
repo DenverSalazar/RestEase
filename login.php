@@ -43,6 +43,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->bind_result($user_id, $hashed_password);
                 $stmt->fetch();
                 if (password_verify($password, $hashed_password)) {
+                    session_start();
+                    $_SESSION['user_id'] = $user_id;
                     // Redirect to client home on successful login
                     header("Location: ClientSide/ClientHome.php");
                     exit;
@@ -294,11 +296,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 min-width: unset;
                 max-width: unset;
                 padding: 1rem;
-            }
-        }
-    </style>
-</body>
-</html>
             }
         }
     </style>

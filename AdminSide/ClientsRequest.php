@@ -21,8 +21,7 @@
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <a href="Clients.php"><button class="tab">All Clients</button></a>
-        <a href="ClientsRequest.php"><button class="tab active">Request</button></a>
+        <span class="clients-tab-title">Clients Request</span>
       </div>
     </div>
     <div class="clients-actions">
@@ -35,77 +34,49 @@
         <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
       </div>
     </div>
+    <?php
+    include_once '../Includes/db.php';
+    // Fetch all client requests with user info
+    $sql = "SELECT cr.*, u.first_name, u.last_name, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC";
+    $result = $conn->query($sql);
+    ?>
     <div class="clients-table-container">
       <table class="clients-table">
         <thead>
           <tr>
             <th>Client Name</th>
             <th>Email</th>
-            <th>Types</th>
+            <th>Type</th>
+            <th>Status</th>
             <th>Details</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/1.jpg');"></div> Rayna Dias</td>
-            <td>Rayna@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/2.jpg');"></div> Wilson Aminoff</td>
-            <td>Wilson@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/3.jpg');"></div> Maren Rosser</td>
-            <td>Maren@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/4.jpg');"></div> Brandon Saris</td>
-            <td>Brandon@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/5.jpg');"></div> Zaire Gouse</td>
-            <td>Zaire@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/women/6.jpg');"></div> Ann Dias</td>
-            <td>Ann@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/7.jpg');"></div> Zain Philips</td>
-            <td>Zain@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/8.jpg');"></div> Alfonso Torff</td>
-            <td>Alfons@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/9.jpg');"></div> Randy Kenter</td>
-            <td>Randy@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
-          <tr>
-            <td><div class="avatar-img" style="background-image:url('https://randomuser.me/api/portraits/men/10.jpg');"></div> Wilson Lubin</td>
-            <td>Wilson@gmail.com</td>
-            <td>Transfer</td>
-            <td><button class="view-btn" onclick="openPopup()">View</button></td>
-          </tr>
+          <?php if ($result && $result->num_rows > 0): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+              <?php
+                $firstName = htmlspecialchars($row['first_name']);
+                $lastName = htmlspecialchars($row['last_name']);
+                $name = $firstName . ' ' . $lastName;
+                $email = htmlspecialchars($row['email']);
+                $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                $colorClass = "avatar-color-$colorIndex";
+              ?>
+              <tr>
+                <td>
+                  <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
+                  <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
+                </td>
+                <td><?php echo $email; ?></td>
+                <td><?php echo htmlspecialchars($row['type']); ?></td>
+                <td><span class="status-badge status-pending">Pending</span></td>
+                <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>)">View</button></td>
+              </tr>
+            <?php endwhile; ?>
+          <?php else: ?>
+            <tr><td colspan="5">No client requests found.</td></tr>
+          <?php endif; ?>
         </tbody>
       </table>
     </div>
@@ -114,20 +85,18 @@
       <div class="popup-content">
         <span class="close-btn" onclick="closePopup()">&times;</span>
         <div class="popup-details" style="display: flex; flex-direction: column; gap: 5px;">
-          <p><b>Name:</b> <span style="color:#888;">Jaxson Saris</span></p>
-          <p><b>Age:</b> <span style="color:#888;">30</span></p>
-          <p><b>Contact:</b> <span style="color:#888;">0996 523 6567</span></p>
-          <p><b>Type:</b> <span style="color:#888;">Internment</span></p>
-          <p><b>Name of Deceased:</b> <span style="color:#888;">Alden Recharge</span></p>
-          <p><b>Attachments</b></p>
-          <div class="attachment-box">
-            <img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/pdf.svg" alt="PDF" style="height:20px;vertical-align:middle;margin-right:6px;">
-            <span style="color:#888;">DeathCert.pdf</span>
-          </div>
+          <p><b>Client Name:</b> <span id="popupClientName" style="color:#888;"></span></p>
+          <p><b>Email:</b> <span id="popupEmail" style="color:#888;"></span></p>
+          <p><b>Type:</b> <span id="popupType" style="color:#888;"></span></p>
+          <p><b>Age:</b> <span id="popupAge" style="color:#888;"></span></p>
+          <p><b>Informant Name:</b> <span id="popupInformant" style="color:#888;"></span></p>
+          <p><b>Name of Deceased:</b> <span id="popupDeceased" style="color:#888;"></span></p>
+          <p><b>Attachments:</b></p>
+          <div id="popupAttachment"></div>
         </div>
-        <div class="popup-actions">
-          <button class="accept-btn">Accept</button>
-          <button class="deny-btn">Deny</button>
+        <div class="popup-actions" style="display: flex; gap: 18px; justify-content: flex-end; margin-top: 18px;">
+          <button class="accept-btn" onclick="acceptRequest()">Accept</button>
+          <button class="deny-btn" onclick="denyRequest()">Deny</button>
         </div>
       </div>
     </div>
@@ -144,82 +113,125 @@
       }
       .popup-content {
         background: #fff;
-        border-radius: 10px;
-        padding: 48px 56px 10px 56px; /* <-- change the third value for bottom padding */
-        min-width: 480px;
-        max-width: 700px;
-        min-height: 400px; /* increased height */
-        box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+        border-radius: 18px;
+        padding: 48px 56px 32px 56px;
+        min-width: 420px;
+        max-width: 95vw;
+        min-height: 340px;
+        box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
         position: relative;
         font-family: 'Inter', sans-serif;
+        border-top: 6px solid #506C84;
+        transition: box-shadow 0.2s;
       }
       .close-btn {
         position: absolute;
         top: 18px;
         right: 22px;
-        font-size: 1.7rem;
+        font-size: 2.1rem;
         color: #e74c3c;
         cursor: pointer;
         font-weight: 400;
+        transition: color 0.18s;
+      }
+      .close-btn:hover {
+        color: #b91c1c;
       }
       .popup-details p {
-        margin: 0 0 10px 0;
+        margin: 0 0 18px 0;
         font-size: 1.13rem;
         font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
       .popup-details b {
         font-weight: 600;
         color: #222;
+        min-width: 170px;
+        display: inline-block;
+        opacity: 0.7;
+      }
+      .popup-details span {
+        color: #666;
+        font-weight: 500;
+        font-size: 1.13rem;
       }
       .attachment-box {
-        border: 1px solid #ddd;
+        border: 1px solid #e5e7eb;
         border-radius: 7px;
-        padding: 8px 14px;
+        padding: 10px 18px;
         background: #fafbfc;
         display: flex;
         align-items: center;
         width: fit-content;
         margin-bottom: 18px;
         margin-top: 4px;
+        font-size: 1.08rem;
       }
       .popup-actions {
         display: flex;
-        gap: 18px;
+        gap: 22px;
         justify-content: flex-end;
-        margin-top: 18px;
+        margin-top: 28px;
+      }
+      .accept-btn, .deny-btn {
+        min-width: 120px;
+        font-size: 1.13rem;
+        padding: 12px 0;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 1.5px 6px rgba(34,197,94,0.04);
       }
       .accept-btn {
-        background: #22c55e;
-        color: #fff;
+        background: #a6f4c5;
+        color: #22c55e;
         border: none;
-        border-radius: 7px;
-        padding: 8px 32px;
-        font-size: 1.1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.2s, color 0.2s;
       }
       .accept-btn:hover {
-        background: #16a34a;
+        background: #22c55e;
+        color: #fff;
       }
       .deny-btn {
-        background: #ef4444;
-        color: #fff;
+        background: #fecaca;
+        color: #dc2626;
         border: none;
-        border-radius: 7px;
-        padding: 8px 32px;
-        font-size: 1.1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.2s, color 0.2s;
       }
       .deny-btn:hover {
         background: #dc2626;
+        color: #fff;
+      }
+      .clients-tab-title {
+        font-weight: 600;
+        font-size: 1.08rem;
+        padding: 10px 28px;
+        border-radius: 8px;
+        background: #f4f6fa;
+        color: #222;
+        display: inline-block;
+        margin-bottom: 0;
+        margin-top: 0;
+        box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
       }
     </style>
     <script>
-      function openPopup() {
-        document.getElementById('popupModal').style.display = 'flex';
+      function openPopup(requestId) {
+        fetch('get_request_details.php?id=' + requestId)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.success) {
+              document.getElementById('popupClientName').textContent = data.name;
+              document.getElementById('popupEmail').textContent = data.email;
+              document.getElementById('popupType').textContent = data.type;
+              document.getElementById('popupAge').textContent = data.age;
+              document.getElementById('popupInformant').textContent = data.informant_name;
+              document.getElementById('popupDeceased').textContent = data.deceased_name;
+              document.getElementById('popupAttachment').innerHTML = data.attachment_html;
+              document.getElementById('popupModal').style.display = 'flex';
+            }
+          });
       }
       function closePopup() {
         document.getElementById('popupModal').style.display = 'none';
@@ -230,6 +242,12 @@
         if (event.target === modal) {
           closePopup();
         }
+      }
+      function acceptRequest() {
+        // To be implemented
+      }
+      function denyRequest() {
+        // To be implemented
       }
     </script>
      <div class="clients-pagination-bar">

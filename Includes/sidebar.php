@@ -1,7 +1,8 @@
 <?php
 $current_page = basename($_SERVER['PHP_SELF']);
 // Add this line to treat both as active for Clients
-$clients_pages = ['Clients.php', 'ClientsRequest.php'];
+$clients_pages = ['Clients.php'];
+$request_pages = ['ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
 $mapping_pages = ['Mapping.php', 'EditNiches.php'];
 // Add this line to treat both as active for Records
@@ -39,8 +40,12 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
         <i class="fas fa-users"></i>
         Clients
       </a>
+      <a href="ClientsRequest.php" class="nav-item<?php if(in_array($current_page, $request_pages)) echo ' active'; ?>">
+        <i class="fas fa-spinner"></i>
+        Client Request
+      </a>
       <a href="Ledger.php" class="nav-item<?php if($current_page == 'Ledger.php') echo ' active'; ?>">
-        <i class="fas fa-sync"></i>
+        <i class="fas fa-credit-card"></i>
         Ledger
       </a>
       <a href="Certificate.php" class="nav-item<?php if($current_page == 'Certificate.php') echo ' active'; ?>">

@@ -21,8 +21,7 @@
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <a href="Clients.php"><button class="tab active">All Clients</button></a>
-        <a href="ClientsRequest.php"><button class="tab">Request</button></a>
+        <span class="clients-tab-title">Manage Clients Account</span>
       </div>
     </div>
     <div class="clients-actions">
@@ -66,24 +65,24 @@
                     $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
                     $colorClass = "avatar-color-$colorIndex";
                     echo "<tr>
-    <td>
-        <div class=\"avatar-img avatar-google $colorClass\" style=\"display:inline-flex;\">$initials</div><span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
-    </td>
-    <td>$email</td>
-    <td>$contact</td>
-    <td><span style=\"background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;\">Active</span></td>
-    <td>
-        <div class=\"actions-dropdown\">
-            <button class=\"actions-btn\" onclick=\"toggleActionsMenu(this); return false;\">
-                <i class=\"fas fa-ellipsis-v\"></i>
-            </button>
-            <div class=\"actions-menu\">
-                <button class=\"dropdown-item\"><i class=\"fas fa-user-slash\"></i> Disable</button>
-                <button class=\"dropdown-item delete\"><i class=\"fas fa-archive\"></i> Archive</button>
-            </div>
-        </div>
-    </td>
-</tr>";
+                    <td>
+                        <div class=\"avatar-img avatar-google $colorClass\" style=\"display:inline-flex;\">$initials</div><span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
+                    </td>
+                    <td>$email</td>
+                    <td>$contact</td>
+                    <td><span style=\"background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;\">Active</span></td>
+                    <td>
+                        <div class=\"actions-dropdown\">
+                            <button class=\"actions-btn\" onclick=\"toggleActionsMenu(this); return false;\">
+                                <i class=\"fas fa-ellipsis-v\"></i>
+                            </button>
+                            <div class=\"actions-menu\">
+                                <button class=\"dropdown-item\"><i class=\"fas fa-user-slash\"></i> Disable</button>
+                                <button class=\"dropdown-item delete\"><i class=\"fas fa-archive\"></i> Archive</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>";
                 }
             } else {
                 echo "<tr><td colspan='5'>No clients found.</td></tr>";
@@ -322,6 +321,18 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 .modal-cancel-btn:hover {
     background: #e0e0e0;
+}
+.clients-tab-title {
+    font-weight: 600;
+    font-size: 1.08rem;
+    padding: 10px 28px;
+    border-radius: 8px;
+    background: #f4f6fa;
+    color: #222;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-top: 0;
+    box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
 }
 </style>
 </html>

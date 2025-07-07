@@ -85,18 +85,85 @@
     .custom-navbar .navbar-links {
         display: none;
         flex-direction: column;
-        gap: 18px;
+        gap: 24px;
         background: #fff;
         position: absolute;
         top: 56px;
         right: 0;
         width: 100%;
-        padding: 18px 0 12px 0;
-        border-bottom: 1px solid #e6e6e6;
-        z-index: 1001;
+        padding: 32px 0 24px 0;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
+        box-shadow: 0 12px 32px rgba(80,108,132,0.13);
+        z-index: 1101;
+        opacity: 0;
+        transform: translateY(-16px);
+        pointer-events: none;
+        transition: opacity 0.25s cubic-bezier(.4,0,.2,1), transform 0.25s cubic-bezier(.4,0,.2,1);
     }
     .custom-navbar .navbar-links.show {
         display: flex;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+    .custom-navbar .navbar-links a {
+        font-size: 1.18rem;
+        padding: 12px 0;
+        text-align: left;
+        border-radius: 8px;
+        transition: background 0.18s;
+        margin: 0 24px;
+    }
+    .custom-navbar .navbar-links a:hover {
+        background: #f3f7fa;
+    }
+    .custom-navbar .navbar-links a .fa-bell,
+    .custom-navbar .navbar-links a .navbar-avatar {
+        display: none !important;
+    }
+    /* Hide the entire <a> for bell and avatar in mobile */
+    .custom-navbar .navbar-links a[href="#"]:has(.fa-bell),
+    .custom-navbar .navbar-links a[href="#"]:has(.navbar-avatar) {
+        display: none !important;
+    }
+    .custom-navbar .navbar-close {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        background: #f3f7fa;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        color: #506C84;
+        box-shadow: 0 2px 8px rgba(80,108,132,0.08);
+        cursor: pointer;
+        z-index: 2;
+        transition: background 0.18s;
+    }
+    .custom-navbar .navbar-close:hover {
+        background: #e3e8ee;
+    }
+    .navbar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(80,108,132,0.18);
+        z-index: 1100;
+        transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+        opacity: 0;
+    }
+    .navbar-overlay.show {
+        display: block;
+        opacity: 1;
     }
     .custom-navbar .navbar-toggler {
         display: block;
@@ -160,6 +227,12 @@
 @media (min-width: 992px) {
     .custom-navbar .navbar-toggler {
         display: none;
+    }
+    .navbar-overlay {
+        display: none !important;
+    }
+    .custom-navbar .navbar-close {
+        display: none !important;
     }
 }
 @media (max-width: 575px) {
