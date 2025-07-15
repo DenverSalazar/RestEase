@@ -97,8 +97,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <!-- Resend option -->
                         <p class="mt-4 text-center">
                             Didn't receive the code?
-                            <a href="send_reset_code.php?email=<?php echo urlencode($email); ?>" class="btn btn-link">Resend Code</a>
+                            <button id="resendBtn" class="btn btn-link" disabled>Resend Code (30s)</button>
+                            <div id="resendStatus" class="text-muted small mt-2"></div>
                         </p>
+
+                       <script>
+    const resendBtn = document.getElementById('resendBtn');
+    const resendStatus = document.getElementById('resendStatus');
+    const email = "<?php echo htmlspecialchars($email); ?>";
+
+    const startCountdown = () => {
+        let countdown = 30;
+        resendBtn.disabled = true;
+        resendBtn.textContent = `Resend Code (${countdown}s)`;
+        const interval = setInterval(() => {
+            countdown--;
+            resendBtn.textContent = `Resend Code (${countdown}s)`;
+            if (countdown <= 0) {
+                clearInterval(interval);
+                resendBtn.disabled = false;
+                resendBtn.textContent = "Resend Code";
+            }
+        }, 1000);
+    };
+
+    resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendBtn.textContent = "Resending...";
+        resendStatus.textContent = "";
+
+        try {
+            const response = await fetch("send_reset_code.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `email=${encodeURIComponent(email)}`
+            });
+
+            const result = await response.json(); // ✅ Don't forget this
+
+            if (result.success) {
+                resendStatus.textContent = "A new code was sent to your email.";
+                startCountdown(); // ✅ Restart cooldown
+            } else {
+                resendStatus.textContent = result.message || "Failed to resend code.";
+                resendBtn.disabled = false;
+                resendBtn.textContent = "Resend Code";
+            }
+        } catch (error) {
+            resendStatus.textContent = "An error occurred. Please try again.";
+            resendBtn.disabled = false;
+            resendBtn.textContent = "Resend Code";
+        }
+    });
+
+    // Start cooldown immediately on page load
+    document.addEventListener("DOMContentLoaded", startCountdown);
+</script>
+
                     </div>
                 </div>
             </div>

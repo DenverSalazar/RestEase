@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-include_once 'Includes/db.php';
+include_once '../Includes/db.php';
 if ($conn->connect_error) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Database connection failed']);
