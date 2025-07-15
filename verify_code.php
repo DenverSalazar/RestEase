@@ -1,3 +1,33 @@
+<?php
+session_start();
+require 'Includes/db.php';
+
+$email = $_GET['email'] ?? $_POST['email'] ?? '';
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $code = $_POST['code'] ?? '';
+
+    // Use prepared statement with mysqli
+    $stmt = $conn->prepare("SELECT reset_code, reset_expires FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+    $stmt->close();
+
+    // Check if code is valid and not expired
+    if ($user && $user['reset_code'] === $code && strtotime($user['reset_expires']) > time()) {
+        $_SESSION['reset_email'] = $email;
+        header("Location: CreatePassword.php");
+        exit;
+    } else {
+        $error = "Invalid or expired verification code.";
+    }
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,21 +74,31 @@
                     </div>
                 </div>
 
-                <!-- Right Side - Registration Form -->
+                <!-- Right Side - Verification Form -->
                 <div class="col-md-6 right-side">
                     <div class="login-form">
                         <h2>Check your Email</h2>
-                        <p class="text-muted">Weve sent the code to.</p>
-                        <form>
-                            <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email Addrress">
-                            </div> 
-                            <button type="submit" class="btn btn-primary w-100"><a href="CreatePassword.php">Verify</a></button>
+                        <p class="text-muted">
+                            We've sent the code to <strong><?php echo htmlspecialchars($email); ?></strong>.
+                        </p>
 
-                            <p class="signup-text mt-4 text-center">
-                                Didn't Recieve the code? <a href="Verification.php">Resend</a>
-                            </p>
+                        <?php if (!empty($error)) : ?>
+                            <div class="alert alert-danger"><?php echo $error; ?></div>
+                        <?php endif; ?>
+
+                        <form method="POST" action="verify_code.php">
+                            <input type="hidden" name="email" value="<?php echo htmlspecialchars($email); ?>">
+                            <div class="mb-3">
+                                <input type="text" name="code" class="form-control" placeholder="Enter verification code" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Verify Code</button>
                         </form>
+
+                        <!-- Resend option -->
+                        <p class="mt-4 text-center">
+                            Didn't receive the code?
+                            <a href="send_reset_code.php?email=<?php echo urlencode($email); ?>" class="btn btn-link">Resend Code</a>
+                        </p>
                     </div>
                 </div>
             </div>
