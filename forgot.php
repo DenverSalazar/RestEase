@@ -49,16 +49,13 @@
                     <div class="login-form">
                         <h2>Forgot Password</h2>
                         <p class="text-muted">Enter the email address you use to create the account, and we will email the verification code to reset your password.</p>
-                        <form>
+                       <form method="POST" action="send_reset_code.php">
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email Addrress">
-                            </div> 
-                           <button type="submit" class="btn btn-primary w-100"> <a href="Verification.php">Send Verification</button></a>
-
-                            <p class="signup-text mt-4 text-center">
-                                Remeber Password? <a href="login.php">Login</a>
-                            </p>
+                                <input type="email" name="email" class="form-control" placeholder="Email Address" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Send Verification Code</button>
                         </form>
+
                     </div>
                 </div>
             </div>
