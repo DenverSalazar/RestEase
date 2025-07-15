@@ -34,22 +34,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Insert into database if no error
-    if (!$error) {
-        if (!isset($_SESSION['user_id'])) {
-            $error = "User not logged in.";
+   // Insert into database if no error
+$user_id = $_POST['user_id'] ?? ($_SESSION['user_id'] ?? null);
+if (!$error) {
+    if (!$user_id) {
+        $error = "User not logged in.";
+    } else {
+        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssisssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload);
+        if ($stmt->execute()) {
+            $success = "Request submitted successfully!";
         } else {
-            $user_id = $_SESSION['user_id'];
-            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("issssisssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload);
-            if ($stmt->execute()) {
-                $success = "Request submitted successfully!";
-            } else {
-                $error = "Database error: " . $conn->error;
-            }
-            $stmt->close();
+            $error = "Database error: " . $conn->error;
         }
+        $stmt->close();
     }
+}
 
     // If API request, return JSON and exit
     if ($isApi) {

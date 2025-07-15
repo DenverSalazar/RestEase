@@ -11,7 +11,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
-    <link rel="stylesheet" href="../css/clientrequest.css">
     <link rel="stylesheet" href="../css/clientprofile.css">
 </head>
 <body>
@@ -73,11 +72,13 @@
                             </div>
                         </div>
                     </div>
+                </form>
             </div>
         </div>
     </div>
 
     <?php include '../includes/footer.php'; ?>
+    <link rel="stylesheet" href="../css/clientprofile.css">
     <script>
     function togglePassword() {
         var pwd = document.getElementById('currentPassword');
