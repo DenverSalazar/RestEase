@@ -109,6 +109,7 @@
             <div id="archiveSubTabs" style="display:flex;gap:32px;">
               <div class="archive-subtab active" data-archivetab="clients" id="archiveClientsTabBtn" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">Archive Clients</div>
               <div class="archive-subtab" data-archivetab="records" id="archiveRecordsTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">Archive Records</div>
+              <div class="archive-subtab" data-archivetab="requests" id="archiveRequestsTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">Archive Request</div>
             </div>
           </div>
           <!-- Archive Clients Table -->
@@ -258,6 +259,132 @@
             }
             </style>
           </div>
+          <!-- Archive Requests Section -->
+          <div id="archiveRequestsTab" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <span class="archive-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search Requests" id="archiveRequestSearchInput">
+              </span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+                <thead>
+                  <tr style="background:#fafbfc;">
+                    <th style="padding:10px 8px;text-align:left;">Client Name</th>
+                    <th style="padding:10px 8px;text-align:left;">Email</th>
+                    <th style="padding:10px 8px;text-align:left;">Type</th>
+                    <th style="padding:10px 8px;text-align:left;">Status</th>
+                    <th style="padding:10px 8px;text-align:left;">Details</th>
+                  </tr>
+                </thead>
+                <tbody id="archiveRequestTableBody">
+                  <?php
+                  $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                  if ($conn->connect_error) {
+                    echo '<tr><td colspan="5">Database connection failed.</td></tr>';
+                  } else {
+                    $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
+                    $result = $conn->query($sql);
+                    if ($result && $result->num_rows > 0) {
+                      while ($row = $result->fetch_assoc()) {
+                        $firstName = htmlspecialchars($row['user_first_name']);
+                        $lastName = htmlspecialchars($row['user_last_name']);
+                        $name = $firstName . ' ' . $lastName;
+                        $email = htmlspecialchars($row['email']);
+                        $type = htmlspecialchars($row['type']);
+                        $status = '<span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>';
+                        echo '<tr style="background:#fff;">';
+                        echo '<td style="padding:8px 8px;">' . $name . '</td>';
+                        echo '<td style="padding:8px 8px;">' . $email . '</td>';
+                        echo '<td style="padding:8px 8px;">' . $type . '</td>';
+                        echo '<td style="padding:8px 8px;">' . $status . '</td>';
+                        echo '<td style="padding:8px 8px;"><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
+                        echo '</tr>';
+                      }
+                    } else {
+                      echo '<tr><td colspan="5">No denied requests found.</td></tr>';
+                    }
+                    $conn->close();
+                  }
+                  ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Denied Request Popup Modal -->
+          <div id="deniedPopupModal" class="popup-modal" style="display:none;">
+            <div class="popup-content">
+              <span class="close-btn" onclick="closeDeniedPopup()">&times;</span>
+              <div class="popup-details" style="display: flex; flex-direction: column; gap: 5px;">
+                <p><b>Client Name:</b> <span id="deniedPopupClientName" style="color:#888;"></span></p>
+                <p><b>Email:</b> <span id="deniedPopupEmail" style="color:#888;"></span></p>
+                <p><b>Type:</b> <span id="deniedPopupType" style="color:#888;"></span></p>
+                <p><b>Age:</b> <span id="deniedPopupAge" style="color:#888;"></span></p>
+                <p><b>Informant Name:</b> <span id="deniedPopupInformant" style="color:#888;"></span></p>
+                <p><b>Name of Deceased:</b> <span id="deniedPopupDeceased" style="color:#888;"></span></p>
+                <p><b>Attachments:</b></p>
+                <div id="deniedPopupAttachment"></div>
+              </div>
+            </div>
+          </div>
+          <style>
+            .popup-modal { position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; }
+            .popup-content { background: #fff; border-radius: 18px; padding: 48px 56px 32px 56px; min-width: 420px; max-width: 95vw; min-height: 340px; box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08); position: relative; font-family: 'Inter', sans-serif; border-top: 6px solid #506C84; transition: box-shadow 0.2s; }
+            .close-btn { position: absolute; top: 18px; right: 22px; font-size: 2.1rem; color: #e74c3c; cursor: pointer; font-weight: 400; transition: color 0.18s; }
+            .close-btn:hover { color: #b91c1c; }
+            .popup-details p { margin: 0 0 18px 0; font-size: 1.13rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+            .popup-details b { font-weight: 600; color: #222; min-width: 170px; display: inline-block; opacity: 0.7; }
+            .popup-details span { color: #666; font-weight: 500; font-size: 1.13rem; }
+            .attachment-box { border: 1px solid #e5e7eb; border-radius: 7px; padding: 10px 18px; background: #fafbfc; display: flex; align-items: center; width: fit-content; margin-bottom: 18px; margin-top: 4px; font-size: 1.08rem; }
+            /* View button style copied from Clients.css for consistency */
+            .btn-view, .view-btn, button.view-btn, button.btn-view {
+              background: #94b2cc;
+              color: #fff;
+              border: none;
+              border-radius: 7px;
+              padding: 6px 20px;
+              font-size: 1rem;
+              font-weight: 400;
+              cursor: pointer;
+              transition: background 0.2s, box-shadow 0.2s;
+              box-shadow: none;
+              outline: none;
+              letter-spacing: 0.5px;
+              display: inline-block;
+            }
+            .btn-view:hover, .view-btn:hover, button.view-btn:hover, button.btn-view:hover {
+              background: #7fa0bb;
+              color: #fff;
+            }
+          </style>
+          <script>
+            function openDeniedPopup(requestId) {
+              fetch('get_denied_request_details.php?id=' + requestId)
+                .then(response => response.json())
+                .then(data => {
+                  if (data && data.success) {
+                    document.getElementById('deniedPopupClientName').textContent = data.name;
+                    document.getElementById('deniedPopupEmail').textContent = data.email;
+                    document.getElementById('deniedPopupType').textContent = data.type;
+                    document.getElementById('deniedPopupAge').textContent = data.age;
+                    document.getElementById('deniedPopupInformant').textContent = data.informant_name;
+                    document.getElementById('deniedPopupDeceased').textContent = data.deceased_name;
+                    document.getElementById('deniedPopupAttachment').innerHTML = data.attachment_html;
+                    document.getElementById('deniedPopupModal').style.display = 'flex';
+                  }
+                });
+            }
+            function closeDeniedPopup() {
+              document.getElementById('deniedPopupModal').style.display = 'none';
+            }
+            window.onclick = function(event) {
+              var modal = document.getElementById('deniedPopupModal');
+              if (event.target === modal) {
+                closeDeniedPopup();
+              }
+            }
+          </script>
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
           <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
@@ -409,7 +536,8 @@
     const archiveTabs = document.querySelectorAll('.archive-subtab');
     const archiveTabContents = {
       clients: document.getElementById('archiveClientsTab'),
-      records: document.getElementById('archiveRecordsTab')
+      records: document.getElementById('archiveRecordsTab'),
+      requests: document.getElementById('archiveRequestsTab')
     };
     archiveTabs.forEach(tab => {
       tab.addEventListener('click', function() {
@@ -426,6 +554,28 @@
           archiveTabContents[this.dataset.archivetab].style.display = '';
         }
       });
+    });
+    // Archive Request search filter
+    document.addEventListener('DOMContentLoaded', function() {
+      var searchInput = document.getElementById('archiveRequestSearchInput');
+      if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+          var filter = searchInput.value.toLowerCase();
+          var table = document.getElementById('archiveRequestTableBody');
+          var trs = table.getElementsByTagName('tr');
+          for (var i = 0; i < trs.length; i++) {
+            var tds = trs[i].getElementsByTagName('td');
+            var found = false;
+            for (var j = 0; j < tds.length; j++) {
+              if (tds[j].textContent.toLowerCase().indexOf(filter) > -1) {
+                found = true;
+                break;
+              }
+            }
+            trs[i].style.display = found ? '' : 'none';
+          }
+        });
+      }
     });
 
     // Action buttons in archive clients table (restore and delete)

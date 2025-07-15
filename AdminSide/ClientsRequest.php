@@ -21,64 +21,124 @@
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <span class="clients-tab-title">Clients Request</span>
+        <span class="clients-tab-title" id="tab-clients-request" onclick="showTab('clients-request')">Clients Request</span>
+        <span class="clients-tab-title" id="tab-accepted-request" onclick="showTab('accepted-request')">Accepted Requests</span>
       </div>
     </div>
-    <div class="clients-actions">
-      <div class="search-container">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search Clients">
+    <div id="clients-request-section">
+      <div class="clients-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search Clients">
+        </div>
+        <div class="actions-right">
+          <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
+          <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+        </div>
       </div>
-      <div class="actions-right">
-        <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
-        <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+      <?php
+      include_once '../Includes/db.php';
+      // Fetch all client requests with user info
+      $sql = "SELECT cr.*, u.first_name, u.last_name, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC";
+      $result = $conn->query($sql);
+      ?>
+      <div class="clients-table-container">
+        <table class="clients-table">
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Email</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if ($result && $result->num_rows > 0): ?>
+              <?php while ($row = $result->fetch_assoc()): ?>
+                <?php
+                  $firstName = htmlspecialchars($row['first_name']);
+                  $lastName = htmlspecialchars($row['last_name']);
+                  $name = $firstName . ' ' . $lastName;
+                  $email = htmlspecialchars($row['email']);
+                  $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                  $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                  $colorClass = "avatar-color-$colorIndex";
+                ?>
+                <tr>
+                  <td>
+                    <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
+                    <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
+                  </td>
+                  <td><?php echo $email; ?></td>
+                  <td><?php echo htmlspecialchars($row['type']); ?></td>
+                  <td><span class="status-badge status-pending">Pending</span></td>
+                  <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'pending')">View</button></td>
+                </tr>
+              <?php endwhile; ?>
+            <?php else: ?>
+              <tr><td colspan="5">No client requests found.</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
       </div>
     </div>
-    <?php
-    include_once '../Includes/db.php';
-    // Fetch all client requests with user info
-    $sql = "SELECT cr.*, u.first_name, u.last_name, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC";
-    $result = $conn->query($sql);
-    ?>
-    <div class="clients-table-container">
-      <table class="clients-table">
-        <thead>
-          <tr>
-            <th>Client Name</th>
-            <th>Email</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php if ($result && $result->num_rows > 0): ?>
-            <?php while ($row = $result->fetch_assoc()): ?>
-              <?php
-                $firstName = htmlspecialchars($row['first_name']);
-                $lastName = htmlspecialchars($row['last_name']);
-                $name = $firstName . ' ' . $lastName;
-                $email = htmlspecialchars($row['email']);
-                $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                $colorClass = "avatar-color-$colorIndex";
-              ?>
-              <tr>
-                <td>
-                  <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
-                  <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
-                </td>
-                <td><?php echo $email; ?></td>
-                <td><?php echo htmlspecialchars($row['type']); ?></td>
-                <td><span class="status-badge status-pending">Pending</span></td>
-                <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>)">View</button></td>
-              </tr>
-            <?php endwhile; ?>
-          <?php else: ?>
-            <tr><td colspan="5">No client requests found.</td></tr>
-          <?php endif; ?>
-        </tbody>
-      </table>
+    <div id="accepted-request-section" style="display:none;">
+      <div class="clients-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search Accepted Clients" id="accepted-search-input">
+        </div>
+        <div class="actions-right">
+          <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
+          <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+        </div>
+      </div>
+      <?php
+      // Fetch all accepted requests with user info
+      $sql_accepted = "SELECT ar.*, u.first_name AS user_first_name, u.last_name AS user_last_name, u.email FROM accepted_request ar JOIN users u ON ar.user_id = u.id ORDER BY ar.created_at DESC";
+      $result_accepted = $conn->query($sql_accepted);
+      ?>
+      <div class="clients-table-container">
+        <table class="clients-table" id="accepted-table">
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Email</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if ($result_accepted && $result_accepted->num_rows > 0): ?>
+              <?php while ($row = $result_accepted->fetch_assoc()): ?>
+                <?php
+                  $firstName = htmlspecialchars($row['user_first_name']);
+                  $lastName = htmlspecialchars($row['user_last_name']);
+                  $name = $firstName . ' ' . $lastName;
+                  $email = htmlspecialchars($row['email']);
+                  $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                  $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                  $colorClass = "avatar-color-$colorIndex";
+                ?>
+                <tr>
+                  <td>
+                    <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
+                    <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
+                  </td>
+                  <td><?php echo $email; ?></td>
+                  <td><?php echo htmlspecialchars($row['type']); ?></td>
+                  <td><span class="status-badge status-accepted">Accepted</span></td>
+                  <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'accepted')">View</button></td>
+                </tr>
+              <?php endwhile; ?>
+            <?php else: ?>
+              <tr><td colspan="5">No accepted requests found.</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
     </div>
     <!-- Popup Modal -->
     <div id="popupModal" class="popup-modal" style="display:none;">
@@ -215,10 +275,27 @@
         margin-top: 0;
         box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
       }
+      .status-badge.status-accepted {
+        background: #a6f4c5;
+        color: #22c55e;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.98rem;
+      }
     </style>
     <script>
-      function openPopup(requestId) {
-        fetch('get_request_details.php?id=' + requestId)
+      function showTab(tab) {
+        document.getElementById('clients-request-section').style.display = (tab === 'clients-request') ? '' : 'none';
+        document.getElementById('accepted-request-section').style.display = (tab === 'accepted-request') ? '' : 'none';
+        document.getElementById('tab-clients-request').classList.toggle('active', tab === 'clients-request');
+        document.getElementById('tab-accepted-request').classList.toggle('active', tab === 'accepted-request');
+      }
+      function openPopup(requestId, type) {
+        window.currentRequestId = requestId;
+        window.currentRequestType = type;
+        let url = (type === 'accepted') ? 'get_accepted_request_details.php?id=' + requestId : 'get_request_details.php?id=' + requestId;
+        fetch(url)
           .then(response => response.json())
           .then(data => {
             if (data && data.success) {
@@ -230,6 +307,9 @@
               document.getElementById('popupDeceased').textContent = data.deceased_name;
               document.getElementById('popupAttachment').innerHTML = data.attachment_html;
               document.getElementById('popupModal').style.display = 'flex';
+              // Hide Accept/Deny for accepted
+              document.querySelector('.accept-btn').style.display = (type === 'accepted') ? 'none' : '';
+              document.querySelector('.deny-btn').style.display = (type === 'accepted') ? 'none' : '';
             }
           });
       }
@@ -244,11 +324,64 @@
         }
       }
       function acceptRequest() {
-        // To be implemented
+        // Get the requestId from the popup (store it globally when opening popup)
+        if (window.currentRequestId) {
+          fetch('accept_request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + encodeURIComponent(window.currentRequestId)
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              closePopup();
+              location.reload();
+            } else {
+              alert('Failed to accept request: ' + (data.message || 'Unknown error'));
+            }
+          });
+        }
       }
       function denyRequest() {
-        // To be implemented
+        if (window.currentRequestId) {
+          fetch('deny_request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + encodeURIComponent(window.currentRequestId)
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              closePopup();
+              location.reload();
+            } else {
+              alert('Failed to deny request: ' + (data.message || 'Unknown error'));
+            }
+          });
+        }
       }
+      // Add search filter for accepted requests
+      document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('accepted-search-input');
+        if (searchInput) {
+          searchInput.addEventListener('keyup', function() {
+            var filter = searchInput.value.toLowerCase();
+            var table = document.getElementById('accepted-table');
+            var trs = table.getElementsByTagName('tr');
+            for (var i = 1; i < trs.length; i++) { // skip header
+              var tds = trs[i].getElementsByTagName('td');
+              var found = false;
+              for (var j = 0; j < tds.length; j++) {
+                if (tds[j].textContent.toLowerCase().indexOf(filter) > -1) {
+                  found = true;
+                  break;
+                }
+              }
+              trs[i].style.display = found ? '' : 'none';
+            }
+          });
+        }
+      });
     </script>
      <div class="clients-pagination-bar">
       <div class="pagination">

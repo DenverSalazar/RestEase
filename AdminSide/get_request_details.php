@@ -22,7 +22,7 @@ if ($row = $result->fetch_assoc()) {
     if (!empty($row['file_upload'])) {
         $file = '../uploads/' . $row['file_upload'];
         $filename = htmlspecialchars($row['file_upload']);
-        $attachment_html = '<div class="attachment-box"><a href="' . $file . '" target="_blank"><img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/pdf.svg" alt="PDF" style="height:20px;vertical-align:middle;margin-right:6px;"></a><span style="color:#888;">' . $filename . '</span></div>';
+        $attachment_html = '<div class="attachment-box"><a href="' . $file . '" target="_blank"><img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/pdf.svg" alt="PDF" style="height:20px;vertical-align:middle;margin-right:6px;"><span style="color:#2563eb;text-decoration:underline;cursor:pointer;">' . $filename . '</span></a></div>';
     }
     echo json_encode([
         'success' => true,

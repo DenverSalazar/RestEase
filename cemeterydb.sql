@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 07, 2025 at 08:45 AM
+-- Generation Time: Jul 15, 2025 at 02:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -73,7 +73,8 @@ INSERT INTO `archive_clients` (`id`, `first_name`, `last_name`, `email`, `contac
 (18, 'DENVER', 'SALAZAR', 'denver@gmail.com', '09859822196', '2025-06-11 06:03:41'),
 (19, 'DENVER', 'SALAZAR', 'denver@gmail.com', '09859822196', '2025-06-11 07:15:48'),
 (20, 'totoy', 'brown', 'totoy@gmail.com', '09859822196', '2025-07-04 13:47:06'),
-(21, 'Denver', 'Salazar', 'denversalazar20@gmail.com', '09859822196', '2025-07-04 13:58:23');
+(21, 'Denver', 'Salazar', 'denversalazar20@gmail.com', '09859822196', '2025-07-04 13:58:23'),
+(22, 'Jung', 'Kook', 'jung@gmail.com', '09859822196', '2025-07-07 15:31:47');
 
 -- --------------------------------------------------------
 
@@ -168,7 +169,7 @@ INSERT INTO `archive_deceased` (`id`, `firstName`, `lastName`, `age`, `born`, `r
 CREATE TABLE `client_requests` (
   `id` int(11) NOT NULL,
   `user_id` int(11) DEFAULT NULL,
-  `type` enum('Interment','Transfer') NOT NULL,
+  `type` enum('Interment','Transfer','Exhumation') NOT NULL,
   `first_name` varchar(100) NOT NULL,
   `last_name` varchar(100) NOT NULL,
   `middle_name` varchar(100) DEFAULT NULL,
@@ -180,6 +181,16 @@ CREATE TABLE `client_requests` (
   `file_upload` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `client_requests`
+--
+
+INSERT INTO `client_requests` (`id`, `user_id`, `type`, `first_name`, `last_name`, `middle_name`, `age`, `dob`, `dod`, `residency`, `informant_name`, `file_upload`, `created_at`) VALUES
+(5, 48, 'Transfer', 'Jung', 'Kook', 'Newt', 12, 'September 6,2004', 'september 25, 2025', 'Korea', 'Lisa Manoban', '', '2025-07-07 07:11:38'),
+(6, 50, 'Interment', 'haha', 'haha', 'haha', 4, 'September 6,2004', 'september 25, 2025', 'haha', 'haha', '', '2025-07-07 07:45:47'),
+(15, 51, 'Transfer', 'Jaja', 'sayo', 'moni', 25, '2025-07-01', '2025-07-15', 'bahay', 'monic', '1752579508_IMG_20250713_170057_932.jpg', '2025-07-15 11:38:28'),
+(17, 51, 'Exhumation', 'jang', 'maki', 'spol', 25, '2025-07-01', '2025-07-15', 'jakokas', 'manika', '1752581487_IMG_20250714_121530_129.jpg', '2025-07-15 12:11:27');
 
 -- --------------------------------------------------------
 
@@ -199,6 +210,14 @@ CREATE TABLE `deceased` (
   `nicheID` varchar(50) DEFAULT NULL,
   `informantName` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `deceased`
+--
+
+INSERT INTO `deceased` (`id`, `firstName`, `lastName`, `age`, `born`, `residency`, `dateDied`, `dateInternment`, `nicheID`, `informantName`) VALUES
+(74, 'HAHAHA', 'HAHAA', 35, '2025-07-12', 'HAHAHA', '2025-07-12', '2025-07-19', '1F-10FB', 'HAHAHA'),
+(75, 'yami', 'maho', 50, '2025-07-01', 'nambu', '2025-07-15', '2025-07-18', '1F-69FA', 'asta');
 
 -- --------------------------------------------------------
 
@@ -250,15 +269,20 @@ CREATE TABLE `users` (
   `email` varchar(255) NOT NULL,
   `contact_no` varchar(30) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `reset_code` varchar(6) DEFAULT NULL,
+  `reset_expires` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `contact_no`, `password`, `created_at`) VALUES
-(47, 'Denver', 'Salazar', 'denversalazar24@gmail.com', '09859822196', '$2y$10$vyON/q4SBqD.Pm4YV8YFbeKNQsJmmqrEzEvJTRwIxeD.X9wZ/1/Xy', '2025-07-07 06:33:54');
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `contact_no`, `password`, `created_at`, `reset_code`, `reset_expires`) VALUES
+(47, 'Denver', 'Salazar', 'denversalazar24@gmail.com', '09859822196', '$2y$10$qsgn7/5WkZOsTXN3X/3KwuHbX3eKAnUIhLgW5eCKUWhXP687UT9u2', '2025-07-07 06:33:54', '273097', '2025-07-15 12:31:27'),
+(48, 'Alleon', 'Perez', 'alleonperez@gmail.com', '09859822196', '$2y$10$WkGZ3Y56NNvd9wyuYXNGGePSNvBJub6nhXcODLEMAWopMh00LYl0O', '2025-07-07 07:03:16', NULL, NULL),
+(50, 'Jung', 'Kook', 'jung@gmail.com', '09859822196', '$2y$10$aAJ5JQ8iSoc3kJ2/7Cd35O9TDyEU0tZUntHMyHQI4lLF1BE0Hcs9G', '2025-07-07 07:44:24', NULL, NULL),
+(51, 'Jam', 'poul', 'jam@gmail.com', '09859822196', '$2y$10$4ouK44mxlCsSCme1ESaqG.KgFipb9OXmD0N94po5TIUwtGTRxuTV2', '2025-07-15 09:25:57', NULL, NULL);
 
 --
 -- Indexes for dumped tables
@@ -323,7 +347,7 @@ ALTER TABLE `admin_accounts`
 -- AUTO_INCREMENT for table `archive_clients`
 --
 ALTER TABLE `archive_clients`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `archive_deceased`
@@ -335,13 +359,13 @@ ALTER TABLE `archive_deceased`
 -- AUTO_INCREMENT for table `client_requests`
 --
 ALTER TABLE `client_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `deceased`
 --
 ALTER TABLE `deceased`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT for table `ledger`
@@ -353,7 +377,7 @@ ALTER TABLE `ledger`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- Constraints for dumped tables

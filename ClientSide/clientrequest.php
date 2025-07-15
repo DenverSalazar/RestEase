@@ -115,6 +115,7 @@ if (!$error) {
                             <option value="" disabled selected>Select type</option>
                             <option value="Interment">Interment</option>
                             <option value="Transfer">Transfer</option>
+                            <option value="Exhumation">Exhumation</option>
                         </select>
                     </div>
                     <div class="section-title">Deceased Information</div>
