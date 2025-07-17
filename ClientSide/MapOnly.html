@@ -20,6 +20,23 @@
     </style>
 </head>
 <body>
+    <button onclick="window.focusNiche && window.focusNiche('1F-69FA')">Test Focus Niche</button>
+    <script>
+        window.focusNiche = function(nicheID) {
+          alert('MapOnly.html: focusNiche called with ' + nicheID);
+          var iframe = document.querySelector('.map-iframe');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              { type: 'focusNiche', nicheID: nicheID },
+              '*'
+            );
+            alert('MapOnly.html: message sent to iframe!');
+          } else {
+            alert('MapOnly.html: iframe not found or not loaded!');
+          }
+        };
+        </script>
+
     <iframe
         class="map-iframe"
         src="ClientMap.php?embed=1"
@@ -27,5 +44,7 @@
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade">
     </iframe>
+
+   
 </body>
 </html>

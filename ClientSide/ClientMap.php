@@ -648,6 +648,53 @@ document.getElementById('popupOverlay').addEventListener('click', function() {
     document.getElementById('customPopup').classList.remove('active');
 });
         </script>
+
+<script>
+window.focusNiche = function(nicheID) {
+  // Your map logic here (same as in your message handler)
+  var found = null;
+  var foundSection = null;
+  var sectionLayers = [
+    {layer: window.layer_Floor1, section: 1},
+    {layer: window.layer_Floor1_2, section: 2},
+    {layer: window.layer_Floor1_3, section: 3},
+    {layer: window.layer_Floor1_4, section: 4}
+  ];
+
+  sectionLayers.forEach(function(sectionObj) {
+    sectionObj.layer.eachLayer(function(layer) {
+      if (
+        layer.feature &&
+        layer.feature.properties &&
+        layer.feature.properties['nicheID'] === nicheID
+      ) {
+        found = layer;
+        foundSection = sectionObj.section;
+      }
+    });
+  });
+
+  if (found && foundSection) {
+    showSection(foundSection);
+    found.fire('click');
+    if (found.setStyle) {
+      found.setStyle({
+        fillColor: '#ffff00',
+        fillOpacity: 1,
+        color: '#ffff00',
+        weight: 3
+      });
+    //   setTimeout(function() {
+    //     var parentLayer = found._eventParents ? Object.values(found._eventParents)[0] : null;
+    //     if (parentLayer && typeof parentLayer.resetStyle === 'function') {
+    //       parentLayer.resetStyle(found);
+    //     }
+    //   }, 2000);
+    }
+  } else {
+    alert('Niche not found: ' + nicheID);
+  }
+};
+</script>
 </body>
 </html>
-
