@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dod = $_POST['dod'] ?? '';
     $residency = $_POST['residency'] ?? '';
     $informant_name = $_POST['informant_name'] ?? '';
+    $niche_id = $_POST['niche_id'] ?? '';
     $file_upload = '';
 
     // Handle file upload
@@ -40,8 +41,8 @@ if (!$error) {
     if (!$user_id) {
         $error = "User not logged in.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issssisssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload);
+        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssissssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id);
         if ($stmt->execute()) {
             $success = "Request submitted successfully!";
         } else {
@@ -111,12 +112,16 @@ if (!$error) {
                 <form method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="type" class="form-label">Type</label>
-                        <select id="type" name="type" class="form-control" required>
+                        <select id="type" name="type" class="form-control" required onchange="toggleNicheIdField()">
                             <option value="" disabled selected>Select type</option>
                             <option value="Interment">Interment</option>
                             <option value="Transfer">Transfer</option>
                             <option value="Exhumation">Exhumation</option>
                         </select>
+                    </div>
+                    <div class="mb-3" id="nicheIdField" style="display:none;">
+                        <label for="niche_id" class="form-label">Niche ID</label>
+                        <input type="text" id="niche_id" name="niche_id" class="form-control" placeholder="Enter Niche ID">
                     </div>
                     <div class="section-title">Deceased Information</div>
                     <div class="row g-3">
@@ -175,5 +180,22 @@ if (!$error) {
     <?php include '../includes/footer.php'; ?>
     <!-- Bootstrap JS (optional, for responsive navbar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function toggleNicheIdField() {
+        var type = document.getElementById('type').value;
+        var nicheField = document.getElementById('nicheIdField');
+        if (type === 'Transfer' || type === 'Exhumation') {
+            nicheField.style.display = '';
+            document.getElementById('niche_id').required = true;
+        } else {
+            nicheField.style.display = 'none';
+            document.getElementById('niche_id').required = false;
+            document.getElementById('niche_id').value = '';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleNicheIdField();
+    });
+    </script>
 </body>
 </html>

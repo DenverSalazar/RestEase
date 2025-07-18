@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 17, 2025 at 03:44 PM
+-- Generation Time: Jul 18, 2025 at 06:11 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -54,7 +54,8 @@ INSERT INTO `accepted_request` (`id`, `user_id`, `type`, `first_name`, `last_nam
 (5, 47, 'Interment', 'donie', 'nietez', 'ahas', 58, '2025-07-01', '2025-07-15', 'manila', 'manny', '1752592264_denver COR.pdf', '2025-07-15 15:11:04'),
 (6, 47, 'Interment', 'try', 'try', 'try', 15, '2025-07-01', '2025-07-15', 'try', 'try', '1752594303_IMG_20250701_202530_340.jpg', '2025-07-15 15:45:03'),
 (7, 47, 'Transfer', 'kaj', 'bdbd', 'djf', 15, '2025-07-02', '2025-07-16', 'bsbs', 'nsbs', '1752639655_IMG_20250701_142351_749.jpg', '2025-07-16 04:20:55'),
-(8, 52, 'Interment', 'John', 'Regala', 'John', 15, '2025-07-01', '2025-07-15', 'Manila Zoo', 'John Regala', '1752755119_IMG_20250629_114822_313.jpg', '2025-07-17 12:25:19');
+(8, 52, 'Interment', 'John', 'Regala', 'John', 15, '2025-07-01', '2025-07-15', 'Manila Zoo', 'John Regala', '1752755119_IMG_20250629_114822_313.jpg', '2025-07-17 12:25:19'),
+(9, 47, 'Exhumation', 'jojo', 'jojo', 'jojo', 18, '2025-07-01', '2025-07-18', 'jojo', 'jojo', '1752770560_IMG_20250519_130309_535.jpg', '2025-07-17 16:42:40');
 
 -- --------------------------------------------------------
 
@@ -222,7 +223,7 @@ CREATE TABLE `client_requests` (
 --
 
 INSERT INTO `client_requests` (`id`, `user_id`, `type`, `first_name`, `last_name`, `middle_name`, `age`, `dob`, `dod`, `residency`, `informant_name`, `file_upload`, `created_at`) VALUES
-(26, 47, 'Transfer', 'HAHA', 'ahha', 'hahah', 19, '2025-07-01', '2025-07-17', 'haha', 'haha', '1752756010_IMG_20250714_121530_129.jpg', '2025-07-17 12:40:10');
+(28, 47, 'Interment', 'Jung', 'Perez', 'Newt', 35, 'September 6,2004', 'september 25, 2025', 'Korea', 'Lisa Manoban', '1752808325_Screenshot 2025-07-03 204157.png', '2025-07-18 03:12:05');
 
 -- --------------------------------------------------------
 
@@ -249,7 +250,8 @@ CREATE TABLE `deceased` (
 
 INSERT INTO `deceased` (`id`, `firstName`, `lastName`, `age`, `born`, `residency`, `dateDied`, `dateInternment`, `nicheID`, `informantName`) VALUES
 (74, 'HAHAHA', 'HAHAA', 35, '2025-07-12', 'HAHAHA', '2025-07-12', '2025-07-19', '1F-10FB', 'HAHAHA'),
-(75, 'yami', 'maho', 50, '2025-07-01', 'nambu', '2025-07-15', '2025-07-18', '1F-69FA', 'asta');
+(75, 'yami', 'maho', 50, '2025-07-01', 'nambu', '2025-07-15', '2025-07-18', '1F-69FA', 'asta'),
+(76, 'Jhong', 'Hillario', 48, '2025-07-18', 'Showtime', '2025-07-18', '2025-07-18', '1F-18FC', 'VIce Ganda');
 
 -- --------------------------------------------------------
 
@@ -278,7 +280,8 @@ CREATE TABLE `denied_request` (
 --
 
 INSERT INTO `denied_request` (`id`, `user_id`, `type`, `first_name`, `last_name`, `middle_name`, `age`, `dob`, `dod`, `residency`, `informant_name`, `file_upload`, `created_at`) VALUES
-(2, 51, 'Transfer', 'Jaja', 'sayo', 'moni', 25, '2025-07-01', '2025-07-15', 'bahay', 'monic', '1752579508_IMG_20250713_170057_932.jpg', '2025-07-15 11:38:28');
+(2, 51, 'Transfer', 'Jaja', 'sayo', 'moni', 25, '2025-07-01', '2025-07-15', 'bahay', 'monic', '1752579508_IMG_20250713_170057_932.jpg', '2025-07-15 11:38:28'),
+(3, 47, 'Transfer', 'HAHA', 'ahha', 'hahah', 19, '2025-07-01', '2025-07-17', 'haha', 'haha', '1752756010_IMG_20250714_121530_129.jpg', '2025-07-17 12:40:10');
 
 -- --------------------------------------------------------
 
@@ -332,19 +335,20 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `reset_code` varchar(6) DEFAULT NULL,
-  `reset_expires` datetime DEFAULT NULL
+  `reset_expires` datetime DEFAULT NULL,
+  `profile_picture` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `contact_no`, `password`, `created_at`, `reset_code`, `reset_expires`) VALUES
-(47, 'Denver', 'Salazar', 'denversalazar24@gmail.com', '09859822196', '$2y$10$pKYBYj2DvTvr1OzAgmTf6ObC6EhQGDTbDKiqycr.h3XkWYUytiGm6', '2025-07-07 06:33:54', NULL, NULL),
-(48, 'Alleon', 'Perez', 'alleonperez@gmail.com', '09859822196', '$2y$10$WkGZ3Y56NNvd9wyuYXNGGePSNvBJub6nhXcODLEMAWopMh00LYl0O', '2025-07-07 07:03:16', NULL, NULL),
-(50, 'Jung', 'Kook', 'jung@gmail.com', '09859822196', '$2y$10$aAJ5JQ8iSoc3kJ2/7Cd35O9TDyEU0tZUntHMyHQI4lLF1BE0Hcs9G', '2025-07-07 07:44:24', NULL, NULL),
-(51, 'Jam', 'poul', 'jam@gmail.com', '09859822196', '$2y$10$4ouK44mxlCsSCme1ESaqG.KgFipb9OXmD0N94po5TIUwtGTRxuTV2', '2025-07-15 09:25:57', NULL, NULL),
-(52, 'John', 'Regala', 'john@gmail.com', '09859822196', '$2y$10$SVB0hv7K9zFGiA/zGN3rK.DcmjwoiF2BfG3aj9k4DebCsnlM22p/S', '2025-07-17 12:24:15', NULL, NULL);
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `email`, `contact_no`, `password`, `created_at`, `reset_code`, `reset_expires`, `profile_picture`) VALUES
+(47, 'Denver', 'Salazar', 'denversalazar24@gmail.com', '09859822196', '$2y$10$pKYBYj2DvTvr1OzAgmTf6ObC6EhQGDTbDKiqycr.h3XkWYUytiGm6', '2025-07-07 06:33:54', NULL, NULL, NULL),
+(48, 'Alleon', 'Perez', 'alleonperez@gmail.com', '09859822196', '$2y$10$WkGZ3Y56NNvd9wyuYXNGGePSNvBJub6nhXcODLEMAWopMh00LYl0O', '2025-07-07 07:03:16', NULL, NULL, NULL),
+(50, 'Jung', 'Kook', 'jung@gmail.com', '09859822196', '$2y$10$aAJ5JQ8iSoc3kJ2/7Cd35O9TDyEU0tZUntHMyHQI4lLF1BE0Hcs9G', '2025-07-07 07:44:24', NULL, NULL, NULL),
+(51, 'Jam', 'poul', 'jam@gmail.com', '09859822196', '$2y$10$4ouK44mxlCsSCme1ESaqG.KgFipb9OXmD0N94po5TIUwtGTRxuTV2', '2025-07-15 09:25:57', NULL, NULL, NULL),
+(52, 'John', 'Regala', 'john@gmail.com', '09859822196', '$2y$10$SVB0hv7K9zFGiA/zGN3rK.DcmjwoiF2BfG3aj9k4DebCsnlM22p/S', '2025-07-17 12:24:15', NULL, NULL, '1752811658_6879c88a5f12f.png');
 
 --
 -- Indexes for dumped tables
@@ -415,7 +419,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `accepted_request`
 --
 ALTER TABLE `accepted_request`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `admin_accounts`
@@ -439,19 +443,19 @@ ALTER TABLE `archive_deceased`
 -- AUTO_INCREMENT for table `client_requests`
 --
 ALTER TABLE `client_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `deceased`
 --
 ALTER TABLE `deceased`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT for table `denied_request`
 --
 ALTER TABLE `denied_request`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `ledger`

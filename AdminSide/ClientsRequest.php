@@ -148,6 +148,7 @@
           <p><b>Client Name:</b> <span id="popupClientName" style="color:#888;"></span></p>
           <p><b>Email:</b> <span id="popupEmail" style="color:#888;"></span></p>
           <p><b>Type:</b> <span id="popupType" style="color:#888;"></span></p>
+          <p id="popupNicheIdRow" style="display:none;"><b>Niche ID:</b> <span id="popupNicheId" style="color:#888;"></span></p>
           <p><b>Age:</b> <span id="popupAge" style="color:#888;"></span></p>
           <p><b>Informant Name:</b> <span id="popupInformant" style="color:#888;"></span></p>
           <p><b>Name of Deceased:</b> <span id="popupDeceased" style="color:#888;"></span></p>
@@ -306,6 +307,12 @@
               document.getElementById('popupInformant').textContent = data.informant_name;
               document.getElementById('popupDeceased').textContent = data.deceased_name;
               document.getElementById('popupAttachment').innerHTML = data.attachment_html;
+              document.getElementById('popupNicheId').textContent = data.niche_id;
+              if (data.type === 'Transfer' || data.type === 'Exhumation') {
+                document.getElementById('popupNicheIdRow').style.display = '';
+              } else {
+                document.getElementById('popupNicheIdRow').style.display = 'none';
+              }
               document.getElementById('popupModal').style.display = 'flex';
               // Hide Accept/Deny for accepted
               document.querySelector('.accept-btn').style.display = (type === 'accepted') ? 'none' : '';

@@ -9,10 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $conn->prepare("SELECT id, type, first_name, middle_name, last_name, age, dob, dod, residency, informant_name, file_upload, created_at
-                            FROM client_requests
-                            WHERE user_id = ?
-                            ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT id, type, first_name, middle_name, last_name, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id
+    FROM client_requests
+    WHERE user_id = ?
+    ORDER BY created_at DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();

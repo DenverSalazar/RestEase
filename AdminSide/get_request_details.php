@@ -24,6 +24,7 @@ if ($row = $result->fetch_assoc()) {
         $filename = htmlspecialchars($row['file_upload']);
         $attachment_html = '<div class="attachment-box"><a href="' . $file . '" target="_blank"><img src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/pdf.svg" alt="PDF" style="height:20px;vertical-align:middle;margin-right:6px;"><span style="color:#2563eb;text-decoration:underline;cursor:pointer;">' . $filename . '</span></a></div>';
     }
+    $niche_id = isset($row['niche_id']) ? htmlspecialchars($row['niche_id']) : '';
     echo json_encode([
         'success' => true,
         'name' => $name,
@@ -32,7 +33,8 @@ if ($row = $result->fetch_assoc()) {
         'age' => $age,
         'informant_name' => $informant,
         'deceased_name' => $deceased,
-        'attachment_html' => $attachment_html
+        'attachment_html' => $attachment_html,
+        'niche_id' => $niche_id
     ]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Request not found']);
