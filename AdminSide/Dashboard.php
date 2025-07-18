@@ -1,3 +1,12 @@
+<?php
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: ../AdminLogin.php"); // Adjust the path if needed
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

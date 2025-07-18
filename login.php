@@ -1,5 +1,6 @@
 <?php
 // Database connection
+session_start();
 include_once 'Includes/db.php';
 
 if ($conn->connect_error) {
@@ -43,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->bind_result($user_id, $hashed_password);
                 $stmt->fetch();
                 if (password_verify($password, $hashed_password)) {
-                    session_start();
+                   
                     $_SESSION['user_id'] = $user_id;
                     // Redirect to client home on successful login
                     header("Location: ClientSide/ClientHome.php");

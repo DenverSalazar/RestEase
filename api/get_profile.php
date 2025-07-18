@@ -20,7 +20,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
     // Build full URL for profile picture
-    $base_url = "http://192.168.100.27/RestEase/uploads/"; // adjust as needed
+    $base_url = "http://192.168.100.214/RestEase/uploads/"; // adjust as needed
     $row['profile_picture'] = $row['profile_picture'] ? $base_url . $row['profile_picture'] : null;
     echo json_encode($row);
 } else {

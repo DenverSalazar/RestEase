@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requests = [];
     while ($row = $result->fetch_assoc()) {
         if (!empty($row['file_upload'])) {
-            $row['file_upload_url'] = 'http://192.168.100.27/RestEase/uploads/' . $row['file_upload'];
+            $row['file_upload_url'] = 'http://192.168.100.214/RestEase/uploads/' . $row['file_upload'];
         } else {
             $row['file_upload_url'] = '';
         }

@@ -1,5 +1,6 @@
 <?php
 // Database connection
+session_start();
 include_once 'Includes/db.php';
 
 if ($conn->connect_error) {
@@ -16,14 +17,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$email || !$password) {
         $admin_error = "Please enter both email and password.";
     } else {
-        $stmt = $conn->prepare("SELECT password FROM admin_accounts WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, password FROM admin_accounts WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows == 1) {
-            $stmt->bind_result($hashed_password);
+            $stmt->bind_result($admin_id, $hashed_password);
             $stmt->fetch();
             if (password_verify($password, $hashed_password)) {
+                 $_SESSION['admin_id'] = $admin_id;
                 // Redirect to admin dashboard on successful login
                 header("Location: AdminSide/Dashboard.php");
                 exit;
