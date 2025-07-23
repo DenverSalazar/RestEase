@@ -158,6 +158,7 @@
         <div class="popup-actions" style="display: flex; gap: 18px; justify-content: flex-end; margin-top: 18px;">
           <button class="accept-btn" onclick="acceptRequest()">Accept</button>
           <button class="deny-btn" onclick="denyRequest()">Deny</button>
+          <button class="go-payment-btn" style="display:none; background:#facc15; color:#92400e; border:none; min-width:140px; font-size:1.13rem; padding:12px 0; border-radius:8px; font-weight:600; box-shadow:0 1.5px 6px rgba(250,204,21,0.08); transition:background 0.2s, color 0.2s;" onclick="goToPayment()">Go to Payment</button>
         </div>
       </div>
     </div>
@@ -317,6 +318,14 @@
               // Hide Accept/Deny for accepted
               document.querySelector('.accept-btn').style.display = (type === 'accepted') ? 'none' : '';
               document.querySelector('.deny-btn').style.display = (type === 'accepted') ? 'none' : '';
+              if (type === 'accepted') {
+                document.querySelector('.go-payment-btn').style.display = '';
+                // Store details for payment redirect
+                window.currentNicheId = data.niche_id;
+                window.currentInformant = data.informant_name;
+              } else {
+                document.querySelector('.go-payment-btn').style.display = 'none';
+              }
             }
           });
       }
@@ -366,6 +375,16 @@
             }
           });
         }
+      }
+      function goToPayment() {
+        let apt = window.currentNicheId;
+        let informant = window.currentInformant;
+        if (!apt) apt = 'Null';
+        const params = new URLSearchParams({
+          apartment: apt,
+          informant: informant || ''
+        });
+        window.location.href = 'Ledger.php?' + params.toString();
       }
       // Add search filter for accepted requests
       document.addEventListener('DOMContentLoaded', function() {
