@@ -320,6 +320,7 @@
                 <p><b>Client Name:</b> <span id="deniedPopupClientName" style="color:#888;"></span></p>
                 <p><b>Email:</b> <span id="deniedPopupEmail" style="color:#888;"></span></p>
                 <p><b>Type:</b> <span id="deniedPopupType" style="color:#888;"></span></p>
+                <p id="deniedPopupNicheIdRow" style="display:none;"><b>Niche ID:</b> <span id="deniedPopupNicheId" style="color:#888;"></span></p>
                 <p><b>Age:</b> <span id="deniedPopupAge" style="color:#888;"></span></p>
                 <p><b>Informant Name:</b> <span id="deniedPopupInformant" style="color:#888;"></span></p>
                 <p><b>Name of Deceased:</b> <span id="deniedPopupDeceased" style="color:#888;"></span></p>
@@ -372,6 +373,12 @@
                     document.getElementById('deniedPopupDeceased').textContent = data.deceased_name;
                     document.getElementById('deniedPopupAttachment').innerHTML = data.attachment_html;
                     document.getElementById('deniedPopupModal').style.display = 'flex';
+                    document.getElementById('deniedPopupNicheId').textContent = data.niche_id;
+                    if (data.type === 'Transfer' || data.type === 'Exhumation') {
+                      document.getElementById('deniedPopupNicheIdRow').style.display = '';
+                    } else {
+                      document.getElementById('deniedPopupNicheIdRow').style.display = 'none';
+                    }
                   }
                 });
             }

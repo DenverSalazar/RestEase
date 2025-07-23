@@ -26,10 +26,10 @@ if ($result->num_rows === 0) {
 $row = $result->fetch_assoc();
 
 // Insert into denied_request
-$insert_sql = "INSERT INTO denied_request (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$insert_sql = "INSERT INTO denied_request (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $insert_stmt = $conn->prepare($insert_sql);
 $insert_stmt->bind_param(
-    'issssissssss',
+    'issssisssssss',
     $row['user_id'],
     $row['type'],
     $row['first_name'],
@@ -41,7 +41,8 @@ $insert_stmt->bind_param(
     $row['residency'],
     $row['informant_name'],
     $row['file_upload'],
-    $row['created_at']
+    $row['created_at'],
+    $row['niche_id']
 );
 $success = $insert_stmt->execute();
 

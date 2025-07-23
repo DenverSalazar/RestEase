@@ -38,5 +38,6 @@ echo json_encode([
     'age' => $age,
     'informant_name' => $informant_name,
     'deceased_name' => $deceased_name,
+    'niche_id' => $row['niche_id'],
     'attachment_html' => $attachment_html
 ]); 

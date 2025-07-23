@@ -38,5 +38,6 @@ echo json_encode([
     'age' => $age,
     'informant_name' => $informant_name,
     'deceased_name' => $deceased_name,
+    'niche_id' => isset($row['niche_id']) ? $row['niche_id'] : null,
     'attachment_html' => $attachment_html
 ]); 
