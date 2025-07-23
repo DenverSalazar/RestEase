@@ -1,3 +1,67 @@
+<?php
+include_once '../Includes/db.php';
+$ledgerEntry = null;
+$entry_id = null;
+
+if (isset($_GET['id'])) {
+    $entry_id = $_GET['id'];
+    // Join ledger with qr_codes to get the path
+    $stmt = $conn->prepare("SELECT l.*, qc.qr_code_path FROM ledger l LEFT JOIN qr_codes qc ON l.id = qc.ledger_id WHERE l.id = ?");
+    $stmt->bind_param("i", $entry_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $ledgerEntry = $result->fetch_assoc();
+    }
+    $stmt->close();
+}
+
+// Handle QR code image upload and saving to qr_codes table
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+    $update_id = $_POST['id'];
+    // Only proceed if a file was uploaded
+    if (isset($_FILES['QRCodeImg']) && $_FILES['QRCodeImg']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = '../uploads/';
+        $ext = pathinfo($_FILES['QRCodeImg']['name'], PATHINFO_EXTENSION);
+        $fileName = time() . '_qr.' . $ext;
+        $targetPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($_FILES['QRCodeImg']['tmp_name'], $targetPath)) {
+            $qrPath = 'uploads/' . $fileName;
+
+            if (!$conn->connect_error) {
+                // Use INSERT ... ON DUPLICATE KEY UPDATE to handle both new and existing QR codes
+                $stmt = $conn->prepare("
+                    INSERT INTO qr_codes (ledger_id, qr_code_path)
+                    VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE qr_code_path = VALUES(qr_code_path)
+                ");
+                $stmt->bind_param("is", $update_id, $qrPath);
+
+                if ($stmt->execute()) {
+                    echo '<script>alert("QR Code updated successfully!"); window.location.href="Ledger.php?id=' . $update_id . '";</script>';
+                    exit;
+                } else {
+                    echo '<div style="color:#e74c3c;margin-top:16px;">Error updating QR code: ' . htmlspecialchars($stmt->error) . '</div>';
+                }
+                $stmt->close();
+            }
+        } else {
+            echo '<div style="color:#e74c3c;margin-top:16px;">Error moving uploaded file.</div>';
+        }
+    } else {
+        // No file uploaded, maybe show a message or just reload
+        echo '<script>alert("No image selected for upload."); window.location.href="Ledger.php?id=' . $update_id . '";</script>';
+        exit;
+    }
+    $conn->close();
+}
+
+if ($entry_id && !$ledgerEntry) {
+    echo "Entry not found.";
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +74,6 @@
   <link rel="stylesheet" href="../css/sidebar.css">
   <style>
     /* ...existing code... */
-    /* Use the same styles as in Clients.css for tabs, table, etc. */
     .ledger-header h1 {
       font-size: 2rem;
       font-weight: 700;
@@ -121,313 +184,189 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <div class="ledger-header">
-      <h1>Ledger</h1>
-      <p class="subtitle">Fill up the ledger information</p>
-    </div>
-    <!-- Tabs -->
-    <div class="clients-tabs-bar">
-      <div class="clients-tabs">
-        <button class="tab active" id="transactionsTabBtn" onclick="showLedgerTab('transactions')">Insert</button>
-        <button class="tab" id="formTabBtn" onclick="showLedgerTab('form')">Table</button>
+    <!-- Page Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <div>
+        <h1 style="font-size:2rem;font-weight:700;margin-bottom:0;">Ledger</h1>
+        <p style="font-size:1.04rem;color:#6b7280;">Fill up the ledger information</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:24px;">
+        <i class="fas fa-bell" style="font-size:1.4rem;color:#6b7280;cursor:pointer;"></i>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="../assets/sybau.jpg" alt="Admin" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #e0e0e0;">
+          <div>
+            <div style="font-weight:600;color:#333;">Sybau</div>
+            <div style="font-size:0.9rem;color:#6b7280;">Admin</div>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- Insert Tab: Ledger Insert Form -->
-    <div id="ledgerTransactionsTab" style="display:block;">
-      <div class="card" style="width: 100%; max-width: 100%; margin: 24px 0; background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(44,62,80,0.10); padding: 24px; box-sizing: border-box;">
-        <div class="form-section-title" style="font-size:1.25rem;font-weight:600;margin-bottom:18px;letter-spacing:0.5px;">Ledger Entry</div>
-        <form id="ledgerForm" method="post" action="" autocomplete="off" style="width: 100%;">
-          <div style="display:flex;gap:16px;flex-wrap:wrap;width:100%;">
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formApartmentNo" style="font-weight:500;">Apartment No.</label>
-              <input type="text" id="formApartmentNo" name="ApartmentNo" class="search-container" required placeholder="e.g. A-101" style="width:100%;box-sizing:border-box;">
-            </div>
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formPayee" style="font-weight:500;">Payee Name</label>
-              <input type="text" id="formPayee" name="Payee" class="search-container" required placeholder="Payee Name" style="width:100%;box-sizing:border-box;">
-            </div>
-          </div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;width:100%;">
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formDatePaid" style="font-weight:500;">Date Paid</label>
-              <input type="date" id="formDatePaid" name="DatePaid" class="search-container" required style="width:100%;box-sizing:border-box;">
-            </div>
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formAmount" style="font-weight:500;">Amount</label>
-              <div style="display:flex;align-items:center;width:100%;">
-                <input type="number" step="0.01" id="formAmount" name="Amount" class="search-container" required placeholder="₱ 0.00" style="width:100%;box-sizing:border-box;padding-left:13px;">
+    <!-- Tabs -->
+    <div style="border-bottom:1px solid #e0e0e0;margin-bottom:24px;">
+      <div style="display:flex;gap:32px;align-items:center;">
+        <button id="ledgerTabBtn" class="tab active" style="background:none;border:none;font-size:1.08rem;padding:16px 0 12px 0;color:#506C84;font-weight:600;border-bottom:2.5px solid #506C84;cursor:pointer;">Ledger Information</button>
+        <button id="paymentTabBtn" class="tab" style="background:none;border:none;font-size:1.08rem;padding:16px 0 12px 0;margin-right:24px;color:#506C84;opacity:0.7;border-bottom:2px solid transparent;cursor:pointer;">Payment Details</button>
+      </div>
+    </div>
+    <!-- Ledger Information Section -->
+    <div id="ledgerInfoSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box;">
+      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Ledger Information</div>
+      <form id="ledgerForm" method="post" action="" enctype="multipart/form-data" autocomplete="off" style="width: 100%;">
+        <input type="hidden" name="id" value="<?php echo htmlspecialchars($ledgerEntry['id'] ?? ''); ?>">
+        <div style="display:flex;gap:30px;flex-wrap:wrap;width:100%;align-items:flex-start;">
+          <!-- Left Column: Ledger Fields -->
+          <div style="flex:1 1 600px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;">
+              <div>
+                <label for="formApartmentNo" style="font-weight:500;">Apartment No.</label>
+                <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="e.g. A-101" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? ''); ?>" readonly>
+              </div>
+              <div>
+                <label for="formName" style="font-weight:500;">Name</label>
+                <input type="text" id="formName" name="Payee" required placeholder="Name" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? ''); ?>" readonly>
+              </div>
+              <div>
+                <label for="formAmount" style="font-weight:500;">Amount</label>
+                <input type="number" step="0.01" id="formAmount" name="Amount" required placeholder="₱ 0.00" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Amount'] ?? ''); ?>" readonly>
+              </div>
+              <div>
+                <label for="formORNumber" style="font-weight:500;">OR Number</label>
+                <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ORNumber'] ?? ''); ?>" readonly>
+              </div>
+              <div>
+                <label for="formMCNo" style="font-weight:500;">MC No.</label>
+                <input type="text" id="formMCNo" name="MCNo" placeholder="MC Number" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['MCNo'] ?? ''); ?>" readonly>
+              </div>
+              <div>
+                <label for="formValidity" style="font-weight:500;">Validity</label>
+                <input type="date" id="formValidity" name="Validity" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? ''); ?>" readonly>
+              </div>
+              <div style="grid-column: span 2;">
+                <label for="formDescription" style="font-weight:500;">Desc</label>
+                <input type="text" id="formDescription" name="Description" placeholder="Description" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Description'] ?? ''); ?>" readonly>
               </div>
             </div>
           </div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;width:100%;">
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formORNumber" style="font-weight:500;">OR Number</label>
-              <input type="text" id="formORNumber" name="ORNumber" class="search-container" placeholder="Official Receipt No." style="width:100%;box-sizing:border-box;">
-            </div>
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formValidity" style="font-weight:500;">Validity</label>
-              <input type="date" id="formValidity" name="Validity" class="search-container" style="width:100%;box-sizing:border-box;">
-            </div>
-          </div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;width:100%;">
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formMCNo" style="font-weight:500;">MC No.</label>
-              <input type="text" id="formMCNo" name="MCNo" class="search-container" placeholder="MC Number" style="width:100%;box-sizing:border-box;">
-            </div>
-            <div style="flex:1;min-width:0;width:100%;">
-              <label for="formDescription" style="font-weight:500;">Description</label>
-              <input type="text" id="formDescription" name="Description" class="search-container" placeholder="Description" style="width:100%;box-sizing:border-box;">
+          <!-- Right Column: QR Code Upload & Preview -->
+          <div style="flex:1 1 320px;min-width:320px;max-width:420px;">
+            <div style="background:#e9f0fa;padding:32px 24px 24px 24px;border-radius:12px;display:flex;flex-direction:column;align-items:center;">
+              <div style="font-weight:600;font-size:1.08rem;margin-bottom:16px;">Scan QR Code</div>
+              <div id="qrPreviewContainer" style="margin-bottom:18px;">
+                <img id="qrPreviewImg" src="<?php echo htmlspecialchars(!empty($ledgerEntry['qr_code_path']) ? '../' . $ledgerEntry['qr_code_path'] : '../assets/qr-placeholder.png'); ?>" alt="QR Preview" style="width:220px;height:220px;object-fit:cover;border:1px solid #ececec;border-radius:8px;background:#fff;display:block;">
+              </div>
+              <input type="file" id="formQRCodeImg" name="QRCodeImg" accept="image/*" style="margin-bottom:18px;">
             </div>
           </div>
-          <div style="margin-top:24px;text-align:right;">
-            <button type="submit" class="btn upload" style="min-width:120px;font-size:1.08rem;background:#506C84;color:#fff;border-radius:8px;">Save</button>
-          </div>
-        </form>
-        <script>
-          document.getElementById('ledgerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Show confirmation modal
-            const modalOverlay = document.getElementById('modalOverlay');
-            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-            const modalCancelBtn = document.getElementById('modalCancelBtn');
-            
-            modalOverlay.style.display = 'flex';
-            
-            // Handle confirmation
-            modalConfirmBtn.onclick = function() {
-              const formData = new FormData(document.getElementById('ledgerForm'));
-              
-              fetch('Ledger.php', {
-                method: 'POST',
-                body: formData
-              })
-              .then(response => response.text())
-              .then(html => {
-                // Show success notification
-                showSuccessNotification('Record saved successfully!');
-                
-                // Clear the form
-                document.getElementById('ledgerForm').reset();
-                
-                // Hide modal
-                modalOverlay.style.display = 'none';
-              })
-              .catch(error => {
-                showErrorNotification('Error saving record. Please try again.');
-                console.error('Error:', error);
-                modalOverlay.style.display = 'none';
-              });
+        </div>
+        <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
+          <button type="submit" class="btn upload" style="width: 140px; padding: 12px 0; font-size:1.08rem;background:#506C84;color:#fff;border-radius:8px;">Save</button>
+        </div>
+      </form>
+      <script>
+        // QR Code image preview
+        document.getElementById('formQRCodeImg').addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          const previewImg = document.getElementById('qrPreviewImg');
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+              previewImg.src = evt.target.result;
             };
-            
-            // Handle cancellation
-            modalCancelBtn.onclick = function() {
-              modalOverlay.style.display = 'none';
-            };
-            
-            // Close modal on overlay click
-            modalOverlay.onclick = function(e) {
-              if (e.target === modalOverlay) {
-                modalOverlay.style.display = 'none';
-              }
-            };
-            
-            // Close modal on ESC key
-            document.addEventListener('keydown', function(e) {
-              if (e.key === "Escape") {
-                modalOverlay.style.display = 'none';
-              }
-            });
-          });
-        </script>
-        <?php
-        // Handle insert
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ApartmentNo'])) {
-          include_once '../Includes/db.php';
-          if (!$conn->connect_error) {
-            $stmt = $conn->prepare("INSERT INTO ledger (ApartmentNo, DatePaid, Payee, Amount, Description, ORNumber, Validity, MCNo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param(
-              "sssdssss",
-              $_POST['ApartmentNo'],
-              $_POST['DatePaid'],
-              $_POST['Payee'],
-              $_POST['Amount'],
-              $_POST['Description'],
-              $_POST['ORNumber'],
-              $_POST['Validity'],
-              $_POST['MCNo']
-            );
-            if ($stmt->execute()) {
-              // Return success response
-              echo json_encode(['status' => 'success']);
-            } else {
-              // Return error response
-              echo json_encode(['status' => 'error', 'message' => $stmt->error]);
-            }
-            $stmt->close();
-            $conn->close();
-            exit;
+            reader.readAsDataURL(file);
+          } else {
+            previewImg.src = '<?php echo htmlspecialchars(!empty($ledgerEntry['qr_code_path']) ? '../' . $ledgerEntry['qr_code_path'] : '../assets/qr-placeholder.png'); ?>';
           }
-        }
-        ?>
-      </div>
+        });
+      </script>
     </div>
-    <!-- Table Tab: Show all ledger records -->
-    <div id="ledgerFormTab" style="display:none;">
-      <div class="clients-actions">
-        <div class="search-container">
-          <i class="fas fa-search"></i>
-          <input type="text" id="ledgerSearchInput" placeholder="Search Ledger">
-        </div>
-        <div class="actions-right">
-          <button class="date-picker-btn"><i class="fas fa-calendar"></i>
-            <span>
-              <?php
-                date_default_timezone_set('Asia/Manila');
-                echo date('M d, Y');
-              ?>
-            </span>
-          </button>
-          <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
-        </div>
+    <!-- Payment Details Section (hidden by default) -->
+    <div id="paymentDetailsSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
+      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Payment Details</div>
+      <div class="ledger-search-container" style="margin-bottom:18px;">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search" />
       </div>
-      <div class="ledger-table-container">
-        <table class="ledger-table" id="ledgerTable">
+      <div style="overflow-x:auto;">
+        <table class="ledger-table" style="min-width:900px;">
           <thead>
             <tr>
-              <th>Apartment No.</th>
-              <th>Payee Name</th>
+              <th>MC No.</th>
+              <th>Apt No.</th>
               <th>Date Paid</th>
+              <th>Payee</th>
               <th>Amount</th>
+              <th>Des</th>
               <th>OR Number</th>
               <th>Validity</th>
-              <th>MC No.</th>
-              <th>Description</th>
             </tr>
           </thead>
           <tbody>
-          <?php
-          $conn = include_once '../Includes/db.php';
-          if ($conn->connect_error) {
-              echo "<tr><td colspan='8'>Database connection failed.</td></tr>";
-          } else {
-              $sql = "SELECT * FROM ledger ORDER BY DatePaid DESC";
-              $result = $conn->query($sql);
-              if ($result && $result->num_rows > 0) {
-                  while ($row = $result->fetch_assoc()) {
-                      echo "<tr>";
-                      echo "<td>" . htmlspecialchars($row['ApartmentNo']) . "</td>";
-                      echo "<td>" . htmlspecialchars($row['Payee']) . "</td>";
-                      echo "<td>" . htmlspecialchars(date('F d, Y', strtotime($row['DatePaid']))) . "</td>";
-                      echo "<td>₱ " . number_format($row['Amount'], 2) . "</td>";
-                      echo "<td>" . htmlspecialchars($row['ORNumber']) . "</td>";
-                      echo "<td>" . ($row['Validity'] ? htmlspecialchars(date('F d, Y', strtotime($row['Validity']))) : '') . "</td>";
-                      echo "<td>" . htmlspecialchars($row['MCNo']) . "</td>";
-                      echo "<td>" . htmlspecialchars($row['Description']) . "</td>";
-                      echo "</tr>";
-                  }
-              } else {
-                  echo "<tr><td colspan='8'>No ledger records found.</td></tr>";
-              }
-              $conn->close();
-          }
-          ?>
+            <tr><td>0</td><td>1F-0A1</td><td>04-12-25</td><td>Dysania Beans</td><td>₱10,000.00</td><td>New</td><td>35426742</td><td>02-28-30</td></tr>
+            <tr><td>1</td><td>1F-0A2</td><td>07-23-24</td><td>Wilson Aminoff</td><td>₱2,000.00</td><td>Renewal</td><td>74382659</td><td>03-09-34</td></tr>
+            <tr><td>2</td><td>1F-0A3</td><td>06-04-24</td><td>Brandon Saris</td><td>₱2,000.00</td><td>Renewal</td><td>19284736</td><td>07-21-29</td></tr>
+            <tr><td>3</td><td>1F-0A4</td><td>12-11-25</td><td>Zain Philips</td><td>₱2,000.00</td><td>Renewal</td><td>86420359</td><td>12-05-31</td></tr>
+            <tr><td>4</td><td>1F-0A5</td><td>08-15-23</td><td>Wilson Lubin</td><td>₱2,000.00</td><td>Renewal</td><td>37491826</td><td>06-30-25</td></tr>
+            <tr><td>5</td><td>1F-0A6</td><td>09-13-24</td><td>Wilson Culhane</td><td>₱2,000.00</td><td>Renewal</td><td>62519038</td><td>09-14-38</td></tr>
+            <tr><td>6</td><td>1F-0A7</td><td>01-14-22</td><td>Adison Vetrovs</td><td>₱2,000.00</td><td>Renewal</td><td>13849275</td><td>04-18-32</td></tr>
+            <tr><td>7</td><td>1F-0A8</td><td>11-25-24</td><td>Jocelyn Mango</td><td>₱2,000.00</td><td>Renewal</td><td>90471628</td><td>11-27-28</td></tr>
+            <tr><td>8</td><td>1F-0A9</td><td>05-28-23</td><td>Jocelyn Mango</td><td>₱2,000.00</td><td>Renewal</td><td>28134697</td><td>08-08-36</td></tr>
+            <tr><td>9</td><td>1F-0A10</td><td>04-23-19</td><td>Jakob Bator</td><td>₱2,000.00</td><td>Renewal</td><td>71658342</td><td>05-23-33</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="clients-pagination-bar">
-        <div class="pagination">
-          <button class="page-btn"><i class="fas fa-angle-left"></i></button>
-          <button class="page-btn">1</button>
-          <button class="page-btn active">2</button>
-          <button class="page-btn">3</button>
-          <button class="page-btn"><i class="fas fa-angle-right"></i></button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;">
+        <div style="font-size:0.97rem;color:#888;">Page 1 of 3</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;" disabled><i class="fas fa-chevron-left"></i></button>
+          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;">1</button>
+          <button style="border:none;background:#506C84;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;">2</button>
+          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;">3</button>
+          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
         </div>
-      </div>
-      <div>
-        <span> Page 1 of 3 </span>
-      </div>
-    </div>
-    <!-- Success Notification -->
-    <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
-      <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Record saved successfully!</span>
-      <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal-overlay" id="modalOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(44,62,80,0.35);z-index:1000;align-items:center;justify-content:center;">
-      <div class="modal-confirm" style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);padding:32px 28px 24px 28px;max-width:370px;width:90%;text-align:center;position:relative;animation:modalPop .18s cubic-bezier(.4,1.4,.6,1.0);">
-        <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#27ae60;font-weight:600;letter-spacing:0.5px;"><i class="fas fa-check-circle" style="margin-right:8px;"></i>Confirm Save</h2>
-        <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">Are you sure you want to save this record?</p>
-        <div class="modal-actions" style="display:flex;gap:12px;justify-content:center;">
-          <button class="modal-btn confirm" id="modalConfirmBtn" style="background:#27ae60;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Save</button>
-          <button class="modal-btn cancel" id="modalCancelBtn" style="background:#f5f7fa;color:#2d3a4a;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;transition:background 0.18s,color 0.18s;">Cancel</button>
+        <div style="display:flex;gap:8px;">
+          <button style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;"><i class="fas fa-print"></i> Print</button>
+          <button style="background:#f7f8fa;color:#506C84;border:1px solid #ececec;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;"><i class="fas fa-filter"></i> Filter</button>
         </div>
       </div>
     </div>
-  </main>
-  <script>
-    // Tab switching logic
-    function showLedgerTab(tab) {
-      document.getElementById('ledgerTransactionsTab').style.display = (tab === 'transactions') ? '' : 'none';
-      document.getElementById('ledgerFormTab').style.display = (tab === 'form') ? '' : 'none';
-      document.getElementById('transactionsTabBtn').classList.toggle('active', tab === 'transactions');
-      document.getElementById('formTabBtn').classList.toggle('active', tab === 'form');
-    }
-
-    // Check URL parameter for tab
-    window.onload = function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tab = urlParams.get('tab');
-      if (tab === 'form') {
-        showLedgerTab('form');
+    <script>
+      // Tab switching logic
+      const ledgerTabBtn = document.getElementById('ledgerTabBtn');
+      const paymentTabBtn = document.getElementById('paymentTabBtn');
+      const ledgerInfoSection = document.getElementById('ledgerInfoSection');
+      const paymentDetailsSection = document.getElementById('paymentDetailsSection');
+      function setActiveTab(tab) {
+        if (tab === 'ledger') {
+          ledgerTabBtn.classList.add('active');
+          paymentTabBtn.classList.remove('active');
+          ledgerTabBtn.style.borderBottom = '2.5px solid #506C84';
+          paymentTabBtn.style.borderBottom = '2px solid transparent';
+          ledgerInfoSection.style.display = '';
+          paymentDetailsSection.style.display = 'none';
+        } else {
+          ledgerTabBtn.classList.remove('active');
+          paymentTabBtn.classList.add('active');
+          ledgerTabBtn.style.borderBottom = '2px solid transparent';
+          paymentTabBtn.style.borderBottom = '2.5px solid #506C84';
+          ledgerInfoSection.style.display = 'none';
+          paymentDetailsSection.style.display = '';
+        }
       }
-    }
-
-    // Show notification logic
-    function showSuccessNotification(message) {
-      const notif = document.getElementById('successNotification');
-      notif.querySelector('span').innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
-      notif.style.display = 'flex';
-      notif.style.background = '#2ecc71';
-      
-      // Auto-close after 3 seconds
-      const timeout = setTimeout(() => {
-        notif.style.display = 'none';
-      }, 3000);
-      
-      document.getElementById('closeNotificationBtn').onclick = function() {
-        notif.style.display = 'none';
-        clearTimeout(timeout);
-      };
-    }
-
-    function showErrorNotification(message) {
-      const notif = document.getElementById('successNotification');
-      notif.querySelector('span').innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
-      notif.style.display = 'flex';
-      notif.style.background = '#e74c3c';
-      
-      // Auto-close after 3 seconds
-      const timeout = setTimeout(() => {
-        notif.style.display = 'none';
-      }, 3000);
-      
-      document.getElementById('closeNotificationBtn').onclick = function() {
-        notif.style.display = 'none';
-        clearTimeout(timeout);
-      };
-    }
-
-    // Simple search filter for the ledger table (Table tab)
-    document.getElementById('ledgerSearchInput').addEventListener('input', function() {
-      const filter = this.value.toLowerCase();
-      const rows = document.querySelectorAll('#ledgerTable tbody tr');
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-      });
-    });
-  </script>
+      ledgerTabBtn.addEventListener('click', function() { setActiveTab('ledger'); });
+      paymentTabBtn.addEventListener('click', function() { setActiveTab('payment'); });
+    </script>
+  </main>
+  <style>
+    .tab.active { border-bottom:2.5px solid #506C84 !important; color:#506C84 !important; font-weight:600; opacity:1 !important; }
+    .tab { opacity:0.7; }
+    input[type="text"], input[type="number"], input[type="date"] {
+      border:1px solid #d0d7e2; border-radius:7px; padding:8px 12px; font-size:1.04rem; margin-top:4px; margin-bottom:2px; background:#f7fafd; transition:border 0.18s; }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
+      border:1.5px solid #506C84; background:#fff; outline:none; }
+    input[readonly] { background-color: #f0f4f8; cursor: not-allowed; }
+    label { margin-bottom:2px; display:block; }
+    .btn.upload { background:#506C84; color:#fff; border:none; padding:10px 32px; border-radius:8px; font-weight:500; cursor:pointer; transition:background 0.18s; }
+    .btn.upload:hover { background:#39546a; }
+  </style>
 </body>
 </html>
