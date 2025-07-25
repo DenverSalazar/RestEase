@@ -3,6 +3,9 @@ header('Content-Type: application/json');
 
 include_once '../Includes/db.php';
 
+// Get server host/IP dynamically
+$server_host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_ADDR'] ?? 'localhost');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_POST['user_id'] ?? null;
     if (!$user_id) {
@@ -21,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requests = [];
     while ($row = $result->fetch_assoc()) {
         if (!empty($row['file_upload'])) {
-            $row['file_upload_url'] = 'http://192.168.100.214/RestEase/uploads/' . $row['file_upload'];
+            $row['file_upload_url'] = 'http://' . $server_host . '/RestEase/uploads/' . $row['file_upload'];
         } else {
             $row['file_upload_url'] = '';
         }
