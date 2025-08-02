@@ -8,7 +8,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Poppins';
   background-color: #fff;
 }
 
@@ -61,12 +61,6 @@ body {
   color: #999;
 }
 
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
 .notification-icon {
   position: relative;
   cursor: pointer;
@@ -91,12 +85,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.profile-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .profile-avatar {

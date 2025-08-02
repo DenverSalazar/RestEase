@@ -116,9 +116,10 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RestEase Ledger</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
     /* ...existing code... */
     .ledger-header h1 {
@@ -141,27 +142,27 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
     }
     .ledger-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+      font-family: 'Poppins', sans-serif;
     }
     .ledger-table th, .ledger-table td {
+      padding: 10px 12px;
       text-align: left;
-      padding: 14px 12px;
-      font-size: 1.02rem;
-      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.98rem;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
     }
     .ledger-table th {
-      font-size: 0.98rem;
-      letter-spacing: 0.01em;
       background: #f7f8fa;
-      color: #b0b0b0;
-      font-weight: 600;
-      border-bottom: 1px solid #ececec;
-    }
-    .ledger-table td {
-      vertical-align: middle;
-      font-size: 1.02rem;
-      color: #222;
       font-weight: 500;
+      color: #333;
     }
     .ledger-table tr:last-child td {
       border-bottom: none;
@@ -347,7 +348,7 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
         <input type="text" placeholder="Search" />
       </div>
       <div style="overflow-x:auto;">
-        <table class="ledger-table" style="min-width:900px;">
+        <table class="ledger-table" id="pendingPaymentTable" style="min-width:900px;">
           <thead>
             <tr>
               <th>MC No.</th>
@@ -385,13 +386,18 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
     </div>
     <!-- Payment Details Section (hidden by default) -->
     <div id="paymentDetailsSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
-      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Payment Details</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:24px;">
+        <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
+        <button style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <i class="fas fa-print"></i> Print
+        </button>
+      </div>
       <div class="ledger-search-container" style="margin-bottom:18px;">
         <i class="fas fa-search"></i>
         <input type="text" placeholder="Search" />
       </div>
       <div style="overflow-x:auto;">
-        <table class="ledger-table" style="min-width:900px;">
+        <table class="ledger-table" id="paymentDetailsTable" style="min-width:900px;">
           <thead>
             <tr>
               <th>MC No.</th>
@@ -417,20 +423,6 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
             <tr><td>9</td><td>1F-0A10</td><td>04-23-19</td><td>Jakob Bator</td><td>₱2,000.00</td><td>Renewal</td><td>71658342</td><td>05-23-33</td></tr>
           </tbody>
         </table>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;">
-        <div style="font-size:0.97rem;color:#888;">Page 1 of 3</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;" disabled><i class="fas fa-chevron-left"></i></button>
-          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;">1</button>
-          <button style="border:none;background:#506C84;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;">2</button>
-          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;">3</button>
-          <button style="border:none;background:#f7f8fa;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;"><i class="fas fa-print"></i> Print</button>
-          <button style="background:#f7f8fa;color:#506C84;border:1px solid #ececec;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;"><i class="fas fa-filter"></i> Filter</button>
-        </div>
       </div>
     </div>
     <script>
@@ -514,6 +506,35 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
       }
     }
   </script>
+  <!-- DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script>
+      // DataTables initialization for both tables
+      $(document).ready(function() {
+        $('#pendingPaymentTable').DataTable({
+          paging: true,
+          searching: true,
+          ordering: true,
+          info: true
+        });
+        $('#paymentDetailsTable').DataTable({
+          paging: true,
+          searching: true,
+          ordering: true,
+          info: true
+        });
+      });
+    </script>
+</body>
+</html>
+</body>
+</html>
+          ordering: true,
+          info: true
+        });
+      });
+    </script>
 </body>
 </html>
 

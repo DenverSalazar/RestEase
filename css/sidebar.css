@@ -1,9 +1,10 @@
 :root {
-    --primary-color: #1a1a1a;
-    --sidebar-width: 240px;
-    --border-radius: 8px;
-  }
-  
+  --primary-color: #1a1a1a;
+  --sidebar-width: 240px;
+  --header-height: 60px;
+  --border-radius: 8px;
+}
+
   /* Sidebar Styles */
   .sidebar {
     position: fixed;
@@ -16,6 +17,7 @@
     border-right: 1px solid #eee;
     display: flex;
     flex-direction: column;
+    font-family: 'Poppins', sans-serif;
   }
   
   .logo {

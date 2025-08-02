@@ -9,11 +9,11 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Poppins', sans-serif;
   background-color: #fff;
 }
 
-/* Main Content Area */
+/* Main Content Area - Remove any conflicting margin */
 .main-content {
   margin-left: var(--sidebar-width);
   padding: 0;
@@ -250,3 +250,12 @@ body {
     margin-left: 0;
   }
 }
+
+/* Ensure no conflicting sidebar styles */
+/* .sidebar {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: var(--sidebar-width) !important;
+  z-index: 1000 !important;
+} */

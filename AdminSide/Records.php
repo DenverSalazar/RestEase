@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RestEase Admin Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Analytics.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
     .cemetery-masterlist-container {
       margin-left: 50px;
       margin-top: 30px;
       padding: 0 32px;
-      font-family: 'Inter', sans-serif;
     }
     .cemetery-masterlist-title {
       font-size: 2rem;
@@ -40,7 +41,7 @@
       align-items: center;
       background: #fff;
       border-radius: 10px;
-      border: 1.5px solid #bfc8d2; /* Faded, lighter border */
+      border: 1.5px solid #bfc8d2;
       padding: 0 16px;
       height: 40px;
       min-width: 320px;
@@ -61,11 +62,13 @@
       font-weight: 400;
       padding: 0;
       margin: 0;
+      font-family: 'Poppins', sans-serif;
     }
     .search-container input::placeholder {
       color: #b0b0b0;
       font-weight: 400;
       opacity: 1;
+      font-family: 'Poppins', sans-serif;
     }
     .cemetery-masterlist-actions button {
       background: #fff;
@@ -79,18 +82,19 @@
       align-items: center;
       gap: 6px;
       transition: background 0.2s;
+      font-family: 'Poppins', sans-serif;
     }
     .cemetery-masterlist-actions button:hover {
       background: #f2f2f2;
     }
     .cemetery-masterlist-actions .export-btn {
-      background: #e57373 !important; /* desaturated red */
+      background: #2563eb !important;
       color: #fff !important;
       border: none !important;
     }
     .cemetery-masterlist-actions .export-btn:hover,
     .cemetery-masterlist-actions .export-btn:focus {
-      background: #d06060 !important;
+      background: #0f2e71ff !important;
       color: #fff !important;
     }
     .cemetery-masterlist-table {
@@ -102,6 +106,7 @@
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       margin-bottom: 1rem;
+      font-family: 'Poppins', sans-serif;
     }
     .cemetery-masterlist-table th, .cemetery-masterlist-table td {
       padding: 10px 12px;
@@ -109,6 +114,7 @@
       font-size: 0.98rem;
       border-bottom: 1px solid #eee;
       background: #fff;
+      font-family: 'Poppins', sans-serif;
     }
     .cemetery-masterlist-table th {
       background: #f7f8fa;
@@ -118,36 +124,6 @@
     .cemetery-masterlist-table tr:last-child td {
       border-bottom: none;
     }
-    .cemetery-masterlist-pagination {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-    }
-    .cemetery-masterlist-pagination button {
-      border: 1px solid #ddd;
-      background: #fff;
-      border-radius: 6px;
-      width: 32px;
-      height: 32px;
-      font-size: 1rem;
-      cursor: pointer;
-      color: #506C84;
-      transition: background 0.2s;
-    }
-    .cemetery-masterlist-pagination button.active,
-    .cemetery-masterlist-pagination button:focus {
-      background: #506C84;
-      color: #fff;
-      border-color: #506C84;
-    }
-    .cemetery-masterlist-pagination button:disabled {
-      color: #bbb;
-      border-color: #eee;
-      background: #fafbfc;
-      cursor: not-allowed;
-    }
     @media (max-width: 900px) {
       .cemetery-masterlist-container {
         margin-left: 0;
@@ -156,9 +132,6 @@
       .cemetery-masterlist-controls {
         flex-direction: column;
         align-items: stretch;
-      }
-      .cemetery-masterlist-search {
-        width: 100%;
       }
     }
   </style>
@@ -175,17 +148,6 @@
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div class="cemetery-masterlist-title">Cemetery Masterlist</div>
         <div class="user-profile" style="display: flex; align-items: center;">
-          <div class="notification-icon">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge">1</span>
-          </div>
-          <div class="profile-info" style="margin-left: 10px;">
-            <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
-            <div>
-              <div class="profile-name">Sybau</div>
-              <div class="profile-role">Admin</div>
-            </div>
-          </div>
         </div>
       </div>
       <div class="cemetery-masterlist-desc">View all Records Information.</div>
@@ -197,7 +159,6 @@
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Print Masterlist</button></a>
-          <button id="filter-btn" type="button"><i class="fas fa-filter"></i> Filter</button>
           <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>
@@ -270,7 +231,7 @@
               <th>Date Died</th>
               <th>Date Internment</th>
               <th>Validity</th>
-              <th class="delete-checkbox-col" style="display:none;" id="delete-checkbox-header">
+              <th class="delete-checkbox-col" id="delete-checkbox-header">
                 <input type="checkbox" id="select-all-checkbox" style="display:none;">
               </th>
             </tr>
@@ -296,79 +257,8 @@
             }
             include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
-
-            $perPage = 10;
-            $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-            if ($page < 1) $page = 1;
-
-            // Search logic
-            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-            $searchSql = '';
-            $searchParams = [];
-            $searchTypes = '';
-
-            if ($search !== '') {
-              $searchSql = "WHERE (nicheID LIKE ? OR lastName LIKE ? OR firstName LIKE ? OR residency LIKE ? OR informantName LIKE ?)";
-              $searchVal = '%' . $search . '%';
-              $searchParams = [$searchVal, $searchVal, $searchVal, $searchVal, $searchVal];
-              $searchTypes = 'sssss';
-            }
-
-            // Get total records (with search)
-            if ($searchSql) {
-              $stmt = $conn->prepare("SELECT COUNT(*) as total FROM deceased $searchSql");
-              $stmt->bind_param($searchTypes, ...$searchParams);
-              $stmt->execute();
-              $totalResult = $stmt->get_result();
-              $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
-              $stmt->close();
-            } else {
-              $totalResult = $conn->query("SELECT COUNT(*) as total FROM deceased");
-              $totalRows = $totalResult ? (int)$totalResult->fetch_assoc()['total'] : 0;
-            }
-            $totalPages = $totalRows > 0 ? ceil($totalRows / $perPage) : 1;
-            if ($page > $totalPages) $page = $totalPages;
-
-            $offset = ($page - 1) * $perPage;
-
-            // Filter/sort logic
-            $allowedFields = [
-              'nicheID' => 'string',
-              'lastName' => 'string',
-              'firstName' => 'string',
-              'age' => 'number',
-              'born' => 'string',
-              'residency' => 'string',
-              'informantName' => 'string',
-              'dateDied' => 'string',
-              'dateInternment' => 'string'
-            ];
-            // Default order: Apt No. ascending
-            $orderBy = 'nicheID ASC';
-            if (isset($_GET['filterField'], $_GET['filterOrder'])) {
-              $field = $_GET['filterField'];
-              $order = strtolower($_GET['filterOrder']) === 'desc' ? 'DESC' : 'ASC';
-              if (isset($allowedFields[$field])) {
-                // For numbers, cast to +0 for numeric sort
-                if ($allowedFields[$field] === 'number') {
-                  $orderBy = "($field+0) $order";
-                } else {
-                  $orderBy = "$field $order";
-                }
-              }
-            }
-
-            // Fetch records (with search and filter)
-            if ($searchSql) {
-              $stmt = $conn->prepare("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased $searchSql ORDER BY $orderBy LIMIT ? OFFSET ?");
-              $params = array_merge($searchParams, [$perPage, $offset]);
-              $types = $searchTypes . "ii";
-              $stmt->bind_param($types, ...$params);
-              $stmt->execute();
-              $result = $stmt->get_result();
-            } else {
-              $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased ORDER BY $orderBy LIMIT $perPage OFFSET $offset");
-            }
+            // Fetch all records (no pagination/search/filter)
+            $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
@@ -410,7 +300,7 @@
                   <td>{$dateDied}</td>
                   <td>{$dateInternment}</td>
                   <td>{$validity}</td>
-                  <td class='delete-checkbox-col' style='display:none;'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
+                  <td class='delete-checkbox-col'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";
               }
             } else {
@@ -422,296 +312,192 @@
         </table>
       </div>
       </form>
-      <style>
-        .delete-checkbox-col {
-          width: 40px;
-          text-align: center;
-        }
-        .delete-checkbox {
-          transform: scale(1.2);
-          cursor: pointer;
-        }
-        /* Custom modal styles */
-        .modal-overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(44, 62, 80, 0.35);
-          z-index: 1000;
-          display: none;
-          align-items: center;
-          justify-content: center;
-        }
-        .modal-confirm {
-          background: #fff;
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(44,62,80,0.18);
-          padding: 32px 28px 24px 28px;
-          max-width: 370px;
-          width: 90%;
-          text-align: center;
-          position: relative;
-          animation: modalPop .18s cubic-bezier(.4,1.4,.6,1.0);
-        }
-        @keyframes modalPop {
-          0% { transform: scale(0.85); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .modal-confirm h2 {
-          margin: 0 0 12px 0;
-          font-size: 1.25rem;
-          color: #d9534f;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-        }
-        .modal-confirm p {
-          color: #2d3a4a;
-          margin-bottom: 24px;
-          font-size: 1rem;
-          line-height: 1.5;
-        }
-        .modal-actions {
-          display: flex;
-          gap: 12px;
-          justify-content: center;
-        }
-        .modal-btn {
-          padding: 8px 24px;
-          border-radius: 7px;
-          border: none;
-          font-weight: 500;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background 0.18s, color 0.18s;
-        }
-        .modal-btn.confirm {
-          background: #d9534f;
-          color: #fff;
-        }
-        .modal-btn.confirm:hover, .modal-btn.confirm:focus {
-          background: #b52a2a;
-        }
-        .modal-btn.cancel {
-          background: #f5f7fa;
-          color: #2d3a4a;
-        }
-        .modal-btn.cancel:hover, .modal-btn.cancel:focus {
-          background: #e4e9ee;
-          color: #1976d2;
-        }
-      </style>
-      <!-- Custom Confirmation Modal -->
-      <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-confirm">
-          <h2><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h2>
-          <p>Are you sure you want to delete this record?<br>This action cannot be undone.</p>
-          <div class="modal-actions">
-            <button class="modal-btn confirm" id="modalConfirmBtn">Delete</button>
-            <button class="modal-btn cancel" id="modalCancelBtn">Cancel</button>
-          </div>
-        </div>
-      </div>
+      <!-- DataTables JS -->
+      <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+      <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
       <script>
-        // Toggle delete mode
-        const deleteBtn = document.getElementById('delete-toggle-btn');
-        const table = document.getElementById('records-table');
-        const deleteCheckboxCols = table.querySelectorAll('.delete-checkbox-col');
-        const deleteCheckboxHeader = document.getElementById('delete-checkbox-header');
-        const deleteForm = document.getElementById('delete-form');
-        const selectAllCheckbox = document.getElementById('select-all-checkbox');
-        let deleteMode = false;
-
-        function setDeleteMode(on) {
-          deleteMode = on;
-          // Show/hide checkbox columns
-          deleteCheckboxCols.forEach(col => col.style.display = on ? '' : 'none');
-          if (deleteCheckboxHeader) {
-            deleteCheckboxHeader.style.display = on ? '' : 'none';
-            if (selectAllCheckbox) selectAllCheckbox.style.display = on ? '' : 'none';
-          }
-          // Uncheck all checkboxes when exiting delete mode
-          if (!on) {
-            table.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
-            if (selectAllCheckbox) selectAllCheckbox.checked = false;
-          }
-        }
-
-        // Initial state: hide checkboxes
-        setDeleteMode(false);
-
-        // Select All logic
-        if (selectAllCheckbox) {
-          selectAllCheckbox.addEventListener('change', function() {
-            const checkboxes = table.querySelectorAll('.delete-checkbox');
-            checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+        $(document).ready(function() {
+          $('#records-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "columnDefs": [
+              { "orderable": false, "targets": [9] } // Disable sort for delete checkbox column
+            ]
           });
-          // Keep select-all in sync if user manually checks/unchecks
-          table.addEventListener('change', function(e) {
-            if (e.target.classList.contains('delete-checkbox')) {
-              const checkboxes = table.querySelectorAll('.delete-checkbox');
-              const checked = table.querySelectorAll('.delete-checkbox:checked');
-              selectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
-            }
-          });
-        }
+          // Toggle delete mode
+          const deleteBtn = document.getElementById('delete-toggle-btn');
+          const table = document.getElementById('records-table');
+          const deleteCheckboxCols = table.querySelectorAll('.delete-checkbox-col');
+          const deleteCheckboxHeader = document.getElementById('delete-checkbox-header');
+          const deleteForm = document.getElementById('delete-form');
+          const selectAllCheckbox = document.getElementById('select-all-checkbox');
+          let deleteMode = false;
 
-        // Custom modal logic
-        const modalOverlay = document.getElementById('modalOverlay');
-        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
-        // Update modal text for plural/singular
-        const modalText = modalOverlay.querySelector('p');
-
-        deleteBtn.addEventListener('click', function(e) {
-          if (!deleteMode) {
-            setDeleteMode(true);
-            // Change button style to indicate active delete mode
-            deleteBtn.classList.add('export-btn');
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
-          } else {
-            // Check if any checkbox is checked
-            const checked = table.querySelectorAll('.delete-checkbox:checked');
-            if (checked.length === 0) {
-              // Exit delete mode if nothing selected
-              setDeleteMode(false);
-              deleteBtn.classList.remove('export-btn');
-              deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
-              return;
+          function setDeleteMode(on) {
+            deleteMode = on;
+            // Show/hide checkbox columns
+            deleteCheckboxCols.forEach(col => col.style.display = on ? '' : 'none');
+            if (deleteCheckboxHeader) {
+              deleteCheckboxHeader.style.display = on ? '' : 'none';
+              if (selectAllCheckbox) selectAllCheckbox.style.display = on ? '' : 'none';
             }
-            // Update modal text for plural/singular
-            if (modalText) {
-              modalText.innerHTML = `Are you sure you want to delete ${checked.length > 1 ? 'these records' : 'this record'}?<br>This action cannot be undone.`;
+            // Uncheck all checkboxes when exiting delete mode
+            if (!on) {
+              table.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
+              if (selectAllCheckbox) selectAllCheckbox.checked = false;
             }
-            // Show custom confirmation modal
-            modalOverlay.style.display = 'flex';
           }
-        });
 
-        modalCancelBtn.addEventListener('click', function() {
-          modalOverlay.style.display = 'none';
-        });
-
-        modalConfirmBtn.addEventListener('click', function() {
-          modalOverlay.style.display = 'none';
-          // Submit the form
-          deleteForm.submit();
-        });
-
-        // Optional: clicking outside modal closes it
-        modalOverlay.addEventListener('click', function(e) {
-          if (e.target === modalOverlay) modalOverlay.style.display = 'none';
-        });
-
-        // Reset delete button and mode after form submit or page reload
-        window.addEventListener('DOMContentLoaded', function() {
+          // Initial state: hide checkboxes
           setDeleteMode(false);
-          deleteBtn.classList.remove('export-btn');
-          deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
-        });
 
-        // Make table rows clickable for editing
-        document.addEventListener('DOMContentLoaded', function() {
-          // Add click event to each record row (except when clicking a checkbox)
-          document.querySelectorAll('.record-row').forEach(function(row) {
-            row.addEventListener('click', function(e) {
-              // Prevent navigation if clicking on a checkbox
-              if (e.target.classList.contains('delete-checkbox')) return;
-              // Prevent navigation if in delete mode
-              if (deleteMode) return;
-              window.location = row.getAttribute('data-href');
+          // Select All logic
+          if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+              const checkboxes = table.querySelectorAll('.delete-checkbox');
+              checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+            });
+            // Keep select-all in sync if user manually checks/unchecks
+            table.addEventListener('change', function(e) {
+              if (e.target.classList.contains('delete-checkbox')) {
+                const checkboxes = table.querySelectorAll('.delete-checkbox');
+                const checked = table.querySelectorAll('.delete-checkbox:checked');
+                selectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
+              }
+            });
+          }
+
+          // Custom modal logic
+          const modalOverlay = document.getElementById('modalOverlay');
+          const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+          const modalCancelBtn = document.getElementById('modalCancelBtn');
+          // Update modal text for plural/singular
+          const modalText = modalOverlay.querySelector('p');
+
+          deleteBtn.addEventListener('click', function(e) {
+            if (!deleteMode) {
+              setDeleteMode(true);
+              // Change button style to indicate active delete mode
+              deleteBtn.classList.add('export-btn');
+              deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            } else {
+              // Check if any checkbox is checked
+              const checked = table.querySelectorAll('.delete-checkbox:checked');
+              if (checked.length === 0) {
+                // Exit delete mode if nothing selected
+                setDeleteMode(false);
+                deleteBtn.classList.remove('export-btn');
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                return;
+              }
+              // Update modal text for plural/singular
+              if (modalText) {
+                modalText.innerHTML = `Are you sure you want to delete ${checked.length > 1 ? 'these records' : 'this record'}?<br>This action cannot be undone.`;
+              }
+              // Show custom confirmation modal
+              modalOverlay.style.display = 'flex';
+            }
+          });
+
+          modalCancelBtn.addEventListener('click', function() {
+            modalOverlay.style.display = 'none';
+          });
+
+          modalConfirmBtn.addEventListener('click', function() {
+            modalOverlay.style.display = 'none';
+            // Submit the form
+            deleteForm.submit();
+          });
+
+          // Optional: clicking outside modal closes it
+          modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+          });
+
+          // Reset delete button and mode after form submit or page reload
+          window.addEventListener('DOMContentLoaded', function() {
+            setDeleteMode(false);
+            deleteBtn.classList.remove('export-btn');
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+          });
+
+          // Make table rows clickable for editing
+          document.addEventListener('DOMContentLoaded', function() {
+            // Add click event to each record row (except when clicking a checkbox)
+            document.querySelectorAll('.record-row').forEach(function(row) {
+              row.addEventListener('click', function(e) {
+                // Prevent navigation if clicking on a checkbox
+                if (e.target.classList.contains('delete-checkbox')) return;
+                // Prevent navigation if in delete mode
+                if (deleteMode) return;
+                window.location = row.getAttribute('data-href');
+              });
             });
           });
-        });
 
-        // Search bar submit on enter or change
-        document.getElementById('search-input').addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
+          // Search bar submit on enter or change
+          document.getElementById('search-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submitSearch();
+            }
+          });
+          document.getElementById('search-input').addEventListener('change', function() {
             submitSearch();
+          });
+          function submitSearch() {
+            const val = document.getElementById('search-input').value;
+            const params = new URLSearchParams(window.location.search);
+            if (val) {
+              params.set('search', val);
+              params.set('page', 1); // Reset to first page on new search
+            } else {
+              params.delete('search');
+              params.set('page', 1);
+            }
+            window.location.search = params.toString();
           }
-        });
-        document.getElementById('search-input').addEventListener('change', function() {
-          submitSearch();
-        });
-        function submitSearch() {
-          const val = document.getElementById('search-input').value;
-          const params = new URLSearchParams(window.location.search);
-          if (val) {
-            params.set('search', val);
-            params.set('page', 1); // Reset to first page on new search
-          } else {
-            params.delete('search');
-            params.set('page', 1);
-          }
-          window.location.search = params.toString();
-        }
 
-        // Filter modal logic
-        const filterBtn = document.getElementById('filter-btn');
-        const filterModalOverlay = document.getElementById('filterModalOverlay');
-        const filterCancelBtn = document.getElementById('filterCancelBtn');
-        const filterForm = document.getElementById('filterForm');
-        // Set initial filter values from URL
-        document.addEventListener('DOMContentLoaded', function() {
-          const params = new URLSearchParams(window.location.search);
-          if (params.has('filterField')) {
-            document.getElementById('filterField').value = params.get('filterField');
-          }
-          if (params.has('filterOrder')) {
-            document.getElementById('filterOrder').value = params.get('filterOrder');
-          }
+          // Filter modal logic
+          const filterBtn = document.getElementById('filter-btn');
+          const filterModalOverlay = document.getElementById('filterModalOverlay');
+          const filterCancelBtn = document.getElementById('filterCancelBtn');
+          const filterForm = document.getElementById('filterForm');
+          // Set initial filter values from URL
+          document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('filterField')) {
+              document.getElementById('filterField').value = params.get('filterField');
+            }
+            if (params.has('filterOrder')) {
+              document.getElementById('filterOrder').value = params.get('filterOrder');
+            }
+          });
+          filterBtn.onclick = function() {
+            filterModalOverlay.style.display = 'flex';
+          };
+          filterCancelBtn.onclick = function() {
+            filterModalOverlay.style.display = 'none';
+          };
+          filterForm.onsubmit = function(e) {
+            e.preventDefault();
+            const field = document.getElementById('filterField').value;
+            const order = document.getElementById('filterOrder').value;
+            const params = new URLSearchParams(window.location.search);
+            params.set('filterField', field);
+            params.set('filterOrder', order);
+            params.set('page', 1);
+            window.location.search = params.toString();
+          };
+          // Optional: close filter modal on overlay click
+          filterModalOverlay.onclick = function(e) {
+            if (e.target === filterModalOverlay) filterModalOverlay.style.display = 'none';
+          };
         });
-        filterBtn.onclick = function() {
-          filterModalOverlay.style.display = 'flex';
-        };
-        filterCancelBtn.onclick = function() {
-          filterModalOverlay.style.display = 'none';
-        };
-        filterForm.onsubmit = function(e) {
-          e.preventDefault();
-          const field = document.getElementById('filterField').value;
-          const order = document.getElementById('filterOrder').value;
-          const params = new URLSearchParams(window.location.search);
-          params.set('filterField', field);
-          params.set('filterOrder', order);
-          params.set('page', 1);
-          window.location.search = params.toString();
-        };
-        // Optional: close filter modal on overlay click
-        filterModalOverlay.onclick = function(e) {
-          if (e.target === filterModalOverlay) filterModalOverlay.style.display = 'none';
-        };
       </script>
-      <div class="cemetery-masterlist-pagination" style="justify-content: center;">
-        <?php
-        $baseUrl = strtok($_SERVER["REQUEST_URI"], '?');
-        // Define as a closure so $baseUrl is available
-        $pageLink = function($p, $label, $active = false, $disabled = false) use ($baseUrl) {
-          $class = $active ? 'active' : '';
-          $disabledAttr = $disabled ? 'disabled' : '';
-          // Add search param if present
-          $searchParam = isset($_GET['search']) && $_GET['search'] !== '' ? '&search=' . urlencode($_GET['search']) : '';
-          $url = $disabled ? '#' : htmlspecialchars($baseUrl . '?page=' . $p . $searchParam);
-          echo "<button class='$class' $disabledAttr onclick='if(this.hasAttribute(\"disabled\"))return false;window.location=\"$url\";'>$label</button>";
-        };
-        // Previous button
-        $pageLink($page-1, '&lt;', false, $page <= 1);
-        // Page numbers (show up to 5 pages)
-        $start = max(1, $page - 2);
-        $end = min($totalPages, $page + 2);
-        if ($start > 1) $pageLink(1, '1', $page == 1);
-        if ($start > 2) echo "<span>...</span>";
-        for ($i = $start; $i <= $end; $i++) {
-          $pageLink($i, $i, $page == $i);
-        }
-        if ($end < $totalPages - 1) echo "<span>...</span>";
-        if ($end < $totalPages) $pageLink($totalPages, $totalPages, $page == $totalPages);
-        // Next button
-        $pageLink($page+1, '&gt;', false, $page >= $totalPages);
-        ?>
-      </div>
-      <div>
-        <span>Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
-      </div>
+      <!-- Remove custom pagination/search/filter HTML/JS -->
     </div>
   </main>
 </body>

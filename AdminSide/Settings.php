@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-< lang="en">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RestEase Admin Dashboard - Settings</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Settings.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 </head>
 <body>
    <!-- Sidebar -->
@@ -185,7 +186,7 @@
             <div class="settings-section">
               <h2>Archive Records</h2>
               <div class="archive-table-container">
-                <table class="archive-table">
+                <table class="archive-table" id="archiveRecordsTable">
                   <thead>
                     <tr>
                       <th>First Name</th>
@@ -408,6 +409,8 @@
       </section>
     </div>
   </main>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script>
     // Track if there are unsaved changes
     let unsaved = false;
@@ -599,6 +602,14 @@
         row.parentNode.removeChild(row);
         // ...add delete logic here...
       };
+    });
+    $(document).ready(function() {
+      $('#archiveRecordsTable').DataTable({
+        paging: true,
+        searching: true,
+        ordering: true,
+        info: true
+      });
     });
   </script>
 </body>

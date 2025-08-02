@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RestEase Clients</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
 </head>
@@ -16,7 +16,7 @@
   <!-- Main Content -->
   <main class="main-content">
     <div class="clients-header">
-      <h1>Clients</h1>
+      <h1>Client Requests</h1>
       <p class="subtitle">View all Clients Information.</p>
     </div>
     <div class="clients-tabs-bar">
