@@ -107,23 +107,47 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       margin-bottom: 1rem;
       font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
     }
     .cemetery-masterlist-table th, .cemetery-masterlist-table td {
-      padding: 10px 12px;
+      padding: 8px 10px;
       text-align: left;
-      font-size: 0.98rem;
+      font-size: 0.9rem;
       border-bottom: 1px solid #eee;
       background: #fff;
       font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .cemetery-masterlist-table th {
       background: #f7f8fa;
       font-weight: 500;
       color: #333;
+      font-size: 0.85rem;
     }
     .cemetery-masterlist-table tr:last-child td {
       border-bottom: none;
     }
+    /* Specific column widths for better date display */
+    .cemetery-masterlist-table th:nth-child(1), 
+    .cemetery-masterlist-table td:nth-child(1) { width: 8%; }
+    .cemetery-masterlist-table th:nth-child(2), 
+    .cemetery-masterlist-table td:nth-child(2) { width: 18%; }
+    .cemetery-masterlist-table th:nth-child(3), 
+    .cemetery-masterlist-table td:nth-child(3) { width: 6%; }
+    .cemetery-masterlist-table th:nth-child(4), 
+    .cemetery-masterlist-table td:nth-child(4) { width: 12%; }
+    .cemetery-masterlist-table th:nth-child(5), 
+    .cemetery-masterlist-table td:nth-child(5) { width: 20%; }
+    .cemetery-masterlist-table th:nth-child(6), 
+    .cemetery-masterlist-table td:nth-child(6) { width: 15%; }
+    .cemetery-masterlist-table th:nth-child(7), 
+    .cemetery-masterlist-table td:nth-child(7) { width: 12%; }
+    .cemetery-masterlist-table th:nth-child(8), 
+    .cemetery-masterlist-table td:nth-child(8) { width: 12%; }
+    .cemetery-masterlist-table th:nth-child(9), 
+    .cemetery-masterlist-table td:nth-child(9) { width: 12%; }
     @media (max-width: 900px) {
       .cemetery-masterlist-container {
         margin-left: 0;
@@ -133,6 +157,59 @@
         flex-direction: column;
         align-items: stretch;
       }
+    }
+    /* Modal styles matching Clients.php */
+    .modal-overlay {
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background: rgba(44,62,80,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+      padding: 32px 32px 24px 32px;
+      min-width: 340px;
+      max-width: 95vw;
+      text-align: center;
+      position: relative;
+    }
+    .modal-header h2 {
+      margin: 0;
+    }
+    .modal-footer {
+      margin-top: 10px;
+    }
+    .modal-delete-btn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    .modal-cancel-btn {
+      background: #95a5a6;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    #delete-toggle-btn {
+      background: #e74c3c !important;
+      color: #fff !important;
+    }
+    #delete-toggle-btn:hover {
+      background: #c0392b !important;
     }
   </style>
 </head>
@@ -162,61 +239,31 @@
           <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>
-      <!-- Filter Modal -->
-      <div class="modal-overlay" id="filterModalOverlay" style="display:none;">
-        <div class="modal-confirm" style="max-width:340px;">
-          <h2 style="color:rgb(122, 157, 192);"><i class="fas fa-filter"></i> Filter & Sort</h2>
-          <form id="filterForm" style="margin-top:18px;">
-            <div style="margin-bottom:16px;">
-              <label for="filterField" style="font-weight:500;">Field:</label>
-              <select id="filterField" name="filterField" style="margin-left:8px;padding:4px 8px;">
-                <option value="nicheID">Apt No.</option>
-                <option value="lastName">Last Name</option>
-                <option value="firstName">First Name</option>
-                <option value="age">Age</option>
-                <option value="born">Date of Birth</option>
-                <option value="residency">Address</option>
-                <option value="informantName">Informant Name</option>
-                <option value="dateDied">Date Died</option>
-                <option value="dateInternment">Date Internment</option>
-              </select>
-            </div>
-            <div style="margin-bottom:18px;">
-              <label for="filterOrder" style="font-weight:500;">Order:</label>
-              <select id="filterOrder" name="filterOrder" style="margin-left:8px;padding:4px 8px;">
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
-            </div>
-            <div class="modal-actions" style="justify-content:flex-end;">
-              <button type="button" class="modal-btn cancel" id="filterCancelBtn">Cancel</button>
-              <button type="submit" class="modal-btn confirm" style="background:rgb(122, 157, 192);color:#fff;">Apply</button>
-            </div>
-          </form>
+      <!-- Delete Confirmation Modal -->
+      <div id="deleteModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
+            <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
+          </div>
+          <div class="modal-body" style="margin:18px 0 24px 0;">
+            <p id="deleteModalText" style="color:#444;font-size:1.07rem;margin:0;">
+              Are you sure you want to archive this record?<br>
+              This action will move the record to the archive section.
+            </p>
+          </div>
+          <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+            <button id="modalDeleteBtn" class="modal-delete-btn">Archive</button>
+            <button id="modalCancelBtn" class="modal-cancel-btn">Cancel</button>
+          </div>
         </div>
       </div>
-      <?php if (isset($_GET['filterField']) && isset($_GET['filterOrder']) && $_GET['filterField'] !== '' && $_GET['filterOrder'] !== ''): ?>
-        <div style="margin: 10px 0 0 0; font-size: 1rem; color:rgb(122, 157, 192); font-weight: 500;">
-          Filtered by: 
-          <?php
-            $fieldLabels = [
-              'nicheID' => 'Apt No.',
-              'lastName' => 'Last Name',
-              'firstName' => 'First Name',
-              'age' => 'Age',
-              'born' => 'Date of Birth',
-              'residency' => 'Address',
-              'informantName' => 'Informant Name',
-              'dateDied' => 'Date Died',
-              'dateInternment' => 'Date Internment'
-            ];
-            $f = $_GET['filterField'];
-            $o = strtolower($_GET['filterOrder']);
-            echo isset($fieldLabels[$f]) ? $fieldLabels[$f] : htmlspecialchars($f);
-          ?>
-          &nbsp;|&nbsp; Order: <?php echo $o === 'asc' ? 'Ascending' : 'Descending'; ?>
-        </div>
-      <?php endif; ?>
+
+      <!-- Success Notification -->
+      <div id="successNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i><span id="notificationText">Records successfully archived.</span></span>
+        <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
+      </div>
       <form id="delete-form" method="post" style="margin:0;">
       <div style="overflow-x:auto;">
         <table class="cemetery-masterlist-table" id="records-table">
@@ -252,7 +299,7 @@
               // Delete from deceased
               $conn->query("DELETE FROM deceased WHERE id IN ($idsList)");
               $conn->close();
-              echo "<script>window.location.href=window.location.pathname+'?deleted=1';</script>";
+              echo "<script>window.location.href='Settings.php?archived=1';</script>";
               exit;
             }
             include_once '../Includes/db.php';
@@ -323,9 +370,10 @@
             "ordering": true,
             "info": true,
             "columnDefs": [
-              { "orderable": false, "targets": [9] } // Disable sort for delete checkbox column
+              { "orderable": false, "targets": [9] }
             ]
           });
+
           // Toggle delete mode
           const deleteBtn = document.getElementById('delete-toggle-btn');
           const table = document.getElementById('records-table');
@@ -337,20 +385,17 @@
 
           function setDeleteMode(on) {
             deleteMode = on;
-            // Show/hide checkbox columns
             deleteCheckboxCols.forEach(col => col.style.display = on ? '' : 'none');
             if (deleteCheckboxHeader) {
               deleteCheckboxHeader.style.display = on ? '' : 'none';
               if (selectAllCheckbox) selectAllCheckbox.style.display = on ? '' : 'none';
             }
-            // Uncheck all checkboxes when exiting delete mode
             if (!on) {
               table.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
               if (selectAllCheckbox) selectAllCheckbox.checked = false;
             }
           }
 
-          // Initial state: hide checkboxes
           setDeleteMode(false);
 
           // Select All logic
@@ -359,7 +404,7 @@
               const checkboxes = table.querySelectorAll('.delete-checkbox');
               checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
             });
-            // Keep select-all in sync if user manually checks/unchecks
+            
             table.addEventListener('change', function(e) {
               if (e.target.classList.contains('delete-checkbox')) {
                 const checkboxes = table.querySelectorAll('.delete-checkbox');
@@ -369,46 +414,119 @@
             });
           }
 
-          // Custom modal logic
-          const modalOverlay = document.getElementById('modalOverlay');
-          const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-          const modalCancelBtn = document.getElementById('modalCancelBtn');
-          // Update modal text for plural/singular
-          const modalText = modalOverlay.querySelector('p');
-
+          // Delete button click handler
           deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
             if (!deleteMode) {
               setDeleteMode(true);
-              // Change button style to indicate active delete mode
               deleteBtn.classList.add('export-btn');
               deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
             } else {
-              // Check if any checkbox is checked
               const checked = table.querySelectorAll('.delete-checkbox:checked');
               if (checked.length === 0) {
-                // Exit delete mode if nothing selected
                 setDeleteMode(false);
                 deleteBtn.classList.remove('export-btn');
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
                 return;
               }
-              // Update modal text for plural/singular
+              
+              // Update modal text
+              const modalText = document.getElementById('deleteModalText');
               if (modalText) {
-                modalText.innerHTML = `Are you sure you want to delete ${checked.length > 1 ? 'these records' : 'this record'}?<br>This action cannot be undone.`;
+                modalText.innerHTML = `Are you sure you want to archive ${checked.length > 1 ? 'these records' : 'this record'}?<br>This action will move the record${checked.length > 1 ? 's' : ''} to the archive section.`;
               }
-              // Show custom confirmation modal
-              modalOverlay.style.display = 'flex';
+              
+              // Show modal
+              document.getElementById('deleteModal').style.display = 'flex';
             }
           });
 
-          modalCancelBtn.addEventListener('click', function() {
-            modalOverlay.style.display = 'none';
+          // Modal handlers
+          document.getElementById('modalCancelBtn').addEventListener('click', function() {
+            document.getElementById('deleteModal').style.display = 'none';
           });
 
-          modalConfirmBtn.addEventListener('click', function() {
-            modalOverlay.style.display = 'none';
-            // Submit the form
-            deleteForm.submit();
+          document.getElementById('modalDeleteBtn').addEventListener('click', function() {
+            const checked = table.querySelectorAll('.delete-checkbox:checked');
+            if (checked.length === 0) return;
+            
+            const deleteModalBtn = this;
+            const modal = document.getElementById('deleteModal');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+            
+            // Show loading state
+            deleteModalBtn.disabled = true;
+            deleteModalBtn.textContent = 'Archiving...';
+            cancelBtn.disabled = true;
+            
+            // Collect IDs
+            const deleteIds = Array.from(checked).map(cb => cb.value);
+            
+            // Create form data
+            const formData = new FormData();
+            deleteIds.forEach(id => {
+              formData.append('delete_ids[]', id);
+            });
+            
+            // Send request
+            fetch('Records.php', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => {
+              if (!response.ok) throw new Error('Network response was not ok');
+              return response.text();
+            })
+            .then(data => {
+              // Remove rows from table
+              checked.forEach(cb => {
+                const row = cb.closest('tr');
+                if (row) row.remove();
+              });
+              
+              // Show success notification
+              const notification = document.getElementById('successNotification');
+              const notificationText = document.getElementById('notificationText');
+              notificationText.textContent = `${deleteIds.length} record${deleteIds.length > 1 ? 's' : ''} successfully archived.`;
+              notification.style.display = 'flex';
+
+              // Auto-hide notification after 3 seconds
+              setTimeout(() => {
+                notification.style.display = 'none';
+              }, 3000);
+
+              // Hide modal and reset
+              modal.style.display = 'none';
+              setDeleteMode(false);
+              deleteBtn.classList.remove('export-btn');
+              deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('An error occurred while archiving. Please try again.');
+            })
+            .finally(() => {
+              deleteModalBtn.disabled = false;
+              deleteModalBtn.textContent = 'Archive';
+              cancelBtn.disabled = false;
+            });
+          });
+
+          // Close notification
+          let notificationTimeout;
+          document.getElementById('closeNotificationBtn').addEventListener('click', function() {
+            document.getElementById('successNotification').style.display = 'none';
+            if (notificationTimeout) {
+              clearTimeout(notificationTimeout);
+            }
+          });
+
+          // Close modal on overlay click
+          document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+              this.style.display = 'none';
+            }
           });
 
           // Optional: clicking outside modal closes it
@@ -459,42 +577,6 @@
             }
             window.location.search = params.toString();
           }
-
-          // Filter modal logic
-          const filterBtn = document.getElementById('filter-btn');
-          const filterModalOverlay = document.getElementById('filterModalOverlay');
-          const filterCancelBtn = document.getElementById('filterCancelBtn');
-          const filterForm = document.getElementById('filterForm');
-          // Set initial filter values from URL
-          document.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('filterField')) {
-              document.getElementById('filterField').value = params.get('filterField');
-            }
-            if (params.has('filterOrder')) {
-              document.getElementById('filterOrder').value = params.get('filterOrder');
-            }
-          });
-          filterBtn.onclick = function() {
-            filterModalOverlay.style.display = 'flex';
-          };
-          filterCancelBtn.onclick = function() {
-            filterModalOverlay.style.display = 'none';
-          };
-          filterForm.onsubmit = function(e) {
-            e.preventDefault();
-            const field = document.getElementById('filterField').value;
-            const order = document.getElementById('filterOrder').value;
-            const params = new URLSearchParams(window.location.search);
-            params.set('filterField', field);
-            params.set('filterOrder', order);
-            params.set('page', 1);
-            window.location.search = params.toString();
-          };
-          // Optional: close filter modal on overlay click
-          filterModalOverlay.onclick = function(e) {
-            if (e.target === filterModalOverlay) filterModalOverlay.style.display = 'none';
-          };
         });
       </script>
       <!-- Remove custom pagination/search/filter HTML/JS -->
@@ -502,3 +584,4 @@
   </main>
 </body>
 </html>
+              

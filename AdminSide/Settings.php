@@ -243,21 +243,44 @@
               background: #fff;
               border-radius: 8px;
               overflow: hidden;
-              font-size: 0.97rem;
+              font-size: 0.9rem;
             }
             .archive-table th, .archive-table td {
-              padding: 10px 12px;
+              padding: 8px 10px;
               border-bottom: 1px solid #e3e7ed;
               text-align: left;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
             .archive-table th {
               background: #f5f7fa;
               color: #2d3a4a;
               font-weight: 600;
+              font-size: 0.85rem;
             }
             .archive-table tr:last-child td {
               border-bottom: none;
             }
+            /* Specific column widths for better date display */
+            .archive-table th:nth-child(1), 
+            .archive-table td:nth-child(1) { width: 12%; }
+            .archive-table th:nth-child(2), 
+            .archive-table td:nth-child(2) { width: 12%; }
+            .archive-table th:nth-child(3), 
+            .archive-table td:nth-child(3) { width: 8%; }
+            .archive-table th:nth-child(4), 
+            .archive-table td:nth-child(4) { width: 12%; }
+            .archive-table th:nth-child(5), 
+            .archive-table td:nth-child(5) { width: 20%; }
+            .archive-table th:nth-child(6), 
+            .archive-table td:nth-child(6) { width: 12%; }
+            .archive-table th:nth-child(7), 
+            .archive-table td:nth-child(7) { width: 12%; }
+            .archive-table th:nth-child(8), 
+            .archive-table td:nth-child(8) { width: 8%; }
+            .archive-table th:nth-child(9), 
+            .archive-table td:nth-child(9) { width: 14%; }
             </style>
           </div>
           <!-- Archive Requests Section -->

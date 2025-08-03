@@ -224,6 +224,23 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
         height: 34px;
       }
     }
+    .tab {
+      background: none;
+      border: none;
+      font-size: 1.08rem;
+      padding: 16px 0 12px 0;
+      color: #222;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
+    }
+    .tab.active {
+      border-bottom: 2.5px solid #506C84;
+      color: #506C84;
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -460,22 +477,6 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
     </script>
   </main>
   <style>
-    .tab {
-      background: none;
-      border: none;
-      font-size: 1.08rem;
-      padding: 16px 0 12px 0;
-      color: #506C84;
-      font-weight: 600;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: border-bottom 0.18s, opacity 0.18s;
-    }
-    .tab.active {
-      border-bottom: 2.5px solid #506C84;
-      opacity: 1;
-    }
     input[type="text"], input[type="number"], input[type="date"] {
       border:1px solid #d0d7e2; border-radius:7px; padding:8px 12px; font-size:1.04rem; margin-top:4px; margin-bottom:2px; background:#f7fafd; transition:border 0.18s; }
     input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
@@ -530,7 +531,6 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
 </html>
 </body>
 </html>
-          ordering: true,
           info: true
         });
       });

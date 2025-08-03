@@ -1,4 +1,5 @@
 <?php
+session_start();
 // Database connection (adjust credentials as needed)
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
@@ -221,6 +222,7 @@ while ($row = $result->fetch_assoc()) {
         var minZoom = map.getBoundsZoom(borderBounds, false);
         map.setMinZoom(minZoom - 1); // allow zooming out a bit more
         map.setMaxZoom(minZoom + 3); // allow zooming in more
+        map.setZoom(minZoom); // set initial zoom level to fit bounds
 
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         // remove popup's row if "visible-with-data"

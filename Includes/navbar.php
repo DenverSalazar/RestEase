@@ -1,5 +1,4 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include_once '../Includes/db.php';
 $user_avatar_html = '';
 if (isset($_SESSION['user_id'])) {
@@ -70,4 +69,5 @@ function toggleMobileMenu() {
     links.classList.toggle('show');
     overlay.classList.toggle('show');
 }
+</script>
 </script>

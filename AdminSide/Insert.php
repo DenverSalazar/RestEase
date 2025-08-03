@@ -5,13 +5,27 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Add date validation and conversion
+  function validateAndFormatDate($dateString) {
+    if (empty($dateString)) {
+      return '';
+    }
+    
+    $date = DateTime::createFromFormat('Y-m-d', $dateString);
+    if ($date !== false) {
+      return $date->format('Y-m-d');
+    }
+    
+    return '';
+  }
+
   $firstName = trim($_POST['firstName'] ?? '');
   $lastName = trim($_POST['lastName'] ?? '');
   $age = trim($_POST['age'] ?? '');
-  $born = trim($_POST['born'] ?? '');
+  $born = validateAndFormatDate(trim($_POST['born'] ?? ''));
   $residency = trim($_POST['residency'] ?? '');
-  $dateDied = trim($_POST['dateDied'] ?? '');
-  $dateInternment = trim($_POST['dateInternment'] ?? '');
+  $dateDied = validateAndFormatDate(trim($_POST['dateDied'] ?? ''));
+  $dateInternment = validateAndFormatDate(trim($_POST['dateInternment'] ?? ''));
   $apartmentNo = trim($_POST['apartmentNo'] ?? '');
   $informantName = trim($_POST['informantName'] ?? '');
 
@@ -19,10 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($firstName === '') $errors[] = "First Name is required.";
   if ($lastName === '') $errors[] = "Last Name is required.";
   if ($age === '' || !is_numeric($age)) $errors[] = "Valid Age is required.";
-  if ($born === '') $errors[] = "Born date is required.";
+  if ($born === '') $errors[] = "Valid Born date is required.";
   if ($residency === '') $errors[] = "Residency is required.";
-  if ($dateDied === '') $errors[] = "Date Died is required.";
-  if ($dateInternment === '') $errors[] = "Date of Internment is required.";
+  if ($dateDied === '') $errors[] = "Valid Date Died is required.";
+  if ($dateInternment === '') $errors[] = "Valid Date of Internment is required.";
   if ($apartmentNo === '') $errors[] = "Apartment No. is required.";
   if ($informantName === '') $errors[] = "Informant Name is required.";
 
@@ -427,11 +441,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <button type="button" id="closeModal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
           <h3 style="margin-top:0;">Import Excel File</h3>
           <form action="ImportExcel.php" method="post" enctype="multipart/form-data">
-            <input type="file" name="excel_file" accept=".xls,.xlsx" required style="margin-bottom:16px;">
+            <input type="file" name="excel_file" accept=".xls,.xlsx,.csv" required style="margin-bottom:16px;">
             <br>
             <button type="submit" style="background:#506C84; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:1rem; cursor:pointer;">Upload</button>
           </form>
-          <div style="font-size:0.95rem; color:#555; margin-top:10px;">Only .xls or .xlsx files are allowed.</div>
+          <div style="font-size:0.95rem; color:#555; margin-top:10px;">CSV, XLS or XLSX files are allowed.</div>
         </div>
       </div>
       <script>

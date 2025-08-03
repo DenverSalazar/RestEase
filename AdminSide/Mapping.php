@@ -324,7 +324,6 @@ while ($row = $result->fetch_assoc()) {
             <option value="all">All</option>
             <option value="vacant">Vacant</option>
             <option value="sold">Sold</option>
-            <option value="reserved">Reserved</option>
         </select>
      </div>
      <div id="map">
@@ -359,10 +358,6 @@ while ($row = $result->fetch_assoc()) {
             <div class="legend-row">
                 <span class="legend-dot sold"></span>
                 <span class="legend-label">Sold</span>
-            </div>
-            <div class="legend-row">
-                <span class="legend-dot reserved"></span>
-                <span class="legend-label">Reserved</span>
             </div>
         </div>
      </div>
@@ -437,7 +432,8 @@ while ($row = $result->fetch_assoc()) {
         // Optionally, set min/max zoom based on border bounds
         var minZoom = map.getBoundsZoom(borderBounds, false);
         map.setMinZoom(minZoom - 1); // allow zooming out a bit more
-        map.setMaxZoom(minZoom + 3); // allow zooming in more
+        map.setMaxZoom(minZoom + 5); // allow more zoom in capability
+        map.setZoom(minZoom + 1); // set initial zoom level lower
 
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         // remove popup's row if "visible-with-data"

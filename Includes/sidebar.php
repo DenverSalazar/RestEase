@@ -4,7 +4,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $clients_pages = ['Clients.php'];
 $request_pages = ['ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
-$mapping_pages = ['Mapping.php', 'EditNiches.php'];
+$mapping_pages = ['Mapping.php','insert.php', 'EditNiches.php'];
 // Add this line to treat both as active for Records
 $records_pages = ['Records.php', 'Insert.php', 'EditNiches.php'];
 
@@ -50,7 +50,7 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
       </a>
       <a href="Certificate.php" class="nav-item<?php if($current_page == 'Certificate.php') echo ' active'; ?>">
         <i class="fas fa-th-list"></i>
-        Certificate
+        Certification
       </a>
     </nav>
     <div style="margin-top: auto;">

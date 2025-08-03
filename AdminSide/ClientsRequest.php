@@ -21,7 +21,7 @@
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <span class="clients-tab-title" id="tab-clients-request" onclick="showTab('clients-request')">Clients Request</span>
+        <span class="clients-tab-title active" id="tab-clients-request" onclick="showTab('clients-request')">Clients Request</span>
         <span class="clients-tab-title" id="tab-accepted-request" onclick="showTab('accepted-request')">Accepted Requests</span>
       </div>
     </div>
@@ -265,17 +265,35 @@
         background: #dc2626;
         color: #fff;
       }
+      .clients-tabs-bar {
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 8px;
+      }
+      .clients-tabs {
+        display: flex;
+        gap: 32px;
+        align-items: center;
+      }
       .clients-tab-title {
-        font-weight: 600;
+        background: none;
+        border: none;
         font-size: 1.08rem;
-        padding: 10px 28px;
-        border-radius: 8px;
-        background: #f4f6fa;
+        padding: 16px 0 12px 0;
         color: #222;
-        display: inline-block;
+        font-weight: 600;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
+        border-radius: 0;
+        box-shadow: none;
         margin-bottom: 0;
         margin-top: 0;
-        box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
+      }
+      .clients-tab-title.active {
+        border-bottom: 2.5px solid #506C84;
+        color: #506C84;
+        opacity: 1;
       }
       .status-badge.status-accepted {
         background: #a6f4c5;

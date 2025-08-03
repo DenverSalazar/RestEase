@@ -22,6 +22,39 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// Add this function to handle date conversion
+function convertExcelDate($value) {
+    if (empty($value) || $value === '0000-00-00') {
+        return '0000-00-00';
+    }
+    
+    // If it's already a valid date format
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return $value;
+    }
+    
+    // If it's an Excel serial number
+    if (is_numeric($value) && $value > 25569) {
+        try {
+            $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
+            return $date->format('Y-m-d');
+        } catch (Exception $e) {
+            return '0000-00-00';
+        }
+    }
+    
+    // Try to parse various date formats
+    $formats = ['Y-m-d', 'm/d/Y', 'd/m/Y', 'Y/m/d', 'm-d-Y', 'd-m-Y'];
+    foreach ($formats as $format) {
+        $date = DateTime::createFromFormat($format, $value);
+        if ($date !== false) {
+            return $date->format('Y-m-d');
+        }
+    }
+    
+    return '0000-00-00';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
     $fileTmp = $_FILES['excel_file']['tmp_name'];
     $spreadsheet = IOFactory::load($fileTmp);
@@ -38,10 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
         $firstName = $row[0] ?? '';
         $lastName = $row[1] ?? '';
         $age = $row[2] ?? '';
-        $born = $row[3] ?? '';
+        $born = convertExcelDate($row[3] ?? '');
         $residency = $row[4] ?? '';
-        $dateDied = $row[5] ?? '';
-        $dateInternment = $row[6] ?? '';
+        $dateDied = convertExcelDate($row[5] ?? '');
+        $dateInternment = convertExcelDate($row[6] ?? '');
         $nicheID = $row[7] ?? '';
         $informantName = $row[8] ?? '';
 

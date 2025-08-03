@@ -5,6 +5,45 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: ../AdminLogin.php"); // Adjust the path if needed
     exit;
 }
+
+include_once '../Includes/db.php';
+
+// Total physical niches calculation
+// Based on your layout: 72x72 niches per section, with 22 sections total
+// Plus baby niches: Section 1 and 4 each have additional 4x29 upper and lower = 232 each
+// Baby niches total: 232 + 232 = 464 additional niches
+$totalPhysicalNiches = (144 * 22) + 464; // 3,168 + 464 = 3,632 total niches
+
+// Occupied niches: unique nicheIDs in deceased table only (current occupants)
+$occupiedNichesArr = [];
+$resOcc = $conn->query("SELECT DISTINCT nicheID FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND nicheID != 'null'");
+if ($resOcc) {
+    while ($row = $resOcc->fetch_assoc()) {
+        $occupiedNichesArr[$row['nicheID']] = true;
+    }
+}
+$occupiedNiches = count($occupiedNichesArr);
+
+// Available niches = Total physical niches - Currently occupied niches
+$availableNiches = $totalPhysicalNiches - $occupiedNiches;
+if ($availableNiches < 0) $availableNiches = 0;
+
+// Pending requests
+$result = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests");
+$pendingRequest = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
+
+// Active clients
+$result = $conn->query("SELECT COUNT(*) AS cnt FROM users");
+$activeClients = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
+
+// Get admin name
+$adminName = 'Admin';
+$adminId = $_SESSION['admin_id'];
+$resAdmin = $conn->query("SELECT email FROM admin_accounts WHERE id = $adminId LIMIT 1");
+if ($resAdmin && $row = $resAdmin->fetch_assoc()) {
+    // Use the part before @ as display name, or use the email if you prefer
+    $adminName = ucfirst(explode('@', $row['email'])[0]);
+}
 ?>
 
 <!DOCTYPE html>
@@ -18,6 +57,37 @@ if (!isset($_SESSION['admin_id'])) {
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/sidebar.css">
 </head>
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .dashboard-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 0;
+    min-height: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dashboard-card-large {
+    padding: 24px 32px 8px 32px;
+    min-height: 340px;
+  }
+  .dashboard-card-small {
+    min-height: 340px;
+    /* You can add content or leave empty for now */
+  }
+  #chart {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+</style>
 <body>
    <!-- Sidebar -->
    <?php include '../Includes/sidebar.php'; ?>
@@ -28,7 +98,7 @@ if (!isset($_SESSION['admin_id'])) {
     <header class="header">
       <div class="header-left">
         <div class="greeting">
-          <div class="hello-text">Hello, <span class="username">Sybau</span></div>
+          <div class="hello-text">Hello, <span class="username"><?php echo htmlspecialchars($adminName); ?></span></div>
           <div class="datetime">
             <span class="date" id="current-date"></span>
             <span class="time" id="current-time"></span>
@@ -43,7 +113,7 @@ if (!isset($_SESSION['admin_id'])) {
         <div class="profile-info">
           <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
           <div>
-            <div class="profile-name">Sybau</div>
+            <div class="profile-name"><?php echo htmlspecialchars($adminName); ?></div>
             <div class="profile-role">Admin</div>
           </div>
         </div>
@@ -92,35 +162,128 @@ if (!isset($_SESSION['admin_id'])) {
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-title">Available Niches</div>
-          <div class="stat-value">652 Available Niches</div>
+          <div class="stat-value"><?php echo $availableNiches; ?> Available Niches</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">Occupied Niches</div>
-          <div class="stat-value">652 Niches Occupied</div>
+          <div class="stat-value"><?php echo $occupiedNiches; ?> Niches Occupied</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">Pending Request</div>
-          <div class="stat-value">652 Pending Request</div>
+          <div class="stat-value"><?php echo $pendingRequest; ?> Pending Request</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">Active Clients</div>
-          <div class="stat-value">652 Active Clients</div>
+          <div class="stat-value"><?php echo $activeClients; ?> Active Clients</div>
         </div>
       </div>
     </section>
     <section class="dashboard-grid">
-      <div class="dashboard-card">
-        <div class="dashboard-card-title">Recent Activity</div>
-        <!-- Recent activity content here -->
+      <div class="dashboard-card dashboard-card-large">
+        <div id="chart"></div>
       </div>
-      <div class="dashboard-card">
-        <!-- Empty card as in screenshot -->
+      <div class="dashboard-card dashboard-card-small">
+        <!-- Small card content here (can be left empty or add a placeholder) -->
       </div>
-      <div class="dashboard-card dashboard-card-full">
-        <div class="dashboard-card-title">Monthly Overview</div>
-        <!-- Monthly overview content here -->
+    </section>
+    <!-- Add gap between grids -->
+    <div style="height: 24px;"></div>
+    <!-- Lower grid for column and pie cards, smaller size -->
+    <section class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 0;">
+      <div class="dashboard-card" style="height: 180px; padding: 0; align-items: stretch; justify-content: stretch;">
+        <div id="columnChart" style="width: 100%; height: 100%;"></div>
+      </div>
+      <div class="dashboard-card" style="height: 180px; padding: 0; align-items: stretch; justify-content: stretch;">
+        <div id="pieChart" style="width: 100%; height: 100%;"></div>
       </div>
     </section>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script>
+    // SPLINE CHART
+  var options = {
+    chart: {
+      type: 'area',
+      height: 350,
+      toolbar: {
+        show: false
+      }
+    },
+    series: [{
+      name: 'Active Clients',
+      data: [31, 40, 28, 51, 42, 85, 77]
+    }],
+    xaxis: {
+      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    },
+    stroke: {
+      curve: 'smooth'
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.5,
+        opacityTo: 0.1,
+        stops: [0, 90, 100]
+      }
+    },
+    colors: ['#4F46E5'], // Indigo tone
+    dataLabels: {
+      enabled: false
+    },
+    tooltip: {
+      theme: 'light'
+    }
+  };
+
+  var chart = new ApexCharts(document.querySelector("#chart"), options);
+  chart.render()
+
+   // COLUMN CHART
+    var columnOptions = {
+      chart: {
+        type: 'bar',
+        height: '100%', // Use full container height
+        toolbar: { show: false }
+      },
+      series: [{
+        name: 'Requests',
+        data: [10, 20, 15, 30, 25]
+      }],
+      xaxis: {
+        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May']
+      },
+      colors: ['#34D399'], // Teal Green
+      plotOptions: {
+        bar: {
+          columnWidth: '40%',
+          borderRadius: 4
+        }
+      },
+      dataLabels: {
+        enabled: false
+      }
+    };
+    var columnChart = new ApexCharts(document.querySelector("#columnChart"), columnOptions);
+    columnChart.render();
+
+    // PIE CHART
+    var pieOptions = {
+      chart: {
+        type: 'pie',
+        height: '100%', // Use full container height
+        toolbar: { show: false }
+      },
+      series: [44, 33, 23],
+      labels: ['Available', 'Occupied', 'Pending'],
+      colors: ['#60A5FA', '#F87171', '#FBBF24'], // Blue, Red, Yellow
+      legend: {
+        position: 'bottom'
+      }
+    };
+    var pieChart = new ApexCharts(document.querySelector("#pieChart"), pieOptions);
+    pieChart.render();
+  </script>
 </body>
 </html>
