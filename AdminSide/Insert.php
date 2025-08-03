@@ -19,9 +19,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     return '';
   }
 
+  // Add date range validation
+  function validateDateRange($dateString, $fieldName) {
+    global $errors;
+    
+    if (empty($dateString)) {
+      return false;
+    }
+    
+    $date = new DateTime($dateString);
+    $currentDate = new DateTime();
+    $minDate = new DateTime('1900-01-01');
+    
+    // Set current date to end of day for proper comparison
+    $currentDate->setTime(23, 59, 59);
+    
+    if ($date > $currentDate) {
+      $errors[] = "$fieldName cannot be in the future.";
+      return false;
+    }
+    
+    if ($date < $minDate) {
+      $errors[] = "$fieldName cannot be before year 1900.";
+      return false;
+    }
+    
+    return true;
+  }
+
   $firstName = trim($_POST['firstName'] ?? '');
   $lastName = trim($_POST['lastName'] ?? '');
-  $age = trim($_POST['age'] ?? '');
   $born = validateAndFormatDate(trim($_POST['born'] ?? ''));
   $residency = trim($_POST['residency'] ?? '');
   $dateDied = validateAndFormatDate(trim($_POST['dateDied'] ?? ''));
@@ -29,10 +56,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $apartmentNo = trim($_POST['apartmentNo'] ?? '');
   $informantName = trim($_POST['informantName'] ?? '');
 
+  // Validate date ranges
+  if ($born) validateDateRange($born, 'Born date');
+  if ($dateDied) validateDateRange($dateDied, 'Date died');
+  // Remove date range validation for dateInternment to allow future dates
+
+  // Validate date logic
+  if ($born && $dateDied) {
+    $bornDate = new DateTime($born);
+    $diedDate = new DateTime($dateDied);
+    if ($diedDate <= $bornDate) {
+      $errors[] = "Date died must be after born date.";
+    }
+  }
+
+  if ($dateDied && $dateInternment) {
+    $diedDate = new DateTime($dateDied);
+    $internmentDate = new DateTime($dateInternment);
+    if ($internmentDate < $diedDate) {
+      $errors[] = "Date of internment cannot be before date died.";
+    }
+  }
+
+  // Calculate age from born and dateDied
+  $age = '';
+  if ($born && $dateDied) {
+    $bornDate = new DateTime($born);
+    $diedDate = new DateTime($dateDied);
+    $interval = $bornDate->diff($diedDate);
+    $years = $interval->y;
+    $months = $interval->m;
+    
+    // Validate age is reasonable (max 150 years)
+    if ($years > 150) {
+      $errors[] = "Age cannot exceed 150 years. Please check the born and died dates.";
+    } else {
+      if ($years == 0) {
+        $age = $months . " months old";
+      } else {
+        $age = $years . " years old";
+      }
+    }
+  }
+
   // Simple required validation
   if ($firstName === '') $errors[] = "First Name is required.";
   if ($lastName === '') $errors[] = "Last Name is required.";
-  if ($age === '' || !is_numeric($age)) $errors[] = "Valid Age is required.";
   if ($born === '') $errors[] = "Valid Born date is required.";
   if ($residency === '') $errors[] = "Residency is required.";
   if ($dateDied === '') $errors[] = "Valid Date Died is required.";
@@ -61,256 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/Insert.css">
-  <style>
-    /* Add this style block inside <head> or in your Insert.css */
-    .niche-picker-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-    }
-    .niche-picker-group input[readonly] {
-      flex: 1 1 0;
-      min-width: 0;
-      background: #f8fafc;
-      border: 1.5px solid #e3e7ed;
-      color: #2d3a4a;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      /* Remove fixed width if any */
-    }
-    .pick-niche-btn {
-      background: #f5f7fa;
-      color: #2d3a4a;
-      border: 1.5px solid #d3dbe2;
-      border-radius: 7px;
-      padding: 8px 14px;
-      min-width: 44px;
-      height: 42px;
-      font-size: 1.1rem;
-      transition: background 0.18s, color 0.18s, border 0.18s;
-      box-shadow: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pick-niche-btn:hover, .pick-niche-btn:focus {
-      background: #e4e9ee;
-      color: #1976d2;
-      border-color: #bfc9d1;
-    }
-    .error-alert {
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1.5px solid #f5c6cb;
-      border-radius: 8px;
-      padding: 18px 22px 14px 22px;
-      margin-bottom: 18px;
-      box-shadow: 0 2px 8px rgba(220,53,69,0.07);
-      font-family: 'Inter', sans-serif;
-      max-width: 520px;
-    }
-    .error-title {
-      font-weight: 600;
-      font-size: 1.08em;
-      margin-bottom: 6px;
-      color: #b52a2a;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .error-list {
-      margin: 0 0 0 18px;
-      padding: 0;
-      font-size: 0.98em;
-      line-height: 1.7;
-    }
-    .error-list li {
-      margin-bottom: 2px;
-      list-style: disc;
-    }
-    .popup-error-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(44, 62, 80, 0.18);
-      z-index: 2000;
-    }
-    .popup-error-modal {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1.5px solid #f5c6cb;
-      border-radius: 12px;
-      padding: 28px 32px 18px 32px;
-      box-shadow: 0 8px 32px rgba(220,53,69,0.13);
-      font-family: 'Inter', sans-serif;
-      min-width: 320px;
-      max-width: 90vw;
-      z-index: 2100;
-      text-align: left;
-      animation: popupErrorPop .18s cubic-bezier(.4,1.4,.6,1.0);
-    }
-    @keyframes popupErrorPop {
-      0% { transform: translate(-50%, -60%) scale(0.92); opacity: 0; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    }
-    .popup-error-header {
-      font-weight: 600;
-      font-size: 1.12em;
-      margin-bottom: 10px;
-      color: #b52a2a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .popup-error-list {
-      margin: 0 0 0 18px;
-      padding: 0;
-      font-size: 1em;
-      line-height: 1.7;
-    }
-    .popup-error-list li {
-      margin-bottom: 2px;
-      list-style: disc;
-    }
-    .popup-error-close {
-      margin-top: 18px;
-      background: #d9534f;
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 8px 28px;
-      font-size: 1em;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.18s;
-      float: right;
-    }
-    .popup-error-close:hover, .popup-error-close:focus {
-      background: #b52a2a;
-    }
-    .btn.upload {
-      background: #27ae60 !important;
-      color: #fff !important;
-      border: none !important;
-      transition: background 0.18s;
-    }
-    .btn.upload:hover, .btn.upload:focus {
-      background: #219150 !important;
-      color: #fff !important;
-    }
-    .main-content {
-      margin-left: 260px;
-      padding: 24px 20px 24px 20px;
-      min-height: 100vh;
-      box-sizing: border-box;
-      width: calc(100% - 260px);
-      background: #f7f8fa;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .card {
-      width: 100%;
-      max-width: 100%;
-      margin: 24px 0;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(44,62,80,0.09);
-      padding: 24px;
-      box-sizing: border-box;
-    }
-    .form-container {
-      background: none;
-      border-radius: 0;
-      box-shadow: none;
-      padding: 0;
-      width: 100%;
-      box-sizing: border-box;
-      margin: 0;
-    }
-    .form-section-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 18px;
-      color: #2d3a4a;
-      letter-spacing: 0.5px;
-    }
-    .form-row, .form-row-2, .form-row-3 {
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .form-group {
-      flex: 1 1 0;
-      min-width: 180px;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .form-group label {
-      font-size: 1.01rem;
-      font-weight: 500;
-      margin-bottom: 7px;
-      color: #3a4656;
-      letter-spacing: 0.1px;
-    }
-    .form-group input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px 13px;
-      border: 1.5px solid #e3e7ed;
-      border-radius: 7px;
-      font-size: 1.02rem;
-      background: #f8fafc;
-      outline: none;
-      transition: border 0.2s;
-    }
-    .form-group input:focus {
-      border: 1.5px solid #a3b6c7;
-      background: #fff;
-    }
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 24px;
-      width: 100%;
-    }
-    @media (max-width: 900px) {
-      .main-content {
-        margin-left: 0;
-        padding: 10px;
-        width: 100vw;
-      }
-      .card {
-        padding: 10px;
-        border-radius: 12px;
-      }
-      .form-row, .form-row-2, .form-row-3 {
-        flex-direction: column;
-        gap: 12px;
-      }
-    }
-  </style>
-  <script>
-    // Add this script before </body>
-    document.getElementById('pickNicheBtn').onclick = function() {
-      window.open('Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
-    };
-
-    // Listen for message from Mapping.php
-    window.addEventListener('message', function(event) {
-      if (event.data && event.data.nicheID) {
-        document.getElementById('apartmentNo').value = event.data.nicheID;
-      }
-    });
-  </script>
 </head>
 <body>
   <!-- Sidebar -->
@@ -330,70 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </ul>
       <button class="popup-error-close" id="popupErrorCloseBtn">Close</button>
     </div>
-    <style>
-      .popup-error-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(44, 62, 80, 0.18);
-        z-index: 2000;
-      }
-      .popup-error-modal {
-        position: fixed;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: #fff0f0;
-        color: #c0392b;
-        border: 1.5px solid #f5c6cb;
-        border-radius: 12px;
-        padding: 28px 32px 18px 32px;
-        box-shadow: 0 8px 32px rgba(220,53,69,0.13);
-        font-family: 'Inter', sans-serif;
-        min-width: 320px;
-        max-width: 90vw;
-        z-index: 2100;
-        text-align: left;
-        animation: popupErrorPop .18s cubic-bezier(.4,1.4,.6,1.0);
-      }
-      @keyframes popupErrorPop {
-        0% { transform: translate(-50%, -60%) scale(0.92); opacity: 0; }
-        100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-      }
-      .popup-error-header {
-        font-weight: 600;
-        font-size: 1.12em;
-        margin-bottom: 10px;
-        color: #b52a2a;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .popup-error-list {
-        margin: 0 0 0 18px;
-        padding: 0;
-        font-size: 1em;
-        line-height: 1.7;
-      }
-      .popup-error-list li {
-        margin-bottom: 2px;
-        list-style: disc;
-      }
-      .popup-error-close {
-        margin-top: 18px;
-        background: #d9534f;
-        color: #fff;
-        border: none;
-        border-radius: 7px;
-        padding: 8px 28px;
-        font-size: 1em;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.18s;
-        float: right;
-      }
-      .popup-error-close:hover, .popup-error-close:focus {
-        background: #b52a2a;
-      }
-    </style>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         var overlay = document.getElementById('popupErrorOverlay');
@@ -413,27 +168,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="main-content">
-    <div class="card">
-      <div class="top-bar" style="display:flex;align-items:center;justify-content:space-between;padding:0 0 18px 0;">
-        <span class="page-title" style="font-size:1.5rem;font-weight:700;color:#2d3a4a;letter-spacing:0.5px;margin:0;">Insert Data</span>
-        <div class="user-profile">
-          <div class="notification-icon">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge">1</span>
-          </div>
-          <div class="profile-info">
-            <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
-            <div>
-              <div class="profile-name">Sybau</div>
-              <div class="profile-role">Admin</div>
-            </div>
-          </div>
-        </div>
+    <div class="cemetery-masterlist-container">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="cemetery-masterlist-title">Insert Data</div>
       </div>
-      <div class="page-subtitle" style="color:#7a8593;margin-bottom:1.2em;font-size:0.98rem;padding-left:0;margin-top:0.1em;">Fill up the masterlist data</div>
-      <div class="top-actions" style="display:flex;justify-content:flex-end;align-items:center;gap:12px;width:100%;margin-bottom:10px;padding-right:0;">
-        <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
-        <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
+      <div class="cemetery-masterlist-desc">Fill up the masterlist data</div>
+    </div>
+    
+    <div class="card">
+      <div class="top-actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-bottom:60px;padding-right:0;">
+        <div class="form-section-title" style="margin:0;">Deceased Information</div>
+        <div style="display:flex;gap:12px;">
+          <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
+          <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
+        </div>
       </div>
       <!-- Excel Import Modal -->
       <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
@@ -460,7 +208,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         };
       </script>
       <div class="form-container">
-        <div class="form-section-title">Deceased Information</div>
         <form method="post" autocomplete="off">
           <div class="form-row">
             <div class="form-group">
@@ -472,8 +219,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($_POST['lastName'] ?? ''); ?>">
             </div>
             <div class="form-group">
-              <label for="age">Age</label>
-              <input type="number" id="age" name="age" placeholder="Age" value="<?php echo htmlspecialchars($_POST['age'] ?? ''); ?>">
+              <label for="residency">Residency</label>
+              <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($_POST['residency'] ?? ''); ?>">
             </div>
           </div>
           <div class="form-row-2">
@@ -482,12 +229,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($_POST['born'] ?? ''); ?>">
             </div>
             <div class="form-group">
-              <label for="residency">Residency</label>
-              <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($_POST['residency'] ?? ''); ?>">
-            </div>
-            <div class="form-group">
               <label for="dateDied">Date Died</label>
               <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($_POST['dateDied'] ?? ''); ?>">
+            </div>
+            <div class="form-group">
+              <label for="age">Age</label>
+              <input type="text" id="age" name="age" placeholder="Age will be calculated automatically" readonly>
             </div>
           </div>
           <div class="form-row-3">
@@ -528,6 +275,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('apartmentNo').value = event.data.nicheID;
       }
     });
+
+    // Listen for message from Mapping.php
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.nicheID) {
+        document.getElementById('apartmentNo').value = event.data.nicheID;
+      }
+    });
+
+    // Auto-calculate age when born or dateDied changes
+    function calculateAge() {
+      const bornInput = document.getElementById('born');
+      const diedInput = document.getElementById('dateDied');
+      const ageInput = document.getElementById('age');
+      
+      if (bornInput.value && diedInput.value) {
+        const bornDate = new Date(bornInput.value);
+        const diedDate = new Date(diedInput.value);
+        const currentDate = new Date();
+        const minDate = new Date('1900-01-01');
+        
+        // Validate date ranges (born and died cannot be in future)
+        if (bornDate > currentDate || diedDate > currentDate) {
+          ageInput.value = '';
+          ageInput.style.borderColor = '#e74c3c';
+          ageInput.title = 'Born and died dates cannot be in the future';
+          return;
+        }
+        
+        if (bornDate < minDate || diedDate < minDate) {
+          ageInput.value = '';
+          ageInput.style.borderColor = '#e74c3c';
+          ageInput.title = 'Dates cannot be before year 1900';
+          return;
+        }
+        
+        if (diedDate >= bornDate) {
+          const years = diedDate.getFullYear() - bornDate.getFullYear();
+          const months = diedDate.getMonth() - bornDate.getMonth();
+          const days = diedDate.getDate() - bornDate.getDate();
+          
+          let finalYears = years;
+          let finalMonths = months;
+          
+          if (days < 0) {
+            finalMonths--;
+          }
+          if (finalMonths < 0) {
+            finalYears--;
+            finalMonths += 12;
+          }
+          
+          // Limit age to 150 years
+          if (finalYears > 150) {
+            ageInput.value = '';
+            ageInput.style.borderColor = '#e74c3c';
+            ageInput.title = 'Age cannot exceed 150 years';
+          } else {
+            if (finalYears == 0) {
+              ageInput.value = finalMonths + ' months old';
+            } else {
+              ageInput.value = finalYears + ' years old';
+            }
+            ageInput.style.borderColor = '';
+            ageInput.title = '';
+          }
+        } else {
+          ageInput.value = '';
+          ageInput.style.borderColor = '#e74c3c';
+          ageInput.title = 'Date died must be after born date';
+        }
+      } else {
+        ageInput.value = '';
+        ageInput.style.borderColor = '';
+        ageInput.title = '';
+      }
+    }
+
+    // Calculate age on page load
+    calculateAge();
+
+    // Add event listeners
+    document.getElementById('born').addEventListener('change', calculateAge);
+    document.getElementById('dateDied').addEventListener('change', calculateAge);
   </script>
+
 </body>
 </html>
