@@ -124,7 +124,7 @@
       background: #f7f8fa;
       font-weight: 500;
       color: #333;
-      font-size: 0.85rem;
+      font-size: 0.77rem;
     }
     .cemetery-masterlist-table tr:last-child td {
       border-bottom: none;
