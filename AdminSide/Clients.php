@@ -78,7 +78,7 @@
                     $contact = htmlspecialchars($row['contact_no']);
                     $registrationDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
                     $profilePicture = htmlspecialchars($row['profile_picture']);
-                    $status = $row['status'] ?? 'active'; // Get actual status from database
+                    $status = htmlspecialchars($row['status']);
                     
                     // Check if user has profile picture
                     $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
@@ -124,11 +124,9 @@
                     </td>
                 </tr>";
                 }
-            } else {
-                echo "<tr><td colspan='6'>No clients found.</td></tr>";
             }
-            $conn->close();
         }
+        $conn->close();
         ?>
         </tbody>
       </table>
@@ -462,16 +460,26 @@ document.addEventListener('DOMContentLoaded', function() {
     background: #e0e0e0;
 }
 .clients-tab-title {
-    font-weight: 600;
+    background: none;
+    border: none;
     font-size: 1.08rem;
-    padding: 10px 28px;
-    border-radius: 8px;
-    background: #f4f6fa;
+    padding: 16px 0 12px 0;
     color: #222;
-    display: inline-block;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
+    border-radius: 0;
+    box-shadow: none;
     margin-bottom: 0;
     margin-top: 0;
-    box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
+    display: inline-block;
+}
+.clients-tab-title.active {
+    border-bottom: 2.5px solid #506C84;
+    color: #506C84;
+    opacity: 1;
 }
 .date-filter-container {
     position: relative;

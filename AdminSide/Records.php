@@ -303,17 +303,25 @@
               if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
               // Ensure archive_deceased table exists
               $conn->query("CREATE TABLE IF NOT EXISTS archive_deceased LIKE deceased");
-              $ids = array_map('intval', $_POST['delete_ids']);
-              $idsList = implode(',', $ids);
-              // Move to archive_deceased
-              $conn->query("INSERT INTO archive_deceased (nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment)
-                SELECT nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased WHERE id IN ($idsList)");
-              // Delete from deceased
-              $conn->query("DELETE FROM deceased WHERE id IN ($idsList)");
+              
+              $deleteIds = array_map('intval', $_POST['delete_ids']);
+              $placeholders = str_repeat('?,', count($deleteIds) - 1) . '?';
+              
+              // Move to archive
+              $stmt = $conn->prepare("INSERT INTO archive_deceased SELECT * FROM deceased WHERE id IN ($placeholders)");
+              $stmt->bind_param(str_repeat('i', count($deleteIds)), ...$deleteIds);
+              $stmt->execute();
+              
+              // Delete from main table
+              $stmt = $conn->prepare("DELETE FROM deceased WHERE id IN ($placeholders)");
+              $stmt->bind_param(str_repeat('i', count($deleteIds)), ...$deleteIds);
+              $stmt->execute();
+              
               $conn->close();
-              echo "<script>window.location.href='Settings.php?archived=1';</script>";
+              echo "<script>window.location.href = 'Records.php';</script>";
               exit;
             }
+            
             include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
             // Fetch all records (no pagination/search/filter)
@@ -328,16 +336,16 @@
                 $informant = htmlspecialchars($row['informantName']);
                 $dateDied = htmlspecialchars($row['dateDied']);
                 $dateInternment = htmlspecialchars($row['dateInternment']);
-                // Calculate validity: 5 years after dateInternment
-                $validity = '';
-                if ($dateInternment && $dateInternment !== '0000-00-00') {
-                  $dt = new DateTime($dateInternment);
-                  $dt->modify('+5 years');
-                  $validity = $dt->format('Y-m-d');
-                }
-                // Prepare query params for edit
+                
+                // Calculate validity
+                $currentDate = new DateTime();
+                $internmentDate = new DateTime($row['dateInternment']);
+                $interval = $currentDate->diff($internmentDate);
+                $years = $interval->y;
+                $validity = ($years >= 5) ? 'Expired' : 'Valid';
+                
+                // Build query parameters for EditNiches.php
                 $queryParams = http_build_query([
-                  'id' => $row['id'],
                   'nicheID' => $row['nicheID'],
                   'lastName' => $row['lastName'],
                   'firstName' => $row['firstName'],
@@ -348,6 +356,7 @@
                   'dateDied' => $row['dateDied'],
                   'dateInternment' => $row['dateInternment']
                 ]);
+                
                 // Add a data-href attribute for JS navigation
                 echo "<tr class='record-row' data-href='EditNiches.php?{$queryParams}' style='cursor:pointer;'>
                   <td>{$apt}</td>
@@ -363,8 +372,6 @@
                   <td class='delete-checkbox-col'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";
               }
-            } else {
-              echo '<tr><td colspan="10" style="text-align:center;">No records found.</td></tr>';
             }
             $conn->close();
             ?>

@@ -103,8 +103,6 @@
                   <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'pending')">View</button></td>
                 </tr>
               <?php endwhile; ?>
-            <?php else: ?>
-              <tr><td colspan="6">No client requests found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -189,8 +187,6 @@
                   <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'accepted')">View</button></td>
                 </tr>
               <?php endwhile; ?>
-            <?php else: ?>
-              <tr><td colspan="6">No accepted requests found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
@@ -447,110 +443,213 @@
       let clientsRequestTable, acceptedTable;
       
       document.addEventListener('DOMContentLoaded', function() {
-        // Initialize DataTables for both tables exactly like Clients.php
-        clientsRequestTable = $('#clients-request-table').DataTable({
-          "paging": true,
-          "searching": true,
-          "ordering": true,
-          "info": true,
-          "dom": 'rtip', // Show table, info and pagination
-          "columnDefs": [
-            { "orderable": false, "targets": [5] } // Details column non-sortable
-          ],
-          "drawCallback": function() {
-            // Move pagination outside table container while preserving functionality
-            const tableWrapper = $('#clients-request-table').closest('.clients-table-container');
-            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
-            
-            // Move info and pagination to external wrapper using detach to preserve events
-            const info = $('#clients-request-table_info').detach();
-            const paginate = $('#clients-request-table_paginate').detach();
-            
-            externalWrapper.empty().append(info).append(paginate);
-          }
-        });
+        // Destroy existing DataTables if they exist
+        if ($.fn.DataTable.isDataTable('#clients-request-table')) {
+          $('#clients-request-table').DataTable().destroy();
+        }
+        if ($.fn.DataTable.isDataTable('#accepted-table')) {
+          $('#accepted-table').DataTable().destroy();
+        }
 
-        acceptedTable = $('#accepted-table').DataTable({
-          "paging": true,
-          "searching": true,
-          "ordering": true,
-          "info": true,
-          "dom": 'rtip', // Show table, info and pagination
-          "columnDefs": [
-            { "orderable": false, "targets": [5] } // Details column non-sortable
-          ],
-          "drawCallback": function() {
-            // Move pagination outside table container while preserving functionality
-            const tableWrapper = $('#accepted-table').closest('.clients-table-container');
-            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
-            
-            // Move info and pagination to external wrapper using detach to preserve events
-            const info = $('#accepted-table_info').detach();
-            const paginate = $('#accepted-table_paginate').detach();
-            
-            externalWrapper.empty().append(info).append(paginate);
-          }
-        });
+        // Initialize DataTables for both tables
+        try {
+          clientsRequestTable = $('#clients-request-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "dom": 'rtip',
+            "pageLength": 10,
+            "language": {
+              "emptyTable": "No client requests found.",
+              "zeroRecords": "No matching records found",
+              "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+              "infoEmpty": "Showing 0 to 0 of 0 entries",
+              "infoFiltered": "(filtered from _MAX_ total entries)"
+            },
+            "columnDefs": [
+              { "orderable": false, "targets": [5] }
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#clients-request-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              
+              const info = $('#clients-request-table_info').detach();
+              const paginate = $('#clients-request-table_paginate').detach();
+              
+              externalWrapper.empty().append(info).append(paginate);
+            }
+          });
+        } catch (e) {
+          console.error('Error initializing clients request table:', e);
+        }
 
-        // Connect search inputs to DataTables exactly like Clients.php
-        document.getElementById('clients-search-input').addEventListener('keyup', function() {
-          clientsRequestTable.search(this.value).draw();
-        });
+        try {
+          acceptedTable = $('#accepted-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "dom": 'rtip',
+            "pageLength": 10,
+            "language": {
+              "emptyTable": "No accepted requests found.",
+              "zeroRecords": "No matching records found",
+              "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+              "infoEmpty": "Showing 0 to 0 of 0 entries",
+              "infoFiltered": "(filtered from _MAX_ total entries)"
+            },
+            "columnDefs": [
+              { "orderable": false, "targets": [5] }
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#accepted-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              
+              const info = $('#accepted-table_info').detach();
+              const paginate = $('#accepted-table_paginate').detach();
+              
+              externalWrapper.empty().append(info).append(paginate);
+            }
+          });
+        } catch (e) {
+          console.error('Error initializing accepted table:', e);
+        }
 
-        document.getElementById('accepted-search-input').addEventListener('keyup', function() {
-          acceptedTable.search(this.value).draw();
-        });
+        // Connect search inputs with error handling
+        const clientsSearchInput = document.getElementById('clients-search-input');
+        if (clientsSearchInput) {
+          clientsSearchInput.addEventListener('keyup', function() {
+            try {
+              if (clientsRequestTable) {
+                clientsRequestTable.search(this.value).draw();
+              }
+            } catch (e) {
+              console.error('Error in clients search:', e);
+            }
+          });
+        }
 
-        // Date filter functionality for clients request table
+        const acceptedSearchInput = document.getElementById('accepted-search-input');
+        if (acceptedSearchInput) {
+          acceptedSearchInput.addEventListener('keyup', function() {
+            try {
+              if (acceptedTable) {
+                acceptedTable.search(this.value).draw();
+              }
+            } catch (e) {
+              console.error('Error in accepted search:', e);
+            }
+          });
+        }
+
+        // Date filters with error handling
         const clientsRequestDateInput = document.getElementById('clients-request-date-filter');
         const clearClientsRequestDateBtn = document.getElementById('clear-clients-request-date-filter');
 
-        clientsRequestDateInput.addEventListener('change', function() {
-          const selectedDate = this.value;
-          if (selectedDate) {
-            clearClientsRequestDateBtn.style.display = 'block';
-            clientsRequestTable.column(3).search(selectedDate, false, false).draw();
-          } else {
-            clearClientsRequestDateBtn.style.display = 'none';
-            clientsRequestTable.column(3).search('').draw();
-          }
-        });
+        if (clientsRequestDateInput && clearClientsRequestDateBtn) {
+          clientsRequestDateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            if (selectedDate) {
+              clearClientsRequestDateBtn.style.display = 'block';
+              try {
+                if (clientsRequestTable) {
+                  clientsRequestTable.column(3).search(selectedDate, false, false).draw();
+                }
+              } catch (e) {
+                console.error('Error in date filter:', e);
+              }
+            } else {
+              clearClientsRequestDateBtn.style.display = 'none';
+              try {
+                if (clientsRequestTable) {
+                  clientsRequestTable.column(3).search('').draw();
+                }
+              } catch (e) {
+                console.error('Error clearing date filter:', e);
+              }
+            }
+          });
 
-        clearClientsRequestDateBtn.addEventListener('click', function() {
-          clientsRequestDateInput.value = '';
-          this.style.display = 'none';
-          clientsRequestTable.column(3).search('').draw();
-        });
+          clearClientsRequestDateBtn.addEventListener('click', function() {
+            clientsRequestDateInput.value = '';
+            this.style.display = 'none';
+            try {
+              if (clientsRequestTable) {
+                clientsRequestTable.column(3).search('').draw();
+              }
+            } catch (e) {
+              console.error('Error clearing date filter:', e);
+            }
+          });
+        }
 
-        // Date filter functionality for accepted requests table
         const acceptedRequestDateInput = document.getElementById('accepted-request-date-filter');
         const clearAcceptedRequestDateBtn = document.getElementById('clear-accepted-request-date-filter');
 
-        acceptedRequestDateInput.addEventListener('change', function() {
-          const selectedDate = this.value;
-          if (selectedDate) {
-            clearAcceptedRequestDateBtn.style.display = 'block';
-            acceptedTable.column(3).search(selectedDate, false, false).draw();
-          } else {
-            clearAcceptedRequestDateBtn.style.display = 'none';
-            acceptedTable.column(3).search('').draw();
-          }
-        });
+        if (acceptedRequestDateInput && clearAcceptedRequestDateBtn) {
+          acceptedRequestDateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            if (selectedDate) {
+              clearAcceptedRequestDateBtn.style.display = 'block';
+              try {
+                if (acceptedTable) {
+                  acceptedTable.column(3).search(selectedDate, false, false).draw();
+                }
+              } catch (e) {
+                console.error('Error in accepted date filter:', e);
+              }
+            } else {
+              clearAcceptedRequestDateBtn.style.display = 'none';
+              try {
+                if (acceptedTable) {
+                  acceptedTable.column(3).search('').draw();
+                }
+              } catch (e) {
+                console.error('Error clearing accepted date filter:', e);
+              }
+            }
+          });
 
-        clearAcceptedRequestDateBtn.addEventListener('click', function() {
-          acceptedRequestDateInput.value = '';
-          this.style.display = 'none';
-          acceptedTable.column(3).search('').draw();
-        });
+          clearAcceptedRequestDateBtn.addEventListener('click', function() {
+            acceptedRequestDateInput.value = '';
+            this.style.display = 'none';
+            try {
+              if (acceptedTable) {
+                acceptedTable.column(3).search('').draw();
+              }
+            } catch (e) {
+              console.error('Error clearing accepted date filter:', e);
+            }
+          });
+        }
 
-        // Connect entries dropdowns to DataTables exactly like Clients.php
-        document.querySelector('select[name="clients-request-table_length"]').addEventListener('change', function() {
-          clientsRequestTable.page.len(parseInt(this.value)).draw();
-        });
+        // Connect entries dropdowns
+        const clientsLengthSelect = document.querySelector('select[name="clients-request-table_length"]');
+        if (clientsLengthSelect) {
+          clientsLengthSelect.addEventListener('change', function() {
+            try {
+              if (clientsRequestTable) {
+                clientsRequestTable.page.len(parseInt(this.value)).draw();
+              }
+            } catch (e) {
+              console.error('Error changing page length:', e);
+            }
+          });
+        }
 
-        document.querySelector('select[name="accepted-table_length"]').addEventListener('change', function() {
-          acceptedTable.page.len(parseInt(this.value)).draw();
-        });
+        const acceptedLengthSelect = document.querySelector('select[name="accepted-table_length"]');
+        if (acceptedLengthSelect) {
+          acceptedLengthSelect.addEventListener('change', function() {
+            try {
+              if (acceptedTable) {
+                acceptedTable.page.len(parseInt(this.value)).draw();
+              }
+            } catch (e) {
+              console.error('Error changing accepted page length:', e);
+            }
+          });
+        }
       });
 
       function showTab(tab) {
@@ -685,6 +784,12 @@
 
 </body>
 </html>
+
+
+
+
+
+
 
 
 
