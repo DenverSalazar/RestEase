@@ -16,14 +16,18 @@ if (!$email || !$password) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+$stmt = $conn->prepare("SELECT id, password, status FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $stmt->store_result();
 if ($stmt->num_rows == 1) {
-    $stmt->bind_result($user_id, $hashed_password);
+    $stmt->bind_result($user_id, $hashed_password, $user_status);
     $stmt->fetch();
-    if (password_verify($password, $hashed_password)) {
+    
+    // Check if account is disabled
+    if ($user_status === 'disabled') {
+        echo json_encode(['success' => false, 'message' => 'Your account has been disabled. Please contact support.']);
+    } elseif (password_verify($password, $hashed_password)) {
         echo json_encode(['success' => true, 'user_id' => $user_id]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Incorrect password.']);

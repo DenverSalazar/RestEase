@@ -36,15 +36,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!$email || !$password) {
             $login_error = "Please enter both email and password.";
         } else {
-            $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+            $stmt = $conn->prepare("SELECT id, password, status FROM users WHERE email = ?");
             $stmt->bind_param("s", $email);
             $stmt->execute();
             $stmt->store_result();
             if ($stmt->num_rows == 1) {
-                $stmt->bind_result($user_id, $hashed_password);
+                $stmt->bind_result($user_id, $hashed_password, $user_status);
                 $stmt->fetch();
-                if (password_verify($password, $hashed_password)) {
-                   
+                
+                // Check if account is disabled
+                if ($user_status === 'disabled') {
+                    $login_error = "Your account has been disabled. Please contact support.";
+                } elseif (password_verify($password, $hashed_password)) {
                     $_SESSION['user_id'] = $user_id;
                     // Redirect to client home on successful login
                     header("Location: ClientSide/ClientHome.php");

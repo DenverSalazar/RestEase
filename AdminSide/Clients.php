@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 </head>
 <body>
   <!-- Sidebar -->
@@ -27,20 +29,33 @@
     <div class="clients-actions">
       <div class="search-container">
         <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search Clients">
+        <input type="text" placeholder="Search Clients" id="search-input">
       </div>
       <div class="actions-right">
-        <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
-        <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+        <div class="date-filter-container">
+          <input type="date" id="registration-date-filter" class="date-input">
+          <button type="button" id="clear-date-filter" class="clear-date-btn" style="display:none;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
     </div>
+    
+    <!-- Show entries dropdown positioned exactly like Records.php -->
+    <div style="margin-bottom: 16px;">
+      <div class="dataTables_length">
+        <label>Show <select name="clients-table_length"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label>
+      </div>
+    </div>
+    
     <div class="clients-table-container">
-      <table class="clients-table">
+      <table class="clients-table" id="clients-table">
         <thead>
           <tr>
             <th>Client Name</th>
             <th>Email</th>
             <th>Contact</th>
+            <th>Registration Date</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -50,9 +65,9 @@
         // Connect to the database
         include_once '../Includes/db.php';
         if ($conn->connect_error) {
-            echo "<tr><td colspan='5'>Database connection failed.</td></tr>";
+            echo "<tr><td colspan='6'>Database connection failed.</td></tr>";
         } else {
-            $sql = "SELECT first_name, last_name, email, contact_no FROM users";
+            $sql = "SELECT first_name, last_name, email, contact_no, created_at, profile_picture, status FROM users ORDER BY created_at DESC";
             $result = $conn->query($sql);
             if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
@@ -61,23 +76,48 @@
                     $name = $firstName . ' ' . $lastName;
                     $email = htmlspecialchars($row['email']);
                     $contact = htmlspecialchars($row['contact_no']);
-                    $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                    $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                    $colorClass = "avatar-color-$colorIndex";
-                    echo "<tr>
-                    <td>
-                        <div class=\"avatar-img avatar-google $colorClass\" style=\"display:inline-flex;\">$initials</div><span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
+                    $registrationDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
+                    $profilePicture = htmlspecialchars($row['profile_picture']);
+                    $status = $row['status'] ?? 'active'; // Get actual status from database
+                    
+                    // Check if user has profile picture
+                    $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                    
+                    if ($hasProfilePicture) {
+                        $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                    } else {
+                        $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                        $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                        $colorClass = "avatar-color-$colorIndex";
+                        $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                    }
+                    
+                    // Status display based on actual database value
+                    if ($status === 'disabled') {
+                        $statusHtml = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Disabled</span>';
+                        $disableButtonText = '<i class="fas fa-user-check"></i> Enable';
+                        $disableButtonClass = 'enable';
+                    } else {
+                        $statusHtml = '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
+                        $disableButtonText = '<i class="fas fa-user-slash"></i> Disable';
+                        $disableButtonClass = 'disable';
+                    }
+                    
+                    echo "<tr data-registration-date='$registrationDate'>
+                    <td style='white-space: nowrap;'>
+                        $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
                     </td>
                     <td>$email</td>
                     <td>$contact</td>
-                    <td><span style=\"background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;\">Active</span></td>
+                    <td>$registrationDate</td>
+                    <td>$statusHtml</td>
                     <td>
                         <div class=\"actions-dropdown\">
                             <button class=\"actions-btn\" onclick=\"toggleActionsMenu(this); return false;\">
                                 <i class=\"fas fa-ellipsis-v\"></i>
                             </button>
                             <div class=\"actions-menu\">
-                                <button class=\"dropdown-item\"><i class=\"fas fa-user-slash\"></i> Disable</button>
+                                <button class=\"dropdown-item $disableButtonClass\">$disableButtonText</button>
                                 <button class=\"dropdown-item delete\"><i class=\"fas fa-archive\"></i> Archive</button>
                             </div>
                         </div>
@@ -85,13 +125,17 @@
                 </tr>";
                 }
             } else {
-                echo "<tr><td colspan='5'>No clients found.</td></tr>";
+                echo "<tr><td colspan='6'>No clients found.</td></tr>";
             }
             $conn->close();
         }
         ?>
         </tbody>
       </table>
+    </div>
+    
+    <!-- Move pagination controls to bottom exactly like Records.php -->
+    <div class="dataTables_wrapper">
     </div>
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay" style="display:none;">
@@ -117,24 +161,71 @@
       <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Client successfully archived.</span>
       <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
     </div>
-    <div class="clients-pagination-bar">
-      <div class="pagination">
-        <button class="page-btn"><i class="fas fa-angle-left"></i></button>
-        <button class="page-btn">1</button>
-        <button class="page-btn active">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn"><i class="fas fa-angle-right"></i></button>
-      </div>
-    </div>
-    <div>
-        <span> Page 1 of 3
-          </span>
-        </div>
+    <!-- DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   </main>
 
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTables
+    const dataTable = $('#clients-table').DataTable({
+        "paging": true,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "dom": 'rtip', // Show table, info and pagination
+        "columnDefs": [
+            { "orderable": false, "targets": [5] }
+        ],
+        "drawCallback": function() {
+            // Move pagination outside table container while preserving functionality
+            const tableWrapper = $('#clients-table').closest('.clients-table-container');
+            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+            
+            // Move info and pagination to external wrapper
+            const info = $('#clients-table_info').detach();
+            const paginate = $('#clients-table_paginate').detach();
+            
+            externalWrapper.empty().append(info).append(paginate);
+        }
+    });
+
+    // Connect existing search bar to DataTables
+    document.getElementById('search-input').addEventListener('keyup', function() {
+        dataTable.search(this.value).draw();
+    });
+
+    // New date filter functionality
+    const dateInput = document.getElementById('registration-date-filter');
+    const clearDateBtn = document.getElementById('clear-date-filter');
+
+    dateInput.addEventListener('change', function() {
+        const selectedDate = this.value;
+        if (selectedDate) {
+            // Show clear button
+            clearDateBtn.style.display = 'block';
+            
+            // Filter table by registration date
+            dataTable.column(3).search(selectedDate, false, false).draw();
+        } else {
+            clearDateBtn.style.display = 'none';
+            dataTable.column(3).search('').draw();
+        }
+    });
+
+    clearDateBtn.addEventListener('click', function() {
+        dateInput.value = '';
+        this.style.display = 'none';
+        dataTable.column(3).search('').draw();
+    });
+
+    // Connect entries dropdown to DataTables
+    document.querySelector('select[name="clients-table_length"]').addEventListener('change', function() {
+        dataTable.page.len(parseInt(this.value)).draw();
+    });
+
     // Close all open menus if clicking outside
     document.addEventListener('click', function(e) {
         document.querySelectorAll('.actions-menu').forEach(function(menu) {
@@ -265,10 +356,58 @@ document.addEventListener('DOMContentLoaded', function() {
             clearTimeout(timeout);
         };
     }
+
+    // Attach click event to all disable/enable buttons
+    document.querySelectorAll('.dropdown-item.disable, .dropdown-item.enable').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var row = this.closest('tr');
+            var email = row.querySelector('td:nth-child(2)').textContent.trim();
+            var isDisable = this.classList.contains('disable');
+            var action = isDisable ? 'disable' : 'enable';
+            
+            // Show loading state
+            this.disabled = true;
+            this.textContent = isDisable ? 'Disabling...' : 'Enabling...';
+            
+            fetch('disable_client.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'disable_client_email=' + encodeURIComponent(email) + '&action=' + action
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update status display
+                    var statusCell = row.querySelector('td:nth-child(5)');
+                    if (isDisable) {
+                        statusCell.innerHTML = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Disabled</span>';
+                        this.innerHTML = '<i class="fas fa-user-check"></i> Enable';
+                        this.classList.remove('disable');
+                        this.classList.add('enable');
+                    } else {
+                        statusCell.innerHTML = '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
+                        this.innerHTML = '<i class="fas fa-user-slash"></i> Disable';
+                        this.classList.remove('enable');
+                        this.classList.add('disable');
+                    }
+                    showSuccessNotification(data.message);
+                } else {
+                    showErrorNotification(data.message || 'Failed to update client status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorNotification('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                this.disabled = false;
+            });
+        });
+    });
 });
 </script>
 <style>
-/* filepath: c:\xampp\htdocs\RestEase\AdminSide\Clients.php (inline style for modal) */
 .modal-overlay {
     position: fixed;
     z-index: 9999;
@@ -334,5 +473,20 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 0;
     box-shadow: 0 1.5px 6px rgba(0,0,0,0.04);
 }
+.date-filter-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+}
+
 </style>
 </html>

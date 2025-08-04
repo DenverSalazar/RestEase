@@ -184,27 +184,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
       <!-- Excel Import Modal -->
-      <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:10px; min-width:320px; max-width:90vw; position:relative;">
-          <button type="button" id="closeModal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
-          <h3 style="margin-top:0;">Import Excel File</h3>
-          <form action="ImportExcel.php" method="post" enctype="multipart/form-data">
-            <input type="file" name="excel_file" accept=".xls,.xlsx,.csv" required style="margin-bottom:16px;">
-            <br>
-            <button type="submit" style="background:#506C84; color:#fff; border:none; border-radius:6px; padding:8px 20px; font-size:1rem; cursor:pointer;">Upload</button>
+      <div id="excelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.25); z-index:1000; align-items:center; justify-content:center;">
+        <div class="import-modal-content">
+          <button type="button" id="closeModal" class="modal-close-btn">&times;</button>
+          <div class="modal-header">
+            <i class="fas fa-file-excel" style="color:#27ae60; font-size:2.5rem; margin-bottom:12px;"></i>
+            <h3>Import Excel File</h3>
+            <p>Upload your Excel file to import multiple records at once</p>
+          </div>
+          <form action="ImportExcel.php" method="post" enctype="multipart/form-data" class="import-form">
+            <div class="file-upload-area">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <input type="file" name="excel_file" accept=".xls,.xlsx,.csv" required id="fileInput">
+              <label for="fileInput" class="file-upload-label">
+                <span class="upload-text">Choose File</span>
+                <span class="file-name">No file selected</span>
+              </label>
+            </div>
+            <div class="file-info">
+              <i class="fas fa-info-circle"></i>
+              Supported formats: CSV, XLS, XLSX files
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="cancelBtn" class="btn-cancel">Cancel</button>
+              <button type="submit" class="btn-upload">
+                <i class="fas fa-upload"></i>
+                Upload File
+              </button>
+            </div>
           </form>
-          <div style="font-size:0.95rem; color:#555; margin-top:10px;">CSV, XLS or XLSX files are allowed.</div>
         </div>
       </div>
       <script>
         document.getElementById('importDataBtn').onclick = function() {
           document.getElementById('excelModal').style.display = 'flex';
         };
+
         document.getElementById('closeModal').onclick = function() {
           document.getElementById('excelModal').style.display = 'none';
         };
+
+        document.getElementById('cancelBtn').onclick = function() {
+          document.getElementById('excelModal').style.display = 'none';
+        };
+
         document.getElementById('excelModal').onclick = function(e) {
           if (e.target === this) this.style.display = 'none';
+        };
+
+        // File input handler
+        document.getElementById('fileInput').onchange = function() {
+          const fileName = this.files[0] ? this.files[0].name : 'No file selected';
+          document.querySelector('.file-name').textContent = fileName;
         };
       </script>
       <div class="form-container">

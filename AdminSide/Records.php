@@ -112,7 +112,7 @@
     .cemetery-masterlist-table th, .cemetery-masterlist-table td {
       padding: 8px 10px;
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       border-bottom: 1px solid #eee;
       background: #fff;
       font-family: 'Poppins', sans-serif;
@@ -211,6 +211,17 @@
     #delete-toggle-btn:hover {
       background: #c0392b !important;
     }
+    .edit-btn {
+      color: #007bff;
+      text-decoration: none;
+      padding: 5px;
+      border-radius: 3px;
+      transition: color 0.2s;
+    }
+    .edit-btn:hover {
+      color: #0056b3;
+      background-color: #f8f9fa;
+    }
   </style>
 </head>
 <body>
@@ -278,6 +289,7 @@
               <th>Date Died</th>
               <th>Date Internment</th>
               <th>Validity</th>
+              <th>Edit</th>
               <th class="delete-checkbox-col" id="delete-checkbox-header">
                 <input type="checkbox" id="select-all-checkbox" style="display:none;">
               </th>
@@ -347,6 +359,7 @@
                   <td>{$dateDied}</td>
                   <td>{$dateInternment}</td>
                   <td>{$validity}</td>
+                  <td><a href='EditNiches.php?{$queryParams}' class='edit-btn' title='Edit Record'><i class='fas fa-edit'></i></a></td>
                   <td class='delete-checkbox-col'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";
               }
@@ -364,14 +377,20 @@
       <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
       <script>
         $(document).ready(function() {
-          $('#records-table').DataTable({
+          const dataTable = $('#records-table').DataTable({
             "paging": true,
             "searching": true,
             "ordering": true,
             "info": true,
+            "dom": 'lrtip', // Remove 'f' (filter/search box)
             "columnDefs": [
-              { "orderable": false, "targets": [9] }
+              { "orderable": false, "targets": [9, 10] } // Both edit and checkbox columns non-sortable
             ]
+          });
+
+          // Connect upper search bar to DataTables search
+          document.getElementById('search-input').addEventListener('keyup', function() {
+            dataTable.search(this.value).draw();
           });
 
           // Toggle delete mode
@@ -385,13 +404,16 @@
 
           function setDeleteMode(on) {
             deleteMode = on;
-            deleteCheckboxCols.forEach(col => col.style.display = on ? '' : 'none');
-            if (deleteCheckboxHeader) {
-              deleteCheckboxHeader.style.display = on ? '' : 'none';
-              if (selectAllCheckbox) selectAllCheckbox.style.display = on ? '' : 'none';
-            }
-            if (!on) {
-              table.querySelectorAll('.delete-checkbox').forEach(cb => cb.checked = false);
+            
+            if (on) {
+              // Show checkboxes on ALL rows using DataTables API
+              $('#records-table').DataTable().column(10).visible(true); // Changed to column 10
+              $('#records-table').DataTable().rows().nodes().to$().find('.delete-checkbox-col').show();
+              if (selectAllCheckbox) selectAllCheckbox.style.display = '';
+            } else {
+              // Hide checkboxes on ALL rows
+              $('#records-table').DataTable().column(10).visible(false); // Changed to column 10
+              $('#records-table').DataTable().rows().nodes().to$().find('.delete-checkbox').prop('checked', false);
               if (selectAllCheckbox) selectAllCheckbox.checked = false;
             }
           }
@@ -554,29 +576,6 @@
               });
             });
           });
-
-          // Search bar submit on enter or change
-          document.getElementById('search-input').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              submitSearch();
-            }
-          });
-          document.getElementById('search-input').addEventListener('change', function() {
-            submitSearch();
-          });
-          function submitSearch() {
-            const val = document.getElementById('search-input').value;
-            const params = new URLSearchParams(window.location.search);
-            if (val) {
-              params.set('search', val);
-              params.set('page', 1); // Reset to first page on new search
-            } else {
-              params.delete('search');
-              params.set('page', 1);
-            }
-            window.location.search = params.toString();
-          }
         });
       </script>
       <!-- Remove custom pagination/search/filter HTML/JS -->

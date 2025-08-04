@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 </head>
 <body>
   <!-- Sidebar -->
@@ -29,26 +31,39 @@
       <div class="clients-actions">
         <div class="search-container">
           <i class="fas fa-search"></i>
-          <input type="text" placeholder="Search Clients">
+          <input type="text" placeholder="Search Clients" id="clients-search-input">
         </div>
         <div class="actions-right">
-          <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
-          <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+          <div class="date-filter-container">
+            <input type="date" id="clients-request-date-filter" class="date-input">
+            <button type="button" id="clear-clients-request-date-filter" class="clear-date-btn" style="display:none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
       </div>
+      
+      <!-- Show entries dropdown -->
+      <div style="margin-bottom: 16px;">
+        <div class="dataTables_length">
+          <label>Show <select name="clients-request-table_length"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label>
+        </div>
+      </div>
+      
       <?php
       include_once '../Includes/db.php';
-      // Fetch all client requests with user info
-      $sql = "SELECT cr.*, u.first_name, u.last_name, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC";
+      // Fetch all client requests with user info including profile_picture
+      $sql = "SELECT cr.*, u.first_name, u.last_name, u.email, u.profile_picture FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC";
       $result = $conn->query($sql);
       ?>
       <div class="clients-table-container">
-        <table class="clients-table">
+        <table class="clients-table" id="clients-request-table">
           <thead>
             <tr>
               <th>Client Name</th>
               <th>Email</th>
               <th>Type</th>
+              <th>Request Date</th>
               <th>Status</th>
               <th>Details</th>
             </tr>
@@ -61,26 +76,42 @@
                   $lastName = htmlspecialchars($row['last_name']);
                   $name = $firstName . ' ' . $lastName;
                   $email = htmlspecialchars($row['email']);
-                  $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                  $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                  $colorClass = "avatar-color-$colorIndex";
+                  $requestDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
+                  $profilePicture = htmlspecialchars($row['profile_picture']);
+                  
+                  // Check if user has profile picture
+                  $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                  
+                  if ($hasProfilePicture) {
+                      $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                  } else {
+                      $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                      $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                      $colorClass = "avatar-color-$colorIndex";
+                      $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                  }
                 ?>
-                <tr>
+                <tr data-request-date='<?php echo $requestDate; ?>'>
                   <td>
-                    <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
+                    <?php echo $avatarHtml; ?>
                     <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
                   </td>
                   <td><?php echo $email; ?></td>
                   <td><?php echo htmlspecialchars($row['type']); ?></td>
+                  <td><?php echo $requestDate; ?></td>
                   <td><span class="status-badge status-pending">Pending</span></td>
                   <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'pending')">View</button></td>
                 </tr>
               <?php endwhile; ?>
             <?php else: ?>
-              <tr><td colspan="5">No client requests found.</td></tr>
+              <tr><td colspan="6">No client requests found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
+      </div>
+      
+      <!-- Move pagination controls to bottom exactly like Clients.php -->
+      <div class="dataTables_wrapper">
       </div>
     </div>
     <div id="accepted-request-section" style="display:none;">
@@ -90,13 +121,25 @@
           <input type="text" placeholder="Search Accepted Clients" id="accepted-search-input">
         </div>
         <div class="actions-right">
-          <button class="date-picker-btn"><i class="fas fa-calendar"></i> <span>Mar 5, 2025 - Mar 5, 2025</span></button>
-          <button class="filter-btn"><i class="fas fa-filter"></i> Filter</button>
+          <div class="date-filter-container">
+            <input type="date" id="accepted-request-date-filter" class="date-input">
+            <button type="button" id="clear-accepted-request-date-filter" class="clear-date-btn" style="display:none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
       </div>
+      
+      <!-- Show entries dropdown for accepted requests -->
+      <div style="margin-bottom: 16px;">
+        <div class="dataTables_length">
+          <label>Show <select name="accepted-table_length"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label>
+        </div>
+      </div>
+      
       <?php
-      // Fetch all accepted requests with user info
-      $sql_accepted = "SELECT ar.*, u.first_name AS user_first_name, u.last_name AS user_last_name, u.email FROM accepted_request ar JOIN users u ON ar.user_id = u.id ORDER BY ar.created_at DESC";
+      // Fetch all accepted requests with user info including profile_picture
+      $sql_accepted = "SELECT ar.*, u.first_name AS user_first_name, u.last_name AS user_last_name, u.email, u.profile_picture FROM accepted_request ar JOIN users u ON ar.user_id = u.id ORDER BY ar.created_at DESC";
       $result_accepted = $conn->query($sql_accepted);
       ?>
       <div class="clients-table-container">
@@ -106,6 +149,7 @@
               <th>Client Name</th>
               <th>Email</th>
               <th>Type</th>
+              <th>Accepted Date</th>
               <th>Status</th>
               <th>Details</th>
             </tr>
@@ -118,47 +162,89 @@
                   $lastName = htmlspecialchars($row['user_last_name']);
                   $name = $firstName . ' ' . $lastName;
                   $email = htmlspecialchars($row['email']);
-                  $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                  $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                  $colorClass = "avatar-color-$colorIndex";
+                  $acceptedDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
+                  $profilePicture = htmlspecialchars($row['profile_picture']);
+                  
+                  // Check if user has profile picture
+                  $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                  
+                  if ($hasProfilePicture) {
+                      $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                  } else {
+                      $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                      $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                      $colorClass = "avatar-color-$colorIndex";
+                      $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                  }
                 ?>
-                <tr>
+                <tr data-accepted-date='<?php echo $acceptedDate; ?>'>
                   <td>
-                    <div class="avatar-img avatar-google <?php echo $colorClass; ?>" style="display:inline-flex;"><?php echo $initials; ?></div>
+                    <?php echo $avatarHtml; ?>
                     <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;"><?php echo $name; ?></span>
                   </td>
                   <td><?php echo $email; ?></td>
                   <td><?php echo htmlspecialchars($row['type']); ?></td>
+                  <td><?php echo $acceptedDate; ?></td>
                   <td><span class="status-badge status-accepted">Accepted</span></td>
                   <td><button class="view-btn" onclick="openPopup(<?php echo $row['id']; ?>, 'accepted')">View</button></td>
                 </tr>
               <?php endwhile; ?>
             <?php else: ?>
-              <tr><td colspan="5">No accepted requests found.</td></tr>
+              <tr><td colspan="6">No accepted requests found.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>
+      </div>
+      
+      <!-- Move pagination controls to bottom exactly like Clients.php -->
+      <div class="dataTables_wrapper">
       </div>
     </div>
     <!-- Popup Modal -->
     <div id="popupModal" class="popup-modal" style="display:none;">
       <div class="popup-content">
-        <span class="close-btn" onclick="closePopup()">&times;</span>
-        <div class="popup-details" style="display: flex; flex-direction: column; gap: 5px;">
-          <p><b>Client Name:</b> <span id="popupClientName" style="color:#888;"></span></p>
-          <p><b>Email:</b> <span id="popupEmail" style="color:#888;"></span></p>
-          <p><b>Type:</b> <span id="popupType" style="color:#888;"></span></p>
-          <p id="popupNicheIdRow" style="display:none;"><b>Niche ID:</b> <span id="popupNicheId" style="color:#888;"></span></p>
-          <p><b>Age:</b> <span id="popupAge" style="color:#888;"></span></p>
-          <p><b>Informant Name:</b> <span id="popupInformant" style="color:#888;"></span></p>
-          <p><b>Name of Deceased:</b> <span id="popupDeceased" style="color:#888;"></span></p>
-          <p><b>Attachments:</b></p>
-          <div id="popupAttachment"></div>
+        <div class="popup-header">
+          <h3 class="popup-title">Request Details</h3>
+          <button class="close-btn" onclick="closePopup()">&times;</button>
         </div>
-        <div class="popup-actions" style="display: flex; gap: 18px; justify-content: flex-end; margin-top: 18px;">
+        <div class="popup-details">
+          <div class="detail-row">
+            <span class="detail-label">Client Name:</span>
+            <span class="detail-value" id="popupClientName"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value" id="popupEmail"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Type:</span>
+            <span class="detail-value" id="popupType"></span>
+          </div>
+          <div class="detail-row" id="popupNicheIdRow" style="display:none;">
+            <span class="detail-label">Niche ID:</span>
+            <span class="detail-value" id="popupNicheId"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Age:</span>
+            <span class="detail-value" id="popupAge"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Informant Name:</span>
+            <span class="detail-value" id="popupInformant"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Name of Deceased:</span>
+            <span class="detail-value" id="popupDeceased"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Attachments:</span>
+            <div class="detail-value" id="popupAttachment"></div>
+          </div>
+        </div>
+        <div class="popup-actions">
           <button class="accept-btn" onclick="acceptRequest()">Accept</button>
           <button class="deny-btn" onclick="denyRequest()">Deny</button>
-          <button class="go-payment-btn" style="display:none; background:#facc15; color:#92400e; border:none; min-width:140px; font-size:1.13rem; padding:12px 0; border-radius:8px; font-weight:600; box-shadow:0 1.5px 6px rgba(250,204,21,0.08); transition:background 0.2s, color 0.2s;" onclick="goToPayment()">Go to Payment</button>
+          <button class="go-payment-btn" style="display:none;" onclick="goToPayment()">Go to Payment</button>
         </div>
       </div>
     </div>
@@ -168,102 +254,137 @@
         position: fixed;
         z-index: 9999;
         left: 0; top: 0; width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.18);
+        background: rgba(44,62,80,0.25);
         display: flex;
         align-items: center;
         justify-content: center;
       }
       .popup-content {
         background: #fff;
-        border-radius: 18px;
-        padding: 48px 56px 32px 56px;
-        min-width: 420px;
-        max-width: 95vw;
-        min-height: 340px;
-        box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+        padding: 32px;
+        border-radius: 16px;
+        width: 500px;
+        max-width: 90vw;
         position: relative;
-        font-family: 'Inter', sans-serif;
-        border-top: 6px solid #506C84;
-        transition: box-shadow 0.2s;
+        box-shadow: 0 12px 48px rgba(44,62,80,0.15);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+      @keyframes modalSlideIn {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .popup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .popup-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #374151;
+        margin: 0;
       }
       .close-btn {
-        position: absolute;
-        top: 18px;
-        right: 22px;
-        font-size: 2.1rem;
-        color: #e74c3c;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #9ca3af;
         cursor: pointer;
-        font-weight: 400;
-        transition: color 0.18s;
+        padding: 4px 8px;
+        line-height: 1;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .close-btn:hover {
-        color: #b91c1c;
+        color: #6b7280;
+        background: #f3f4f6;
       }
-      .popup-details p {
-        margin: 0 0 18px 0;
-        font-size: 1.13rem;
-        font-weight: 500;
+      .popup-details {
         display: flex;
-        align-items: center;
-        gap: 8px;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 24px;
       }
-      .popup-details b {
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 8px 12px;
+        transition: background 0.2s ease;
+        border-radius: 6px;
+      }
+      .detail-row:hover {
+        background: #f9fafb;
+      }
+      .detail-label {
         font-weight: 600;
-        color: #222;
-        min-width: 170px;
-        display: inline-block;
-        opacity: 0.7;
+        color: #374151;
+        min-width: 120px;
+        font-size: 0.95rem;
       }
-      .popup-details span {
-        color: #666;
-        font-weight: 500;
-        font-size: 1.13rem;
+      .detail-value {
+        color: #6b7280;
+        font-size: 0.95rem;
+        text-align: right;
+        flex: 1;
+        margin-left: 16px;
       }
-      .attachment-box {
-        border: 1px solid #e5e7eb;
-        border-radius: 7px;
-        padding: 10px 18px;
-        background: #fafbfc;
-        display: flex;
-        align-items: center;
-        width: fit-content;
-        margin-bottom: 18px;
-        margin-top: 4px;
-        font-size: 1.08rem;
+      .attachment-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: color 0.2s ease;
+      }
+      .attachment-link:hover {
+        color: #2563eb;
+        text-decoration: underline;
       }
       .popup-actions {
         display: flex;
-        gap: 22px;
+        gap: 12px;
         justify-content: flex-end;
-        margin-top: 28px;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
       }
-      .accept-btn, .deny-btn {
-        min-width: 120px;
-        font-size: 1.13rem;
-        padding: 12px 0;
+      .accept-btn, .deny-btn, .go-payment-btn {
+        padding: 12px 24px;
         border-radius: 8px;
-        font-weight: 600;
-        box-shadow: 0 1.5px 6px rgba(34,197,94,0.04);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
       }
       .accept-btn {
-        background: #a6f4c5;
-        color: #22c55e;
-        border: none;
-        transition: background 0.2s, color 0.2s;
+        background: #27ae60;
+        color: #fff;
       }
       .accept-btn:hover {
-        background: #22c55e;
-        color: #fff;
+        background: #219150;
       }
       .deny-btn {
-        background: #fecaca;
-        color: #dc2626;
-        border: none;
-        transition: background 0.2s, color 0.2s;
+        background: #e4e9ee;
+        color: #2d3a4a;
       }
       .deny-btn:hover {
-        background: #dc2626;
+        background: #d3dbe2;
+      }
+      .go-payment-btn {
+        background: #27ae60;
         color: #fff;
+        min-width: 120px;
+      }
+      .go-payment-btn:hover {
+        background: #219150;
       }
       .clients-tabs-bar {
         border-bottom: 1px solid #e0e0e0;
@@ -303,15 +424,151 @@
         font-weight: 600;
         font-size: 0.98rem;
       }
+      .date-filter-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .date-input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #fff;
+        cursor: pointer;
+      }
     </style>
+    <!-- DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script>
+      // Initialize DataTables
+      let clientsRequestTable, acceptedTable;
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTables for both tables exactly like Clients.php
+        clientsRequestTable = $('#clients-request-table').DataTable({
+          "paging": true,
+          "searching": true,
+          "ordering": true,
+          "info": true,
+          "dom": 'rtip', // Show table, info and pagination
+          "columnDefs": [
+            { "orderable": false, "targets": [5] } // Details column non-sortable
+          ],
+          "drawCallback": function() {
+            // Move pagination outside table container while preserving functionality
+            const tableWrapper = $('#clients-request-table').closest('.clients-table-container');
+            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+            
+            // Move info and pagination to external wrapper using detach to preserve events
+            const info = $('#clients-request-table_info').detach();
+            const paginate = $('#clients-request-table_paginate').detach();
+            
+            externalWrapper.empty().append(info).append(paginate);
+          }
+        });
+
+        acceptedTable = $('#accepted-table').DataTable({
+          "paging": true,
+          "searching": true,
+          "ordering": true,
+          "info": true,
+          "dom": 'rtip', // Show table, info and pagination
+          "columnDefs": [
+            { "orderable": false, "targets": [5] } // Details column non-sortable
+          ],
+          "drawCallback": function() {
+            // Move pagination outside table container while preserving functionality
+            const tableWrapper = $('#accepted-table').closest('.clients-table-container');
+            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+            
+            // Move info and pagination to external wrapper using detach to preserve events
+            const info = $('#accepted-table_info').detach();
+            const paginate = $('#accepted-table_paginate').detach();
+            
+            externalWrapper.empty().append(info).append(paginate);
+          }
+        });
+
+        // Connect search inputs to DataTables exactly like Clients.php
+        document.getElementById('clients-search-input').addEventListener('keyup', function() {
+          clientsRequestTable.search(this.value).draw();
+        });
+
+        document.getElementById('accepted-search-input').addEventListener('keyup', function() {
+          acceptedTable.search(this.value).draw();
+        });
+
+        // Date filter functionality for clients request table
+        const clientsRequestDateInput = document.getElementById('clients-request-date-filter');
+        const clearClientsRequestDateBtn = document.getElementById('clear-clients-request-date-filter');
+
+        clientsRequestDateInput.addEventListener('change', function() {
+          const selectedDate = this.value;
+          if (selectedDate) {
+            clearClientsRequestDateBtn.style.display = 'block';
+            clientsRequestTable.column(3).search(selectedDate, false, false).draw();
+          } else {
+            clearClientsRequestDateBtn.style.display = 'none';
+            clientsRequestTable.column(3).search('').draw();
+          }
+        });
+
+        clearClientsRequestDateBtn.addEventListener('click', function() {
+          clientsRequestDateInput.value = '';
+          this.style.display = 'none';
+          clientsRequestTable.column(3).search('').draw();
+        });
+
+        // Date filter functionality for accepted requests table
+        const acceptedRequestDateInput = document.getElementById('accepted-request-date-filter');
+        const clearAcceptedRequestDateBtn = document.getElementById('clear-accepted-request-date-filter');
+
+        acceptedRequestDateInput.addEventListener('change', function() {
+          const selectedDate = this.value;
+          if (selectedDate) {
+            clearAcceptedRequestDateBtn.style.display = 'block';
+            acceptedTable.column(3).search(selectedDate, false, false).draw();
+          } else {
+            clearAcceptedRequestDateBtn.style.display = 'none';
+            acceptedTable.column(3).search('').draw();
+          }
+        });
+
+        clearAcceptedRequestDateBtn.addEventListener('click', function() {
+          acceptedRequestDateInput.value = '';
+          this.style.display = 'none';
+          acceptedTable.column(3).search('').draw();
+        });
+
+        // Connect entries dropdowns to DataTables exactly like Clients.php
+        document.querySelector('select[name="clients-request-table_length"]').addEventListener('change', function() {
+          clientsRequestTable.page.len(parseInt(this.value)).draw();
+        });
+
+        document.querySelector('select[name="accepted-table_length"]').addEventListener('change', function() {
+          acceptedTable.page.len(parseInt(this.value)).draw();
+        });
+      });
+
       function showTab(tab) {
         document.getElementById('clients-request-section').style.display = (tab === 'clients-request') ? '' : 'none';
         document.getElementById('accepted-request-section').style.display = (tab === 'accepted-request') ? '' : 'none';
         document.getElementById('tab-clients-request').classList.toggle('active', tab === 'clients-request');
         document.getElementById('tab-accepted-request').classList.toggle('active', tab === 'accepted-request');
       }
+      
       function openPopup(requestId, type) {
+        const modal = document.getElementById('popupModal');
+        modal.style.display = 'flex';
+        
+        // Trigger animation
+        setTimeout(() => {
+          modal.classList.add('show');
+        }, 10);
+        
         window.currentRequestId = requestId;
         window.currentRequestType = type;
         let url = (type === 'accepted') ? 'get_accepted_request_details.php?id=' + requestId : 'get_request_details.php?id=' + requestId;
@@ -332,7 +589,6 @@
               } else {
                 document.getElementById('popupNicheIdRow').style.display = 'none';
               }
-              document.getElementById('popupModal').style.display = 'flex';
               // Hide Accept/Deny for accepted
               document.querySelector('.accept-btn').style.display = (type === 'accepted') ? 'none' : '';
               document.querySelector('.deny-btn').style.display = (type === 'accepted') ? 'none' : '';
@@ -347,16 +603,34 @@
             }
           });
       }
+      
       function closePopup() {
-        document.getElementById('popupModal').style.display = 'none';
+        const modal = document.getElementById('popupModal');
+        modal.classList.remove('show');
+        
+        // Hide modal after animation completes
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 300);
       }
-      // Optional: Close popup when clicking outside content
-      window.onclick = function(event) {
-        var modal = document.getElementById('popupModal');
-        if (event.target === modal) {
+      
+      // Close popup when clicking outside
+      document.getElementById('popupModal').addEventListener('click', function(e) {
+        if (e.target === this) {
           closePopup();
         }
-      }
+      });
+
+      // Close popup with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('popupModal');
+          if (modal.style.display === 'flex') {
+            closePopup();
+          }
+        }
+      });
+      
       function acceptRequest() {
         // Get the requestId from the popup (store it globally when opening popup)
         if (window.currentRequestId) {
@@ -376,6 +650,7 @@
           });
         }
       }
+      
       function denyRequest() {
         if (window.currentRequestId) {
           fetch('deny_request.php', {
@@ -394,6 +669,7 @@
           });
         }
       }
+      
       function goToPayment() {
         let apt = window.currentNicheId;
         let informant = window.currentInformant;
@@ -404,43 +680,31 @@
         });
         window.location.href = 'Ledger.php?' + params.toString();
       }
-      // Add search filter for accepted requests
-      document.addEventListener('DOMContentLoaded', function() {
-        var searchInput = document.getElementById('accepted-search-input');
-        if (searchInput) {
-          searchInput.addEventListener('keyup', function() {
-            var filter = searchInput.value.toLowerCase();
-            var table = document.getElementById('accepted-table');
-            var trs = table.getElementsByTagName('tr');
-            for (var i = 1; i < trs.length; i++) { // skip header
-              var tds = trs[i].getElementsByTagName('td');
-              var found = false;
-              for (var j = 0; j < tds.length; j++) {
-                if (tds[j].textContent.toLowerCase().indexOf(filter) > -1) {
-                  found = true;
-                  break;
-                }
-              }
-              trs[i].style.display = found ? '' : 'none';
-            }
-          });
-        }
-      });
     </script>
-     <div class="clients-pagination-bar">
-      <div class="pagination">
-        <button class="page-btn"><i class="fas fa-angle-left"></i></button>
-        <button class="page-btn">1</button>
-        <button class="page-btn active">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn"><i class="fas fa-angle-right"></i></button>
-      </div>
-    </div>
-    <div>
-        <span> Page 1 of 3
-          </span>
-        </div>
   </main>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

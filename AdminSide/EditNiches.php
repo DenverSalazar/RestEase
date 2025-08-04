@@ -3,8 +3,10 @@
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-// Get nicheID from query string
+// Get record ID or nicheID from query string
+$recordId = $_GET['id'] ?? '';
 $nicheID = $_GET['nicheID'] ?? '';
+
 $deceased = [
   'firstName' => '',
   'lastName' => '',
@@ -17,11 +19,22 @@ $deceased = [
   'informantName' => ''
 ];
 
-// Get original nicheID from query string
+// Get original nicheID from query string or from database
 $originalNicheID = $_GET['nicheID'] ?? '';
 
-// If editing, fetch data for this niche
-if ($nicheID) {
+// If editing by ID, fetch data for this record
+if ($recordId) {
+  $stmt = $conn->prepare("SELECT * FROM deceased WHERE id = ? LIMIT 1");
+  $stmt->bind_param("i", $recordId);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result && $row = $result->fetch_assoc()) {
+    $deceased = $row;
+    $originalNicheID = $row['nicheID'];
+  }
+  $stmt->close();
+} elseif ($nicheID) {
+  // If editing by nicheID, fetch data for this niche
   $stmt = $conn->prepare("SELECT * FROM deceased WHERE nicheID = ? LIMIT 1");
   $stmt->bind_param("s", $originalNicheID);
   $stmt->execute();
