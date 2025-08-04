@@ -92,6 +92,16 @@ function generateUniqueORNumber($conn) {
   return $orNumber;
 }
 
+function generateUniqueMCNumber($conn) {
+  // Get the highest MC No. and increment by 1, starting from 0
+  $result = $conn->query("SELECT MAX(CAST(MCNo AS UNSIGNED)) as max_mc FROM ledger WHERE MCNo REGEXP '^[0-9]+$'");
+  $maxMC = -1; // Start from -1 so first number will be 0
+  if ($result && $row = $result->fetch_assoc()) {
+    $maxMC = intval($row['max_mc']);
+  }
+  return strval($maxMC + 1);
+}
+
 if ($entry_id && !$ledgerEntry) {
     echo "Entry not found.";
     exit;
@@ -105,8 +115,17 @@ if (!$validity) {
   $validity = date('Y-m-d', strtotime('+5 years'));
 }
 $orNumber = '';
+$mcNumber = '';
 if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
   $orNumber = generateUniqueORNumber($conn);
+}
+if (($apartment || $informant) && empty($ledgerEntry['MCNo'])) {
+  $mcNumber = generateUniqueMCNumber($conn);
+}
+// For walk-in clients (no URL parameters), also generate numbers
+if (!$apartment && !$informant && !$ledgerEntry) {
+  $orNumber = generateUniqueORNumber($conn);
+  $mcNumber = generateUniqueMCNumber($conn);
 }
 ?>
 <!DOCTYPE html>
@@ -275,11 +294,11 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;">
               <div>
                 <label for="formApartmentNo" style="font-weight:500;">Apartment No.</label>
-                <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>" readonly>
+                <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
               </div>
               <div>
                 <label for="formName" style="font-weight:500;">Name</label>
-                <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>" readonly>
+                <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>">
               </div>
               <div>
                 <label for="formAmount" style="font-weight:500;">Amount</label>
@@ -294,11 +313,11 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
               </div>
               <div>
                 <label for="formMCNo" style="font-weight:500;">MC No.</label>
-                <input type="text" id="formMCNo" name="MCNo" placeholder="MC Number" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['MCNo'] ?? ''); ?>">
+                <input type="text" id="formMCNo" name="MCNo" placeholder="MC Number" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['MCNo'] ?? $mcNumber); ?>" readonly>
               </div>
               <div>
                 <label for="formValidity" style="font-weight:500;">Validity</label>
-                <input type="date" id="formValidity" name="Validity" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? $validity); ?>" readonly>
+                <input type="date" id="formValidity" name="Validity" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? $validity); ?>">
               </div>
               <div style="grid-column: span 2;">
                 <label for="formDescription" style="font-weight:500;">Desc</label>
@@ -393,8 +412,6 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
                 echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
                 echo '</tr>';
               }
-            } else {
-              echo '<tr><td colspan="7">No pending payments found.</td></tr>';
             }
             ?>
           </tbody>
@@ -428,16 +445,24 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
             </tr>
           </thead>
           <tbody>
-            <tr><td>0</td><td>1F-0A1</td><td>04-12-25</td><td>Dysania Beans</td><td>₱10,000.00</td><td>New</td><td>35426742</td><td>02-28-30</td></tr>
-            <tr><td>1</td><td>1F-0A2</td><td>07-23-24</td><td>Wilson Aminoff</td><td>₱2,000.00</td><td>Renewal</td><td>74382659</td><td>03-09-34</td></tr>
-            <tr><td>2</td><td>1F-0A3</td><td>06-04-24</td><td>Brandon Saris</td><td>₱2,000.00</td><td>Renewal</td><td>19284736</td><td>07-21-29</td></tr>
-            <tr><td>3</td><td>1F-0A4</td><td>12-11-25</td><td>Zain Philips</td><td>₱2,000.00</td><td>Renewal</td><td>86420359</td><td>12-05-31</td></tr>
-            <tr><td>4</td><td>1F-0A5</td><td>08-15-23</td><td>Wilson Lubin</td><td>₱2,000.00</td><td>Renewal</td><td>37491826</td><td>06-30-25</td></tr>
-            <tr><td>5</td><td>1F-0A6</td><td>09-13-24</td><td>Wilson Culhane</td><td>₱2,000.00</td><td>Renewal</td><td>62519038</td><td>09-14-38</td></tr>
-            <tr><td>6</td><td>1F-0A7</td><td>01-14-22</td><td>Adison Vetrovs</td><td>₱2,000.00</td><td>Renewal</td><td>13849275</td><td>04-18-32</td></tr>
-            <tr><td>7</td><td>1F-0A8</td><td>11-25-24</td><td>Jocelyn Mango</td><td>₱2,000.00</td><td>Renewal</td><td>90471628</td><td>11-27-28</td></tr>
-            <tr><td>8</td><td>1F-0A9</td><td>05-28-23</td><td>Jocelyn Mango</td><td>₱2,000.00</td><td>Renewal</td><td>28134697</td><td>08-08-36</td></tr>
-            <tr><td>9</td><td>1F-0A10</td><td>04-23-19</td><td>Jakob Bator</td><td>₱2,000.00</td><td>Renewal</td><td>71658342</td><td>05-23-33</td></tr>
+            <?php
+            // Fetch payment details (where DatePaid is NOT NULL and not empty)
+            $paymentResult = $conn->query("SELECT * FROM ledger WHERE DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC");
+            if ($paymentResult && $paymentResult->num_rows > 0) {
+              while ($row = $paymentResult->fetch_assoc()) {
+                echo '<tr>';
+                echo '<td>' . htmlspecialchars($row['MCNo']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
+                echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
+                echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
+                echo '</tr>';
+              }
+            }
+            ?>
           </tbody>
         </table>
       </div>
@@ -537,4 +562,7 @@ if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
     </script>
 </body>
 </html>
+
+
+
 
