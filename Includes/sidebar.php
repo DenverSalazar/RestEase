@@ -4,7 +4,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $clients_pages = ['Clients.php'];
 $request_pages = ['ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
-$mapping_pages = ['Mapping.php','insert.php', 'EditNiches.php'];
+$mapping_pages = ['Mapping.php','insert.php', 'EditNiches.php', 'first_floor.php', 'second_floor.php', 'third_floor.php'];
 // Add this line to treat both as active for Records
 $records_pages = ['Records.php', 'Insert.php', 'EditNiches.php'];
 
@@ -18,6 +18,9 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
         $current_page = 'Mapping.php';
     }
 }
+
+// Check if mapping dropdown should be open
+$mapping_dropdown_open = in_array($current_page, $mapping_pages);
 ?>
 <aside class="sidebar">
     <div class="logo">
@@ -28,10 +31,30 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
         <i class="fas fa-pie-chart"></i>
         Dashboard
       </a>
-      <a href="Mapping.php" class="nav-item<?php if(in_array($current_page, $mapping_pages)) echo ' active'; ?>">
-        <i class="fas fa-map-marker-alt"></i>
-        Mapping
-      </a>
+      
+      <!-- Mapping Dropdown -->
+      <div class="nav-dropdown<?php if($mapping_dropdown_open) echo ' open'; ?>">
+        <div class="nav-item dropdown-toggle">
+          <i class="fas fa-map-marker-alt"></i>
+          Mapping
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </div>
+        <div class="dropdown-menu">
+          <a href="Mapping.php" class="dropdown-item<?php if($current_page == 'Mapping.php' || $current_page == 'first_floor.php') echo ' active'; ?>">
+            <i class="fas fa-building"></i>
+            First Floor
+          </a>
+          <a href="second_floor.php" class="dropdown-item<?php if($current_page == 'second_floor.php') echo ' active'; ?>">
+            <i class="fas fa-building"></i>
+            Second Floor
+          </a>
+          <a href="third_floor.php" class="dropdown-item<?php if($current_page == 'third_floor.php') echo ' active'; ?>">
+            <i class="fas fa-building"></i>
+            Third Floor
+          </a>
+        </div>
+      </div>
+      
       <a href="Records.php" class="nav-item<?php if(in_array($current_page, $records_pages)) echo ' active'; ?>">
         <i class="fas fa-file-alt"></i>
         Records
@@ -64,3 +87,18 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
       </a>
     </div>
   </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle dropdown toggle
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdown = document.querySelector('.nav-dropdown');
+    
+    if (dropdownToggle && dropdown) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.classList.toggle('open');
+        });
+    }
+});
+</script>

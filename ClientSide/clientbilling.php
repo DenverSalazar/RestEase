@@ -330,7 +330,7 @@ if ($user_id) {
                 <div class="status-title">Pending Request</div>
                 <div class="status-type">Type: <span>Internment</span></div>
             </div>
-            <span class="status-card-btn"></span>
+            <button class="pay-btn" type="button" onclick="showPendingRequestForm()">View</button>
         `;
         document.querySelector('.status-card.approved').innerHTML = `
             <div>
@@ -342,6 +342,85 @@ if ($user_id) {
     }
     setInitialStatusCards();
 
+    // Prepare JS variables with PHP values for the pending request
+    const pendingRequest = {
+        type: <?php echo json_encode($request['type'] ?? ''); ?>,
+        first_name: <?php echo json_encode($request['first_name'] ?? ''); ?>,
+        last_name: <?php echo json_encode($request['last_name'] ?? ''); ?>,
+        middle_name: <?php echo json_encode($request['middle_name'] ?? ''); ?>,
+        age: <?php echo json_encode($request['age'] ?? ''); ?>,
+        dob: <?php echo json_encode($request['dob'] ?? ''); ?>,
+        dod: <?php echo json_encode($request['dod'] ?? ''); ?>,
+        residency: <?php echo json_encode($request['residency'] ?? ''); ?>,
+        informant_name: <?php echo json_encode($request['informant_name'] ?? ''); ?>,
+        file_upload: <?php echo json_encode($request['file_upload'] ?? 'BirthCert.pdf'); ?>
+    };
+
+    function showPendingRequestForm() {
+        document.querySelector('.status-card.pending').classList.add('active');
+        document.querySelector('.status-card.approved').classList.remove('active');
+        document.getElementById('billingRight').innerHTML = `
+            <div class="pending-info">Your request is still pending please wait...</div>
+            <form class="billing-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Type</label>
+                    <input type="text" value="${pendingRequest.type}" readonly>
+                </div>
+                <div class="form-section">
+                    <div class="section-title">Deceased Information</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" value="${pendingRequest.first_name}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" value="${pendingRequest.last_name}" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Middle Name</label>
+                            <input type="text" value="${pendingRequest.middle_name}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="text" value="${pendingRequest.age}" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date of Birth</label>
+                            <input type="text" value="${pendingRequest.dob}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Date Died</label>
+                            <input type="text" value="${pendingRequest.dod}" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Residency</label>
+                            <input type="text" value="${pendingRequest.residency}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Informant Name</label>
+                            <input type="text" value="${pendingRequest.informant_name}" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="section-title">Uploaded Files</div>
+                    <div class="uploaded-file">
+                        <i class="fas fa-file-pdf"></i>
+                        <span class="file-name">${pendingRequest.file_upload ? pendingRequest.file_upload : 'BirthCert.pdf'}</span>
+                    </div>
+                </div>
+                <button class="cancel-btn" type="button" onclick="showCancelModal()">Cancel</button>
+            </form>
+        `;
+    }
+    
     function showPayForm() {
         // Get the real amount from PHP - ensure it's not empty
         const realAmount = '<?php 
@@ -445,71 +524,6 @@ if ($user_id) {
         document.querySelector('.status-card.pending').classList.remove('active');
         document.querySelector('.status-card.approved').classList.add('active');
         location.reload(); // Reload to show approved request form
-    }
-    function showPendingRequestForm() {
-        setInitialStatusCards();
-        document.querySelector('.status-card.pending').classList.add('active');
-        document.querySelector('.status-card.approved').classList.remove('active');
-        document.getElementById('billingRight').innerHTML = `
-            <div class="pending-info">Your request is still pending please wait...</div>
-            <form class="billing-form" onsubmit="return false;">
-                <div class="form-group">
-                    <label>Type</label>
-                    <input type="text" value="Internment" readonly>
-                </div>
-                <div class="form-section">
-                    <div class="section-title">Deceased Information</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input type="text" value="Josephine" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input type="text" value="Damdaman" readonly>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Middle Name</label>
-                            <input type="text" value="Yow" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Age</label>
-                            <input type="text" value="34" readonly>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="text" value="April 27, 1977" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Date Died</label>
-                            <input type="text" value="April 19, 2012" readonly>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Residency</label>
-                            <input type="text" value="Ohio, Mexico Pampanga" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Informant Name</label>
-                            <input type="text" value="Dysania Beans" readonly>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-section">
-                    <div class="section-title">Uploaded Files</div>
-                    <div class="uploaded-file">
-                        <i class="fas fa-file-pdf"></i>
-                        <span class="file-name">BirthCert.pdf</span>
-                    </div>
-                </div>
-                <button class="cancel-btn" type="button" onclick="showCancelModal()">Cancel</button>
-            </form>
-        `;
     }
     function showPayConfirmModal() {
         const uploadInput = document.getElementById('pay-upload');
