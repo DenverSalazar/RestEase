@@ -8,58 +8,79 @@ if ($conn->connect_error) {
 
 $register_success = false;
 $register_error = "";
-// $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Added secret key
+
+// Store submitted values for repopulation
+$input = [
+    'first_name' => '',
+    'last_name' => '',
+    'email' => '',
+    'contact_no' => '',
+    'password' => '',
+    'confirm_password' => '',
+    'terms' => false
+];
+$field_errors = [
+    'first_name' => false,
+    'last_name' => false,
+    'email' => false,
+    'contact_no' => false,
+    'password' => false,
+    'confirm_password' => false,
+    'terms' => false
+];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $first_name = trim($_POST['first_name']);
-    $last_name = trim($_POST['last_name']);
-    $email = trim($_POST['email']);
-    $contact_no = trim($_POST['contact_no']); // New field
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
-    $terms = isset($_POST['terms']);
-    // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    $input['first_name'] = trim($_POST['first_name']);
+    $input['last_name'] = trim($_POST['last_name']);
+    $input['email'] = trim($_POST['email']);
+    $input['contact_no'] = trim($_POST['contact_no']);
+    $input['password'] = $_POST['password'];
+    $input['confirm_password'] = $_POST['confirm_password'];
+    $input['terms'] = isset($_POST['terms']);
 
     // Basic validation
-    if (!$first_name || !$last_name || !$email || !$contact_no || !$password || !$confirm_password) {
+    if (!$input['first_name'] || !$input['last_name'] || !$input['email'] || !$input['contact_no'] || !$input['password'] || !$input['confirm_password']) {
         $register_error = "All fields are required.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $register_error = "Invalid email format.";
-    } elseif (!preg_match('/^[0-9+\-\s]{7,20}$/', $contact_no)) {
-        $register_error = "Invalid contact number format.";
-    } elseif (strlen($password) < 8) {
+        foreach ($field_errors as $k => $_) $field_errors[$k] = !$input[$k];
+    } elseif (!preg_match('/^[A-Za-z]+$/', $input['first_name'])) {
+        $register_error = "First name must only contain letters.";
+        $field_errors['first_name'] = true;
+    } elseif (!preg_match('/^[A-Za-z]+$/', $input['last_name'])) {
+        $register_error = "Last name must only contain letters.";
+        $field_errors['last_name'] = true;
+    } elseif (!filter_var($input['email'], FILTER_VALIDATE_EMAIL) ||
+              !(preg_match('/@gmail\.com$/', $input['email']) || preg_match('/@yahoo\.com$/', $input['email']))) {
+        $register_error = "Email must be a valid Gmail or Yahoo address.";
+        $field_errors['email'] = true;
+    } elseif (!preg_match('/^09[0-9]{9}$/', $input['contact_no'])) {
+        $register_error = "Contact number must start with 09 and be exactly 11 digits.";
+        $field_errors['contact_no'] = true;
+    } elseif (strlen($input['password']) < 8) {
         $register_error = "Password must be at least 8 characters long.";
-    } elseif ($password !== $confirm_password) {
+        $field_errors['password'] = true;
+    } elseif (!preg_match('/[A-Za-z]/', $input['password']) || !preg_match('/[0-9]/', $input['password'])) {
+        $register_error = "Password must contain at least one letter and one number.";
+        $field_errors['password'] = true;
+    } elseif ($input['password'] !== $input['confirm_password']) {
         $register_error = "Passwords do not match.";
-    } elseif (!$terms) {
+        $field_errors['confirm_password'] = true;
+    } elseif (!$input['terms']) {
         $register_error = "You must agree to the Terms & Conditions.";
-    // } elseif (empty($recaptcha_response)) {
-    //     $register_error = "Please complete the reCAPTCHA.";
+        $field_errors['terms'] = true;
     } else {
-        // reCAPTCHA validation
-        // $recaptcha_verify = file_get_contents(
-        //     "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-        // );
-        // $recaptcha_success = json_decode($recaptcha_verify);
-        // if (!$recaptcha_success->success) {
-        //     $register_error = "reCAPTCHA verification failed. Please try again.";
-        // }
-    }
-
-    // Only proceed if no error
-    if (!$register_error) {
+        // Only proceed if no error
         // Check if email already exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
+        $stmt->bind_param("s", $input['email']);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows > 0) {
             $register_error = "Email already registered.";
         } else {
             // Insert new user
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $hashed_password = password_hash($input['password'], PASSWORD_DEFAULT);
             $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, contact_no, password) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssss", $first_name, $last_name, $email, $contact_no, $hashed_password);
+            $stmt->bind_param("sssss", $input['first_name'], $input['last_name'], $input['email'], $input['contact_no'], $hashed_password);
             if ($stmt->execute()) {
                 $register_success = true;
             } else {
@@ -84,6 +105,66 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="css/register.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
+    <style>
+        /* Custom Toast Styles */
+        .custom-toast {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            min-width: 320px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.1rem 1.5rem;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.08rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .custom-toast.success {
+            border-left: 6px solid #38d39f;
+        }
+        .custom-toast.error {
+            border-left: 6px solid #e74c3c;
+        }
+        .custom-toast .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #38d39f;
+        }
+        .custom-toast.error .toast-icon {
+            color: #e74c3c;
+        }
+        .custom-toast .toast-message {
+            flex: 1;
+        }
+        .custom-toast .toast-close {
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: color 0.2s;
+        }
+        .custom-toast .toast-close:hover {
+            color: #222;
+        }
+        @media (max-width: 600px) {
+            .custom-toast {
+                right: 10px;
+                left: 10px;
+                min-width: unset;
+                max-width: unset;
+            }
+        }
+        .is-invalid {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 0 0.2rem rgba(231,76,60,.25);
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -145,32 +226,45 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <form method="POST" action="">
                             <div class="row ">
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control" placeholder="First name" name="first_name" required>
+                                    <input type="text" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
+                                        placeholder="First name" name="first_name" required
+                                        value="<?php echo htmlspecialchars($input['first_name']); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control" placeholder="Last name" name="last_name" required>
+                                    <input type="text" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
+                                        placeholder="Last name" name="last_name" required
+                                        value="<?php echo htmlspecialchars($input['last_name']); ?>">
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email" name="email" required>
+                                <input type="email" class="form-control <?php if($field_errors['email']) echo 'is-invalid'; ?>"
+                                    placeholder="Email" name="email" required
+                                    value="<?php echo htmlspecialchars($input['email']); ?>">
                             </div>
                             <div class="mb-3">
-                                <input type="text" class="form-control" placeholder="Contact No." name="contact_no" required>
+                                <input type="text" class="form-control <?php if($field_errors['contact_no']) echo 'is-invalid'; ?>"
+                                    placeholder="Contact No." name="contact_no" required
+                                    value="<?php echo htmlspecialchars($input['contact_no']); ?>">
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Enter your password" id="password" name="password" required>
+                                <input type="password" class="form-control <?php if($field_errors['password']) echo 'is-invalid'; ?>"
+                                    placeholder="Enter your password" id="password" name="password" required
+                                    value="<?php echo htmlspecialchars($input['password']); ?>">
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>
                                 </span>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Confirm password" id="confirmPassword" name="confirm_password" required>
+                                <input type="password" class="form-control <?php if($field_errors['confirm_password']) echo 'is-invalid'; ?>"
+                                    placeholder="Confirm password" id="confirmPassword" name="confirm_password" required
+                                    value="<?php echo htmlspecialchars($input['confirm_password']); ?>">
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="toggleConfirmPassword"></i>
                                 </span>
                             </div>
                             <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                                <input type="checkbox" class="form-check-input <?php if($field_errors['terms']) echo 'is-invalid'; ?>"
+                                    id="terms" name="terms" required <?php if($input['terms']) echo 'checked'; ?>>
                                 <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link">Terms & Conditions</a></label>
                             </div>
                             <!-- reCAPTCHA widget -->
@@ -228,67 +322,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         });
         <?php endif; ?>
     </script>
-    <style>
-        /* Custom Toast Styles */
-        .custom-toast {
-            position: fixed;
-            top: 40px;
-            right: 40px;
-            min-width: 320px;
-            max-width: 400px;
-            display: flex;
-            align-items: center;
-            background: #fff;
-            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
-            border-radius: 1rem;
-            padding: 1.1rem 1.5rem;
-            z-index: 9999;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1.08rem;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .custom-toast.success {
-            border-left: 6px solid #38d39f;
-        }
-        .custom-toast.error {
-            border-left: 6px solid #e74c3c;
-        }
-        .custom-toast .toast-icon {
-            font-size: 2rem;
-            margin-right: 1rem;
-            color: #38d39f;
-        }
-        .custom-toast.error .toast-icon {
-            color: #e74c3c;
-        }
-        .custom-toast .toast-message {
-            flex: 1;
-        }
-        .custom-toast .toast-close {
-            font-size: 1.5rem;
-            color: #888;
-            cursor: pointer;
-            margin-left: 1rem;
-            transition: color 0.2s;
-        }
-        .custom-toast .toast-close:hover {
-            color: #222;
-        }
-        @media (max-width: 600px) {
-            .custom-toast {
-                right: 10px;
-                left: 10px;
-                min-width: unset;
-                max-width: unset;
-            }
-        }
-    </style>
-</body>
-</html>
-                max-width: unset;
-            }
-        }
-    </style>
 </body>
 </html>

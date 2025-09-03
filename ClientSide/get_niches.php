@@ -1,4 +1,4 @@
-<?php
+<?php //dapat hindi ito makita ng kahit sino kasi may mahlaagang information
 header('Content-Type: application/json');
 include_once '../includes/db.php'; // Adjust path if needed
 
