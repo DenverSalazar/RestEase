@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['user_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: ../login.php"); // Adjust the path if needed
+    exit;
+}
 // Database connection (adjust credentials as needed)
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }

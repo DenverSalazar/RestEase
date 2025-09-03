@@ -1,4 +1,11 @@
 <?php
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../AdminLogin.php");
+    exit;
+}
+?>
+<?php
 include_once '../Includes/db.php';
 $ledgerEntry = null;
 $entry_id = null;
@@ -554,12 +561,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     </script>
 </body>
 </html>
-</body>
-</html>
-          info: true
-        });
-      });
-    </script>
 </body>
 </html>
 

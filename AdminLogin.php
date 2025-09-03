@@ -115,13 +115,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <!-- End Toast -->
                         <form id="loginForm" method="POST" action="">
                             <div class="mb-3">
-                                <input type="email" class="form-control" placeholder="Email" id="email" name="email" required>
+                                <input type="email" class="form-control" placeholder="Email" id="email" name="email" required
+                                    value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES); ?>">
+                                <div class="invalid-feedback" id="emailError" style="display:none;">
+                                    Email must end with @restease.com or @gmail.com.
+                                </div>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required>
+                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required
+                                    value="<?php echo htmlspecialchars($_POST['password'] ?? '', ENT_QUOTES); ?>">
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>
                                 </span>
+                                <div class="invalid-feedback" id="passwordError" style="display:none;">
+                                    Password is required.
+                                </div>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="form-check">
@@ -188,11 +196,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         }
 
-        // Handle regular form submission
-        // document.getElementById('loginForm').addEventListener('submit', function(e) {
-        //     e.preventDefault();
-        //     // Add your regular login form handling here
-        // });
+        // Email validation function
+        function validateEmail(email) {
+            return email.endsWith('@restease.com') || email.endsWith('@gmail.com');
+        }
+
+        let attemptedSubmit = false;
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+
+        function showValidation() {
+            // Email validation
+            if (!validateEmail(emailInput.value.trim())) {
+                emailInput.classList.add('is-invalid');
+                emailError.style.display = 'block';
+            } else {
+                emailInput.classList.remove('is-invalid');
+                emailError.style.display = 'none';
+            }
+            // Password validation
+            if (!passwordInput.value.trim()) {
+                passwordInput.classList.add('is-invalid');
+                passwordError.textContent = "Password is required.";
+                passwordError.style.display = 'block';
+            } else {
+                passwordInput.classList.remove('is-invalid');
+                passwordError.style.display = 'none';
+            }
+        }
+
+        loginForm.addEventListener('submit', function(e) {
+            attemptedSubmit = true;
+            let valid = true;
+
+            if (!validateEmail(emailInput.value.trim())) valid = false;
+            if (!passwordInput.value.trim()) valid = false;
+
+            if (!valid) {
+                showValidation();
+                e.preventDefault(); // Prevents submission, does NOT reset fields
+            }
+        });
+
+        emailInput.addEventListener('input', function() {
+            if (attemptedSubmit) showValidation();
+        });
+        passwordInput.addEventListener('input', function() {
+            if (attemptedSubmit) showValidation();
+        });
+
+        // Password validation (only highlight if server error)
+        <?php if ($admin_error && $admin_error == "Incorrect password.") { ?>
+            passwordInput.classList.add('is-invalid');
+        <?php } ?>
 
         // Custom Toast Logic
         function closeToast() {
@@ -258,6 +317,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .custom-toast .toast-close:hover {
             color: #222;
         }
+        .is-invalid {
+            border-color: #e74c3c !important;
+            box-shadow: 0 0 0 0.2rem rgba(231,76,60,.25);
+            /* Remove any icon background or padding for invalid fields */
+            background-image: none !important;
+            padding-right: 0.75rem !important;
+        }
+        .invalid-feedback {
+            color: #e74c3c;
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+            /* Remove any icon styling */
+            padding-left: 0;
+        }
         @media (max-width: 600px) {
             .custom-toast {
                 right: 10px !important;
@@ -265,11 +338,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 min-width: unset;
                 max-width: unset;
                 padding: 1rem;
-            }
-        }
-    </style>
-</body>
-</html>
             }
         }
     </style>
