@@ -345,12 +345,13 @@ if (!isset($_SESSION['admin_id'])) {
                 $dateDied = htmlspecialchars($row['dateDied']);
                 $dateInternment = htmlspecialchars($row['dateInternment']);
                 
-                // Calculate validity
-                $currentDate = new DateTime();
-                $internmentDate = new DateTime($row['dateInternment']);
-                $interval = $currentDate->diff($internmentDate);
-                $years = $interval->y;
-                $validity = ($years >= 5) ? 'Expired' : 'Valid';
+                // Calculate validity date (5 years from internment)
+                $validityDate = '';
+                if (!empty($row['dateInternment'])) {
+                  $internmentDateObj = new DateTime($row['dateInternment']);
+                  $internmentDateObj->modify('+5 years');
+                  $validityDate = $internmentDateObj->format('Y-m-d');
+                }
                 
                 // Build query parameters for EditNiches.php
                 $queryParams = http_build_query([
@@ -375,7 +376,7 @@ if (!isset($_SESSION['admin_id'])) {
                   <td>{$informant}</td>
                   <td>{$dateDied}</td>
                   <td>{$dateInternment}</td>
-                  <td>{$validity}</td>
+                  <td>{$validityDate}</td>
                   <td><a href='EditNiches.php?{$queryParams}' class='edit-btn' title='Edit Record'><i class='fas fa-edit'></i></a></td>
                   <td class='delete-checkbox-col'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";

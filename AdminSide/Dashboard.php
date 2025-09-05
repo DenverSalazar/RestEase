@@ -37,13 +37,19 @@ $result = $conn->query("SELECT COUNT(*) AS cnt FROM users");
 $activeClients = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
 
 // Get admin name
-$adminName = 'Admin';
 $adminId = $_SESSION['admin_id'];
-$resAdmin = $conn->query("SELECT email FROM admin_accounts WHERE id = $adminId LIMIT 1");
-if ($resAdmin && $row = $resAdmin->fetch_assoc()) {
-    // Use the part before @ as display name, or use the email if you prefer
-    $adminName = ucfirst(explode('@', $row['email'])[0]);
+$adminName = 'Admin';
+$adminProfilePic = '../assets/Default Image.jpg';
+// Fetch display_name and profile_pic from admin_profiles
+$stmt = $conn->prepare('SELECT display_name, profile_pic FROM admin_profiles WHERE admin_id = ? LIMIT 1');
+$stmt->bind_param('i', $adminId);
+$stmt->execute();
+$stmt->bind_result($displayName, $profilePic);
+if ($stmt->fetch()) {
+    $adminName = $displayName ? $displayName : $adminName;
+    $adminProfilePic = $profilePic ? $profilePic : $adminProfilePic;
 }
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -111,7 +117,7 @@ if ($resAdmin && $row = $resAdmin->fetch_assoc()) {
           <span class="notification-badge">1</span>
         </div>
         <div class="profile-info">
-          <img src="../assets/Default Image.jpg" alt="Profile" class="profile-avatar">
+          <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
           <div>
             <div class="profile-name"><?php echo htmlspecialchars($adminName); ?></div>
             <div class="profile-role">Admin</div>

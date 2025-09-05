@@ -46,13 +46,19 @@ while ($row = $result->fetch_assoc()) {
     }
     /* Only adjust legend position, not width */
     body.pick-niche-mode .custom-map-legend {
-      left: 24px !important;
-      right: auto !important;
+      right: 24px !important;
+      left: auto !important;
       bottom: 18px !important;
       border-radius: 10px !important;
       max-width: 260px !important;
       min-width: 140px !important;
       width: auto !important;
+    }
+    /* Position legend at lower right in all modes */
+    .custom-map-legend {
+      right: 18px !important;
+      left: auto !important;
+      bottom: 18px !important;
     }
     body.pick-niche-mode #map {
       margin: 0 !important;
@@ -270,7 +276,7 @@ while ($row = $result->fetch_assoc()) {
         setTimeout(function() {
           // Function to highlight a niche on the map
           function highlightNicheOnMap(nicheID, color, openPopup, forceVacant) {
-            [layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4].forEach(function(sectionLayer) {
+            [layer_Floor1, layer_Floor1, layer_Floor1, layer_Floor1_4].forEach(function(sectionLayer) {
               sectionLayer.eachLayer(function(layer) {
                 if (
                   layer.feature &&
@@ -334,7 +340,7 @@ while ($row = $result->fetch_assoc()) {
    <?php if (!isset($_GET['pickNiche'])) include '../Includes/sidebar.php'; ?>
 
    <main class="main-content">
-  <div class="search-filter-bar" style="margin-top:0 !important; margin-bottom:0 !important;">
+       <div class="search-filter-bar" style="margin-top:0 !important; margin-bottom:0 !important;">
         <div class="search-input-wrapper">
             <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
             <span class="search-input-icon"><i class="fas fa-search"></i></span>
@@ -345,7 +351,7 @@ while ($row = $result->fetch_assoc()) {
             <option value="sold">Sold</option>
         </select>
      </div>
-    <div id="map" style="margin-top:0 !important;">
+      <div id="map" style="margin-top:0 !important;">
         <!-- Layer Control Button -->
         <div class="layer-control">
             <button class="layer-control-btn">
@@ -403,11 +409,9 @@ while ($row = $result->fetch_assoc()) {
    <script src="../js/rbush.min.js"></script>
    <script src="../js/labelgun.min.js"></script>
    <script src="../js/labels.js"></script>
-   <script src="../data/border_1.js"></script>
-   <script src="../data/floor2.js"></script>
-   <script src="../data/floor2_2.js"></script>
-   <script src="../data/floor2_3.js"></script>
-   <script src="../data/floor2_4.js"></script>
+   <script src="../data/OldMap/border_1.js"></script>
+   <script src="../data/OldMap/floor1.js"></script>
+   <script src="../data/OldMap/floor1_4.js"></script>
    <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -543,7 +547,7 @@ while ($row = $result->fetch_assoc()) {
         });
         bounds_group.addLayer(layer_border_1);
         map.addLayer(layer_border_1);
-        function pop_Floor2(feature, layer) {
+        function pop_Floor1(feature, layer) {
             layer.on({
                 mouseout: function(e) {
                     for (var i in e.target._eventParents) {
@@ -612,13 +616,13 @@ while ($row = $result->fetch_assoc()) {
         }
 
         // --- Section Layer Creation ---
-        function style_Floor2_0(feature) {
+        function style_Floor1(feature) {
             // Check if this nicheID has a deceased record
             var nicheID = feature.properties && feature.properties['nicheID'];
             if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
                 // Use "sold" color if there is data
                 return {
-                    pane: 'pane_Floor2',
+                    pane: 'pane_Floor1',
                     opacity: 1,
                     color: 'rgba(35,35,35,1.0)',
                     dashArray: '',
@@ -633,7 +637,7 @@ while ($row = $result->fetch_assoc()) {
             }
             if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
                 return {
-                    pane: 'pane_Floor2',
+                    pane: 'pane_Floor1',
                     color: 'rgba(96, 125, 139, 1.0)',
                     weight: 0,
                     fill: true,
@@ -644,7 +648,7 @@ while ($row = $result->fetch_assoc()) {
             switch(String(feature.properties['Status'])) {
                 case 'vacant':
                     return {
-                pane: 'pane_Floor2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -659,7 +663,7 @@ while ($row = $result->fetch_assoc()) {
                     break;
                 case 'reserved':
                     return {
-                pane: 'pane_Floor2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -674,7 +678,7 @@ while ($row = $result->fetch_assoc()) {
                     break;
                 case 'sold':
                     return {
-                pane: 'pane_Floor2',
+                pane: 'pane_Floor1',
                 opacity: 1,
                 color: 'rgba(35,35,35,1.0)',
                 dashArray: '',
@@ -689,92 +693,92 @@ while ($row = $result->fetch_assoc()) {
                     break;
             }
         }
-        map.createPane('pane_Floor2');
-        map.getPane('pane_Floor2').style.zIndex = 402;
-        map.getPane('pane_Floor2').style['mix-blend-mode'] = 'normal';
-        var layer_Floor2 = new L.geoJson(json_Floor2, {
+        map.createPane('pane_Floor1');
+        map.getPane('pane_Floor1').style.zIndex = 402;
+        map.getPane('pane_Floor1').style['mix-blend-mode'] = 'normal';
+        var layer_Floor1 = new L.geoJson(json_Floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor2',
-            layerName: 'layer_Floor2',
-            pane: 'pane_Floor2',
-            onEachFeature: pop_Floor2,
-            style: style_Floor2_0,
+            dataVar: 'json_Floor1',
+            layerName: 'layer_Floor1',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1,
         });
         // Section 2
-        var layer_Floor2_2 = new L.geoJson(json_Floor2_2, {
+        var layer_Floor1 = new L.geoJson(json_Floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor2_2',
-            layerName: 'layer_Floor2_2',
-            pane: 'pane_Floor2',
-            onEachFeature: pop_Floor2,
-            style: style_Floor2_0,
+            dataVar: 'json_Floor1',
+            layerName: 'layer_Floor1',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1,
         });
         // Section 3
-        var layer_Floor2_3 = new L.geoJson(json_Floor2_3, {
+        var layer_Floor1 = new L.geoJson(json_Floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor2_3',
-            layerName: 'layer_Floor2_3',
-            pane: 'pane_Floor2',
-            onEachFeature: pop_Floor2,
-            style: style_Floor2_0,
+            dataVar: 'json_Floor1',
+            layerName: 'layer_Floor1',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1,
         });
         // Section 4
-        var layer_Floor2_4 = new L.geoJson(json_Floor2_4, {
+        var layer_Floor1_4 = new L.geoJson(json_Floor1_4, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor2_4',
-            layerName: 'layer_Floor2_4',
-            pane: 'pane_Floor2',
-            onEachFeature: pop_Floor2,
-            style: style_Floor2_0,
+            dataVar: 'json_Floor1_4',
+            layerName: 'layer_Floor1_4',
+            pane: 'pane_Floor1',
+            onEachFeature: pop_Floor1,
+            style: style_Floor1,
         });
 
-        bounds_group.addLayer(layer_Floor2);
-        bounds_group.addLayer(layer_Floor2_2);
-        bounds_group.addLayer(layer_Floor2_3);
-        bounds_group.addLayer(layer_Floor2_4);
+        bounds_group.addLayer(layer_Floor1);
+        bounds_group.addLayer(layer_Floor1);
+        bounds_group.addLayer(layer_Floor1);
+        bounds_group.addLayer(layer_Floor1_4);
 
         // Only add Section 1 by default
-        map.addLayer(layer_Floor2);
-        map.addLayer(layer_Floor2_2);
-        map.addLayer(layer_Floor2_3);
-        map.addLayer(layer_Floor2_4);
-        addSectionLabels(layer_Floor2);
-        addSectionLabels(layer_Floor2_2);
-        addSectionLabels(layer_Floor2_3);
-        addSectionLabels(layer_Floor2_4);
-        resetLabels([layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4]);
+        map.addLayer(layer_Floor1);
+        map.addLayer(layer_Floor1);
+        map.addLayer(layer_Floor1);
+        map.addLayer(layer_Floor1_4);
+        addSectionLabels(layer_Floor1);
+        addSectionLabels(layer_Floor1);
+        addSectionLabels(layer_Floor1);
+        addSectionLabels(layer_Floor1_4);
+        resetLabels([layer_Floor1, layer_Floor1, layer_Floor1, layer_Floor1_4]);
 
         // --- Section Toggle Button Logic ---
         function showSection(section) {
             // Remove all section layers
-            [layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4].forEach(function(l) {
+            [layer_Floor1, layer_Floor1, layer_Floor1, layer_Floor1_4].forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
             
             if (section === 'all') {
                 // Add all sections
-                map.addLayer(layer_Floor2);
-                map.addLayer(layer_Floor2_2);
-                map.addLayer(layer_Floor2_3);
-                map.addLayer(layer_Floor2_4);
+                map.addLayer(layer_Floor1);
+                map.addLayer(layer_Floor1);
+                map.addLayer(layer_Floor1);
+                map.addLayer(layer_Floor1_4);
                 
                 // Add labels for all sections
-                addSectionLabels(layer_Floor2);
-                addSectionLabels(layer_Floor2_2);
-                addSectionLabels(layer_Floor2_3);
-                addSectionLabels(layer_Floor2_4);
-                resetLabels([layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4]);
+                addSectionLabels(layer_Floor1);
+                addSectionLabels(layer_Floor1);
+                addSectionLabels(layer_Floor1);
+                addSectionLabels(layer_Floor1_4);
+                resetLabels([layer_Floor1, layer_Floor1, layer_Floor1, layer_Floor1_4]);
             } else {
                 // Add selected section
                 switch(section) {
-                    case 1: map.addLayer(layer_Floor2); break;
-                    case 2: map.addLayer(layer_Floor2_2); break;
-                    case 3: map.addLayer(layer_Floor2_3); break;
-                    case 4: map.addLayer(layer_Floor2_4); break;
+                    case 1: map.addLayer(layer_Floor1); break;
+                    case 2: map.addLayer(layer_Floor1); break;
+                    case 3: map.addLayer(layer_Floor1); break;
+                    case 4: map.addLayer(layer_Floor1_4); break;
                 }
             }
         }
@@ -838,53 +842,53 @@ function removeSectionLabels(sectionLayer) {
 }
 
 // Add labels only for the default visible layer
-addSectionLabels(layer_Floor2);
-resetLabels([layer_Floor2]);
+addSectionLabels(layer_Floor1);
+resetLabels([layer_Floor1]);
 
 // Listen for layeradd/layerremove and update labels accordingly
 map.on("layeradd", function(e){
-    if (e.layer === layer_Floor2) {
-        addSectionLabels(layer_Floor2);
-        resetLabels([layer_Floor2]);
+    if (e.layer === layer_Floor1) {
+        addSectionLabels(layer_Floor1);
+        resetLabels([layer_Floor1]);
     }
-    if (e.layer === layer_Floor2_2) {
-        addSectionLabels(layer_Floor2_2);
-        resetLabels([layer_Floor2_2]);
+    if (e.layer === layer_Floor1) {
+        addSectionLabels(layer_Floor1);
+        resetLabels([layer_Floor1]);
     }
-    if (e.layer === layer_Floor2_3) {
-        addSectionLabels(layer_Floor2_3);
-        resetLabels([layer_Floor2_3]);
+    if (e.layer === layer_Floor1) {
+        addSectionLabels(layer_Floor1);
+        resetLabels([layer_Floor1]);
     }
-    if (e.layer === layer_Floor2_4) {
-        addSectionLabels(layer_Floor2_4);
-        resetLabels([layer_Floor2_4]);
+    if (e.layer === layer_Floor1_4) {
+        addSectionLabels(layer_Floor1_4);
+        resetLabels([layer_Floor1_4]);
     }
 });
 map.on("layerremove", function(e){
-    if (e.layer === layer_Floor2) {
-        removeSectionLabels(layer_Floor2);
+    if (e.layer === layer_Floor1) {
+        removeSectionLabels(layer_Floor1);
         resetLabels([]);
     }
-    if (e.layer === layer_Floor2_2) {
-        removeSectionLabels(layer_Floor2_2);
+    if (e.layer === layer_Floor1) {
+        removeSectionLabels(layer_Floor1);
         resetLabels([]);
     }
-    if (e.layer === layer_Floor2_3) {
-        removeSectionLabels(layer_Floor2_3);
+    if (e.layer === layer_Floor1) {
+        removeSectionLabels(layer_Floor1);
         resetLabels([]);
     }
-    if (e.layer === layer_Floor2_4) {
-        removeSectionLabels(layer_Floor2_4);
+    if (e.layer === layer_Floor1_4) {
+        removeSectionLabels(layer_Floor1_4);
         resetLabels([]);
     }
 });
 map.on("zoomend", function(){
     // Only reset labels for visible layers
     var visibleLayers = [];
-    if (map.hasLayer(layer_Floor2)) visibleLayers.push(layer_Floor2);
-    if (map.hasLayer(layer_Floor2_2)) visibleLayers.push(layer_Floor2_2);
-    if (map.hasLayer(layer_Floor2_3)) visibleLayers.push(layer_Floor2_3);
-    if (map.hasLayer(layer_Floor2_4)) visibleLayers.push(layer_Floor2_4);
+    if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
+    if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
+    if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
+    if (map.hasLayer(layer_Floor1_4)) visibleLayers.push(layer_Floor1_4);
     resetLabels(visibleLayers);
 });
 

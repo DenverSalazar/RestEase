@@ -50,6 +50,17 @@ while ($row = $result->fetch_assoc()) {
       right: 0 !important;
       border-radius: 10px !important;
     }
+    .main-content {
+      position: relative;
+      padding-top: 0 !important;
+    }
+    .search-filter-bar {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      position: relative;
+      top: 0;
+      z-index: 2;
+    }
     /* Only adjust legend position, not width */
     body.pick-niche-mode .custom-map-legend {
       left: 24px !important;
@@ -234,6 +245,25 @@ while ($row = $result->fetch_assoc()) {
     .show-all-btn.active {
         background: #2d8cff !important;
     }
+     .main-content {
+      position: relative;
+      padding-top: 0 !important;
+    }
+    .search-filter-bar {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      position: relative;
+      top: 0;
+      z-index: 2;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    #map {
+      margin-top: 0 !important;
+      box-shadow: none !important;
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -321,7 +351,7 @@ while ($row = $result->fetch_assoc()) {
    <?php if (!isset($_GET['pickNiche'])) include '../Includes/sidebar.php'; ?>
 
    <main class="main-content">
-     <div class="search-filter-bar">
+     <div class="search-filter-bar" style="margin-top:0 !important; margin-bottom:0 !important;">
         <div class="search-input-wrapper">
             <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
             <span class="search-input-icon"><i class="fas fa-search"></i></span>
@@ -332,7 +362,7 @@ while ($row = $result->fetch_assoc()) {
             <option value="sold">Sold</option>
         </select>
      </div>
-     <div id="map">
+     <div id="map" style="margin-top:0 !important;">
         <!-- Layer Control Button -->
         <div class="layer-control">
             <button class="layer-control-btn">

@@ -4,6 +4,90 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: ../AdminLogin.php");
     exit;
 }
+// Fetch admin info from new admin_profiles table
+include_once '../Includes/db.php';
+$adminId = $_SESSION['admin_id'];
+$adminInfo = [
+  'display_name' => '',
+  'first_name' => '',
+  'last_name' => '',
+  'email' => '',
+  'phone' => '',
+  'role' => 'Admin',
+  'profile_pic' => '../assets/Default Image.jpg'
+];
+// Get email from admin_accounts
+$email = '';
+if ($conn && !$conn->connect_error) {
+  $stmt = $conn->prepare('SELECT email FROM admin_accounts WHERE id = ? LIMIT 1');
+  $stmt->bind_param('i', $adminId);
+  $stmt->execute();
+  $stmt->bind_result($email);
+  if ($stmt->fetch()) {
+    $adminInfo['email'] = $email;
+  }
+  $stmt->close();
+  // Get profile info from admin_profiles
+  $stmt2 = $conn->prepare('SELECT display_name, first_name, last_name, phone, role, profile_pic FROM admin_profiles WHERE admin_id = ? LIMIT 1');
+  $stmt2->bind_param('i', $adminId);
+  $stmt2->execute();
+  $stmt2->bind_result($displayName, $firstName, $lastName, $phone, $role, $profilePic);
+  if ($stmt2->fetch()) {
+    $adminInfo['display_name'] = $displayName;
+    $adminInfo['first_name'] = $firstName;
+    $adminInfo['last_name'] = $lastName; // Fixed variable name
+    $adminInfo['phone'] = $phone;
+    $adminInfo['role'] = $role;
+    $adminInfo['profile_pic'] = $profilePic ? $profilePic : '../assets/Default Image.jpg';
+  }
+  $stmt2->close();
+}
+// Handle profile update and profile picture upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || isset($_POST['upload_profile_pic']))) {
+  $displayName = trim($_POST['displayName'] ?? '');
+  $firstName = trim($_POST['firstName'] ?? '');
+  $lastName = trim($_POST['lastName'] ?? '');
+  $phone = trim($_POST['phone'] ?? '');
+  $role = trim($_POST['role'] ?? 'Admin');
+  $profilePicPath = $adminInfo['profile_pic'];
+  // Handle profile picture upload
+  if (isset($_FILES['profilePicInput']) && $_FILES['profilePicInput']['error'] === UPLOAD_ERR_OK) {
+    $uploadDir = '../uploads/';
+    if (!is_dir($uploadDir)) {
+      mkdir($uploadDir, 0777, true);
+    }
+    $fileName = 'admin_' . $adminId . '_' . time() . '_' . basename($_FILES['profilePicInput']['name']);
+    $targetFile = $uploadDir . $fileName;
+    if (move_uploaded_file($_FILES['profilePicInput']['tmp_name'], $targetFile)) {
+      $profilePicPath = $targetFile;
+    }
+  }
+  // Update or insert profile
+  $stmt = $conn->prepare('SELECT id FROM admin_profiles WHERE admin_id = ? LIMIT 1');
+  $stmt->bind_param('i', $adminId);
+  $stmt->execute();
+  $stmt->store_result();
+  if ($stmt->num_rows > 0) {
+    $stmt->close();
+    $stmt2 = $conn->prepare('UPDATE admin_profiles SET display_name=?, first_name=?, last_name=?, phone=?, role=?, profile_pic=? WHERE admin_id=?');
+    $stmt2->bind_param('ssssssi', $displayName, $firstName, $lastName, $phone, $role, $profilePicPath, $adminId);
+    $stmt2->execute();
+    $stmt2->close();
+  } else {
+    $stmt->close();
+    $stmt2 = $conn->prepare('INSERT INTO admin_profiles (admin_id, display_name, first_name, last_name, phone, role, profile_pic) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt2->bind_param('issssss', $adminId, $displayName, $firstName, $lastName, $phone, $role, $profilePicPath);
+    $stmt2->execute();
+    $stmt2->close();
+  }
+  // Update adminInfo array with new values
+  $adminInfo['display_name'] = $displayName;
+  $adminInfo['first_name'] = $firstName;
+  $adminInfo['last_name'] = $lastName;
+  $adminInfo['phone'] = $phone;
+  $adminInfo['role'] = $role;
+  $adminInfo['profile_pic'] = $profilePicPath;
+}
 ?>
 
 <!DOCTYPE html>
@@ -44,31 +128,31 @@ if (!isset($_SESSION['admin_id'])) {
           <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
             Real-time information and activities of your property.
           </div>
+          <form method="POST" id="profileForm" enctype="multipart/form-data">
           <div class="settings-account-header">
-            <img src="../assets/Default Image.jpg" alt="Profile" class="settings-profile-img">
+            <img src="<?php echo htmlspecialchars($adminInfo['profile_pic']); ?>" alt="Profile" class="settings-profile-img">
             <div class="settings-profile-info">
-              <div class="settings-profile-name">Sybau</div>
-              <div class="settings-profile-email">sybau@gmail.com</div>
+              <div class="settings-profile-name"><?php echo htmlspecialchars($adminInfo['display_name']); ?></div>
+              <div class="settings-profile-email"><?php echo htmlspecialchars($adminInfo['email']); ?></div>
             </div>
             <div class="settings-profile-actions" style="flex-direction: row; gap: 8px; margin-left: auto;">
-              <button id="uploadPicBtn" style="border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.10);">Upload new picture</button>
-              <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
-              <button class="delete-btn" style="border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.10);">Delete</button>
+              <button id="uploadPicBtn" style="border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.10);" type="button">Upload new picture</button>
+              <input type="file" id="profilePicInput" name="profilePicInput" accept="image/*" style="display:none;">
             </div>
           </div>
           <div class="settings-section-title">Personal Information</div>
           <div class="settings-fields-row">
             <div class="settings-field-group">
               <label for="displayName">Display Name</label>
-              <input type="text" id="displayName" value="Sybau">
+              <input type="text" id="displayName" name="displayName" value="<?php echo htmlspecialchars($adminInfo['display_name']); ?>">
             </div>
             <div class="settings-field-group">
               <label for="firstName">First Name</label>
-              <input type="text" id="firstName" value="Kierra">
+              <input type="text" id="firstName" name="firstName" value="<?php echo htmlspecialchars($adminInfo['first_name']); ?>">
             </div>
             <div class="settings-field-group">
               <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" value="Vaccaro">
+              <input type="text" id="lastName" name="lastName" value="<?php echo htmlspecialchars($adminInfo['last_name']); ?>">
             </div>
           </div>
           <hr style="margin: 5px 0;">
@@ -79,15 +163,15 @@ if (!isset($_SESSION['admin_id'])) {
           <div class="settings-fields-row">
             <div class="settings-field-group">
               <label for="email">Email Address</label>
-              <input type="email" id="email" value="sybau@gmail.com" readonly>
+              <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($adminInfo['email']); ?>" readonly>
             </div>
             <div class="settings-field-group">
               <label for="phone">Phone Number</label>
-              <input type="text" id="phone" value="+935 734 6817">
+              <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($adminInfo['phone']); ?>">
             </div>
             <div class="settings-field-group">
               <label for="role">Role</label>
-              <input type="text" id="role" value="Admin" readonly>
+              <input type="text" id="role" name="role" value="<?php echo htmlspecialchars($adminInfo['role']); ?>" readonly>
             </div>
           </div>
           <hr style="margin: 5px 0;">
@@ -106,10 +190,10 @@ if (!isset($_SESSION['admin_id'])) {
               </div>
             </div>
           </div>
-          <!-- Fixed Save Button inside card -->
-          <button id="cardSaveBtn" style="position:absolute;right:32px;bottom:32px;z-index:10;background:#2ecc71;color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:1.1rem;font-weight:600;box-shadow:0 4px 16px rgba(46,204,113,0.15);cursor:pointer;display:none;">
+          <button id="cardSaveBtn" name="save_profile" type="submit" style="position:absolute;right:32px;bottom:32px;z-index:10;background:#2ecc71;color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:1.1rem;font-weight:600;box-shadow:0 4px 16px rgba(46,204,113,0.15);cursor:pointer;display:none;">
             Save Changes
           </button>
+          </form>
         </div>
         <div class="settings-card" id="archiveTab" style="display:none;">
           
@@ -123,76 +207,78 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
           <!-- Archive Clients Table -->
           <div id="archiveClientsTab">
-            <div style="margin-bottom:12px;">
-              <span class="archive-search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search Clients">
-              </span>
-            </div>
-            <div style="overflow-x:auto;">
-              <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
-                <thead>
-                  <tr style="background:#fafbfc;">
-                    <th style="padding:10px 8px;text-align:left;">Client Name</th>
-                    <th style="padding:10px 8px;text-align:left;">Email</th>
-                    <th style="padding:10px 8px;text-align:left;">Contact</th>
-                    <th style="padding:10px 8px;text-align:left;">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php
-                  // Database connection (adjust credentials as needed)
-                  $conn = new mysqli("localhost", "root", "", "cemeterydb");
-                  if ($conn->connect_error) {
-                    echo '<tr><td colspan="4">Database connection failed.</td></tr>';
-                  } else {
-                    $result = $conn->query("SELECT * FROM archive_clients ORDER BY archived_at DESC");
-                    if ($result && $result->num_rows > 0) {
-                      while ($row = $result->fetch_assoc()) {
-                        $firstName = htmlspecialchars($row['first_name']);
-                        $lastName = htmlspecialchars($row['last_name']);
-                        $name = $firstName . ' ' . $lastName;
-                        $email = htmlspecialchars($row['email']);
-                        $contact = htmlspecialchars($row['contact_no']);
-                        $initials = strtoupper(mb_substr($firstName, 0, 1, 'UTF-8') . mb_substr($lastName, 0, 1, 'UTF-8'));
-                        $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                        $colorClass = "avatar-color-$colorIndex";
-                        echo '<tr style="background:#fff;">';
-                        echo '<td style="padding:8px 8px; display:flex; align-items:center;">';
-                        echo '<div class="avatar-img avatar-google ' . $colorClass . '">' . $initials . '</div>';
-                        echo '<span class="client-name" style="margin-left:4px; display:inline-block;">' . $name . '</span>';
-                        echo '</td>';
-                        echo '<td style="padding:8px 8px;">' . $email . '</td>';
-                        echo '<td style="padding:8px 8px;">' . $contact . '</td>';
-                        echo '<td style="padding:8px 8px;"><span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span></td>';
-                        echo '</tr>';
-                      }
-                    } else {
-                      echo '<tr><td colspan="4">No archived clients found.</td></tr>';
-                    }
-                    $conn->close();
-                  }
-                  ?>
-                </tbody>
-              </table>
-            </div>
-            <!-- Pagination (static example) -->
-             
-              <div style="margin-top:18px;display:flex;align-items:center;gap:8px;font-size:0.97em;color:#888;justify-content:center;position:relative;min-height:36px;">
-                <span style="position:absolute;left:0;top:50%;transform:translateY(-50%);">Page 1 of 3</span>
-                <div>
-                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;" disabled>&lt;</button>
-                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">1</button>
-                  <button style="border:none;background:#6c8ebf;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;">2</button>
-                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">3</button>
-                  <button style="border:none;background:#f4f4f4;padding:4px 10px;border-radius:4px;cursor:pointer;color:#888;">&gt;</button>
-                </div>
+            <div class="settings-section">
+              <h2 style="margin-bottom:12px;">Archive Clients</h2>
+              <div style="margin-bottom:12px;">
+                <span class="archive-search-bar">
+                  <i class="fas fa-search"></i>
+                  <input type="text" placeholder="Search Clients" id="archiveClientsSearchInput">
+                </span>
               </div>
+              <div style="overflow-x:auto;">
+                <table id="archiveClientsTable" class="archive-table" style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+                  <thead>
+                    <tr style="background:#fafbfc;">
+                      <th style="padding:10px 8px;text-align:left;">Avatar</th>
+                      <th style="padding:10px 8px;text-align:left;">Client Name</th>
+                      <th style="padding:10px 8px;text-align:left;">Email</th>
+                      <th style="padding:10px 8px;text-align:left;">Contact</th>
+                      <th style="padding:10px 8px;text-align:left;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php
+                    $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                    if ($conn->connect_error) {
+                      echo '<tr><td colspan="5">Database connection failed.</td></tr>';
+                    } else {
+                      $result = $conn->query("SELECT * FROM archive_clients ORDER BY archived_at DESC");
+                      if ($result && $result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                          $firstName = htmlspecialchars($row['first_name']);
+                          $lastName = htmlspecialchars($row['last_name']);
+                          $name = $firstName . ' ' . $lastName;
+                          $email = htmlspecialchars($row['email']);
+                          $contact = htmlspecialchars($row['contact_no']);
+                          $profilePic = isset($row['profile_pic']) && $row['profile_pic'] ? $row['profile_pic'] : '';
+                          $initials = strtoupper(mb_substr($firstName, 0, 1, 'UTF-8') . mb_substr($lastName, 0, 1, 'UTF-8'));
+                          $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                          $colorClass = "avatar-color-$colorIndex";
+                          echo '<tr style="background:#fff;">';
+                          echo '<td style="padding:8px 8px;">';
+                          if ($profilePic) {
+                            echo '<img src="' . htmlspecialchars($profilePic) . '" alt="Avatar" class="avatar-img" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">';
+                          } else {
+                            echo '<div class="avatar-img ' . $colorClass . '" style="width:36px;height:36px;border-radius:50%;font-weight:600;font-size:1.1em;color:#fff;line-height:36px;text-align:center;">' . $initials . '</div>';
+                          }
+                          echo '</td>';
+                          echo '<td style="padding:8px 8px;">' . $name . '</td>';
+                          echo '<td style="padding:8px 8px;">' . $email . '</td>';
+                          echo '<td style="padding:8px 8px;">' . $contact . '</td>';
+                          echo '<td style="padding:8px 8px;"><span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span></td>';
+                          echo '</tr>';
+                        }
+                      } else {
+                        echo '<tr><td colspan="5">No archived clients found.</td></tr>';
+                      }
+                      // $conn->close();
+                    }
+                    ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
           <!-- Archive Records Section -->
           <div id="archiveRecordsTab" style="display:none;">
             <div class="settings-section">
-              <h2>Archive Records</h2>
+              <h2 style="margin-bottom:12px;">Archive Records</h2>
+              <div style="margin-bottom:12px;">
+                <span class="archive-search-bar">
+                  <i class="fas fa-search"></i>
+                  <input type="text" placeholder="Search Records" id="archiveRecordsSearchInput">
+                </span>
+              </div>
               <div class="archive-table-container">
                 <table class="archive-table" id="archiveRecordsTable">
                   <thead>
@@ -232,7 +318,7 @@ if (!isset($_SESSION['admin_id'])) {
                       } else {
                         echo '<tr><td colspan="9">No archived records found.</td></tr>';
                       }
-                      $conn->close();
+                      // $conn->close();
                     }
                     ?>
                   </tbody>
@@ -293,55 +379,58 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
           <!-- Archive Requests Section -->
           <div id="archiveRequestsTab" style="display:none;">
-            <div style="margin-bottom:12px;">
-              <span class="archive-search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search Requests" id="archiveRequestSearchInput">
-              </span>
-            </div>
-            <div style="overflow-x:auto;">
-              <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
-                <thead>
-                  <tr style="background:#fafbfc;">
-                    <th style="padding:10px 8px;text-align:left;">Client Name</th>
-                    <th style="padding:10px 8px;text-align:left;">Email</th>
-                    <th style="padding:10px 8px;text-align:left;">Type</th>
-                    <th style="padding:10px 8px;text-align:left;">Status</th>
-                    <th style="padding:10px 8px;text-align:left;">Details</th>
-                  </tr>
-                </thead>
-                <tbody id="archiveRequestTableBody">
-                  <?php
-                  $conn = new mysqli("localhost", "root", "", "cemeterydb");
-                  if ($conn->connect_error) {
-                    echo '<tr><td colspan="5">Database connection failed.</td></tr>';
-                  } else {
-                    $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
-                    $result = $conn->query($sql);
-                    if ($result && $result->num_rows > 0) {
-                      while ($row = $result->fetch_assoc()) {
-                        $firstName = htmlspecialchars($row['user_first_name']);
-                        $lastName = htmlspecialchars($row['user_last_name']);
-                        $name = $firstName . ' ' . $lastName;
-                        $email = htmlspecialchars($row['email']);
-                        $type = htmlspecialchars($row['type']);
-                        $status = '<span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>';
-                        echo '<tr style="background:#fff;">';
-                        echo '<td style="padding:8px 8px;">' . $name . '</td>';
-                        echo '<td style="padding:8px 8px;">' . $email . '</td>';
-                        echo '<td style="padding:8px 8px;">' . $type . '</td>';
-                        echo '<td style="padding:8px 8px;">' . $status . '</td>';
-                        echo '<td style="padding:8px 8px;"><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
-                        echo '</tr>';
-                      }
+            <div class="settings-section">
+              <h2 style="margin-bottom:12px;">Archive Requests</h2>
+              <div style="margin-bottom:12px;">
+                <span class="archive-search-bar">
+                  <i class="fas fa-search"></i>
+                  <input type="text" placeholder="Search Requests" id="archiveRequestSearchInput">
+                </span>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+                  <thead>
+                    <tr style="background:#fafbfc;">
+                      <th style="padding:10px 8px;text-align:left;">Client Name</th>
+                      <th style="padding:10px 8px;text-align:left;">Email</th>
+                      <th style="padding:10px 8px;text-align:left;">Type</th>
+                      <th style="padding:10px 8px;text-align:left;">Status</th>
+                      <th style="padding:10px 8px;text-align:left;">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="archiveRequestTableBody">
+                    <?php
+                    $conn = new mysqli("localhost", "root", "", "cemeterydb");
+                    if ($conn->connect_error) {
+                      echo '<tr><td colspan="5">Database connection failed.</td></tr>';
                     } else {
-                      echo '<tr><td colspan="5">No denied requests found.</td></tr>';
+                      $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
+                      $result = $conn->query($sql);
+                      if ($result && $result->num_rows > 0) {
+                        while ($row = $result->fetch_assoc()) {
+                          $firstName = htmlspecialchars($row['user_first_name']);
+                          $lastName = htmlspecialchars($row['user_last_name']);
+                          $name = $firstName . ' ' . $lastName;
+                          $email = htmlspecialchars($row['email']);
+                          $type = htmlspecialchars($row['type']);
+                          $status = '<span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>';
+                          echo '<tr style="background:#fff;">';
+                          echo '<td style="padding:8px 8px;">' . $name . '</td>';
+                          echo '<td style="padding:8px 8px;">' . $email . '</td>';
+                          echo '<td style="padding:8px 8px;">' . $type . '</td>';
+                          echo '<td style="padding:8px 8px;">' . $status . '</td>';
+                          echo '<td style="padding:8px 8px;"><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
+                          echo '</tr>';
+                        }
+                      } else {
+                        echo '<tr><td colspan="5">No denied requests found.</td></tr>';
+                      }
+                      // $conn->close();
                     }
-                    $conn->close();
-                  }
-                  ?>
-                </tbody>
-              </table>
+                    ?>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <!-- Denied Request Popup Modal -->
@@ -452,8 +541,14 @@ if (!isset($_SESSION['admin_id'])) {
     });
 
     // Mark as unsaved on input change
+    // Only mark unsaved for profile form fields, not search boxes
+    const profileInputIds = [
+      'displayName', 'firstName', 'lastName', 'email', 'phone', 'role', 'currentPassword'
+    ];
     document.querySelectorAll('.settings-card input').forEach(input => {
-      input.addEventListener('input', () => { unsaved = true; });
+      if (profileInputIds.includes(input.id)) {
+        input.addEventListener('input', () => { unsaved = true; });
+      }
     });
 
     // Tab switching logic
@@ -514,10 +609,12 @@ if (!isset($_SESSION['admin_id'])) {
       cardSaveBtn.style.display = unsaved ? 'block' : 'none';
     }
     document.querySelectorAll('.settings-card input').forEach(input => {
-      input.addEventListener('input', () => {
-        unsaved = true;
-        updateCardSaveBtn();
-      });
+      if (profileInputIds.includes(input.id)) {
+        input.addEventListener('input', () => {
+          unsaved = true;
+          updateCardSaveBtn();
+        });
+      }
     });
     document.getElementById('saveBtn').onclick = function() {
       unsaved = false;
@@ -554,13 +651,21 @@ if (!isset($_SESSION['admin_id'])) {
     profilePicInput.onchange = function(e) {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          profileImg.src = ev.target.result;
-          unsaved = true;
-          updateCardSaveBtn && updateCardSaveBtn();
-        };
-        reader.readAsDataURL(file);
+        const formData = new FormData(document.getElementById('profileForm'));
+        formData.append('upload_profile_pic', '1');
+        fetch('', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.text())
+        .then(() => {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            profileImg.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+          location.reload(); // Reload to get updated image from server
+        });
       }
     };
 
@@ -641,7 +746,63 @@ if (!isset($_SESSION['admin_id'])) {
         ordering: true,
         info: true
       });
+      var archiveClientsTable = $('#archiveClientsTable').DataTable({
+        paging: true,
+        searching: true, // Enable DataTables search API
+        ordering: true,
+        info: true,
+        autoWidth: false,
+        columnDefs: [
+          { orderable: false, targets: 0 }
+        ],
+        dom: 'tip' // Remove DataTables default search box from DOM
+      });
+      // Hide DataTables search box with CSS
+      $('<style>.dataTables_filter{display:none!important;}</style>').appendTo('head');
+      // Custom search input filters table
+      $('#archiveClientsSearchInput').on('keyup', function() {
+        archiveClientsTable.search(this.value).draw();
+      });
+      // Custom search for Archive Records
+      var archiveRecordsTable = $('#archiveRecordsTable').DataTable();
+      $('#archiveRecordsSearchInput').on('keyup', function() {
+        archiveRecordsTable.search(this.value).draw();
+      });
     });
   </script>
+  <style>
+.avatar-img {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  font-weight: 600;
+  font-size: 1.1em;
+  object-fit: cover;
+  box-shadow: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-align: center;
+  line-height: 36px !important;
+  display: inline-block !important;
+  vertical-align: middle;
+}
+.avatar-img img {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+  display: block;
+}
+.avatar-color-1 { background: #6c8ebf !important; }
+.avatar-color-2 { background: #e67e22 !important; }
+.avatar-color-3 { background: #2ecc71 !important; }
+.avatar-color-4 { background: #e74c3c !important; }
+.avatar-color-5 { background: #9b59b6 !important; }
+.avatar-color-6 { background: #f1c40f !important; }
+.avatar-color-7 { background: #34495e !important; }
+.avatar-color-8 { background: #16a085 !important; }
+.avatar-color-9 { background: #d35400 !important; }
+.avatar-color-10 { background: #2980b9 !important; }
+  </style>
 </body>
 </html>

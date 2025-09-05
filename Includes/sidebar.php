@@ -4,7 +4,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $clients_pages = ['Clients.php'];
 $request_pages = ['ClientsRequest.php'];
 // Add this line to treat both as active for Mapping
-$mapping_pages = ['Mapping.php','insert.php', 'EditNiches.php', 'first_floor.php', 'second_floor.php', 'third_floor.php'];
+$mapping_pages = ['Mapping.php','insert.php', 'EditNiches.php', 'first_floor.php', 'second_floor.php', 'third_floor.php', 'OldMap.php'];
 // Add this line to treat both as active for Records
 $records_pages = ['Records.php', 'Insert.php', 'EditNiches.php'];
 
@@ -51,6 +51,10 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
           <a href="third_floor.php" class="dropdown-item<?php if($current_page == 'third_floor.php') echo ' active'; ?>">
             <i class="fas fa-building"></i>
             Third Floor
+          </a>
+           <a href="OldMap.php" class="dropdown-item<?php if($current_page == 'OldMap.php') echo ' active'; ?>">
+            <i class="fas fa-building"></i>
+             Old Map
           </a>
         </div>
       </div>
