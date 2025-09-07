@@ -1,4 +1,12 @@
 <?php
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: ../AdminLogin.php");
+    exit;
+}
+?>
+
+<?php
 // Database connection (adjust credentials as needed)
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }

@@ -144,19 +144,40 @@ if (!$error) {
                         </div>
                         <div class="col-md-6">
                             <label for="age" class="form-label">Age</label>
-                            <input type="number" id="age" name="age" min="0" class="form-control" required>
+                            <input type="number" id="age" name="age" min="0" class="form-control" required disabled>
                         </div>
                         <div class="col-md-6">
                             <label for="dob" class="form-label">Date of Birth</label>
-                            <input type="text" id="dob" name="dob" class="form-control" required>
+                            <input type="date" id="dob" name="dob" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label for="dod" class="form-label">Date Died</label>
-                            <input type="text" id="dod" name="dod" class="form-control" required>
+                            <input type="date" id="dod" name="dod" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label for="residency" class="form-label">Residency</label>
-                            <input type="text" id="residency" name="residency" class="form-control" required>
+                            <input type="text" id="residency" name="residency" class="form-control mb-2" placeholder="Enter Residency" required>
+                            <select id="barangay-dropdown" class="form-select" onchange="setResidencyFromDropdown(this)">
+                                <option value="">Select Barangay (optional)</option>
+                                <option value="Banaba, Padre Garcia, Batangas">Banaba, Padre Garcia, Batangas</option>
+                                <option value="Banaybanay, Padre Garcia, Batangas">Banaybanay, Padre Garcia, Batangas</option>
+                                <option value="Bawi, Padre Garcia, Batangas">Bawi, Padre Garcia, Batangas</option>
+                                <option value="Bukal, Padre Garcia, Batangas">Bukal, Padre Garcia, Batangas</option>
+                                <option value="Castillo, Padre Garcia, Batangas">Castillo, Padre Garcia, Batangas</option>
+                                <option value="Cawongan, Padre Garcia, Batangas">Cawongan, Padre Garcia, Batangas</option>
+                                <option value="Manggas, Padre Garcia, Batangas">Manggas, Padre Garcia, Batangas</option>
+                                <option value="Maugat East, Padre Garcia, Batangas">Maugat East, Padre Garcia, Batangas</option>
+                                <option value="Maugat West, Padre Garcia, Batangas">Maugat West, Padre Garcia, Batangas</option>
+                                <option value="Pansol, Padre Garcia, Batangas">Pansol, Padre Garcia, Batangas</option>
+                                <option value="Payapa, Padre Garcia, Batangas">Payapa, Padre Garcia, Batangas</option>
+                                <option value="Poblacion, Padre Garcia, Batangas">Poblacion, Padre Garcia, Batangas</option>
+                                <option value="Quilo-quilo North, Padre Garcia, Batangas">Quilo-quilo North, Padre Garcia, Batangas</option>
+                                <option value="Quilo-quilo South, Padre Garcia, Batangas">Quilo-quilo South, Padre Garcia, Batangas</option>
+                                <option value="San Felipe, Padre Garcia, Batangas">San Felipe, Padre Garcia, Batangas</option>
+                                <option value="San Miguel, Padre Garcia, Batangas">San Miguel, Padre Garcia, Batangas</option>
+                                <option value="Tamak, Padre Garcia, Batangas">Tamak, Padre Garcia, Batangas</option>
+                                <option value="Tangob, Padre Garcia, Batangas">Tangob, Padre Garcia, Batangas</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="informant_name" class="form-label">Informant Name</label>
@@ -201,6 +222,30 @@ if (!$error) {
     document.addEventListener('DOMContentLoaded', function() {
         toggleNicheIdField();
     });
+    function setResidencyFromDropdown(select) {
+        if (select.value) {
+            document.getElementById('residency').value = select.value;
+        }
+    }
+
+    function calculateAge() {
+        var dob = document.getElementById('dob').value;
+        var dod = document.getElementById('dod').value;
+        var ageInput = document.getElementById('age');
+        if (dob && dod) {
+            var birth = new Date(dob);
+            var death = new Date(dod);
+            var age = death.getFullYear() - birth.getFullYear();
+            var m = death.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
+                age--;
+            }
+            ageInput.value = age >= 0 ? age : '';
+        }
+    }
+
+    document.getElementById('dob').addEventListener('change', calculateAge);
+    document.getElementById('dod').addEventListener('change', calculateAge);
     </script>
 </body>
 </html>
