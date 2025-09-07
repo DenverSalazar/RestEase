@@ -78,14 +78,14 @@ if (!isset($_SESSION['admin_id'])) {
             $result = $conn->query($sql);
             if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    $firstName = htmlspecialchars($row['first_name']);
-                    $lastName = htmlspecialchars($row['last_name']);
+                    $firstName = htmlspecialchars($row['first_name'] ?? '');
+                    $lastName = htmlspecialchars($row['last_name'] ?? '');
                     $name = $firstName . ' ' . $lastName;
-                    $email = htmlspecialchars($row['email']);
-                    $contact = htmlspecialchars($row['contact_no']);
+                    $email = htmlspecialchars($row['email'] ?? '');
+                    $contact = htmlspecialchars($row['contact_no'] ?? '');
                     $registrationDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
-                    $profilePicture = htmlspecialchars($row['profile_picture']);
-                    $status = htmlspecialchars($row['status']);
+                    $profilePicture = htmlspecialchars($row['profile_picture'] ?? '');
+                    $status = htmlspecialchars($row['status'] ?? '');
                     
                     // Check if user has profile picture
                     $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
