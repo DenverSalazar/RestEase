@@ -25,25 +25,46 @@ if ($result->num_rows === 0) {
 }
 $row = $result->fetch_assoc();
 
+// Calculate age from dob and dod
+function calculateAgeFromDates($dob, $dod) {
+    if (!$dob || !$dod) return null;
+    $birth = new DateTime($dob);
+    $death = new DateTime($dod);
+    $age = $death->format('Y') - $birth->format('Y');
+    if (
+        $death->format('m') < $birth->format('m') ||
+        ($death->format('m') == $birth->format('m') && $death->format('d') < $birth->format('d'))
+    ) {
+        $age--;
+    }
+    return ($age >= 0) ? $age : null;
+}
+$calculated_age = calculateAgeFromDates($row['dob'], $row['dod']);
+
 // Insert into accepted_request
-$insert_sql = "INSERT INTO accepted_request (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$insert_sql = "INSERT INTO accepted_request 
+(user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
 $insert_stmt = $conn->prepare($insert_sql);
 $insert_stmt->bind_param(
-    'issssisssssss',
-    $row['user_id'],
-    $row['type'],
-    $row['first_name'],
-    $row['last_name'],
-    $row['middle_name'],
-    $row['age'],
-    $row['dob'],
-    $row['dod'],
-    $row['residency'],
-    $row['informant_name'],
-    $row['file_upload'],
-    $row['created_at'],
-    $row['niche_id'] // <-- Add this line
+    'isssssisssssss',
+    $row['user_id'],       // i
+    $row['type'],          // s
+    $row['first_name'],    // s
+    $row['last_name'],     // s
+    $row['middle_name'],   // s
+    $row['suffix'],        // s 
+    $calculated_age,       // i (use calculated age)
+    $row['dob'],           // s
+    $row['dod'],           // s
+    $row['residency'],     // s
+    $row['informant_name'],// s
+    $row['file_upload'],   // s
+    $row['created_at'],    // s
+    $row['niche_id']       // s
 );
+
 $success = $insert_stmt->execute();
 
 if (!$success) {
@@ -57,4 +78,4 @@ $delete_stmt = $conn->prepare($delete_sql);
 $delete_stmt->bind_param('i', $id);
 $delete_stmt->execute();
 
-echo json_encode(['success' => true]); 
+echo json_encode(['success' => true]);

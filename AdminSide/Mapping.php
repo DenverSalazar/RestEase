@@ -264,6 +264,11 @@ while ($row = $result->fetch_assoc()) {
       border-top-left-radius: 0 !important;
       border-top-right-radius: 0 !important;
     }
+
+    .floor-control {
+    margin-top: 40px; /* small gap below Layers button */
+}
+
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -385,6 +390,27 @@ while ($row = $result->fetch_assoc()) {
                 </div>
             </div>
         </div>
+
+        <?php if (isset($_GET['pickNiche']) && $_GET['pickNiche'] == '1') { ?>
+        <!-- Floor Button (below Layers) -->
+        <div class="layer-control floor-control">
+            <button class="layer-control-btn">
+                <i class="fas fa-building"></i>
+                <span>Select Floor</span>
+            </button>
+            <div class="layer-control-content">
+                <div class="layer-section">
+                    <h4>Floors</h4>
+                    <div class="section-buttons">
+                        <button class="section-btn active" data-floor="1">First Floor</button>
+                        <button class="section-btn" data-floor="2">Second Floor</button>
+                        <button class="section-btn" data-floor="3">Third Floor</button>
+                        <button class="section-btn" data-floor="4">Old Cemetery</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php } ?>
         <!-- Custom Legend -->
         <div class="custom-map-legend" id="customMapLegend">
             <div class="legend-row">
@@ -425,6 +451,16 @@ while ($row = $result->fetch_assoc()) {
    <script src="../data/floor1_2.js"></script>
    <script src="../data/floor1_3.js"></script>
    <script src="../data/floor1_4.js"></script>
+   <script src="../data/floor2.js"></script>
+   <script src="../data/floor2_2.js"></script>
+   <script src="../data/floor2_3.js"></script>
+   <script src="../data/floor2_4.js"></script>
+   <script src="../data/floor3.js"></script>
+   <script src="../data/floor3_2.js"></script>
+   <script src="../data/floor3_3.js"></script>
+   <script src="../data/floor3_4.js"></script>
+   <script src="../data/oldmap/floor1.js"></script>
+   <script src="../data/oldmap/floor1_4.js"></script>
    <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -748,11 +784,332 @@ while ($row = $result->fetch_assoc()) {
             onEachFeature: pop_Floor1,
             style: style_Floor1_0,
         });
-
-        bounds_group.addLayer(layer_Floor1);
-        bounds_group.addLayer(layer_Floor1_2);
-        bounds_group.addLayer(layer_Floor1_3);
-        bounds_group.addLayer(layer_Floor1_4);
+        // --- Second Floor Layer Creation ---
+        function style_Floor2_0(feature) {
+            var nicheID = feature.properties && feature.properties['nicheID'];
+            // Match separatorBand logic from Floor1
+            if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
+                return {
+                    pane: 'pane_Floor2',
+                    color: 'rgba(96, 125, 139, 1.0)',
+                    weight: 0,
+                    fill: true,
+                    fillOpacity: 1,
+                    interactive: false
+                };
+            }
+            if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
+                return {
+                    pane: 'pane_Floor2',
+                    opacity: 1,
+                    color: 'rgba(35,35,35,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,154,153,1.0)', // Leased color
+                interactive: true,
+                };
+            }
+            switch(String(feature.properties['Status'])) {
+                case 'vacant':
+                    return {
+                        pane: 'pane_Floor2',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(123,213,145,1.0)',
+                        interactive: true,
+                    }
+                case 'reserved':
+                    return {
+                        pane: 'pane_Floor2',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(166,206,227,1.0)',
+                        interactive: true,
+                    }
+                case 'leased':
+                    return {
+                        pane: 'pane_Floor2',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(251,154,153,1.0)',
+                        interactive: true,
+                    }
+            }
+        }
+        map.createPane('pane_Floor2');
+        map.getPane('pane_Floor2').style.zIndex = 403;
+        map.getPane('pane_Floor2').style['mix-blend-mode'] = 'normal';
+        var layer_Floor2 = new L.geoJson(json_Floor2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor2',
+            layerName: 'layer_Floor2',
+            pane: 'pane_Floor2',
+            onEachFeature: pop_Floor1, // reuse popup logic
+            style: style_Floor2_0,
+        });
+        var layer_Floor2_2 = new L.geoJson(json_Floor2_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor2_2',
+            layerName: 'layer_Floor2_2',
+            pane: 'pane_Floor2',
+            onEachFeature: pop_Floor1,
+            style: style_Floor2_0,
+        });
+        var layer_Floor2_3 = new L.geoJson(json_Floor2_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor2_3',
+            layerName: 'layer_Floor2_3',
+            pane: 'pane_Floor2',
+            onEachFeature: pop_Floor1,
+            style: style_Floor2_0,
+        });
+        var layer_Floor2_4 = new L.geoJson(json_Floor2_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor2_4',
+            layerName: 'layer_Floor2_4',
+            pane: 'pane_Floor2',
+            onEachFeature: pop_Floor1,
+            style: style_Floor2_0,
+        });
+        // --- Third Floor Layer Creation ---
+        function style_Floor3_0(feature) {
+            var nicheID = feature.properties && feature.properties['nicheID'];
+            // Match separatorBand logic from Floor1
+            if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
+                return {
+                    pane: 'pane_Floor3',
+                    color: 'rgba(96, 125, 139, 1.0)',
+                    weight: 0,
+                    fill: true,
+                    fillOpacity: 1,
+                    interactive: false
+                };
+            }
+            if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
+                return {
+                    pane: 'pane_Floor3',
+                    opacity: 1,
+                    color: 'rgba(35,35,35,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 1.0, 
+                    fill: true,
+                    fillOpacity: 1,
+                    fillColor: 'rgba(251,154,153,1.0)', // Leased color
+                    interactive: true,
+                };
+            }
+            switch(String(feature.properties['Status'])) {
+                case 'vacant':
+                    return {
+                        pane: 'pane_Floor3',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(123,213,145,1.0)',
+                        interactive: true,
+                    }
+                case 'reserved':
+                    return {
+                        pane: 'pane_Floor3',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(166,206,227,1.0)',
+                        interactive: true,
+                    }
+                case 'leased':
+                    return {
+                        pane: 'pane_Floor3',
+                        opacity: 1,
+                        color: 'rgba(35,35,35,1.0)',
+                        dashArray: '',
+                        lineCap: 'butt',
+                        lineJoin: 'miter',
+                        weight: 1.0, 
+                        fill: true,
+                        fillOpacity: 1,
+                        fillColor: 'rgba(251,154,153,1.0)',
+                        interactive: true,
+                    }
+            }
+        }
+        map.createPane('pane_Floor3');
+        map.getPane('pane_Floor3').style.zIndex = 404;
+        map.getPane('pane_Floor3').style['mix-blend-mode'] = 'normal';
+        var layer_Floor3 = new L.geoJson(json_Floor3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor3',
+            layerName: 'layer_Floor3',
+            pane: 'pane_Floor3',
+            onEachFeature: pop_Floor1, // reuse popup logic
+            style: style_Floor3_0,
+        });
+        var layer_Floor3_2 = new L.geoJson(json_Floor3_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor3_2',
+            layerName: 'layer_Floor3_2',
+            pane: 'pane_Floor3',
+            onEachFeature: pop_Floor1,
+            style: style_Floor3_0,
+        });
+        var layer_Floor3_3 = new L.geoJson(json_Floor3_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor3_3',
+            layerName: 'layer_Floor3_3',
+            pane: 'pane_Floor3',
+            onEachFeature: pop_Floor1,
+            style: style_Floor3_0,
+        });
+        var layer_Floor3_4 = new L.geoJson(json_Floor3_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Floor3_4',
+            layerName: 'layer_Floor3_4',
+            pane: 'pane_Floor3',
+            onEachFeature: pop_Floor1,
+            style: style_Floor3_0,
+        });
+        // --- Old Cemetery Layer Creation ---
+        function style_OldMap_0(feature) {
+            var nicheID = feature.properties && feature.properties['nicheID'];
+            // Match separatorBand logic from Floor1
+            if (feature.properties && feature.properties['borderID'] === 'separatorBand') {
+                return {
+                    pane: 'pane_OldMap',
+                    color: 'rgba(96, 125, 139, 1.0)',
+                    weight: 0,
+                    fill: true,
+                    fillOpacity: 1,
+                    interactive: false
+                };
+            }
+            if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
+                return {
+                    pane: 'pane_OldMap',
+                    opacity: 1,
+                    color: 'rgba(35,35,35,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 1.0, 
+                    fill: true,
+                    fillOpacity: 1,
+                    fillColor: 'rgba(251,154,153,1.0)', // Leased color
+                    interactive: true,
+                };
+            }
+            switch(String(feature.properties['Status'])) {
+                case 'vacant':
+                    return {
+                pane: 'pane_OldMap',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,213,145,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'reserved':
+                    return {
+                pane: 'pane_OldMap',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(166,206,227,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'leased':
+                    return {
+                pane: 'pane_OldMap',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,154,153,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_OldMap');
+        map.getPane('pane_OldMap').style.zIndex = 405;
+        map.getPane('pane_OldMap').style['mix-blend-mode'] = 'normal';
+        var layer_OldMap_1 = new L.geoJson(json_oldmap_floor1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_oldmap_floor1',
+            layerName: 'layer_OldMap_1',
+            pane: 'pane_OldMap',
+            onEachFeature: pop_Floor1, // reuse popup logic
+            style: style_OldMap_0,
+        });
+        var layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_oldmap_floor1_4',
+            layerName: 'layer_OldMap_4',
+            pane: 'pane_OldMap',
+            onEachFeature: pop_Floor1,
+            style: style_OldMap_0,
+        });
+        bounds_group.addLayer(layer_OldMap_1);
+        bounds_group.addLayer(layer_OldMap_4);
 
         // Only add Section 1 by default
         map.addLayer(layer_Floor1);
@@ -766,32 +1123,81 @@ while ($row = $result->fetch_assoc()) {
         resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
 
         // --- Section Toggle Button Logic ---
+        var currentFloor = 1; // 1 for first, 2 for second
         function showSection(section) {
-            // Remove all section layers
-            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4].forEach(function(l) {
+            // Remove all section layers for both floors
+            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4, layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4, layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4, layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
-            
-            if (section === 'all') {
-                // Add all sections
-                map.addLayer(layer_Floor1);
-                map.addLayer(layer_Floor1_2);
-                map.addLayer(layer_Floor1_3);
-                map.addLayer(layer_Floor1_4);
-                
-                // Add labels for all sections
-                addSectionLabels(layer_Floor1);
-                addSectionLabels(layer_Floor1_2);
-                addSectionLabels(layer_Floor1_3);
-                addSectionLabels(layer_Floor1_4);
-                resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
-            } else {
-                // Add selected section
-                switch(section) {
-                    case 1: map.addLayer(layer_Floor1); break;
-                    case 2: map.addLayer(layer_Floor1_2); break;
-                    case 3: map.addLayer(layer_Floor1_3); break;
-                    case 4: map.addLayer(layer_Floor1_4); break;
+            if (currentFloor === 1) {
+                if (section === 'all') {
+                    map.addLayer(layer_Floor1);
+                    map.addLayer(layer_Floor1_2);
+                    map.addLayer(layer_Floor1_3);
+                    map.addLayer(layer_Floor1_4);
+                    addSectionLabels(layer_Floor1);
+                    addSectionLabels(layer_Floor1_2);
+                    addSectionLabels(layer_Floor1_3);
+                    addSectionLabels(layer_Floor1_4);
+                    resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+                } else {
+                    switch(section) {
+                        case 1: map.addLayer(layer_Floor1); addSectionLabels(layer_Floor1); resetLabels([layer_Floor1]); break;
+                        case 2: map.addLayer(layer_Floor1_2); addSectionLabels(layer_Floor1_2); resetLabels([layer_Floor1_2]); break;
+                        case 3: map.addLayer(layer_Floor1_3); addSectionLabels(layer_Floor1_3); resetLabels([layer_Floor1_3]); break;
+                        case 4: map.addLayer(layer_Floor1_4); addSectionLabels(layer_Floor1_4); resetLabels([layer_Floor1_4]); break;
+                    }
+                }
+            } else if (currentFloor === 2) {
+                if (section === 'all') {
+                    map.addLayer(layer_Floor2);
+                    map.addLayer(layer_Floor2_2);
+                    map.addLayer(layer_Floor2_3);
+                    map.addLayer(layer_Floor2_4);
+                    addSectionLabels(layer_Floor2);
+                    addSectionLabels(layer_Floor2_2);
+                    addSectionLabels(layer_Floor2_3);
+                    addSectionLabels(layer_Floor2_4);
+                    resetLabels([layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4]);
+                } else {
+                    switch(section) {
+                        case 1: map.addLayer(layer_Floor2); addSectionLabels(layer_Floor2); resetLabels([layer_Floor2]); break;
+                        case 2: map.addLayer(layer_Floor2_2); addSectionLabels(layer_Floor2_2); resetLabels([layer_Floor2_2]); break;
+                        case 3: map.addLayer(layer_Floor2_3); addSectionLabels(layer_Floor2_3); resetLabels([layer_Floor2_3]); break;
+                        case 4: map.addLayer(layer_Floor2_4); addSectionLabels(layer_Floor2_4); resetLabels([layer_Floor2_4]); break;
+                    }
+                }
+            } else if (currentFloor === 3) {
+                if (section === 'all') {
+                    map.addLayer(layer_Floor3);
+                    map.addLayer(layer_Floor3_2);
+                    map.addLayer(layer_Floor3_3);
+                    map.addLayer(layer_Floor3_4);
+                    addSectionLabels(layer_Floor3);
+                    addSectionLabels(layer_Floor3_2);
+                    addSectionLabels(layer_Floor3_3);
+                    addSectionLabels(layer_Floor3_4);
+                    resetLabels([layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4]);
+                } else {
+                    switch(section) {
+                        case 1: map.addLayer(layer_Floor3); addSectionLabels(layer_Floor3); resetLabels([layer_Floor3]); break;
+                        case 2: map.addLayer(layer_Floor3_2); addSectionLabels(layer_Floor3_2); resetLabels([layer_Floor3_2]); break;
+                        case 3: map.addLayer(layer_Floor3_3); addSectionLabels(layer_Floor3_3); resetLabels([layer_Floor3_3]); break;
+                        case 4: map.addLayer(layer_Floor3_4); addSectionLabels(layer_Floor3_4); resetLabels([layer_Floor3_4]); break;
+                    }
+                }
+            } else if (currentFloor === 4) {
+                if (section === 'all') {
+                    map.addLayer(layer_OldMap_1);
+                    map.addLayer(layer_OldMap_4);
+                    addSectionLabels(layer_OldMap_1);
+                    addSectionLabels(layer_OldMap_4);
+                    resetLabels([layer_OldMap_1, layer_OldMap_4]);
+                } else {
+                    switch(section) {
+                        case 1: map.addLayer(layer_OldMap_1); addSectionLabels(layer_OldMap_1); resetLabels([layer_OldMap_1]); break;
+                        case 4: map.addLayer(layer_OldMap_4); addSectionLabels(layer_OldMap_4); resetLabels([layer_OldMap_4]); break;
+                    }
                 }
             }
         }
@@ -940,6 +1346,89 @@ map.on("zoomend", function(){
             document.getElementById('popupOverlay').classList.remove('active');
             document.getElementById('customPopup').classList.remove('active');
         });
+
+        document.addEventListener("DOMContentLoaded", function () {
+    // Floor control toggle
+    const floorControl = document.querySelector('.floor-control');
+    const floorControlBtn = floorControl.querySelector('.layer-control-btn');
+
+    floorControlBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        floorControl.classList.toggle('active');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!floorControl.contains(e.target)) {
+            floorControl.classList.remove('active');
+        }
+    });
+
+    // Floor button click handlers
+    const floorBtns = floorControl.querySelectorAll('.section-btn');
+    floorBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            floorBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const floor = btn.getAttribute('data-floor');
+            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4, layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4, layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4, layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
+                if (map.hasLayer(l)) map.removeLayer(l);
+            });
+            if (floor === "1") {
+                currentFloor = 1;
+                map.addLayer(layer_Floor1);
+                map.addLayer(layer_Floor1_2);
+                map.addLayer(layer_Floor1_3);
+                map.addLayer(layer_Floor1_4);
+                addSectionLabels(layer_Floor1);
+                addSectionLabels(layer_Floor1_2);
+                addSectionLabels(layer_Floor1_3);
+                addSectionLabels(layer_Floor1_4);
+                resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+            } 
+            else if (floor === "2") {
+                currentFloor = 2;
+                map.addLayer(layer_Floor2);
+                map.addLayer(layer_Floor2_2);
+                map.addLayer(layer_Floor2_3);
+                map.addLayer(layer_Floor2_4);
+                addSectionLabels(layer_Floor2);
+                addSectionLabels(layer_Floor2_2);
+                addSectionLabels(layer_Floor2_3);
+                addSectionLabels(layer_Floor2_4);
+                resetLabels([layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4]);
+            }
+            else if (floor === "3") {
+                currentFloor = 3;
+                map.addLayer(layer_Floor3);
+                map.addLayer(layer_Floor3_2);
+                map.addLayer(layer_Floor3_3);
+                map.addLayer(layer_Floor3_4);
+                addSectionLabels(layer_Floor3);
+                addSectionLabels(layer_Floor3_2);
+                addSectionLabels(layer_Floor3_3);
+                addSectionLabels(layer_Floor3_4);
+                resetLabels([layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4]);
+            }
+            else if (floor === "4") {
+                currentFloor = 4;
+                map.addLayer(layer_OldMap_1);
+                map.addLayer(layer_OldMap_4);
+                addSectionLabels(layer_OldMap_1);
+                addSectionLabels(layer_OldMap_4);
+                resetLabels([layer_OldMap_1, layer_OldMap_4]);
+            }
+            // Set 'Show All Sections' button as active
+            const sectionBtns = document.querySelectorAll('.section-btn');
+            sectionBtns.forEach(b => b.classList.remove('active'));
+            const showAllBtn = document.querySelector('.show-all-btn');
+            if (showAllBtn) showAllBtn.classList.add('active');
+            // Show all sections for the selected floor
+            showSection('all');
+            floorControl.classList.remove('active');
+        });
+    });
+});
+
         </script>
 </body>
 </html>

@@ -23,13 +23,24 @@ $email = htmlspecialchars($row['email']);
 $type = htmlspecialchars($row['type']);
 $age = htmlspecialchars($row['age']);
 $informant_name = htmlspecialchars($row['informant_name']);
-$deceased_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+// Build deceased name as First Middle Last Suffix
+$deceased_name = htmlspecialchars(trim($row['first_name'] .
+    (isset($row['middle_name']) && $row['middle_name'] ? ' ' . $row['middle_name'] : '') .
+    (isset($row['last_name']) && $row['last_name'] ? ' ' . $row['last_name'] : '') .
+    (isset($row['suffix']) && $row['suffix'] && $row['suffix'] !== '0' ? ' ' . $row['suffix'] : '')
+));
 $attachment_html = '';
 if (!empty($row['file_upload'])) {
     $file = '../uploads/' . $row['file_upload'];
     $filename = htmlspecialchars($row['file_upload']);
     $attachment_html = "<div class='attachment-box'><a href='$file' target='_blank'><img src='https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/pdf.svg' alt='PDF' style='height:20px;vertical-align:middle;margin-right:6px;'><span style='color:#2563eb;text-decoration:underline;cursor:pointer;'>$filename</span></a></div>";
 }
+$niche_id = isset($row['niche_id']) ? htmlspecialchars($row['niche_id']) : '';
+$middle_name = isset($row['middle_name']) ? htmlspecialchars($row['middle_name']) : '';
+$suffix = isset($row['suffix']) ? htmlspecialchars($row['suffix']) : '';
+$residency = isset($row['residency']) ? htmlspecialchars($row['residency']) : '';
+$dob = isset($row['dob']) ? htmlspecialchars($row['dob']) : '';
+$dod = isset($row['dod']) ? htmlspecialchars($row['dod']) : '';
 echo json_encode([
     'success' => true,
     'name' => $name,
@@ -38,6 +49,11 @@ echo json_encode([
     'age' => $age,
     'informant_name' => $informant_name,
     'deceased_name' => $deceased_name,
-    'niche_id' => $row['niche_id'],
-    'attachment_html' => $attachment_html
-]); 
+    'niche_id' => $niche_id,
+    'attachment_html' => $attachment_html,
+    'middle_name' => $middle_name,
+    'suffix' => $suffix,
+    'residency' => $residency,
+    'dob' => $dob,
+    'dod' => $dod
+]);

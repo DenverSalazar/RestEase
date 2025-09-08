@@ -222,8 +222,8 @@ if (!isset($_SESSION['admin_id'])) {
         </div>
         <div class="popup-details">
           <div class="detail-row">
-            <span class="detail-label">Client Name:</span>
-            <span class="detail-value" id="popupClientName"></span>
+            <span class="detail-label">Informant Name:</span>
+            <span class="detail-value" id="popupInformant"></span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Email:</span>
@@ -237,17 +237,26 @@ if (!isset($_SESSION['admin_id'])) {
             <span class="detail-label">Niche ID:</span>
             <span class="detail-value" id="popupNicheId"></span>
           </div>
+          <div class="detail-row" id="popupDeceasedRow" style="display:none;">
+            <span class="detail-label">Name of Deceased:</span>
+            <span class="detail-value" id="popupDeceased"></span>
+          </div>
+          <!-- Additional fields for full deceased info -->
+          <div class="detail-row" id="popupResidencyRow" style="display:none;">
+            <span class="detail-label">Residency:</span>
+            <span class="detail-value" id="popupResidency"></span>
+          </div>
+          <div class="detail-row" id="popupDOBRow" style="display:none;">
+            <span class="detail-label">Date of Birth:</span>
+            <span class="detail-value" id="popupDOB"></span>
+          </div>
+          <div class="detail-row" id="popupDODRow" style="display:none;">
+            <span class="detail-label">Date of Death:</span>
+            <span class="detail-value" id="popupDOD"></span>
+          </div>
           <div class="detail-row">
             <span class="detail-label">Age:</span>
             <span class="detail-value" id="popupAge"></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Informant Name:</span>
-            <span class="detail-value" id="popupInformant"></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Name of Deceased:</span>
-            <span class="detail-value" id="popupDeceased"></span>
           </div>
           <div class="detail-row">
             <span class="detail-label">Attachments:</span>
@@ -681,12 +690,7 @@ if (!isset($_SESSION['admin_id'])) {
       function openPopup(requestId, type) {
         const modal = document.getElementById('popupModal');
         modal.style.display = 'flex';
-        
-        // Trigger animation
-        setTimeout(() => {
-          modal.classList.add('show');
-        }, 10);
-        
+        setTimeout(() => { modal.classList.add('show'); }, 10);
         window.currentRequestId = requestId;
         window.currentRequestType = type;
         let url = (type === 'accepted') ? 'get_accepted_request_details.php?id=' + requestId : 'get_request_details.php?id=' + requestId;
@@ -694,25 +698,58 @@ if (!isset($_SESSION['admin_id'])) {
           .then(response => response.json())
           .then(data => {
             if (data && data.success) {
-              document.getElementById('popupClientName').textContent = data.name;
               document.getElementById('popupEmail').textContent = data.email;
               document.getElementById('popupType').textContent = data.type;
-              document.getElementById('popupAge').textContent = data.age;
+              // Calculate accurate age from dob and dod
+              let age = '';
+              if (data.dob && data.dod) {
+                const dob = new Date(data.dob);
+                const dod = new Date(data.dod);
+                let years = dod.getFullYear() - dob.getFullYear();
+                let m = dod.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && dod.getDate() < dob.getDate())) {
+                  years--;
+                }
+                age = years;
+              } else {
+                age = data.age || '';
+              }
+              document.getElementById('popupAge').textContent = age;
               document.getElementById('popupInformant').textContent = data.informant_name;
-              document.getElementById('popupDeceased').textContent = data.deceased_name;
+              // Show only the backend formatted deceased name
+              document.getElementById('popupDeceased').textContent = (data.deceased_name || '').trim();
               document.getElementById('popupAttachment').innerHTML = data.attachment_html;
               document.getElementById('popupNicheId').textContent = data.niche_id;
+              // Show/hide deceased row
+              document.getElementById('popupDeceasedRow').style.display = (data.deceased_name ? '' : 'none');
+              // Hide middle name and suffix rows always
+              if (document.getElementById('popupMiddleNameRow')) {
+                document.getElementById('popupMiddleNameRow').style.display = 'none';
+              }
+              if (document.getElementById('popupSuffixRow')) {
+                document.getElementById('popupSuffixRow').style.display = 'none';
+              }
+              if (document.getElementById('popupResidency')) {
+                document.getElementById('popupResidency').textContent = data.residency || '';
+                document.getElementById('popupResidencyRow').style.display = data.residency ? '' : 'none';
+              }
+              if (document.getElementById('popupDOB')) {
+                document.getElementById('popupDOB').textContent = data.dob || '';
+                document.getElementById('popupDOBRow').style.display = data.dob ? '' : 'none';
+              }
+              if (document.getElementById('popupDOD')) {
+                document.getElementById('popupDOD').textContent = data.dod || '';
+                document.getElementById('popupDODRow').style.display = data.dod ? '' : 'none';
+              }
               if (data.type === 'Transfer' || data.type === 'Exhumation') {
                 document.getElementById('popupNicheIdRow').style.display = '';
               } else {
                 document.getElementById('popupNicheIdRow').style.display = 'none';
               }
-              // Hide Accept/Deny for accepted
               document.querySelector('.accept-btn').style.display = (type === 'accepted') ? 'none' : '';
               document.querySelector('.deny-btn').style.display = (type === 'accepted') ? 'none' : '';
               if (type === 'accepted') {
                 document.querySelector('.go-payment-btn').style.display = '';
-                // Store details for payment redirect
                 window.currentNicheId = data.niche_id;
                 window.currentInformant = data.informant_name;
               } else {
@@ -797,32 +834,3 @@ if (!isset($_SESSION['admin_id'])) {
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

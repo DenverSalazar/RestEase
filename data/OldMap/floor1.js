@@ -1,4 +1,4 @@
-var json_Floor1 = {
+var json_oldmap_floor1 = {
   "type": "FeatureCollection",
   "features": [
     // ...features for Section 1 only...

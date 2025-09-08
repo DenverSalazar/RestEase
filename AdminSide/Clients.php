@@ -30,7 +30,7 @@ if (!isset($_SESSION['admin_id'])) {
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <span class="clients-tab-title">Manage Clients Account</span>
+        <span class="clients-tab-title active">Manage Clients Account</span>
       </div>
     </div>
     <div class="clients-actions">

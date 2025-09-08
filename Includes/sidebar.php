@@ -23,12 +23,16 @@ if ($current_page === 'EditNiches.php' || $current_page === 'editniches.php') {
 $mapping_dropdown_open = in_array($current_page, $mapping_pages);
 ?>
 <aside class="sidebar">
-    <div class="logo">
-      <img src="../assets/RE Logo New.png" alt="RestEase Logo">
+    <div class="logo" style="display: flex; flex-direction: row; align-items: center; padding: 0.75rem 0 0.5rem 0.5rem;">
+      <img src="../assets/logo.png" alt="RestEase" style="width: 55px; height: 55px; border-radius: 50%; margin-right: 0.85rem;">
+      <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <div style="font-size: 1.35em; font-weight: 700; color: #222; line-height: 1;">RestEase</div>
+        <div style="font-size: 0.95em; color: #888; font-weight: 500; margin-top: 0.15rem; letter-spacing: 1px;">MPDO</div>
+      </div>
     </div>
     <nav class="nav-links">
         <!-- Main Menu Section -->
-      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Main Menu</div>
+      <div class="nav-section text-muted" style="padding: 0.10rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Main Menu</div>
       <a href="Dashboard.php" class="nav-item<?php if($current_page == 'Dashboard.php') echo ' active'; ?>">
         <i class="fas fa-pie-chart"></i>
         Dashboard

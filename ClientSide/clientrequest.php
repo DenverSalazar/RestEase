@@ -17,7 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = $_POST['first_name'] ?? '';
     $last_name = $_POST['last_name'] ?? '';
     $middle_name = $_POST['middle_name'] ?? '';
-    $suffix = $_POST['suffix'] ?? '';
+    $suffix = isset($_POST['suffix']) ? trim($_POST['suffix']) : null;
+    if ($suffix === '' || strtolower($suffix) === '0' || $suffix === '0') {
+        $suffix = null;
+    }
     $age = $_POST['age'] ?? '';
     $dob = $_POST['dob'] ?? '';
     $dod = $_POST['dod'] ?? '';
@@ -47,8 +50,21 @@ if (!$error) {
     if (!$user_id) {
         $error = "User not logged in.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issssisssssss", $user_id, $type, $first_name, $last_name, $middle_name, $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id);
+        if ($suffix === null) {
+            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
+            // Bind 12 variables, exclude $suffix
+            $stmt->bind_param("issssissssss", 
+                $user_id, $type, $first_name, $last_name, $middle_name, 
+                $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+            );
+        } else {
+            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            // Bind 13 variables, include $suffix
+            $stmt->bind_param("isssssissssss", 
+                $user_id, $type, $first_name, $last_name, $middle_name, 
+                $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+            );
+        }
         if ($stmt->execute()) {
             $success = "Request submitted successfully!";
         } else {
@@ -67,6 +83,19 @@ if (!$error) {
         ]);
         exit;
     }
+}
+
+// Fetch logged-in user's full name
+$user_fullname = '';
+if (isset($_SESSION['user_id'])) {
+    $stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $_SESSION['user_id']);
+    $stmt->execute();
+    $stmt->bind_result($first_name, $last_name);
+    if ($stmt->fetch()) {
+        $user_fullname = trim($first_name . ' ' . $last_name);
+    }
+    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -136,18 +165,18 @@ if (!$error) {
                             <input type="text" id="first_name" name="first_name" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="last_name" class="form-label">Last Name</label>
-                            <input type="text" id="last_name" name="last_name" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
                             <label for="middle_name" class="form-label">Middle Name</label>
                             <input type="text" id="middle_name" name="middle_name" class="form-control">
+                        </div>
+                         <div class="col-md-6">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" id="last_name" name="last_name" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label for="suffix" class="form-label">Suffix</label>
                             <input type="text" id="suffix" name="suffix" class="form-control" placeholder="e.g. Jr, Sr, III">
                         </div>
-                        <div class="col-md-6">
+                       <div class="col-md-6">
                             <label for="dob" class="form-label">Date of Birth</label>
                             <input type="date" id="dob" name="dob" class="form-control" required>
                         </div>
@@ -156,8 +185,11 @@ if (!$error) {
                             <input type="date" id="dod" name="dod" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="age" class="form-label">Age</label>
-                            <input type="number" id="age" name="age" min="0" class="form-control" required disabled>
+                            <label for="age_display" class="form-label">Age</label>
+                            <!-- Visible but not editable -->
+                            <input type="number" id="age_display" class="form-control" required disabled>
+                            <!-- Hidden field that actually submits -->
+                            <input type="hidden" id="age" name="age">
                         </div>
                         <div class="col-md-6">
                             <label for="residency" class="form-label">Residency</label>
@@ -188,7 +220,7 @@ if (!$error) {
                         </div>
                         <div class="col-md-6">
                             <label for="informant_name" class="form-label">Informant Name</label>
-                            <input type="text" id="informant_name" name="informant_name" class="form-control" required>
+                            <input type="text" id="informant_name" name="informant_name" class="form-control" required value="<?php echo htmlspecialchars($user_fullname, ENT_QUOTES); ?>" readonly>
                         </div>
                     </div>
                     <div class="section-title">Upload Files</div>
@@ -242,21 +274,28 @@ if (!$error) {
     function calculateAge() {
         var dob = document.getElementById('dob').value;
         var dod = document.getElementById('dod').value;
-        var ageInput = document.getElementById('age');
+        var ageDisplay = document.getElementById('age_display');
+        var ageHidden = document.getElementById('age');
+
+        var age = '';
         if (dob && dod) {
             var birth = new Date(dob);
             var death = new Date(dod);
-            var age = death.getFullYear() - birth.getFullYear();
+            age = death.getFullYear() - birth.getFullYear();
             var m = death.getMonth() - birth.getMonth();
             if (m < 0 || (m === 0 && death.getDate() < birth.getDate())) {
                 age--;
             }
-            ageInput.value = age >= 0 ? age : '';
+            if (age < 0) age = '';
         }
+
+        ageDisplay.value = age; // show user
+        ageHidden.value = age;  // save in DB
     }
 
     document.getElementById('dob').addEventListener('change', calculateAge);
     document.getElementById('dod').addEventListener('change', calculateAge);
+
     </script>
 </body>
 </html>
