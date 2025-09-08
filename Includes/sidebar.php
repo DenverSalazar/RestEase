@@ -27,16 +27,24 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <img src="../assets/RE Logo New.png" alt="RestEase Logo">
     </div>
     <nav class="nav-links">
+        <!-- Main Menu Section -->
+      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Main Menu</div>
       <a href="Dashboard.php" class="nav-item<?php if($current_page == 'Dashboard.php') echo ' active'; ?>">
         <i class="fas fa-pie-chart"></i>
         Dashboard
       </a>
+       <a href="Records.php" class="nav-item<?php if(in_array($current_page, $records_pages)) echo ' active'; ?>">
+        <i class="fas fa-file-alt"></i>
+        Records
+      </a>
       
-      <!-- Mapping Dropdown -->
-      <div class="nav-dropdown<?php if($mapping_dropdown_open) echo ' open'; ?>">
+      <!-- Mapping Section -->
+      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Mapping</div>
+      <!-- New Cemetery Dropdown -->
+      <div class="nav-dropdown<?php if(in_array($current_page, ['Mapping.php','first_floor.php','second_floor.php','third_floor.php'])) echo ' open'; ?>" id="new-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
           <i class="fas fa-map-marker-alt"></i>
-          Mapping
+          New Cemetery
           <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
         <div class="dropdown-menu">
@@ -52,17 +60,26 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
             <i class="fas fa-building"></i>
             Third Floor
           </a>
-           <a href="OldMap.php" class="dropdown-item<?php if($current_page == 'OldMap.php') echo ' active'; ?>">
+        </div>
+      </div>
+      <!-- Old Cemetery Dropdown -->
+      <div class="nav-dropdown<?php if($current_page == 'OldMap.php') echo ' open'; ?>" id="old-cemetery-dropdown">
+        <div class="nav-item dropdown-toggle">
+          <i class="fas fa-map-marker-alt"></i>
+          Old Cemetery
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </div>
+        <div class="dropdown-menu">
+          <a href="OldMap.php" class="dropdown-item<?php if($current_page == 'OldMap.php') echo ' active'; ?>">
             <i class="fas fa-building"></i>
-             Old Map
+            Old Map
           </a>
         </div>
       </div>
       
-      <a href="Records.php" class="nav-item<?php if(in_array($current_page, $records_pages)) echo ' active'; ?>">
-        <i class="fas fa-file-alt"></i>
-        Records
-      </a>
+       <!-- General Section -->
+      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">General</div>
+     
       <a href="Clients.php" class="nav-item<?php if(in_array($current_page, $clients_pages)) echo ' active'; ?>">
         <i class="fas fa-users"></i>
         Clients
@@ -94,15 +111,15 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle dropdown toggle
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    const dropdown = document.querySelector('.nav-dropdown');
-    
-    if (dropdownToggle && dropdown) {
-        dropdownToggle.addEventListener('click', function(e) {
+    // Handle all dropdown toggles
+    document.querySelectorAll('.dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
             e.preventDefault();
-            dropdown.classList.toggle('open');
+            var parentDropdown = toggle.closest('.nav-dropdown');
+            if (parentDropdown) {
+                parentDropdown.classList.toggle('open');
+            }
         });
-    }
+    });
 });
 </script>

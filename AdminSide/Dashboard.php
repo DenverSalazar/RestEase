@@ -112,10 +112,6 @@ $stmt->close();
         </div>
       </div>
       <div class="user-profile">
-        <div class="notification-icon">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge">1</span>
-        </div>
         <div class="profile-info">
           <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
           <div>
