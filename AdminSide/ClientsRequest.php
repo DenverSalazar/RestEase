@@ -33,6 +33,7 @@ if (!isset($_SESSION['admin_id'])) {
       <div class="clients-tabs">
         <span class="clients-tab-title active" id="tab-clients-request" onclick="showTab('clients-request')">Clients Request</span>
         <span class="clients-tab-title" id="tab-accepted-request" onclick="showTab('accepted-request')">Accepted Requests</span>
+        <span class="clients-tab-title" id="tab-assessment-fees" onclick="showTab('assessment-fees')">Assessment of Fees</span>
       </div>
     </div>
     <div id="clients-request-section">
@@ -202,6 +203,12 @@ if (!isset($_SESSION['admin_id'])) {
       
       <!-- Move pagination controls to bottom exactly like Clients.php -->
       <div class="dataTables_wrapper">
+      </div>
+    </div>
+    <div id="assessment-fees-section" style="display:none;">
+      <div style="padding: 32px 0; text-align: center; color: #888;">
+        <h2>Assessment of Fees</h2>
+        <p>This section is under construction.</p>
       </div>
     </div>
     <!-- Popup Modal -->
@@ -663,8 +670,10 @@ if (!isset($_SESSION['admin_id'])) {
       function showTab(tab) {
         document.getElementById('clients-request-section').style.display = (tab === 'clients-request') ? '' : 'none';
         document.getElementById('accepted-request-section').style.display = (tab === 'accepted-request') ? '' : 'none';
+        document.getElementById('assessment-fees-section').style.display = (tab === 'assessment-fees') ? '' : 'none';
         document.getElementById('tab-clients-request').classList.toggle('active', tab === 'clients-request');
         document.getElementById('tab-accepted-request').classList.toggle('active', tab === 'accepted-request');
+        document.getElementById('tab-assessment-fees').classList.toggle('active', tab === 'assessment-fees');
       }
       
       function openPopup(requestId, type) {

@@ -10,43 +10,7 @@ include_once '../Includes/db.php';
 $ledgerEntry = null;
 $entry_id = null;
 
-if (isset($_GET['id'])) {
-    $entry_id = $_GET['id'];
-    // Join ledger with qr_codes to get the path
-    $stmt = $conn->prepare("SELECT l.*, qc.qr_code_path FROM ledger l LEFT JOIN qr_codes qc ON l.id = qc.ledger_id WHERE l.id = ?");
-    $stmt->bind_param("i", $entry_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $ledgerEntry = $result->fetch_assoc();
-    }
-    $stmt->close();
-}
 
-// Handle QR code image upload and saving to admin_qr_code table
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['QRCodeImg']) && $_FILES['QRCodeImg']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = '../uploads/';
-        $ext = pathinfo($_FILES['QRCodeImg']['name'], PATHINFO_EXTENSION);
-        $fileName = time() . '_qr.' . $ext;
-        $targetPath = $uploadDir . $fileName;
-        if (move_uploaded_file($_FILES['QRCodeImg']['tmp_name'], $targetPath)) {
-        $qrPathDb = 'uploads/' . $fileName;
-        // Remove old QR code row and file
-        $result = $conn->query("SELECT qr_code_path FROM admin_qr_code ORDER BY id DESC LIMIT 1");
-        if ($result && $row = $result->fetch_assoc()) {
-            $oldPath = '../' . $row['qr_code_path'];
-            if (file_exists($oldPath)) { unlink($oldPath); }
-        }
-        $conn->query("DELETE FROM admin_qr_code");
-        $stmt = $conn->prepare("INSERT INTO admin_qr_code (qr_code_path) VALUES (?)");
-        $stmt->bind_param("s", $qrPathDb);
-        $stmt->execute();
-        echo '<script>alert("QR Code updated successfully!"); window.location.href="Ledger.php";</script>';
-        exit;
-    } else {
-        echo '<div style="color:#e74c3c;margin-top:16px;">Error moving uploaded file.</div>';
-    }
-}
 
 // Handle Ledger Form Submission (Insert or Update)
 if (
@@ -285,148 +249,12 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <!-- Tabs -->
     <div style="border-bottom:1px solid #e0e0e0;margin-bottom:8px;">
       <div style="display:flex;gap:32px;align-items:center;">
-        <button id="ledgerTabBtn" class="tab active">Ledger Information</button>
-        <button id="pendingPaymentTabBtn" class="tab">Pending Payment</button>
-        <button id="paymentTabBtn" class="tab">Payment Details</button>
+        <button id="paymentTabBtn" class="tab active">Payment Details</button>
+        <button id="ledgerTabBtn" class="tab">Ledger Information</button>
       </div>
     </div>
-    <!-- Ledger Information Section -->
-    <div id="ledgerInfoSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box;">
-      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Ledger Information</div>
-        <div style="display:flex;gap:30px;flex-wrap:wrap;width:100%;align-items:flex-start;">
-          <!-- Left Column: Ledger Fields -->
-          <div style="flex:1 1 600px;">
-          <form id="ledgerForm" method="post" action="" enctype="multipart/form-data" autocomplete="off" style="width: 100%;">
-            <input type="hidden" name="id" value="<?php echo htmlspecialchars($ledgerEntry['id'] ?? ''); ?>">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 16px;">
-              <div>
-                <label for="formApartmentNo" style="font-weight:500;">Apartment No.</label>
-                <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
-              </div>
-              <div>
-                <label for="formName" style="font-weight:500;">Name</label>
-                <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>">
-              </div>
-              <div>
-                <label for="formAmount" style="font-weight:500;">Amount</label>
-                <div style="display:flex;align-items:center;position:relative;">
-                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#888;font-size:1.08rem;">₱</span>
-                  <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:100%;box-sizing:border-box;padding-left:28px;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
-                </div>
-              </div>
-              <div>
-                <label for="formORNumber" style="font-weight:500;">OR Number</label>
-                <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['ORNumber'] ?? $orNumber); ?>" readonly>
-              </div>
-              <div>
-                <label for="formMCNo" style="font-weight:500;">MC No.</label>
-                <input type="text" id="formMCNo" name="MCNo" placeholder="MC Number" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['MCNo'] ?? $mcNumber); ?>" readonly>
-              </div>
-              <div>
-                <label for="formValidity" style="font-weight:500;">Validity</label>
-                <input type="date" id="formValidity" name="Validity" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? $validity); ?>">
-              </div>
-              <div style="grid-column: span 2;">
-                <label for="formDescription" style="font-weight:500;">Desc</label>
-                <input type="text" id="formDescription" name="Description" placeholder="Description" style="width:100%;box-sizing:border-box;" value="<?php echo htmlspecialchars($ledgerEntry['Description'] ?? ''); ?>">
-              </div>
-            </div>
-            <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
-              <button type="submit" class="btn upload" style="width: 140px; padding: 12px 0; font-size:1.08rem;background:#506C84;color:#fff;border-radius:8px;">Submit</button>
-            </div>
-          </form>
-          </div>
-        <!-- Right Column: QR Code Upload & Preview (outside the main form, but visually in the same place) -->
-          <div style="flex:1 1 320px;min-width:320px;max-width:420px;">
-          <div style="background:#e9f0fa;padding:32px 24px 24px 24px;border-radius:12px;display:flex;flex-direction:column;align-items:center;min-width:260px;">
-            <div style="font-weight:600;font-size:1.08rem;margin-bottom:16px;">Admin QR Code</div>
-              <div id="qrPreviewContainer" style="margin-bottom:18px;">
-              <?php
-              // Fetch the global admin QR code
-              $qrPath = '../assets/qr-placeholder.png'; // default
-              $result = $conn->query("SELECT qr_code_path FROM admin_qr_code ORDER BY id DESC LIMIT 1");
-              if ($result && $row = $result->fetch_assoc()) {
-                  $qrPath = '../' . $row['qr_code_path'];
-              }
-              ?>
-              <img id="qrPreviewImg" src="<?php echo htmlspecialchars($qrPath); ?>" alt="QR Preview" style="width:220px;height:220px;object-fit:cover;border:1.5px solid #b6c6d6;border-radius:10px;background:#fff;display:block;box-shadow:0 2px 8px rgba(44,62,80,0.08);">
-            </div>
-            <form id="qrUploadForm" method="post" action="" enctype="multipart/form-data" style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;" novalidate>
-              <input type="file" id="formQRCodeImg" name="QRCodeImg" accept="image/*" style="display:none;">
-              <label for="formQRCodeImg" style="background:#506C84;color:#fff;padding:10px 0;border-radius:7px;font-size:1.08rem;font-weight:500;cursor:pointer;transition:background 0.18s;box-shadow:0 1.5px 6px rgba(80,108,132,0.08);margin-bottom:6px;width:160px;text-align:center;">Choose QR Image</label>
-              <button type="submit" class="btn upload" style="width:160px; padding:12px 0; font-size:1.08rem;background:#22c55e;color:#fff;border-radius:8px;font-weight:600;box-shadow:0 1.5px 6px rgba(34,197,94,0.08);border:none;transition:background 0.18s;">Save QR Code</button>
-            </form>
-            <style>
-              #qrUploadForm label[for='formQRCodeImg']:hover { background: #29405a; }
-              #qrUploadForm .btn.upload:hover { background: #15803d; }
-            </style>
-          </div>
-        </div>
-        </div>
-      <script>
-        // QR Code image preview for the separate QR upload form
-        const qrInput = document.getElementById('formQRCodeImg');
-        if (qrInput) {
-          qrInput.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          const previewImg = document.getElementById('qrPreviewImg');
-          if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-              previewImg.src = evt.target.result;
-            };
-            reader.readAsDataURL(file);
-          } else {
-              previewImg.src = '<?php echo htmlspecialchars($qrPath); ?>';
-          }
-        });
-        }
-      </script>
-    </div>
-    <!-- Pending Payment Section (hidden by default) -->
-    <div id="pendingPaymentSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
-      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Pending Payment</div>
-      <div class="ledger-search-container" style="margin-bottom:18px;">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search" />
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="ledger-table" id="pendingPaymentTable" style="min-width:900px;">
-          <thead>
-            <tr>
-              <th>MC No.</th>
-              <th>Apt No.</th>
-              <th>Payee</th>
-              <th>Amount</th>
-              <th>Des</th>
-              <th>OR Number</th>
-              <th>Validity</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-            // Example: Fetch pending payments (where DatePaid is NULL or empty)
-            $pendingResult = $conn->query("SELECT * FROM ledger WHERE DatePaid IS NULL OR DatePaid = ''");
-            if ($pendingResult && $pendingResult->num_rows > 0) {
-              while ($row = $pendingResult->fetch_assoc()) {
-                echo '<tr>';
-                echo '<td>' . htmlspecialchars($row['MCNo']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
-                echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
-                echo '</tr>';
-              }
-            }
-            ?>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Payment Details Section (hidden by default) -->
-    <div id="paymentDetailsSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
+    <!-- Payment Details Section (now comes first, visible by default) -->
+    <div id="paymentDetailsSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:24px;">
         <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
         <button style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -441,14 +269,13 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <table class="ledger-table" id="paymentDetailsTable" style="min-width:900px;">
           <thead>
             <tr>
-              <th>MC No.</th>
               <th>Apt No.</th>
-              <th>Date Paid</th>
               <th>Payee</th>
+              <th>Date Paid</th>
               <th>Amount</th>
-              <th>Des</th>
-              <th>OR Number</th>
+              <th>Description</th>
               <th>Validity</th>
+              <th>OR Number</th>
             </tr>
           </thead>
           <tbody>
@@ -458,14 +285,13 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             if ($paymentResult && $paymentResult->num_rows > 0) {
               while ($row = $paymentResult->fetch_assoc()) {
                 echo '<tr>';
-                echo '<td>' . htmlspecialchars($row['MCNo']) . '</td>';
                 echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
                 echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
                 echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
                 echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
                 echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
+                echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
                 echo '</tr>';
               }
             }
@@ -474,37 +300,93 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         </table>
       </div>
     </div>
+    <!-- Ledger Information Section (now comes second, hidden by default) -->
+    <div id="ledgerInfoSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
+      <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Ledger Information</div>
+      <form id="ledgerForm" method="post" action="" enctype="multipart/form-data" autocomplete="off" style="width: 100%;">
+        <!-- Section: Basic Information -->
+        <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;">Basic Information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
+          <div>
+            <label for="formApartmentNo">Apt No.</label>
+            <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:90%;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
+          </div>
+          <div>
+            <label for="formName">Payee</label>
+            <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:90%;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>">
+          </div>
+          <div>
+            <label for="formDatePaid">Date Paid</label>
+            <input type="date" id="formDatePaid" name="DatePaid" style="width:90%;" value="<?php echo htmlspecialchars($ledgerEntry['DatePaid'] ?? ''); ?>">
+          </div>
+          <div>
+            <label for="formAmount">Amount</label>
+            <div style="display:flex;align-items:center;position:relative;">
+              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#888;font-size:1.08rem;">₱</span>
+              <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:90%;box-sizing:border-box;padding-left:28px;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
+            </div>
+          </div>
+        </div>
+        <!-- Section: Details -->
+        <div style="font-weight:600;font-size:1.08rem;margin:24px 0 8px 0;">Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
+          <div>
+            <label for="formDescription">Description</label>
+            <input
+              type="text"
+              id="formDescription"
+              name="Description"
+              list="descOptions"
+              required
+              placeholder="Description"
+              style="width:90%;"
+              value="<?php echo htmlspecialchars($ledgerEntry['Description'] ?? ''); ?>"
+            >
+            <datalist id="descOptions">
+              <option value="New">
+              <option value="Renewal">
+              <option value="ReOpen">
+              <option value="Transfer">
+              <option value="Full Payment">
+            </datalist>
+          </div>
+          <div>
+            <label for="formValidity">Validity</label>
+            <input type="date" id="formValidity" name="Validity" style="width:90%;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? $validity); ?>">
+          </div>
+          <div>
+            <label for="formORNumber">OR Number</label>
+            <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:90%;" value="<?php echo htmlspecialchars($ledgerEntry['ORNumber'] ?? $orNumber); ?>" readonly>
+          </div>
+        </div>
+        <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
+          <button type="submit" class="btn upload" style="width: 140px; padding: 12px 0; font-size:1.08rem;background:#506C84;color:#fff;border-radius:8px;">Submit</button>
+        </div>
+        <input type="hidden" name="id" value="<?php echo htmlspecialchars($ledgerEntry['id'] ?? ''); ?>">
+      </form>
+    </div>
     <script>
-      // Tab switching logic for three tabs
+      // Tab switching logic for two tabs (Payment Details is default)
       const ledgerTabBtn = document.getElementById('ledgerTabBtn');
-      const pendingPaymentTabBtn = document.getElementById('pendingPaymentTabBtn');
       const paymentTabBtn = document.getElementById('paymentTabBtn');
       const ledgerInfoSection = document.getElementById('ledgerInfoSection');
-      const pendingPaymentSection = document.getElementById('pendingPaymentSection');
       const paymentDetailsSection = document.getElementById('paymentDetailsSection');
+      // Set Payment Details as default visible
+      paymentTabBtn.classList.add('active');
+      ledgerTabBtn.classList.remove('active');
+      paymentDetailsSection.style.display = '';
+      ledgerInfoSection.style.display = 'none';
       ledgerTabBtn.addEventListener('click', function() {
-          ledgerTabBtn.classList.add('active');
-        pendingPaymentTabBtn.classList.remove('active');
-          paymentTabBtn.classList.remove('active');
-          ledgerInfoSection.style.display = '';
-        pendingPaymentSection.style.display = 'none';
+        ledgerTabBtn.classList.add('active');
+        paymentTabBtn.classList.remove('active');
+        ledgerInfoSection.style.display = '';
         paymentDetailsSection.style.display = 'none';
       });
-      pendingPaymentTabBtn.addEventListener('click', function() {
-        ledgerTabBtn.classList.remove('active');
-        pendingPaymentTabBtn.classList.add('active');
-        paymentTabBtn.classList.remove('active');
-        ledgerInfoSection.style.display = 'none';
-        pendingPaymentSection.style.display = '';
-          paymentDetailsSection.style.display = 'none';
-      });
       paymentTabBtn.addEventListener('click', function() {
-          ledgerTabBtn.classList.remove('active');
-        pendingPaymentTabBtn.classList.remove('active');
-          paymentTabBtn.classList.add('active');
-          ledgerInfoSection.style.display = 'none';
-        pendingPaymentSection.style.display = 'none';
-          paymentDetailsSection.style.display = '';
+        ledgerTabBtn.classList.remove('active');
+        paymentTabBtn.classList.add('active');
+        ledgerInfoSection.style.display = 'none';
+        paymentDetailsSection.style.display = '';
       });
     </script>
   </main>
@@ -544,25 +426,17 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script>
       // DataTables initialization for both tables
-      $(document).ready(function() {
-        $('#pendingPaymentTable').DataTable({
-          paging: true,
-          searching: true,
-          ordering: true,
-          info: true
-        });
+
         $('#paymentDetailsTable').DataTable({
           paging: true,
           searching: true,
           ordering: true,
           info: true
         });
-      });
     </script>
 </body>
 </html>
-</body>
-</html>
+
 
 
 

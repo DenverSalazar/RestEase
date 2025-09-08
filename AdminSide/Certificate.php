@@ -60,6 +60,47 @@ if (!isset($_SESSION['admin_id'])) {
       box-sizing: border-box;
       margin-bottom: 24px;
     }
+    /* --- Begin Certificate Masterlist Table Design (renamed from cemetery-masterlist-table) --- */
+    .certificate-masterlist-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+    }
+    .certificate-masterlist-table th, .certificate-masterlist-table td {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 0.82rem;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .certificate-masterlist-table th {
+      background: #f7f8fa;
+      font-weight: 500;
+      color: #333;
+      font-size: 0.77rem;
+    }
+    .certificate-masterlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .certificate-masterlist-table th, .certificate-masterlist-table td {
+        font-size: 0.75rem;
+        padding: 6px 6px;
+      }
+    }
+    /* --- End Certificate Masterlist Table Design --- */
     input[type="text"], input[type="number"], input[type="date"] {
       border:1px solid #d0d7e2; border-radius:7px; padding:8px 12px; font-size:1.04rem; margin-top:4px; margin-bottom:2px; background:#f7fafd; transition:border 0.18s;
     }
@@ -103,13 +144,115 @@ if (!isset($_SESSION['admin_id'])) {
     <!-- Tabs Navigation -->
     <div style="border-bottom:1px solid #e0e0e0;margin-bottom:8px;">
       <div style="display:flex;gap:32px;align-items:center;">
-        <button id="certTabBtn" class="tab active" onclick="showTab('certTab')">Certification</button>
-        <button id="masterlistTabBtn" class="tab" onclick="showTab('masterlistTab')">Certification Masterlist</button>
+        <button id="masterlistTabBtn" class="tab active" onclick="showTab('masterlistTab')">Certification Masterlist</button>
+        <button id="certTabBtn" class="tab" onclick="showTab('certTab')">Certification</button>
       </div>
     </div>
 
     <!-- Tabs Content -->
-    <div id="certTab" class="card">
+    <div id="masterlistTab" class="card">
+      <h2 style="margin-bottom:18px;font-size:1.25rem;font-weight:600;">Certification Masterlist</h2>
+      <div style="margin-bottom:18px;">
+        <button class="cert-filter-btn" data-filter="all" style="margin-right:8px;">All</button>
+        <button class="cert-filter-btn" data-filter="DNew" style="margin-right:8px;">New</button>
+        <button class="cert-filter-btn" data-filter="DReEnter" style="margin-right:8px;">ReEnter</button>
+        <button class="cert-filter-btn" data-filter="DRenew" style="margin-right:8px;">ReNew</button>
+        <button class="cert-filter-btn" data-filter="DReOpen" style="margin-right:8px;">ReOpen</button>
+        <button class="cert-filter-btn" data-filter="DTransfer">Transfer</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="certificate-masterlist-table" id="certificate-masterlist-table">
+          <thead>
+            <tr>
+              <th data-col="AptNo">Apt. No</th>
+              <th data-col="NameOfDeceased">Name of Deceased</th>
+              <th data-col="InformantName">Informant Name</th>
+              <th data-col="InformantAddress">Informant Address</th>
+              <th data-col="AddressOfDeceased">Address of Deceased</th>
+              <th data-col="DateDied">Date Died</th>
+              <th data-col="DateInternment">Date Internment</th>
+              <th data-col="DNew">DNew</th>
+              <th data-col="DRenew">DRenew</th>
+              <th data-col="DTransfer">DTransfer</th>
+              <th data-col="DReOpen">DReOpen</th>
+              <th data-col="DReEnter">DReEnter</th>
+              <th data-col="DatePaid">Date Paid</th>
+              <th data-col="Payee">Payee</th>
+              <th data-col="Amount">Amount</th>
+              <th data-col="ORNumber">ORNumber</th>
+              <th data-col="Validity">Validity</th>
+              <th data-col="MCNo">MCNo.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Example static row, replace with dynamic PHP rows as needed -->
+            <tr>
+              <td data-col="AptNo">101</td>
+              <td data-col="NameOfDeceased">Maria Santos</td>
+              <td data-col="InformantName">Juan Dela Cruz</td>
+              <td data-col="InformantAddress">Brgy. Mabini</td>
+              <td data-col="AddressOfDeceased">Brgy. Mabini</td>
+              <td data-col="DateDied">2024-01-15</td>
+              <td data-col="DateInternment">2024-01-20</td>
+              <td data-col="DNew">✔</td>
+              <td data-col="DRenew"></td>
+              <td data-col="DTransfer"></td>
+              <td data-col="DReOpen"></td>
+              <td data-col="DReEnter"></td>
+              <td data-col="DatePaid">2024-01-20</td>
+              <td data-col="Payee">Juan Dela Cruz</td>
+              <td data-col="Amount">500</td>
+              <td data-col="ORNumber">123456</td>
+              <td data-col="Validity">2029-01-20</td>
+              <td data-col="MCNo">2024-001</td>
+            </tr>
+            <tr>
+              <td data-col="AptNo">102</td>
+              <td data-col="NameOfDeceased">Pedro Reyes</td>
+              <td data-col="InformantName">Ana Cruz</td>
+              <td data-col="InformantAddress">Brgy. San Juan</td>
+              <td data-col="AddressOfDeceased">Brgy. San Juan</td>
+              <td data-col="DateDied">2024-02-10</td>
+              <td data-col="DateInternment">2024-02-15</td>
+              <td data-col="DNew"></td>
+              <td data-col="DRenew">✔</td>
+              <td data-col="DTransfer"></td>
+              <td data-col="DReOpen"></td>
+              <td data-col="DReEnter"></td>
+              <td data-col="DatePaid">2024-02-15</td>
+              <td data-col="Payee">Ana Cruz</td>
+              <td data-col="Amount">600</td>
+              <td data-col="ORNumber">654321</td>
+              <td data-col="Validity">2029-02-15</td>
+              <td data-col="MCNo">2024-002</td>
+            </tr>
+            <tr>
+              <td data-col="AptNo">103</td>
+              <td data-col="NameOfDeceased">Josefa Lim</td>
+              <td data-col="InformantName">Carlos Lim</td>
+              <td data-col="InformantAddress">Brgy. Rosario</td>
+              <td data-col="AddressOfDeceased">Brgy. Rosario</td>
+              <td data-col="DateDied">2024-03-05</td>
+              <td data-col="DateInternment">2024-03-10</td>
+              <td data-col="DNew"></td>
+              <td data-col="DRenew"></td>
+              <td data-col="DTransfer"></td>
+              <td data-col="DReOpen"></td>
+              <td data-col="DReEnter">✔</td>
+              <td data-col="DatePaid">2024-03-10</td>
+              <td data-col="Payee">Carlos Lim</td>
+              <td data-col="Amount">700</td>
+              <td data-col="ORNumber">789012</td>
+              <td data-col="Validity">2029-03-10</td>
+              <td data-col="MCNo">2024-003</td>
+            </tr>
+            <!-- Add more rows as needed -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="certTab" class="card" style="display:none;">
       <h2 style="margin-left:0;margin-bottom:18px;font-size:1.25rem;font-weight:600;">New Certificate</h2>
       <!-- Certificate Template Form -->
       <form method="post" autocomplete="off" style="width:100%;" id="certificateForm">
@@ -285,15 +428,6 @@ if (!isset($_SESSION['admin_id'])) {
         </div>
       <?php endif; ?>
     </div>
-
-    <div id="masterlistTab" class="card" style="display:none;">
-      <h2 style="margin-bottom:18px;font-size:1.25rem;font-weight:600;">Certification Masterlist</h2>
-      <div style="background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px #eee; max-width:900px;">
-        <!-- Masterlist content goes here -->
-        <p>Masterlist of all issued certificates will be shown here.</p>
-      </div>
-    </div>
-
     <script>
       function showTab(tabId) {
         document.getElementById('certTab').style.display = tabId === 'certTab' ? '' : 'none';
@@ -301,8 +435,8 @@ if (!isset($_SESSION['admin_id'])) {
         document.getElementById('certTabBtn').classList.toggle('active', tabId === 'certTab');
         document.getElementById('masterlistTabBtn').classList.toggle('active', tabId === 'masterlistTab');
       }
-      // Show Certification tab by default
-      showTab('certTab');
+      // Show Masterlist tab by default
+      showTab('masterlistTab');
 
       function showWarning(id, show) {
         document.getElementById(id).style.display = show ? 'block' : 'none';
@@ -342,10 +476,74 @@ if (!isset($_SESSION['admin_id'])) {
           e.preventDefault();
         }
       });
-    </script>
 
+      // Certificate Masterlist Filter Logic
+      (function() {
+        const filterButtons = document.querySelectorAll('.cert-filter-btn');
+        const table = document.getElementById('certificate-masterlist-table');
+        const allCols = [
+          "AptNo", "NameOfDeceased", "InformantName", "InformantAddress", "AddressOfDeceased", "DateDied", "DateInternment",
+          "DNew", "DRenew", "DTransfer", "DReOpen", "DReEnter", "DatePaid", "Payee", "Amount", "ORNumber", "Validity", "MCNo"
+        ];
+        const actionCols = {
+          DNew: "DNew",
+          DReEnter: "DReEnter",
+          DReOpen: "DReOpen",
+          DRenew: "DRenew",
+          DTransfer: "DTransfer"
+        };
+
+        function showColumns(colsToShow) {
+          // Show/hide headers
+          table.querySelectorAll('th').forEach(th => {
+            const col = th.getAttribute('data-col');
+            th.style.display = colsToShow.includes(col) ? '' : 'none';
+          });
+          // Show/hide cells
+          table.querySelectorAll('tbody tr').forEach(tr => {
+            tr.querySelectorAll('td').forEach(td => {
+              const col = td.getAttribute('data-col');
+              td.style.display = colsToShow.includes(col) ? '' : 'none';
+            });
+          });
+        }
+
+        function filterRowsByAction(actionCol) {
+          table.querySelectorAll('tbody tr').forEach(tr => {
+            if (!actionCol || actionCol === 'all') {
+              tr.style.display = '';
+            } else {
+              const td = tr.querySelector('td[data-col="' + actionCol + '"]');
+              tr.style.display = (td && td.textContent.trim()) ? '' : 'none';
+            }
+          });
+        }
+
+        filterButtons.forEach(btn => {
+          btn.addEventListener('click', function() {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.getAttribute('data-filter');
+            if (filter === 'all') {
+              showColumns(allCols);
+              filterRowsByAction(null);
+            } else {
+              showColumns(['AptNo', 'NameOfDeceased', filter]);
+              filterRowsByAction(filter);
+            }
+          });
+        });
+
+        // Set default to All
+        document.querySelector('.cert-filter-btn[data-filter="all"]').click();
+      })();
+    </script>
   </main>
 
+</body>
+</html>
+</body>
+</html>
 </body>
 </html>
 </body>
