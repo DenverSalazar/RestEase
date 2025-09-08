@@ -305,9 +305,9 @@ while ($row = $result->fetch_assoc()) {
                       color: color,
                       weight: 3
                     });
-                    // Update the layer's properties to show it's occupied
+                    // Update the layer's properties to show it's leased
                     layer.feature.properties.occupied = true;
-                    layer.feature.properties.Status = 'sold';
+                    layer.feature.properties.Status = 'leased';
                   }
                   if (openPopup) layer.fire('click');
                   // Reset style after 2 seconds
@@ -324,12 +324,12 @@ while ($row = $result->fetch_assoc()) {
             // First highlight the old niche in green (vacant)
             highlightNicheOnMap(oldNicheID, '#7dd591', false, true);
             
-            // Then highlight the new niche in red (sold)
+            // Then highlight the new niche in red (leased)
             setTimeout(function() {
               highlightNicheOnMap(highlightNicheID, '#fb9a99', true, false);
             }, 100);
           } else {
-            // Just highlight the niche in red (sold)
+            // Just highlight the niche in red (leased)
             highlightNicheOnMap(highlightNicheID, '#fb9a99', true, false);
           }
         }, 600);
@@ -350,7 +350,7 @@ while ($row = $result->fetch_assoc()) {
         <select class="filter-select" id="mapFilterSelect">
             <option value="all">All</option>
             <option value="vacant">Vacant</option>
-            <option value="sold">Sold</option>
+            <option value="leased">Leased</option>
         </select>
      </div>
       <div id="map" style="margin-top:0 !important;">
@@ -384,7 +384,7 @@ while ($row = $result->fetch_assoc()) {
             </div>
             <div class="legend-row">
                 <span class="legend-dot sold"></span>
-                <span class="legend-label">Sold</span>
+                <span class="legend-label">Leased</span>
             </div>
         </div>
      </div>
@@ -624,7 +624,7 @@ while ($row = $result->fetch_assoc()) {
             // Check if this nicheID has a deceased record
             var nicheID = feature.properties && feature.properties['nicheID'];
             if (typeof deceasedData !== "undefined" && deceasedData[nicheID]) {
-                // Use "sold" color if there is data
+                // Use "leased" color if there is data
                 return {
                     pane: 'pane_Floor2',
                     opacity: 1,
@@ -635,7 +635,7 @@ while ($row = $result->fetch_assoc()) {
                     weight: 1.0, 
                     fill: true,
                     fillOpacity: 1,
-                    fillColor: 'rgba(251,154,153,1.0)', // Sold color
+                    fillColor: 'rgba(251,154,153,1.0)', // Leased color
                     interactive: true,
                 };
             }
@@ -680,7 +680,7 @@ while ($row = $result->fetch_assoc()) {
                 interactive: true,
             }
                     break;
-                case 'sold':
+                case 'leased':
                     return {
                 pane: 'pane_Floor2',
                 opacity: 1,
