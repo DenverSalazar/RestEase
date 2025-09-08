@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = $_POST['first_name'] ?? '';
     $last_name = $_POST['last_name'] ?? '';
     $middle_name = $_POST['middle_name'] ?? '';
+    $suffix = $_POST['suffix'] ?? '';
     $age = $_POST['age'] ?? '';
     $dob = $_POST['dob'] ?? '';
     $dod = $_POST['dod'] ?? '';
@@ -46,8 +47,8 @@ if (!$error) {
     if (!$user_id) {
         $error = "User not logged in.";
     } else {
-        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issssissssss", $user_id, $type, $first_name, $last_name, $middle_name, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id);
+        $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssisssssss", $user_id, $type, $first_name, $last_name, $middle_name, $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id);
         if ($stmt->execute()) {
             $success = "Request submitted successfully!";
         } else {
@@ -119,9 +120,9 @@ if (!$error) {
                         <label for="type" class="form-label">Type</label>
                         <select id="type" name="type" class="form-control" required onchange="toggleNicheIdField()">
                             <option value="" disabled selected>Select type</option>
-                            <option value="Interment">Interment</option>
+                            <option value="New">New</option>
+                            <option value="Relocate">Relocate</option>
                             <option value="Transfer">Transfer</option>
-                            <option value="Exhumation">Exhumation</option>
                         </select>
                     </div>
                     <div class="mb-3" id="nicheIdField" style="display:none;">
@@ -143,8 +144,8 @@ if (!$error) {
                             <input type="text" id="middle_name" name="middle_name" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label for="age" class="form-label">Age</label>
-                            <input type="number" id="age" name="age" min="0" class="form-control" required disabled>
+                            <label for="suffix" class="form-label">Suffix</label>
+                            <input type="text" id="suffix" name="suffix" class="form-control" placeholder="e.g. Jr, Sr, III">
                         </div>
                         <div class="col-md-6">
                             <label for="dob" class="form-label">Date of Birth</label>
@@ -155,29 +156,35 @@ if (!$error) {
                             <input type="date" id="dod" name="dod" class="form-control" required>
                         </div>
                         <div class="col-md-6">
+                            <label for="age" class="form-label">Age</label>
+                            <input type="number" id="age" name="age" min="0" class="form-control" required disabled>
+                        </div>
+                        <div class="col-md-6">
                             <label for="residency" class="form-label">Residency</label>
-                            <input type="text" id="residency" name="residency" class="form-control mb-2" placeholder="Enter Residency" required>
-                            <select id="barangay-dropdown" class="form-select" onchange="setResidencyFromDropdown(this)">
-                                <option value="">Select Barangay (optional)</option>
-                                <option value="Banaba, Padre Garcia, Batangas">Banaba, Padre Garcia, Batangas</option>
-                                <option value="Banaybanay, Padre Garcia, Batangas">Banaybanay, Padre Garcia, Batangas</option>
-                                <option value="Bawi, Padre Garcia, Batangas">Bawi, Padre Garcia, Batangas</option>
-                                <option value="Bukal, Padre Garcia, Batangas">Bukal, Padre Garcia, Batangas</option>
-                                <option value="Castillo, Padre Garcia, Batangas">Castillo, Padre Garcia, Batangas</option>
-                                <option value="Cawongan, Padre Garcia, Batangas">Cawongan, Padre Garcia, Batangas</option>
-                                <option value="Manggas, Padre Garcia, Batangas">Manggas, Padre Garcia, Batangas</option>
-                                <option value="Maugat East, Padre Garcia, Batangas">Maugat East, Padre Garcia, Batangas</option>
-                                <option value="Maugat West, Padre Garcia, Batangas">Maugat West, Padre Garcia, Batangas</option>
-                                <option value="Pansol, Padre Garcia, Batangas">Pansol, Padre Garcia, Batangas</option>
-                                <option value="Payapa, Padre Garcia, Batangas">Payapa, Padre Garcia, Batangas</option>
-                                <option value="Poblacion, Padre Garcia, Batangas">Poblacion, Padre Garcia, Batangas</option>
-                                <option value="Quilo-quilo North, Padre Garcia, Batangas">Quilo-quilo North, Padre Garcia, Batangas</option>
-                                <option value="Quilo-quilo South, Padre Garcia, Batangas">Quilo-quilo South, Padre Garcia, Batangas</option>
-                                <option value="San Felipe, Padre Garcia, Batangas">San Felipe, Padre Garcia, Batangas</option>
-                                <option value="San Miguel, Padre Garcia, Batangas">San Miguel, Padre Garcia, Batangas</option>
-                                <option value="Tamak, Padre Garcia, Batangas">Tamak, Padre Garcia, Batangas</option>
-                                <option value="Tangob, Padre Garcia, Batangas">Tangob, Padre Garcia, Batangas</option>
-                            </select>
+                            <div class="input-group mb-2">
+                                <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required>
+                                <select id="barangay-dropdown" class="form-select" style="width: 40px; min-width: 40px; max-width: 40px; padding-left: 0; padding-right: 0;" onchange="setResidencyFromDropdown(this)">
+                                    <option value=""></option>
+                                    <option value="Banaba, Padre Garcia, Batangas">Banaba, Padre Garcia, Batangas</option>
+                                    <option value="Banaybanay, Padre Garcia, Batangas">Banaybanay, Padre Garcia, Batangas</option>
+                                    <option value="Bawi, Padre Garcia, Batangas">Bawi, Padre Garcia, Batangas</option>
+                                    <option value="Bukal, Padre Garcia, Batangas">Bukal, Padre Garcia, Batangas</option>
+                                    <option value="Castillo, Padre Garcia, Batangas">Castillo, Padre Garcia, Batangas</option>
+                                    <option value="Cawongan, Padre Garcia, Batangas">Cawongan, Padre Garcia, Batangas</option>
+                                    <option value="Manggas, Padre Garcia, Batangas">Manggas, Padre Garcia, Batangas</option>
+                                    <option value="Maugat East, Padre Garcia, Batangas">Maugat East, Padre Garcia, Batangas</option>
+                                    <option value="Maugat West, Padre Garcia, Batangas">Maugat West, Padre Garcia, Batangas</option>
+                                    <option value="Pansol, Padre Garcia, Batangas">Pansol, Padre Garcia, Batangas</option>
+                                    <option value="Payapa, Padre Garcia, Batangas">Payapa, Padre Garcia, Batangas</option>
+                                    <option value="Poblacion, Padre Garcia, Batangas">Poblacion, Padre Garcia, Batangas</option>
+                                    <option value="Quilo-quilo North, Padre Garcia, Batangas">Quilo-quilo North, Padre Garcia, Batangas</option>
+                                    <option value="Quilo-quilo South, Padre Garcia, Batangas">Quilo-quilo South, Padre Garcia, Batangas</option>
+                                    <option value="San Felipe, Padre Garcia, Batangas">San Felipe, Padre Garcia, Batangas</option>
+                                    <option value="San Miguel, Padre Garcia, Batangas">San Miguel, Padre Garcia, Batangas</option>
+                                    <option value="Tamak, Padre Garcia, Batangas">Tamak, Padre Garcia, Batangas</option>
+                                    <option value="Tangob, Padre Garcia, Batangas">Tangob, Padre Garcia, Batangas</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="informant_name" class="form-label">Informant Name</label>
@@ -194,6 +201,9 @@ if (!$error) {
                     </div>
                     <div class="file-note mb-3">
                         Attach file. File size of your documents should not exceed 10MB
+                    </div>
+                    <div class="alert alert-warning" style="font-size: 0.95rem;">
+                        Please double check any of the following information before submitting to avoid any conflict.
                     </div>
                     <button type="submit" class="submit-btn">Submit</button>
                 </form>
@@ -225,6 +235,7 @@ if (!$error) {
     function setResidencyFromDropdown(select) {
         if (select.value) {
             document.getElementById('residency').value = select.value;
+            select.selectedIndex = 0; // Reset dropdown to default after selection
         }
     }
 

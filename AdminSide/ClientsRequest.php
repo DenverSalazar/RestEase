@@ -206,9 +206,11 @@ if (!isset($_SESSION['admin_id'])) {
       </div>
     </div>
     <div id="assessment-fees-section" style="display:none;">
-      <div style="padding: 32px 0; text-align: center; color: #888;">
-        <h2>Assessment of Fees</h2>
-        <p>This section is under construction.</p>
+      <div class="assessment-fees-container" style="max-width:600px;margin:0 auto;padding:32px 0;">
+        <div style="text-align: center; color: #888;">
+          <h2>Assessment of Fees</h2>
+          <p>This section is under construction.</p>
+        </div>
       </div>
     </div>
     <!-- Popup Modal -->
@@ -255,7 +257,7 @@ if (!isset($_SESSION['admin_id'])) {
         <div class="popup-actions">
           <button class="accept-btn" onclick="acceptRequest()">Accept</button>
           <button class="deny-btn" onclick="denyRequest()">Deny</button>
-          <button class="go-payment-btn" style="display:none;" onclick="goToPayment()">Go to Payment</button>
+          <button class="go-payment-btn" style="display:none;" onclick="goToAssessment()">Assess</button>
         </div>
       </div>
     </div>
@@ -786,15 +788,9 @@ if (!isset($_SESSION['admin_id'])) {
         }
       }
       
-      function goToPayment() {
-        let apt = window.currentNicheId;
-        let informant = window.currentInformant;
-        if (!apt) apt = 'Null';
-        const params = new URLSearchParams({
-          apartment: apt,
-          informant: informant || ''
-        });
-        window.location.href = 'Ledger.php?' + params.toString();
+      function goToAssessment() {
+        showTab('assessment-fees');
+        closePopup();
       }
     </script>
   </main>

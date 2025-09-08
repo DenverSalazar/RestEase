@@ -435,8 +435,12 @@ if (!isset($_SESSION['admin_id'])) {
         document.getElementById('certTabBtn').classList.toggle('active', tabId === 'certTab');
         document.getElementById('masterlistTabBtn').classList.toggle('active', tabId === 'masterlistTab');
       }
-      // Show Masterlist tab by default
-      showTab('masterlistTab');
+      // Show correct tab on page load
+      <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+        showTab('certTab');
+      <?php else: ?>
+        showTab('masterlistTab');
+      <?php endif; ?>
 
       function showWarning(id, show) {
         document.getElementById(id).style.display = show ? 'block' : 'none';
