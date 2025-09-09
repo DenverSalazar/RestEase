@@ -388,23 +388,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                 </span>
               </div>
               <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+                <table class="clients-table" id="archiveRequestsTable">
                   <thead>
-                    <tr style="background:#fafbfc;">
-                      <th style="padding:10px 8px;text-align:left;">Client Name</th>
-                      <th style="padding:10px 8px;text-align:left;">Email</th>
-                      <th style="padding:10px 8px;text-align:left;">Type</th>
-                      <th style="padding:10px 8px;text-align:left;">Status</th>
-                      <th style="padding:10px 8px;text-align:left;">Details</th>
+                    <tr>
+                      <th>Client Name</th>
+                      <th>Email</th>
+                      <th>Type</th>
+                      <th>Request Date</th>
+                      <th>Status</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody id="archiveRequestTableBody">
                     <?php
                     $conn = new mysqli("localhost", "root", "", "cemeterydb");
                     if ($conn->connect_error) {
-                      echo '<tr><td colspan="5">Database connection failed.</td></tr>';
+                      echo '<tr><td colspan="6">Database connection failed.</td></tr>';
                     } else {
-                      $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
+                      $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name, u.profile_picture FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
                       $result = $conn->query($sql);
                       if ($result && $result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
@@ -413,17 +414,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                           $name = $firstName . ' ' . $lastName;
                           $email = htmlspecialchars($row['email']);
                           $type = htmlspecialchars($row['type']);
-                          $status = '<span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Denied</span>';
+                          $requestDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
+                          $status = '<span class="status-badge status-denied">Denied</span>';
+                          $profilePicture = htmlspecialchars($row['profile_picture']);
+                          $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                          if ($hasProfilePicture) {
+                            $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                          } else {
+                            $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                            $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                            $colorClass = "avatar-color-$colorIndex";
+                            $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                          }
                           echo '<tr style="background:#fff;">';
-                          echo '<td style="padding:8px 8px;">' . $name . '</td>';
-                          echo '<td style="padding:8px 8px;">' . $email . '</td>';
-                          echo '<td style="padding:8px 8px;">' . $type . '</td>';
-                          echo '<td style="padding:8px 8px;">' . $status . '</td>';
-                          echo '<td style="padding:8px 8px;"><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
+                          echo '<td style="padding:8px 8px;display:flex;align-items:center;gap:10px;">' . $avatarHtml . '<span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;font-weight:500;">' . $name . '</span></td>';
+                          echo '<td>' . $email . '</td>';
+                          echo '<td>' . $type . '</td>';
+                          echo '<td>' . $requestDate . '</td>';
+                          echo '<td>' . $status . '</td>';
+                          echo '<td><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
                           echo '</tr>';
                         }
                       } else {
-                        echo '<tr><td colspan="5">No denied requests found.</td></tr>';
+                        echo '<tr><td colspan="6">No denied requests found.</td></tr>';
                       }
                       // $conn->close();
                     }
@@ -436,66 +449,179 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           <!-- Denied Request Popup Modal -->
           <div id="deniedPopupModal" class="popup-modal" style="display:none;">
             <div class="popup-content">
-              <span class="close-btn" onclick="closeDeniedPopup()">&times;</span>
-              <div class="popup-details" style="display: flex; flex-direction: column; gap: 5px;">
-                <p><b>Client Name:</b> <span id="deniedPopupClientName" style="color:#888;"></span></p>
-                <p><b>Email:</b> <span id="deniedPopupEmail" style="color:#888;"></span></p>
-                <p><b>Type:</b> <span id="deniedPopupType" style="color:#888;"></span></p>
-                <p id="deniedPopupNicheIdRow" style="display:none;"><b>Niche ID:</b> <span id="deniedPopupNicheId" style="color:#888;"></span></p>
-                <p><b>Age:</b> <span id="deniedPopupAge" style="color:#888;"></span></p>
-                <p><b>Informant Name:</b> <span id="deniedPopupInformant" style="color:#888;"></span></p>
-                <p><b>Name of Deceased:</b> <span id="deniedPopupDeceased" style="color:#888;"></span></p>
-                <p><b>Attachments:</b></p>
-                <div id="deniedPopupAttachment"></div>
+              <div class="popup-header">
+                <h3 class="popup-title">Request Details</h3>
+                <button class="close-btn" onclick="closeDeniedPopup()">&times;</button>
+              </div>
+              <div class="popup-details">
+                <div class="detail-row">
+                  <span class="detail-label">Informant Name:</span>
+                  <span class="detail-value" id="deniedPopupInformant"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value" id="deniedPopupEmail"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Type:</span>
+                  <span class="detail-value" id="deniedPopupType"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Name of Deceased:</span>
+                  <span class="detail-value" id="deniedPopupDeceased"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Residency:</span>
+                  <span class="detail-value" id="deniedPopupResidency"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date of Birth:</span>
+                  <span class="detail-value" id="deniedPopupDOB"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date of Death:</span>
+                  <span class="detail-value" id="deniedPopupDOD"></span>
+                </div>
+                <div class="detail-row" id="deniedPopupNicheIdRow" style="display:none;">
+                  <span class="detail-label">Niche ID:</span>
+                  <span class="detail-value" id="deniedPopupNicheId"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Age:</span>
+                  <span class="detail-value" id="deniedPopupAge"></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Attachments:</span>
+                  <div class="detail-value" id="deniedPopupAttachment"></div>
+                </div>
               </div>
             </div>
           </div>
           <style>
-            .popup-modal { position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; }
-            .popup-content { background: #fff; border-radius: 18px; padding: 48px 56px 32px 56px; min-width: 420px; max-width: 95vw; min-height: 340px; box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08); position: relative; font-family: 'Inter', sans-serif; border-top: 6px solid #506C84; transition: box-shadow 0.2s; }
-            .close-btn { position: absolute; top: 18px; right: 22px; font-size: 2.1rem; color: #e74c3c; cursor: pointer; font-weight: 400; transition: color 0.18s; }
-            .close-btn:hover { color: #b91c1c; }
-            .popup-details p { margin: 0 0 18px 0; font-size: 1.13rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-            .popup-details b { font-weight: 600; color: #222; min-width: 170px; display: inline-block; opacity: 0.7; }
-            .popup-details span { color: #666; font-weight: 500; font-size: 1.13rem; }
-            .attachment-box { border: 1px solid #e5e7eb; border-radius: 7px; padding: 10px 18px; background: #fafbfc; display: flex; align-items: center; width: fit-content; margin-bottom: 18px; margin-top: 4px; font-size: 1.08rem; }
-            /* View button style copied from Clients.css for consistency */
-            .btn-view, .view-btn, button.view-btn, button.btn-view {
-              background: #94b2cc;
-              color: #fff;
-              border: none;
-              border-radius: 7px;
-              padding: 6px 20px;
-              font-size: 1rem;
-              font-weight: 400;
-              cursor: pointer;
-              transition: background 0.2s, box-shadow 0.2s;
-              box-shadow: none;
-              outline: none;
-              letter-spacing: 0.5px;
-              display: inline-block;
+            /* Popup Modal Styles (copied from ClientsRequest.php) */
+            .popup-modal {
+              position: fixed;
+              z-index: 9999;
+              left: 0; top: 0; width: 100vw; height: 100vh;
+              background: rgba(44,62,80,0.25);
+              display: flex;
+              align-items: center;
+              justify-content: center;
             }
-            .btn-view:hover, .view-btn:hover, button.view-btn:hover, button.btn-view:hover {
-              background: #7fa0bb;
-              color: #fff;
+            .popup-content {
+              background: #fff;
+              padding: 32px;
+              border-radius: 16px;
+              width: 500px;
+              max-width: 90vw;
+              position: relative;
+              box-shadow: 0 12px 48px rgba(44,62,80,0.15);
+              animation: modalSlideIn 0.3s ease-out;
+            }
+            @keyframes modalSlideIn {
+              0% { transform: scale(0.9); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            .popup-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+              padding-bottom: 12px;
+              border-bottom: 1px solid #e5e7eb;
+            }
+            .popup-title {
+              font-size: 1.25rem;
+              font-weight: 600;
+              color: #374151;
+              margin: 0;
+            }
+            .close-btn {
+              background: none;
+              border: none;
+              font-size: 1.5rem;
+              color: #9ca3af;
+              cursor: pointer;
+              padding: 4px 8px;
+              line-height: 1;
+              border-radius: 50%;
+              transition: all 0.2s ease;
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .close-btn:hover {
+              color: #6b7280;
+              background: #f3f4f6;
+            }
+            .popup-details {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              margin-bottom: 24px;
+            }
+            .detail-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              padding: 8px 12px;
+              transition: background 0.2s ease;
+              border-radius: 6px;
+            }
+            .detail-row:hover {
+              background: #f9fafb;
+            }
+            .detail-label {
+              font-weight: 600;
+              color: #374151;
+              min-width: 120px;
+              font-size: 0.95rem;
+            }
+            .detail-value {
+              color: #6b7280;
+              font-size: 0.95rem;
+              text-align: right;
+              flex: 1;
+              margin-left: 16px;
+            }
+            .attachment-link {
+              color: #3b82f6;
+              text-decoration: none;
+              font-size: 0.9rem;
+              transition: color 0.2s ease;
+            }
+            .attachment-link:hover {
+              color: #2563eb;
+              text-decoration: underline;
             }
           </style>
           <script>
             function openDeniedPopup(requestId) {
+              const modal = document.getElementById('deniedPopupModal');
+              modal.style.display = 'flex';
+              setTimeout(() => { modal.classList.add('show'); }, 10);
               fetch('get_denied_request_details.php?id=' + requestId)
                 .then(response => response.json())
                 .then(data => {
                   if (data && data.success) {
-                    document.getElementById('deniedPopupClientName').textContent = data.name;
-                    document.getElementById('deniedPopupEmail').textContent = data.email;
-                    document.getElementById('deniedPopupType').textContent = data.type;
-                    document.getElementById('deniedPopupAge').textContent = data.age;
-                    document.getElementById('deniedPopupInformant').textContent = data.informant_name;
-                    document.getElementById('deniedPopupDeceased').textContent = data.deceased_name;
-                    document.getElementById('deniedPopupAttachment').innerHTML = data.attachment_html;
-                    document.getElementById('deniedPopupModal').style.display = 'flex';
-                    document.getElementById('deniedPopupNicheId').textContent = data.niche_id;
-                    if (data.type === 'Transfer' || data.type === 'Exhumation') {
+                    // Build full deceased name
+                    const deceasedName = [data.first_name, data.middle_name, data.last_name, data.suffix]
+                      .filter(Boolean)
+                      .join(' ').replace(/ +/g, ' ').trim();
+                    document.getElementById('deniedPopupDeceased').textContent = deceasedName;
+                    document.getElementById('deniedPopupEmail').textContent = data.email || '';
+                    document.getElementById('deniedPopupType').textContent = data.type || '';
+                    document.getElementById('deniedPopupAge').textContent = data.age || '';
+                    document.getElementById('deniedPopupInformant').textContent = data.informant_name || '';
+                    document.getElementById('deniedPopupResidency').textContent = data.residency || '';
+                    document.getElementById('deniedPopupDOB').textContent = data.dob || '';
+                    document.getElementById('deniedPopupDOD').textContent = data.dod || '';
+                    document.getElementById('deniedPopupNicheId').textContent = data.niche_id || '';
+                    document.getElementById('deniedPopupAttachment').innerHTML = data.attachment_html || '';
+                    // Show Niche ID only if type is Transfer
+                    if (data.type && data.type.toLowerCase() === 'transfer') {
                       document.getElementById('deniedPopupNicheIdRow').style.display = '';
                     } else {
                       document.getElementById('deniedPopupNicheIdRow').style.display = 'none';
@@ -504,14 +630,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                 });
             }
             function closeDeniedPopup() {
-              document.getElementById('deniedPopupModal').style.display = 'none';
+              const modal = document.getElementById('deniedPopupModal');
+              modal.classList.remove('show');
+              setTimeout(() => {
+                modal.style.display = 'none';
+              }, 300);
             }
-            window.onclick = function(event) {
-              var modal = document.getElementById('deniedPopupModal');
-              if (event.target === modal) {
+            document.getElementById('deniedPopupModal').addEventListener('click', function(e) {
+              if (e.target === this) {
                 closeDeniedPopup();
               }
-            }
+            });
+            document.addEventListener('keydown', function(e) {
+              if (e.key === 'Escape') {
+                const modal = document.getElementById('deniedPopupModal');
+                if (modal.style.display === 'flex') {
+                  closeDeniedPopup();
+                }
+              }
+            });
           </script>
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
@@ -685,19 +822,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       records: document.getElementById('archiveRecordsTab'),
       requests: document.getElementById('archiveRequestsTab')
     };
+    let archiveRequestsTableInstance = null;
     archiveTabs.forEach(tab => {
       tab.addEventListener('click', function() {
-        if (!this.classList.contains('active')) {
-          archiveTabs.forEach(t => {
-            t.classList.remove('active');
-            t.style.color = '#888';
-            t.style.borderBottom = 'none';
-          });
-          this.classList.add('active');
-          this.style.color = '#2d72d9';
-          this.style.borderBottom = '2px solid #2d72d9';
-          Object.values(archiveTabContents).forEach(tc => tc.style.display = 'none');
-          archiveTabContents[this.dataset.archivetab].style.display = '';
+        // Restore original tab active logic
+        archiveTabs.forEach(t => {
+          t.classList.remove('active');
+          t.style.color = '';
+          t.style.borderBottom = '';
+        });
+        this.classList.add('active');
+        this.style.color = '#2d72d9';
+        this.style.borderBottom = '2px solid #2d72d9';
+        Object.values(archiveTabContents).forEach(tc => tc.style.display = 'none');
+        archiveTabContents[this.dataset.archivetab].style.display = '';
+        // DataTable logic for Archive Requests
+        if (this.dataset.archivetab === 'requests') {
+          // Destroy previous instance if exists
+          if ($.fn.DataTable.isDataTable('#archiveRequestsTable')) {
+            $('#archiveRequestsTable').DataTable().destroy();
+          }
+          // Only initialize if table is visible, has thead, and has more than just the 'No denied requests found.' row
+          try {
+            var $table = $('#archiveRequestsTable');
+            var hasDataRows = $table.find('tbody tr').length > 0 && !$table.find('tbody tr td').first().text().includes('No denied requests found');
+            if ($table.is(':visible') && $table.find('thead tr th').length > 0 && hasDataRows) {
+              archiveRequestsTableInstance = $table.DataTable({
+                dom: 'lrtip', // Hide default DataTables search bar
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                autoWidth: false
+              });
+              // Custom search
+              $('#archiveRequestSearchInput').off('keyup').on('keyup', function() {
+                archiveRequestsTableInstance.search(this.value).draw();
+              });
+            }
+          } catch (e) {
+            // Suppress DataTables warning
+            console.warn('DataTables init suppressed:', e);
+          }
+        } else {
+          // Destroy DataTable if leaving requests tab
+          if ($.fn.DataTable.isDataTable('#archiveRequestsTable')) {
+            $('#archiveRequestsTable').DataTable().destroy();
+          }
         }
       });
     });
@@ -740,40 +911,140 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       };
     });
     $(document).ready(function() {
-      $('#archiveRecordsTable').DataTable({
-        paging: true,
-        searching: true,
-        ordering: true,
-        info: true
-      });
-      var archiveClientsTable = $('#archiveClientsTable').DataTable({
-        paging: true,
-        searching: true, // Enable DataTables search API
-        ordering: true,
-        info: true,
-        autoWidth: false,
-        columnDefs: [
-          { orderable: false, targets: 0 }
-        ],
-        dom: 'tip' // Remove DataTables default search box from DOM
-      });
-      // Hide DataTables search box with CSS
-      $('<style>.dataTables_filter{display:none!important;}</style>').appendTo('head');
-      // Custom search input filters table
-      $('#archiveClientsSearchInput').on('keyup', function() {
-        archiveClientsTable.search(this.value).draw();
-      });
-      // Custom search for Archive Records
-      var archiveRecordsTable = $('#archiveRecordsTable').DataTable();
-      $('#archiveRecordsSearchInput').on('keyup', function() {
-        archiveRecordsTable.search(this.value).draw();
-      });
+      // Archive Records Table DataTables initialization with strict checks
+      var $archiveRecordsTable = $('#archiveRecordsTable');
+      var $theadRecords = $archiveRecordsTable.find('thead');
+      var $tbodyRecords = $archiveRecordsTable.find('tbody');
+      var hasTheadRecords = $theadRecords.length > 0 && $theadRecords.find('tr th').length > 0;
+      var hasTbodyRecords = $tbodyRecords.length > 0;
+      var colCountRecords = hasTheadRecords ? $theadRecords.find('tr th').length : 0;
+      var validRowsRecords = false;
+      var archiveRecordsTableInstance = null;
+      if (hasTbodyRecords) {
+        $tbodyRecords.find('tr').each(function() {
+          if ($(this).find('td').length === colCountRecords) {
+            validRowsRecords = true;
+            return false; // break loop
+          }
+        });
+      }
+      if (hasTheadRecords && hasTbodyRecords && validRowsRecords) {
+        try {
+          archiveRecordsTableInstance = $archiveRecordsTable.DataTable({
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            autoWidth: false,
+            dom: 'lrtip', // Use default DataTables layout
+            language: {
+              lengthMenu: 'Show _MENU_ entries',
+              zeroRecords: 'No records found',
+              emptyTable: 'No records available',
+              infoEmpty: '',
+              info: 'Showing _START_ to _END_ of _TOTAL_',
+              infoFiltered: '',
+              infoPostFix: '',
+              thousands: ',',
+              loadingRecords: 'Loading...',
+              processing: 'Processing...',
+              search: '',
+              paginate: {
+                first: 'First',
+                last: 'Last',
+                next: 'Next',
+                previous: 'Previous'
+              },
+              aria: {
+                sortAscending: ': activate to sort column ascending',
+                sortDescending: ': activate to sort column descending'
+              }
+            }
+          });
+          // Connect custom search bar to DataTables search
+          $('#archiveRecordsSearchInput').on('keyup', function() {
+            archiveRecordsTableInstance.search(this.value).draw();
+          });
+        } catch (e) {
+          // Suppress DataTables warning
+          console.warn('DataTables init suppressed:', e);
+        }
+      } else {
+        // If DataTable is not initialized, still allow custom search to filter rows manually
+        $('#archiveRecordsSearchInput').on('keyup', function() {
+          var filter = this.value.toLowerCase();
+          $tbodyRecords.find('tr').each(function() {
+            var found = false;
+            $(this).find('td').each(function() {
+              if ($(this).text().toLowerCase().indexOf(filter) > -1) {
+                found = true;
+                return false;
+              }
+            });
+            $(this).css('display', found ? '' : 'none');
+          });
+        });
+      }
     });
   </script>
   <style>
+.clients-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-size: 0.97rem;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.clients-table th, .clients-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e3e7ed;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clients-table th {
+  background: #f5f7fa;
+  color: #2d3a4a;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.clients-table tr:last-child td {
+  border-bottom: none;
+}
+.status-badge.status-denied {
+  background: #f8d7da;
+  color: #c0392b;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 600;
+  display: inline-block;
+}
+.view-btn {
+  background: #94b2cc;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 20px;
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: none;
+  outline: none;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+.view-btn:hover {
+  background: #7fa0bb;
+  color: #fff;
+}
 .avatar-img {
-  width: 36px !important;
-  height: 36px !important;
+  width: 38px !important;
+  height: 38px !important;
   border-radius: 50% !important;
   font-weight: 600;
   font-size: 1.1em;
@@ -782,13 +1053,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   padding: 0 !important;
   margin: 0 !important;
   text-align: center;
-  line-height: 36px !important;
+  line-height: 38px !important;
   display: inline-block !important;
   vertical-align: middle;
 }
 .avatar-img img {
-  width: 36px !important;
-  height: 36px !important;
+  width: 38px !important;
+  height: 38px !important;
   border-radius: 50% !important;
   object-fit: cover;
   display: block;

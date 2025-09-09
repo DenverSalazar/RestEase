@@ -23,7 +23,20 @@ $email = htmlspecialchars($row['email']);
 $type = htmlspecialchars($row['type']);
 $age = htmlspecialchars($row['age']);
 $informant_name = htmlspecialchars($row['informant_name']);
-$deceased_name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+
+$middle_name = isset($row['middle_name']) ? htmlspecialchars($row['middle_name']) : '';
+$suffix = isset($row['suffix']) ? htmlspecialchars($row['suffix']) : '';
+$deceased_name = htmlspecialchars(trim(
+    $row['first_name'].
+    ($middle_name ? ' ' . $middle_name : '').
+    ($row['last_name'] ? ' ' . $row['last_name'] : '').
+    ($suffix ? ' ' . $suffix : '')
+));
+
+$residency = htmlspecialchars($row['residency'] ?? '');
+$dob = htmlspecialchars($row['dob'] ?? '');
+$dod = htmlspecialchars($row['dod'] ?? '');
+$niche_id = htmlspecialchars($row['niche_id'] ?? '');
 $attachment_html = '';
 if (!empty($row['file_upload'])) {
     $file = '../uploads/' . $row['file_upload'];
@@ -38,6 +51,13 @@ echo json_encode([
     'age' => $age,
     'informant_name' => $informant_name,
     'deceased_name' => $deceased_name,
-    'niche_id' => isset($row['niche_id']) ? $row['niche_id'] : null,
+    'first_name' => isset($row['first_name']) ? htmlspecialchars($row['first_name']) : '',
+    'middle_name' => $middle_name,
+    'last_name' => isset($row['last_name']) ? htmlspecialchars($row['last_name']) : '',
+    'suffix' => $suffix,
+    'residency' => $residency,
+    'dob' => $dob,
+    'dod' => $dod,
+    'niche_id' => $niche_id,
     'attachment_html' => $attachment_html
-]); 
+]);

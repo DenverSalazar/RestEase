@@ -1,4 +1,8 @@
 <?php
+// Show all errors for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 header('Content-Type: application/json');
 include_once '../Includes/db.php';
 
@@ -25,16 +29,17 @@ if ($result->num_rows === 0) {
 }
 $row = $result->fetch_assoc();
 
-// Insert into denied_request
-$insert_sql = "INSERT INTO denied_request (user_id, type, first_name, last_name, middle_name, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+// Insert into denied_request (now includes suffix)
+$insert_sql = "INSERT INTO denied_request (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, created_at, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $insert_stmt = $conn->prepare($insert_sql);
 $insert_stmt->bind_param(
-    'issssisssssss',
+    'issssssssssssi',
     $row['user_id'],
     $row['type'],
     $row['first_name'],
     $row['last_name'],
     $row['middle_name'],
+    $row['suffix'],
     $row['age'],
     $row['dob'],
     $row['dod'],
@@ -57,4 +62,4 @@ $delete_stmt = $conn->prepare($delete_sql);
 $delete_stmt->bind_param('i', $id);
 $delete_stmt->execute();
 
-echo json_encode(['success' => true]); 
+echo json_encode(['success' => true]);

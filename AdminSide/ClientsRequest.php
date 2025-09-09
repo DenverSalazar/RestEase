@@ -820,8 +820,16 @@ if (!isset($_SESSION['admin_id'])) {
               location.reload();
             } else {
               alert('Failed to deny request: ' + (data.message || 'Unknown error'));
+              console.error('Deny request error:', data);
             }
+          })
+          .catch(error => {
+            alert('Network error: ' + error);
+            console.error('Network error:', error);
           });
+        } else {
+          alert('No request ID found.');
+          console.error('No request ID found for denyRequest');
         }
       }
       
