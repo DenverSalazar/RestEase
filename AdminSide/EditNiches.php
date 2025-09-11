@@ -15,7 +15,9 @@ $nicheID = $_GET['nicheID'] ?? '';
 
 $deceased = [
   'firstName' => '',
+  'middleName' => '',
   'lastName' => '',
+  'suffix' => '',
   'age' => '',
   'born' => '',
   'residency' => '',
@@ -121,7 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   }
 
   $firstName = trim($_POST['firstName'] ?? '');
+  $middleName = trim($_POST['middleName'] ?? '');
   $lastName = trim($_POST['lastName'] ?? '');
+  $suffix = isset($_POST['suffix']) ? trim($_POST['suffix']) : null;
+  if ($suffix === '' || strtolower($suffix) === '0' || $suffix === '0') {
+    $suffix = null;
+  }
   $born = trim($_POST['born'] ?? '');
   $residency = trim($_POST['residency'] ?? '');
   $dateDied = trim($_POST['dateDied'] ?? '');
@@ -209,8 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           $checkStmt->close();
           
           // Update the specific record by its ID
-          $updateStmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
-          $updateStmt->bind_param("ssissssssi", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $recordId);
+          $updateStmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
+          $updateStmt->bind_param("ssssissssssi", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $recordId);
           $updateStmt->execute();
           $updateStmt->close();
           
@@ -227,14 +234,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       $stmt->store_result();
       if ($stmt->num_rows > 0) {
         $stmt->close();
-        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, lastName=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
-        $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
+        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
+        $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
         $stmt->execute();
         $stmt->close();
       } else {
         $stmt->close();
-        $stmt = $conn->prepare("INSERT INTO deceased (firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
+        $stmt = $conn->prepare("INSERT INTO deceased (firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
         $stmt->execute();
         $stmt->close();
       }
@@ -319,19 +326,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
             <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName']); ?>">
           </div>
           <div class="form-group">
+            <label for="middleName">Middle Name</label>
+            <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="" readonly>
+          </div>
+          <div class="form-group">
             <label for="lastName">Last Name</label>
             <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName']); ?>">
           </div>
-          <div class="form-group">
-            <label for="residency">Residency</label>
-            <input type="text" id="residency" name="residency" placeholder="Residency" value="<?php echo htmlspecialchars($deceased['residency']); ?>">
-          </div>
         </div>
-        <div class="form-row-2">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="suffix">Suffix</label>
+            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="" readonly>
+          </div>
+          <div class="form-group" style="position:relative;">
+            <label for="residency">Residency</label>
+            <div style="position:relative;">
+              <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($deceased['residency']); ?>" autocomplete="off" style="padding-right:36px;">
+              <button type="button" id="residency-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:2;">
+                <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
+              </button>
+              <ul id="residency-dropdown-list" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-radius:6px;max-height:220px;overflow-y:auto;z-index:10;margin:2px 0 0 0;padding:0;list-style:none;">
+                <li data-value="Banaba, Padre Garcia, Batangas">Banaba, Padre Garcia, Batangas</li>
+                <li data-value="Banaybanay, Padre Garcia, Batangas">Banaybanay, Padre Garcia, Batangas</li>
+                <li data-value="Bawi, Padre Garcia, Batangas">Bawi, Padre Garcia, Batangas</li>
+                <li data-value="Bukal, Padre Garcia, Batangas">Bukal, Padre Garcia, Batangas</li>
+                <li data-value="Castillo, Padre Garcia, Batangas">Castillo, Padre Garcia, Batangas</li>
+                <li data-value="Cawongan, Padre Garcia, Batangas">Cawongan, Padre Garcia, Batangas</li>
+                <li data-value="Manggas, Padre Garcia, Batangas">Manggas, Padre Garcia, Batangas</li>
+                <li data-value="Maugat East, Padre Garcia, Batangas">Maugat East, Padre Garcia, Batangas</li>
+                <li data-value="Maugat West, Padre Garcia, Batangas">Maugat West, Padre Garcia, Batangas</li>
+                <li data-value="Pansol, Padre Garcia, Batangas">Pansol, Padre Garcia, Batangas</li>
+                <li data-value="Payapa, Padre Garcia, Batangas">Payapa, Padre Garcia, Batangas</li>
+                <li data-value="Poblacion, Padre Garcia, Batangas">Poblacion, Padre Garcia, Batangas</li>
+                <li data-value="Quilo-quilo North, Padre Garcia, Batangas">Quilo-quilo North, Padre Garcia, Batangas</li>
+                <li data-value="Quilo-quilo South, Padre Garcia, Batangas">Quilo-quilo South, Padre Garcia, Batangas</li>
+                <li data-value="San Felipe, Padre Garcia, Batangas">San Felipe, Padre Garcia, Batangas</li>
+                <li data-value="San Miguel, Padre Garcia, Batangas">San Miguel, Padre Garcia, Batangas</li>
+                <li data-value="Tamak, Padre Garcia, Batangas">Tamak, Padre Garcia, Batangas</li>
+                <li data-value="Tangob, Padre Garcia, Batangas">Tangob, Padre Garcia, Batangas</li>
+              </ul>
+            </div>
+          </div>
           <div class="form-group">
             <label for="born">Born</label>
             <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born']); ?>">
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label for="dateDied">Date Died</label>
             <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied']); ?>">
@@ -340,12 +382,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
             <label for="age">Age</label>
             <input type="text" id="age" name="age" placeholder="Age will be calculated automatically" readonly value="<?php echo htmlspecialchars($deceased['age']); ?>">
           </div>
-        </div>
-        <div class="form-row-3">
           <div class="form-group">
             <label for="dateInternment">Date of Internment</label>
             <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment']); ?>">
           </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label for="apartmentNo">Apartment No.</label>
             <div class="niche-picker-group">
@@ -657,6 +699,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
     document.addEventListener('keydown', function(e) {
       if (e.key === "Escape") modalOverlay.style.display = 'none';
     });
+
+    // Residency dropdown as icon logic
+(function() {
+  var btn = document.getElementById('residency-dropdown-btn');
+  var list = document.getElementById('residency-dropdown-list');
+  var input = document.getElementById('residency');
+  if (btn && list && input) {
+    btn.onclick = function(e) {
+      e.preventDefault();
+      list.style.display = (list.style.display === 'block') ? 'none' : 'block';
+    };
+    list.querySelectorAll('li').forEach(function(item) {
+      item.onclick = function() {
+        input.value = this.getAttribute('data-value');
+        list.style.display = 'none';
+      };
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!list.contains(e.target) && e.target !== btn && e.target !== input) {
+        list.style.display = 'none';
+      }
+    });
+    input.addEventListener('focus', function() { list.style.display = 'none'; });
+  }
+})();
   </script>
 </body>
 </html>

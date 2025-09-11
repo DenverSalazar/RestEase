@@ -81,12 +81,12 @@ if (!isset($_SESSION['admin_id'])) {
             <?php if ($result && $result->num_rows > 0): ?>
               <?php while ($row = $result->fetch_assoc()): ?>
                 <?php
-                  $firstName = htmlspecialchars($row['first_name']);
-                  $lastName = htmlspecialchars($row['last_name']);
+                  $firstName = htmlspecialchars($row['first_name'] ?? '');
+                  $lastName = htmlspecialchars($row['last_name'] ?? '');
                   $name = $firstName . ' ' . $lastName;
-                  $email = htmlspecialchars($row['email']);
+                  $email = htmlspecialchars($row['email'] ?? '');
                   $requestDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
-                  $profilePicture = htmlspecialchars($row['profile_picture']);
+                  $profilePicture = htmlspecialchars($row['profile_picture'] ?? '');
                   
                   // Check if user has profile picture
                   $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
@@ -165,12 +165,12 @@ if (!isset($_SESSION['admin_id'])) {
             <?php if ($result_accepted && $result_accepted->num_rows > 0): ?>
               <?php while ($row = $result_accepted->fetch_assoc()): ?>
                 <?php
-                  $firstName = htmlspecialchars($row['user_first_name']);
-                  $lastName = htmlspecialchars($row['user_last_name']);
+                  $firstName = htmlspecialchars($row['user_first_name'] ?? '');
+                  $lastName = htmlspecialchars($row['user_last_name'] ?? '');
                   $name = $firstName . ' ' . $lastName;
-                  $email = htmlspecialchars($row['email']);
+                  $email = htmlspecialchars($row['email'] ?? '');
                   $acceptedDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
-                  $profilePicture = htmlspecialchars($row['profile_picture']);
+                  $profilePicture = htmlspecialchars($row['profile_picture'] ?? '');
                   
                   // Check if user has profile picture
                   $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
@@ -209,7 +209,7 @@ if (!isset($_SESSION['admin_id'])) {
       <div class="assessment-fees-container" style="max-width:600px;margin:0 auto;padding:32px 0;">
         <div style="text-align: center; color: #888;">
           <h2>Assessment of Fees</h2>
-          <p>This section is under construction.</p>
+          <p>Nothing to Assess, go to Accepted Client Request to get started.</p>
         </div>
       </div>
     </div>
@@ -834,8 +834,126 @@ if (!isset($_SESSION['admin_id'])) {
       }
       
       function goToAssessment() {
-        showTab('assessment-fees');
-        closePopup();
+        // List of barangays in Padre Garcia, Batangas
+        const padreGarciaBarangays = [
+          'Banaba, Padre Garcia, Batangas',
+          'Banaybanay, Padre Garcia, Batangas',
+          'Bawi, Padre Garcia, Batangas',
+          'Bukal, Padre Garcia, Batangas',
+          'Castillo, Padre Garcia, Batangas',
+          'Cawongan, Padre Garcia, Batangas',
+          'Manggas, Padre Garcia, Batangas',
+          'Maugat East, Padre Garcia, Batangas',
+          'Maugat West, Padre Garcia, Batangas',
+          'Pansol, Padre Garcia, Batangas',
+          'Payapa, Padre Garcia, Batangas',
+          'Poblacion, Padre Garcia, Batangas',
+          'Quilo-quilo North, Padre Garcia, Batangas',
+          'Quilo-quilo South, Padre Garcia, Batangas',
+          'San Felipe, Padre Garcia, Batangas',
+          'San Miguel, Padre Garcia, Batangas',
+          'Tamak, Padre Garcia, Batangas',
+          'Tangob, Padre Garcia, Batangas'
+        ];
+        // Fetch the details again to ensure we have the latest data
+        let url = (window.currentRequestType === 'accepted') ? 'get_accepted_request_details.php?id=' + window.currentRequestId : 'get_request_details.php?id=' + window.currentRequestId;
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.success) {
+              let summaryHtml = '';
+              let expirationInfo = '';
+              let totalFee = 0;
+              let renewalFee = 5000;
+              let formHtml = '';
+              // Relocate logic
+              if (data.type === 'Relocate') {
+                let openingFee = 1000;
+                let remainsCount = parseInt(data.remains_count) || 1;
+                let relocationFee = 500 * remainsCount;
+                totalFee = openingFee + relocationFee;
+                summaryHtml = `
+                  <div class=\"detail-row\"><span class=\"detail-label\">Opening Fee:</span><span class=\"detail-value\">₱ 1,000.00</span></div>
+                  <div class=\"detail-row\"><span class=\"detail-label\">Relocation Fee:</span><span class=\"detail-value\">₱ 500.00 x ${remainsCount} = ₱ ${(relocationFee).toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+                  <div class=\"detail-row\"><span class=\"detail-label\">Total Fee:</span><span class=\"detail-value\">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+                `;
+              } else {
+                // Calculate total fee and expiration date for other types
+                let discountNote = '';
+                let babyNote = '';
+                let isBaby = false;
+                let age = parseInt(data.age);
+                if (data.type === 'New') {
+                  // Check if baby/newborn (2 years old or below)
+                  if (!isNaN(age) && age <= 2) {
+                    totalFee = 5000;
+                    babyNote = ' (Newborn/Baby Rate)';
+                    discountNote = '';
+                    isBaby = true;
+                  } else {
+                    let residency = (data.residency || '').trim();
+                    let isPadreGarcia = padreGarciaBarangays.some(function(bgy) {
+                      return residency.toLowerCase() === bgy.toLowerCase();
+                    });
+                    if (isPadreGarcia) {
+                      totalFee = 10000;
+                      discountNote = ' (Graciano discount applied)';
+                    } else {
+                      totalFee = 15000;
+                    }
+                  }
+                }
+                // Calculate expiration date (5 years from date of death)
+                let expirationDate = '';
+                if (data.dod) {
+                  let dod = new Date(data.dod);
+                  let exp = new Date(dod);
+                  exp.setFullYear(exp.getFullYear() + 5);
+                  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                  let day = String(exp.getDate()).padStart(2, '0');
+                  let month = months[exp.getMonth()];
+                  let year = exp.getFullYear();
+                  expirationDate = `${day}-${month}-${year}`;
+                }
+                expirationInfo = expirationDate ? `<div class=\"detail-row\"><span class=\"detail-label\">Certificate Expiration:</span><span class=\"detail-value\">${expirationDate}</span></div>` : '';
+                let totalFeeInfo = totalFee ? `<div class=\"detail-row\"><span class=\"detail-label\">Total Fee:</span><span class=\"detail-value\">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}${babyNote || discountNote}</span></div>` : '';
+                let renewalInfo = `<div class=\"detail-row\"><span class=\"detail-label\">Renewal Fee:</span><span class=\"detail-value\">₱ 5,000.00</span></div>`;
+                summaryHtml = `${totalFeeInfo}${renewalInfo}${expirationInfo}`;
+              }
+              // Build the assessment form HTML (move summary fields to bottom)
+              formHtml = `
+                <div class=\"assessment-fees-container\" style=\"max-width:600px;margin:0 auto;padding:32px 0;\">
+                  <h2>Assessment of Fees</h2>
+                  <form id=\"assessmentForm">
+                    <div class=\"detail-row\"><span class=\"detail-label\">Informant Name:</span><span class=\"detail-value\">${data.informant_name || ''}</span></div>
+                    <div class=\"detail-row\"><span class=\"detail-label\">Email:</span><span class=\"detail-value\">${data.email || ''}</span></div>
+                    <div class=\"detail-row\"><span class=\"detail-label\">Type:</span><span class=\"detail-value\">${data.type || ''}</span></div>
+                    <div class=\"detail-row\" style=\"display:${data.deceased_name ? '' : 'none'};\"><span class=\"detail-label\">Name of Deceased:</span><span class=\"detail-value\">${data.deceased_name || ''}</span></div>
+                    <div class=\"detail-row\" style=\"display:${data.residency ? '' : 'none'};\"><span class=\"detail-label\">Residency:</span><span class=\"detail-value\">${data.residency || ''}</span></div>
+                    <div class=\"detail-row\" style=\"display:${data.dob ? '' : 'none'};\"><span class=\"detail-label\">Date of Birth:</span><span class=\"detail-value\">${data.dob || ''}</span></div>
+                    <div class=\"detail-row\" style=\"display:${data.dod ? '' : 'none'};\"><span class=\"detail-label\">Date of Death:</span><span class=\"detail-value\">${data.dod || ''}</span></div>
+                    <div class=\"detail-row\"><span class=\"detail-label\">Age:</span><span class=\"detail-value\">${data.age || ''}</span></div>
+                    <div class=\"detail-row\" style=\"display:${(data.type === 'Transfer' || data.type === 'Exhumation') ? '' : 'none'};\"><span class=\"detail-label\">Niche ID:</span><span class=\"detail-value\">${data.niche_id || ''}</span></div>
+                  
+                    <hr style=\"margin:24px 0;\">
+                    ${summaryHtml}
+                    <div style=\"text-align:right;margin-top:24px;\">
+                      <button type=\"submit\" class=\"accept-btn\">Submit Assessment</button>
+                    </div>
+                  </form>
+                </div>
+              `;
+              document.getElementById('assessment-fees-section').innerHTML = formHtml;
+              showTab('assessment-fees');
+              closePopup();
+              // Optionally, add form submission handler here
+              document.getElementById('assessmentForm').onsubmit = function(e) {
+                e.preventDefault();
+                // You can add AJAX submission here
+                alert('Assessment submitted!');
+              };
+            }
+          });
       }
     </script>
   </main>

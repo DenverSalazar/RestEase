@@ -85,18 +85,25 @@ if (!$error) {
     }
 }
 
-// Fetch logged-in user's full name
+// Fetch user's full name
 $user_fullname = '';
-if (isset($_SESSION['user_id'])) {
-    $stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1");
-    $stmt->bind_param("i", $_SESSION['user_id']);
-    $stmt->execute();
-    $stmt->bind_result($first_name, $last_name);
-    if ($stmt->fetch()) {
-        $user_fullname = trim($first_name . ' ' . $last_name);
-    }
-    $stmt->close();
+$stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($first_name, $last_name);
+if ($stmt->fetch()) {
+    $user_fullname = trim($first_name . ' ' . $last_name);
 }
+$stmt->close();
+$deceased_list = [];
+$stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
+$stmt->bind_param("s", $user_fullname);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $deceased_list[] = $row;
+}
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -139,27 +146,46 @@ if (isset($_SESSION['user_id'])) {
             <div class="client-request-form-card">
                 <h2>Fill up form</h2>
                 <p>Please complete the form below with accurate information to proceed with your request.</p>
+                <div id="type-explanation-new" class="alert alert-info mb-3" style="font-size:0.98rem; display:none;">
+                    <b>New</b> – Request to register your loved one and lease a burial plot.
+                </div>
+                <div id="type-explanation-relocate" class="alert alert-info mb-3" style="font-size:0.98rem; display:none;">
+                    <b>Relocate</b> – Request to move your loved one within the cemetery, usually to place family members together.
+                </div>
+                <div id="type-explanation-transfer" class="alert alert-info mb-3" style="font-size:0.98rem; display:none;">
+                    <b>Transfer</b> – Request to move your loved one’s remains from this cemetery to another one.
+                </div>
                 <?php if ($success): ?>
                     <div class="alert alert-success"><?php echo $success; ?></div>
                 <?php elseif ($error): ?>
                     <div class="alert alert-danger"><?php echo $error; ?></div>
                 <?php endif; ?>
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" id="client-request-form">
                     <div class="mb-3">
                         <label for="type" class="form-label">Type</label>
-                        <select id="type" name="type" class="form-control" required onchange="toggleNicheIdField()">
+                        <select id="type" name="type" class="form-control" required onchange="toggleNicheIdField(); handleRelocateMode();">
                             <option value="" disabled selected>Select type</option>
                             <option value="New">New</option>
                             <option value="Relocate">Relocate</option>
                             <option value="Transfer">Transfer</option>
                         </select>
                     </div>
+                    <!-- Deceased selector for Relocate -->
+                    <div class="mb-3" id="deceasedSelectorField" style="display:none;">
+                        <label for="deceased_selector" class="form-label">Select Deceased Family Member</label>
+                        <select id="deceased_selector" class="form-control" onchange="fillDeceasedInfoFromSelector()">
+                            <option value="">Select deceased</option>
+                            <?php foreach ($deceased_list as $d): ?>
+                                <option value='<?php echo json_encode($d, JSON_HEX_APOS | JSON_HEX_QUOT); ?>'><?php echo htmlspecialchars($d['firstName'] . ' ' . $d['lastName']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="mb-3" id="nicheIdField" style="display:none;">
                         <label for="niche_id" class="form-label">Niche ID</label>
                         <input type="text" id="niche_id" name="niche_id" class="form-control" placeholder="Enter Niche ID">
                     </div>
-                    <div class="section-title">Deceased Information</div>
-                    <div class="row g-3">
+                    <div class="section-title" id="deceasedInfoSection">Deceased Information</div>
+                    <div class="row g-3" id="deceasedInfoFields">
                         <div class="col-md-6">
                             <label for="first_name" class="form-label">First Name</label>
                             <input type="text" id="first_name" name="first_name" class="form-control" required>
@@ -222,6 +248,20 @@ if (isset($_SESSION['user_id'])) {
                             <label for="informant_name" class="form-label">Informant Name</label>
                             <input type="text" id="informant_name" name="informant_name" class="form-control" required value="<?php echo htmlspecialchars($user_fullname, ENT_QUOTES); ?>" readonly>
                         </div>
+                        <div class="col-md-6" id="currentNicheField" style="display:none;">
+                            <label for="current_niche" class="form-label">Current Niche</label>
+                            <input type="text" id="current_niche" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <!-- Niche picker for Relocate -->
+                    <div class="mb-3" id="nichePickerField" style="display:none;">
+                        <label for="niche_picker" class="form-label">Select New Niche Location</label>
+                        <div class="input-group">
+                            <input type="text" id="niche_picker" class="form-control" name="niche_id" placeholder="Select niche or pick from map" readonly>
+                            <button type="button" id="pickNicheBtn" class="btn btn-outline-secondary" title="Pick Niche from Map">
+                                <i class="fas fa-map-marker-alt"></i> Pick Niche
+                            </button>
+                        </div>
                     </div>
                     <div class="section-title">Upload Files</div>
                     <div class="upload-area mb-2">
@@ -261,9 +301,30 @@ if (isset($_SESSION['user_id'])) {
             document.getElementById('niche_id').value = '';
         }
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleNicheIdField();
-    });
+    function handleRelocateMode() {
+        var type = document.getElementById('type').value;
+        var deceasedSelector = document.getElementById('deceasedSelectorField');
+        var deceasedInfoFields = document.getElementById('deceasedInfoFields');
+        var deceasedInfoSection = document.getElementById('deceasedInfoSection');
+        var nichePicker = document.getElementById('nichePickerField');
+        var nicheIdField = document.getElementById('nicheIdField');
+        var currentNicheField = document.getElementById('currentNicheField');
+        if (type === 'Relocate' || type === 'Transfer') {
+            deceasedSelector.style.display = '';
+            deceasedInfoFields.style.display = '';
+            deceasedInfoSection.style.display = '';
+            nichePicker.style.display = '';
+            nicheIdField.style.display = 'none';
+            currentNicheField.style.display = '';
+        } else {
+            deceasedSelector.style.display = 'none';
+            nichePicker.style.display = 'none';
+            deceasedInfoFields.style.display = '';
+            deceasedInfoSection.style.display = '';
+            nicheIdField.style.display = 'none';
+            currentNicheField.style.display = 'none';
+        }
+    }
     function setResidencyFromDropdown(select) {
         if (select.value) {
             document.getElementById('residency').value = select.value;
@@ -293,9 +354,48 @@ if (isset($_SESSION['user_id'])) {
         ageHidden.value = age;  // save in DB
     }
 
+    function fillDeceasedInfoFromSelector() {
+        var selector = document.getElementById('deceased_selector');
+        var value = selector.value;
+        if (!value) return;
+        var data = JSON.parse(value);
+        document.getElementById('first_name').value = data.firstName || '';
+        document.getElementById('last_name').value = data.lastName || '';
+        // No middle_name or suffix in deceased table, so clear them
+        document.getElementById('middle_name').value = '';
+        document.getElementById('suffix').value = '';
+        document.getElementById('dob').value = data.born || '';
+        document.getElementById('dod').value = data.dateDied || '';
+        document.getElementById('age_display').value = data.age || '';
+        document.getElementById('age').value = data.age || '';
+        document.getElementById('residency').value = data.residency || '';
+        document.getElementById('niche_id').value = data.nicheID || '';
+        document.getElementById('current_niche').value = data.nicheID || '';
+    }
+
+    function showTypeExplanation() {
+        var type = document.getElementById('type').value;
+        document.getElementById('type-explanation-new').style.display = (type === 'New') ? '' : 'none';
+        document.getElementById('type-explanation-relocate').style.display = (type === 'Relocate') ? '' : 'none';
+        document.getElementById('type-explanation-transfer').style.display = (type === 'Transfer') ? '' : 'none';
+    }
+
+    document.getElementById('type').addEventListener('change', showTypeExplanation);
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleNicheIdField();
+        handleRelocateMode();
+        showTypeExplanation();
+    });
     document.getElementById('dob').addEventListener('change', calculateAge);
     document.getElementById('dod').addEventListener('change', calculateAge);
-
+    document.getElementById('pickNicheBtn').onclick = function() {
+        window.open('../AdminSide/Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
+    };
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.nicheID) {
+            document.getElementById('niche_picker').value = event.data.nicheID;
+        }
+    });
     </script>
 </body>
 </html>

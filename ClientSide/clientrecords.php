@@ -5,6 +5,26 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php"); // Adjust the path if needed
     exit;
 }
+include_once '../Includes/db.php';
+// Fetch user's full name
+$user_fullname = '';
+$stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ? LIMIT 1");
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$stmt->bind_result($first_name, $last_name);
+if ($stmt->fetch()) {
+    $user_fullname = trim($first_name . ' ' . $last_name);
+}
+$stmt->close();
+$deceased_list = [];
+$stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
+$stmt->bind_param("s", $user_fullname);
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $deceased_list[] = $row;
+}
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -24,11 +44,60 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body>
    <?php include '../Includes/navbar2.php'; ?>
-
-  
-
-    <?php include '../includes/footer.php'; ?>
-   
+   <div class="container my-4">
+       <h2 class="mb-3">My Deceased Records</h2>
+       <?php if (count($deceased_list) === 0): ?>
+           <div class="alert alert-info">No records found.</div>
+       <?php else: ?>
+       <div class="mb-3">
+           <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">
+       </div>
+       <div class="table-responsive">
+           <table class="table table-bordered table-striped" id="deceasedTable">
+               <thead>
+                   <tr>
+                       <th>Name</th>
+                       <th>Born</th>
+                       <th>Date Died</th>
+                       <th>Age</th>
+                       <th>Residency</th>
+                       <th>Date Internment</th>
+                       <th>Niche</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   <?php foreach ($deceased_list as $d): ?>
+                   <tr>
+                       <td><?php echo htmlspecialchars($d['firstName'] . ' ' . $d['lastName']); ?></td>
+                       <td><?php echo htmlspecialchars($d['born']); ?></td>
+                       <td><?php echo htmlspecialchars($d['dateDied']); ?></td>
+                       <td><?php echo htmlspecialchars($d['age']); ?></td>
+                       <td><?php echo htmlspecialchars($d['residency']); ?></td>
+                       <td><?php echo htmlspecialchars($d['dateInternment']); ?></td>
+                       <td><?php echo htmlspecialchars($d['nicheID']); ?></td>
+                   </tr>
+                   <?php endforeach; ?>
+               </tbody>
+           </table>
+       </div>
+       <?php endif; ?>
+   </div>
+   <?php include '../includes/footer.php'; ?>
+   <script>
+   // Simple client-side search for deceased name
+   document.addEventListener('DOMContentLoaded', function() {
+       var searchInput = document.getElementById('searchInput');
+       if (!searchInput) return;
+       searchInput.addEventListener('keyup', function() {
+           var filter = searchInput.value.toLowerCase();
+           var rows = document.querySelectorAll('#deceasedTable tbody tr');
+           rows.forEach(function(row) {
+               var nameCell = row.cells[0].textContent.toLowerCase();
+               row.style.display = nameCell.includes(filter) ? '' : 'none';
+           });
+       });
+   });
+   </script>
     <!-- Bootstrap JS (optional, for responsive navbar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
