@@ -137,26 +137,7 @@ $stmt->close();
     <link rel="stylesheet" href="../css/clientrequest.css">
 </head>
 <body>
-    <!-- Custom Navbar -->
-    <nav class="custom-navbar position-relative">
-        <div class="container navbar-top position-relative">
-            <a href="#" class="navbar-brand">
-                <img src="../assets/RE logo New.png" alt="RestEase Logo" style="height: 32px;">
-            </a>
-            <button class="navbar-toggler" type="button" aria-label="Toggle navigation" onclick="document.querySelector('.navbar-links').classList.toggle('show')">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="navbar-links">
-                <a href="ClientHome.php">Home</a>
-                <a href="./clientabout-us.php">About Us</a>
-                <a href="./clientcontact-us.php">Contact Us</a>
-                <a href="#"><i class="fas fa-bell"></i></a>
-                <a href="#"><img src="../assets/Default Image.jpg" alt="Avatar" class="navbar-avatar"></a>
-            </div>
-        </div>
-    </nav>
-    <!-- End Custom Navbar -->
-
+    <?php include '../Includes/navbar2.php'; ?>
     <div class="client-request-outer">
         <div class="client-request-card">
             <div class="client-request-form-card">

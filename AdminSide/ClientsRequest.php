@@ -1145,12 +1145,30 @@ if (!isset($_SESSION['admin_id'])) {
               document.getElementById('assessment-fees-section').innerHTML = formHtml;
               showTab('assessment-fees');
               closePopup();
-              // Optionally, add form submission handler here
-              document.getElementById('assessmentForm').onsubmit = function(e) {
-                e.preventDefault();
-                // You can add AJAX submission here
-                alert('Assessment submitted!');
-              };
+              // Add form submission handler to send AJAX request
+              const assessmentForm = document.getElementById('assessmentForm');
+              if (assessmentForm) {
+                assessmentForm.onsubmit = function(e) {
+                  e.preventDefault();
+                  // Send AJAX request to submit_assessment.php
+                  fetch('submit_assessment.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `request_id=${encodeURIComponent(data.id)}&user_id=${encodeURIComponent(data.user_id)}&total_fee=${encodeURIComponent(totalFee)}`
+                  })
+                  .then(response => response.json())
+                  .then(result => {
+                    if (result.success) {
+                      showActionSuccessNotification('Assessment submitted and user notified!');
+                    } else {
+                      alert('Failed to submit assessment: ' + (result.message || 'Unknown error'));
+                    }
+                  })
+                  .catch(error => {
+                    alert('Network error: ' + error);
+                  });
+                };
+              }
             }
           });
       }

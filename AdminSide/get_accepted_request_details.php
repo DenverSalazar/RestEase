@@ -43,6 +43,8 @@ $dob = isset($row['dob']) ? htmlspecialchars($row['dob']) : '';
 $dod = isset($row['dod']) ? htmlspecialchars($row['dod']) : '';
 echo json_encode([
     'success' => true,
+    'id' => $row['id'],
+    'user_id' => $row['user_id'],
     'name' => $name,
     'email' => $email,
     'type' => $type,
