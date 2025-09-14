@@ -17,7 +17,7 @@ if ($stmt->fetch()) {
 }
 $stmt->close();
 $deceased_list = [];
-$stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
+$stmt = $conn->prepare("SELECT firstName, lastName, middleName, suffix, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
 $stmt->bind_param("s", $user_fullname);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -68,7 +68,16 @@ $stmt->close();
                <tbody>
                    <?php foreach ($deceased_list as $d): ?>
                    <tr>
-                       <td><?php echo htmlspecialchars($d['firstName'] . ' ' . $d['lastName']); ?></td>
+                       <td>
+                           <?php
+                               $middleInitial = '';
+                               if (!empty($d['middleName'])) {
+                                   $middleInitial = strtoupper(substr(trim($d['middleName']), 0, 1)) . '. ';
+                               }
+                               $suffix = !empty($d['suffix']) ? ' ' . htmlspecialchars($d['suffix']) : '';
+                               echo htmlspecialchars($d['firstName']) . ' ' . $middleInitial . htmlspecialchars($d['lastName']) . $suffix;
+                           ?>
+                       </td>
                        <td><?php echo htmlspecialchars($d['born']); ?></td>
                        <td><?php echo htmlspecialchars($d['dateDied']); ?></td>
                        <td><?php echo htmlspecialchars($d['age']); ?></td>

@@ -9,9 +9,28 @@ if (!isset($_SESSION['admin_id'])) {
 include_once '../Includes/db.php';
 if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
+// --- Suggestion Data for Informant Name ---
+$informantSuggestions = [];
+$userResult = $conn->query("SELECT first_name, last_name FROM users");
+if ($userResult && $userResult->num_rows > 0) {
+    while ($row = $userResult->fetch_assoc()) {
+        $fullName = trim($row['first_name'] . ' ' . $row['last_name']);
+        if ($fullName !== '') $informantSuggestions[$fullName] = true;
+    }
+}
+$informantResult = $conn->query("SELECT DISTINCT informantName FROM deceased WHERE informantName IS NOT NULL AND informantName != ''");
+if ($informantResult && $informantResult->num_rows > 0) {
+    while ($row = $informantResult->fetch_assoc()) {
+        $name = trim($row['informantName']);
+        if ($name !== '') $informantSuggestions[$name] = true;
+    }
+}
+$informantSuggestions = array_keys($informantSuggestions);
+
 // Get record ID or nicheID from query string
 $recordId = $_GET['id'] ?? '';
 $nicheID = $_GET['nicheID'] ?? '';
+$from = $_GET['from'] ?? ''; // Track where the user came from
 
 $deceased = [
   'firstName' => '',
@@ -141,8 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   if ($dateDied) validateDateRange($dateDied, 'Date died');
   // Remove date range validation for dateInternment to allow future dates
 
-  // Validate date logic
-  if ($born && $dateDied) {
+  // Validate date logic only if born or dateDied changed
+  $isBornChanged = isset($deceased['born']) && $born !== $deceased['born'];
+  $isDiedChanged = isset($deceased['dateDied']) && $dateDied !== $deceased['dateDied'];
+  if (($born && $dateDied) && ($isBornChanged || $isDiedChanged)) {
     $bornDate = new DateTime($born);
     $diedDate = new DateTime($dateDied);
     if ($diedDate <= $bornDate) {
@@ -158,15 +179,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
     }
   }
 
-  // Calculate age from born and dateDied
-  $age = '';
-  if ($born && $dateDied) {
+  // Calculate age from born and dateDied only if either is changed
+  $age = $deceased['age'] ?? '';
+  $isBornChanged = isset($deceased['born']) && $born !== $deceased['born'];
+  $isDiedChanged = isset($deceased['dateDied']) && $dateDied !== $deceased['dateDied'];
+  if (($born && $dateDied) && ($isBornChanged || $isDiedChanged)) {
     $bornDate = new DateTime($born);
     $diedDate = new DateTime($dateDied);
     $interval = $bornDate->diff($diedDate);
     $years = $interval->y;
     $months = $interval->m;
-    
     // Validate age is reasonable (max 150 years)
     if ($years > 150) {
       $errors[] = "Age cannot exceed 150 years. Please check the born and died dates.";
@@ -222,8 +244,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           $updateStmt->execute();
           $updateStmt->close();
           
-          // Redirect without highlight parameter
-          header("Location: Mapping.php");
+          // Redirect to correct page
+          if (!empty($_GET['from']) && $_GET['from'] === 'records') {
+            header("Location: Records.php");
+          } else {
+            header("Location: Mapping.php");
+          }
           exit();
         }
       }
@@ -235,19 +261,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       $stmt->store_result();
       if ($stmt->num_rows > 0) {
         $stmt->close();
+        // Update including middleName and suffix
         $stmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
         $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
         $stmt->execute();
         $stmt->close();
       } else {
         $stmt->close();
+        // Insert including middleName and suffix
         $stmt = $conn->prepare("INSERT INTO deceased (firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
         $stmt->execute();
         $stmt->close();
       }
-      // Redirect without highlight parameter
-      header("Location: Mapping.php");
+      // Redirect to correct page
+      if (!empty($_GET['from']) && $_GET['from'] === 'records') {
+        header("Location: Records.php");
+      } else {
+        header("Location: Mapping.php");
+      }
       exit();
     }
   }
@@ -301,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   <?php endif; ?>
 
   <!-- Main Content -->
-    <div class="main-content">
+  <div class="main-content">
     <div class="cemetery-masterlist-container">
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div class="cemetery-masterlist-title">Edit Data</div>
@@ -324,26 +356,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         <div class="form-row">
           <div class="form-group">
             <label for="firstName">First Name</label>
-            <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName']); ?>">
+            <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName'] ?? ''); ?>">
           </div>
           <div class="form-group">
             <label for="middleName">Middle Name</label>
-            <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($deceased['middleName']); ?>">
+            <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($deceased['middleName'] ?? ''); ?>">
           </div>
           <div class="form-group">
             <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName']); ?>">
+            <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName'] ?? ''); ?>">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="suffix">Suffix</label>
-            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix']); ?>">
+            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix'] ?? ''); ?>">
           </div>
           <div class="form-group" style="position:relative;">
             <label for="residency">Residency</label>
             <div style="position:relative;">
-              <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($deceased['residency']); ?>" autocomplete="off" style="padding-right:36px;">
+              <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($deceased['residency'] ?? ''); ?>" autocomplete="off" style="padding-right:36px;">
               <button type="button" id="residency-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:2;">
                 <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
               </button>
@@ -371,28 +403,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           </div>
           <div class="form-group">
             <label for="born">Born</label>
-            <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born']); ?>">
+            <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born'] ?? ''); ?>">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="dateDied">Date Died</label>
-            <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied']); ?>">
+            <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied'] ?? ''); ?>">
           </div>
           <div class="form-group">
             <label for="age">Age</label>
-            <input type="text" id="age" name="age" placeholder="Age will be calculated automatically" readonly value="<?php echo htmlspecialchars($deceased['age']); ?>">
+            <input type="text" id="age" name="age" placeholder="Age" readonly value="<?php echo htmlspecialchars($deceased['age'] ?? ''); ?>">
           </div>
           <div class="form-group">
             <label for="dateInternment">Date of Internment</label>
-            <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment']); ?>">
+            <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment'] ?? ''); ?>">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label for="apartmentNo">Apartment No.</label>
             <div class="niche-picker-group">
-              <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
+              <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID'] ?? ''); ?>">
               <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
                 <i class="fas fa-map-marker-alt"></i>
               </button>
@@ -400,12 +432,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           </div>
           <div class="form-group">
             <label for="informantName">Informant Name</label>
-            <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName']); ?>">
+            <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName'] ?? ''); ?>" autocomplete="off" list="informantNameList">
+            <datalist id="informantNameList">
+              <?php foreach ($informantSuggestions as $suggestion): ?>
+                <option value="<?php echo htmlspecialchars($suggestion); ?>"></option>
+              <?php endforeach; ?>
+            </datalist>
           </div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn save-btn">Save</button>
-          <a href="Mapping.php" class="btn cancel-btn" style="margin-left:12px;">Cancel</a>
+          <a href="<?php echo (!empty($from) && $from === 'records') ? 'Records.php' : 'Mapping.php'; ?>" class="btn cancel-btn" style="margin-left:12px;background:#eaf3fa;color:#2471a3;border:1px solid #d4e6f1;">Cancel</a>
         </div>
       </form>
 
@@ -470,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         
         const formData = new FormData(document.getElementById('editForm'));
         
-        fetch('EditNiches.php', {
+        fetch('EditNiches.php' + window.location.search, {
           method: 'POST',
           body: formData
         })
@@ -479,7 +516,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           showSuccessNotification('Record saved successfully!');
           saveModalOverlay.style.display = 'none';
           setTimeout(function() {
-            window.location.href = 'Mapping.php';
+            // Redirect to correct page
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'records') {
+              window.location.href = 'Records.php';
+            } else {
+              window.location.href = 'Mapping.php';
+            }
           }, 1000);
         })
         .catch(error => {
@@ -529,70 +572,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       }
     });
 
+    // Store initial values to detect changes
+    let initialBorn = document.getElementById('born').value;
+    let initialDied = document.getElementById('dateDied').value;
+    let initialAge = document.getElementById('age').value;
+
     // Auto-calculate age when born or dateDied changes
     function calculateAge() {
       const bornInput = document.getElementById('born');
       const diedInput = document.getElementById('dateDied');
       const ageInput = document.getElementById('age');
-      
-      if (bornInput.value && diedInput.value) {
-        const bornDate = new Date(bornInput.value);
-        const diedDate = new Date(diedInput.value);
-        const currentDate = new Date();
-        const minDate = new Date('1900-01-01');
-        
-        // Validate date ranges (born and died cannot be in future)
-        if (bornDate > currentDate || diedDate > currentDate) {
-          ageInput.value = '';
-          ageInput.style.borderColor = '#e74c3c';
-          ageInput.title = 'Born and died dates cannot be in the future';
-          return;
-        }
-        
-        if (bornDate < minDate || diedDate < minDate) {
-          ageInput.value = '';
-          ageInput.style.borderColor = '#e74c3c';
-          ageInput.title = 'Dates cannot be before year 1900';
-          return;
-        }
-        
-        if (diedDate >= bornDate) {
-          const years = diedDate.getFullYear() - bornDate.getFullYear();
-          const months = diedDate.getMonth() - bornDate.getMonth();
-          const days = diedDate.getDate() - bornDate.getDate();
-          
-          let finalYears = years;
-          let finalMonths = months;
-          
-          if (days < 0) {
-            finalMonths--;
-          }
-          if (finalMonths < 0) {
-            finalYears--;
-            finalMonths += 12;
-          }
-          
-          // Limit age to 150 years
-          if (finalYears > 150) {
-            ageInput.value = '';
+
+      // Only recalculate if either born or died changed from initial
+      if (
+        bornInput.value !== initialBorn ||
+        diedInput.value !== initialDied
+      ) {
+        if (bornInput.value && diedInput.value) {
+          const bornDate = new Date(bornInput.value);
+          const diedDate = new Date(diedInput.value);
+          const currentDate = new Date();
+          const minDate = new Date('1900-01-01');
+
+          // Validate date ranges (born and died cannot be in future)
+          if (bornDate > currentDate || diedDate > currentDate) {
+            ageInput.value = initialAge;
             ageInput.style.borderColor = '#e74c3c';
-            ageInput.title = 'Age cannot exceed 150 years';
-          } else {
-            if (finalYears == 0) {
-              ageInput.value = finalMonths + ' months old';
-            } else {
-              ageInput.value = finalYears + ' years old';
+            ageInput.title = 'Born and died dates cannot be in the future';
+            return;
+          }
+
+          if (bornDate < minDate || diedDate < minDate) {
+            ageInput.value = initialAge;
+            ageInput.style.borderColor = '#e74c3c';
+            ageInput.title = 'Dates cannot be before year 1900';
+            return;
+          }
+
+          if (diedDate >= bornDate) {
+            let years = diedDate.getFullYear() - bornDate.getFullYear();
+            let months = diedDate.getMonth() - bornDate.getMonth();
+            let days = diedDate.getDate() - bornDate.getDate();
+
+            let finalYears = years;
+            let finalMonths = months;
+
+            if (days < 0) {
+              finalMonths--;
             }
-            ageInput.style.borderColor = '';
-            ageInput.title = '';
+            if (finalMonths < 0) {
+              finalYears--;
+              finalMonths += 12;
+            }
+
+            // Limit age to 150 years
+            if (finalYears > 150) {
+              ageInput.value = initialAge;
+              ageInput.style.borderColor = '#e74c3c';
+              ageInput.title = 'Age cannot exceed 150 years';
+            } else {
+              if (finalYears == 0) {
+                ageInput.value = finalMonths + ' months old';
+              } else {
+                ageInput.value = finalYears + ' years old';
+              }
+              ageInput.style.borderColor = '';
+              ageInput.title = '';
+            }
+          } else {
+            ageInput.value = initialAge;
+            ageInput.style.borderColor = '#e74c3c';
+            ageInput.title = 'Date died must be after born date';
           }
         } else {
-          ageInput.value = '';
-          ageInput.style.borderColor = '#e74c3c';
-          ageInput.title = 'Date died must be after born date';
+          ageInput.value = initialAge;
+          ageInput.style.borderColor = '';
+          ageInput.title = '';
         }
       } else {
-        ageInput.value = '';
+        // If not changed, keep the original age
+        ageInput.value = initialAge;
         ageInput.style.borderColor = '';
         ageInput.title = '';
       }
@@ -725,6 +784,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
     input.addEventListener('focus', function() { list.style.display = 'none'; });
   }
 })();
+
+    // --- Prevent sidebar navigation during edit ---
+    document.addEventListener('DOMContentLoaded', function() {
+      var sidebar = document.querySelector('.sidebar');
+      if (sidebar) {
+        var sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(function(link) {
+          // Only intercept if not the current page
+          if (!link.classList.contains('active')) {
+            link.addEventListener('click', function(e) {
+              e.preventDefault();
+              showSidebarBlockModal(link.href);
+            });
+          }
+        });
+      }
+    });
+
+    // Modal for blocking sidebar navigation
+    function showSidebarBlockModal(targetHref) {
+      if (!document.getElementById('sidebarBlockModal')) {
+        var modal = document.createElement('div');
+        modal.id = 'sidebarBlockModal';
+        modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+          <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
+            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e67e22;font-weight:600;letter-spacing:0.5px;">
+              <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
+            </h2>
+            <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">
+              Please complete the editing or click "Cancel" to leave before navigating to another section.
+            </p>
+            <button id="sidebarBlockCloseBtn" style="background:#e67e22;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('sidebarBlockCloseBtn').onclick = function() {
+          modal.style.display = 'none';
+        };
+        modal.onclick = function(e) {
+          if (e.target === modal) modal.style.display = 'none';
+        };
+      } else {
+        document.getElementById('sidebarBlockModal').style.display = 'flex';
+      }
+    }
   </script>
 </body>
 </html>

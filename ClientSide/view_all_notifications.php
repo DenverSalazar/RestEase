@@ -103,16 +103,42 @@ if ($user_id) {
         .notification-status-denied {
             color: #e74c3c;
         }
+        #delete-mode-controls {
+            min-width: 180px;
+        }
+        #main-delete-btn, #delete-all-btn, #cancel-delete-btn {
+            min-width: 38px;
+            min-height: 38px;
+            padding: 0 12px;
+            font-size: 1rem;
+        }
+        #main-delete-btn i, #delete-all-btn i, #cancel-delete-btn i {
+            font-size: 1.1rem;
+        }
+        .notification-card-wrapper {
+            margin-bottom: 0.5rem;
+        }
+        .notification-card {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
     <div class="container py-4 flex-grow-1">
-        <h2 class="mb-4 text-center">All Notifications</h2>
+        <h2 class="mb-0 text-center">All Notifications</h2>
+        <div class="d-flex justify-content-end align-items-center mb-4" id="delete-mode-controls" style="gap: 0.5rem;">
+            <button id="delete-all-btn" class="btn btn-danger btn-sm" style="display:none;">Delete All</button>
+            <button id="main-delete-btn" class="btn btn-outline-danger btn-sm ms-2" title="Delete Notifications">
+                <i class="fas fa-trash-alt"></i> Delete
+            </button>
+            <button id="cancel-delete-btn" class="btn btn-secondary btn-sm ms-2" style="display:none;">Cancel</button>
+        </div>
         <?php if ($user_id && count($notifications) > 0): ?>
-            <div class="row g-4">
-                <?php foreach ($notifications as $notif): ?>
-                    <div class="col-12 col-sm-6 col-md-4">
-                        <div class="card shadow-sm h-100">
+            <div class="row g-4" id="notifications-list">
+                <?php foreach ($notifications as $idx => $notif): ?>
+                    <div class="col-12 col-sm-6 col-md-4 notification-card-wrapper" style="position:relative;">
+                        <div class="card shadow-sm h-100 notification-card" data-idx="<?php echo $idx; ?>" style="transition:box-shadow 0.2s;">
                             <div class="card-body d-flex flex-row align-items-center justify-content-between" style="min-height:140px;">
                                 <div style="flex:1;">
                                     <span class="notification-title d-block mb-2">
@@ -144,6 +170,12 @@ if ($user_id) {
                                     </a>
                                 <?php endif; ?>
                             </div>
+                            <!-- Checkbox for deletion mode -->
+                            <input type="checkbox" class="form-check-input notif-checkbox" style="position:absolute;top:12px;right:12px;display:none;z-index:2;width:20px;height:20px;" 
+                                data-status="<?php echo htmlspecialchars($notif['status']); ?>"
+                                data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>"
+                                data-created_at="<?php echo isset($notif['created_at']) ? htmlspecialchars($notif['created_at']) : ''; ?>"
+                            >
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -163,5 +195,104 @@ if ($user_id) {
     <footer style="margin-top:auto;">
         <?php include '../Includes/footer.php'; ?>
     </footer>
+    <script>
+    // Deletion mode logic
+    const mainDeleteBtn = document.getElementById('main-delete-btn');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const notifCheckboxes = () => document.querySelectorAll('.notif-checkbox');
+    const notificationCards = () => document.querySelectorAll('.notification-card-wrapper');
+    let deletionMode = false;
+
+    function setDeletionMode(on) {
+        deletionMode = on;
+        notifCheckboxes().forEach(cb => cb.style.display = on ? 'block' : 'none');
+        notificationCards().forEach(card => {
+            card.style.transition = 'box-shadow 0.2s';
+            card.style.boxShadow = ''; // Remove red outline
+            card.style.opacity = on ? '0.97' : '1';
+        });
+        deleteAllBtn.style.display = on ? 'inline-block' : 'none';
+        cancelDeleteBtn.style.display = on ? 'inline-block' : 'none';
+        mainDeleteBtn.classList.toggle('btn-outline-danger', !on);
+        mainDeleteBtn.classList.toggle('btn-danger', on);
+        mainDeleteBtn.innerHTML = on ? '<i class="fas fa-trash-alt"></i> Delete Selected' : '<i class="fas fa-trash-alt"></i> Delete';
+        if (!on) notifCheckboxes().forEach(cb => cb.checked = false);
+    }
+
+    mainDeleteBtn.addEventListener('click', function() {
+        if (!deletionMode) {
+            setDeletionMode(true);
+        } else {
+            // Delete selected
+            const selected = Array.from(notifCheckboxes()).filter(cb => cb.checked);
+            if (selected.length === 0) {
+                alert('Select at least one notification to delete.');
+                return;
+            }
+            if (!confirm('Delete selected notifications?')) return;
+            const notifications = selected.map(cb => ({
+                status: cb.getAttribute('data-status'),
+                id: cb.getAttribute('data-id'),
+                created_at: cb.getAttribute('data-created_at')
+            }));
+            fetch('delete_notification.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete_selected', notifications })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    selected.forEach(cb => cb.closest('.notification-card-wrapper').remove());
+                    setDeletionMode(false);
+                } else {
+                    alert('Failed to delete selected notifications.');
+                }
+            })
+            .catch(() => alert('Failed to delete selected notifications.'));
+        }
+    });
+
+    deleteAllBtn.addEventListener('click', function() {
+        if (!confirm('Delete ALL notifications?')) return;
+        fetch('delete_notification.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_all' })
+        })
+        .then(res => res.json())
+        .then(data => { // <-- fixed here
+            if (data.success) {
+                document.getElementById('notifications-list').innerHTML = '';
+                setDeletionMode(false);
+            } else {
+                alert('Failed to delete all notifications.');
+            }
+        })
+        .catch(() => alert('Failed to delete all notifications.'));
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+        setDeletionMode(false);
+    });
+
+    // Optional: visually highlight cards on checkbox hover
+    document.addEventListener('mouseover', function(e) {
+        if (e.target.classList.contains('notif-checkbox')) {
+            e.target.closest('.notification-card-wrapper').style.boxShadow = ''; // Remove highlight
+        }
+    });
+    document.addEventListener('mouseout', function(e) {
+        if (e.target.classList.contains('notif-checkbox')) {
+            e.target.closest('.notification-card-wrapper').style.boxShadow = '';
+        }
+    });
+    </script>
+</body>
+</html>
+</body>
+</html>
+</html>
 </body>
 </html>
