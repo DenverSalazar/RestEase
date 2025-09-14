@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $residency = $_POST['residency'] ?? '';
     $informant_name = $_POST['informant_name'] ?? '';
     $niche_id = $_POST['niche_id'] ?? '';
+    $current_niche_id = $_POST['current_niche_id'] ?? '';
+    $new_niche_id = $_POST['new_niche_id'] ?? '';
     $file_upload = '';
 
     // Handle file upload
@@ -50,20 +52,34 @@ if (!$error) {
     if (!$user_id) {
         $error = "User not logged in.";
     } else {
-        if ($suffix === null) {
-            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
-            // Bind 12 variables, exclude $suffix
-            $stmt->bind_param("issssissssss", 
-                $user_id, $type, $first_name, $last_name, $middle_name, 
-                $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
-            );
+        if ($type === 'Relocate' || $type === 'Transfer') {
+            if ($suffix === null) {
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("issssssssssssss", 
+                    $user_id, $type, $first_name, $last_name, $middle_name, 
+                    $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
+                );
+            } else {
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("issssssssssssss", 
+                    $user_id, $type, $first_name, $last_name, $middle_name, 
+                    $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
+                );
+            }
         } else {
-            $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            // Bind 13 variables, include $suffix
-            $stmt->bind_param("isssssissssss", 
-                $user_id, $type, $first_name, $last_name, $middle_name, 
-                $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
-            );
+            if ($suffix === null) {
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("issssissssss", 
+                    $user_id, $type, $first_name, $last_name, $middle_name, 
+                    $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+                );
+            } else {
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("isssssissssss", 
+                    $user_id, $type, $first_name, $last_name, $middle_name, 
+                    $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+                );
+            }
         }
         if ($stmt->execute()) {
             $success = "Request submitted successfully!";
@@ -96,7 +112,7 @@ if ($stmt->fetch()) {
 }
 $stmt->close();
 $deceased_list = [];
-$stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
+$stmt = $conn->prepare("SELECT firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID FROM deceased WHERE informantName = ?");
 $stmt->bind_param("s", $user_fullname);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -277,6 +293,8 @@ $stmt->close();
                     <div class="alert alert-warning" style="font-size: 0.95rem;">
                         Please double check any of the following information before submitting to avoid any conflict.
                     </div>
+                    <input type="hidden" id="current_niche_id" name="current_niche_id">
+                    <input type="hidden" id="new_niche_id" name="new_niche_id">
                     <button type="submit" class="submit-btn">Submit</button>
                 </form>
             </div>
@@ -361,9 +379,8 @@ $stmt->close();
         var data = JSON.parse(value);
         document.getElementById('first_name').value = data.firstName || '';
         document.getElementById('last_name').value = data.lastName || '';
-        // No middle_name or suffix in deceased table, so clear them
-        document.getElementById('middle_name').value = '';
-        document.getElementById('suffix').value = '';
+        document.getElementById('middle_name').value = data.middleName || '';
+        document.getElementById('suffix').value = (data.suffix && data.suffix.trim() !== '' && data.suffix !== '0') ? data.suffix : '';
         document.getElementById('dob').value = data.born || '';
         document.getElementById('dod').value = data.dateDied || '';
         document.getElementById('age_display').value = data.age || '';
@@ -371,6 +388,7 @@ $stmt->close();
         document.getElementById('residency').value = data.residency || '';
         document.getElementById('niche_id').value = data.nicheID || '';
         document.getElementById('current_niche').value = data.nicheID || '';
+        document.getElementById('current_niche_id').value = data.nicheID || '';
     }
 
     function showTypeExplanation() {
@@ -394,6 +412,7 @@ $stmt->close();
     window.addEventListener('message', function(event) {
         if (event.data && event.data.nicheID) {
             document.getElementById('niche_picker').value = event.data.nicheID;
+            document.getElementById('new_niche_id').value = event.data.nicheID;
         }
     });
     </script>

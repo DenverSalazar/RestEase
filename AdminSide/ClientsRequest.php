@@ -258,6 +258,14 @@ if (!isset($_SESSION['admin_id'])) {
             <span class="detail-label">Age:</span>
             <span class="detail-value" id="popupAge"></span>
           </div>
+          <div class="detail-row" id="popupCurrentNicheIdRow" style="display:none;">
+            <span class="detail-label">Current Niche ID:</span>
+            <span class="detail-value" id="popupCurrentNicheId"></span>
+          </div>
+          <div class="detail-row" id="popupNewNicheIdRow" style="display:none;">
+            <span class="detail-label">New Niche Location:</span>
+            <span class="detail-value" id="popupNewNicheId"></span>
+          </div>
           <div class="detail-row">
             <span class="detail-label">Attachments:</span>
             <div class="detail-value" id="popupAttachment"></div>
@@ -268,6 +276,30 @@ if (!isset($_SESSION['admin_id'])) {
           <button class="deny-btn" onclick="denyRequest()">Deny</button>
           <button class="go-payment-btn" style="display:none;" onclick="goToAssessment()">Assess</button>
         </div>
+      </div>
+    </div>
+    <!-- Confirmation Modal -->
+    <div id="actionConfirmModal" style="display:none;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:9999;">
+      <div style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:32px 32px 28px 32px;max-width:420px;width:100%;text-align:center;position:relative;">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div id="actionConfirmIconContainer" style="border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:#eafaf1;">
+            <span id="actionConfirmIcon" style="font-size:2.1rem;"></span>
+          </div>
+          <h2 id="actionConfirmTitle" style="font-size:1.35rem;font-weight:700;margin-bottom:12px;color:#222;">Confirm Action</h2>
+          <div id="actionConfirmText" style="font-size:1.05rem;color:#444;margin-bottom:24px;line-height:1.5;"></div>
+          <div style="display:flex;gap:14px;justify-content:center;">
+            <button id="modalActionConfirmBtn" style="background:#27ae60;color:#fff;font-weight:600;padding:10px 32px;border:none;border-radius:8px;font-size:1rem;cursor:pointer;transition:background 0.2s;">Confirm</button>
+            <button id="modalActionCancelBtn" style="background:#bdbdbd;color:#fff;font-weight:500;padding:10px 32px;border:none;border-radius:8px;font-size:1rem;cursor:pointer;transition:background 0.2s;">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Success Notification -->
+    <div id="actionSuccessNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:9999;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:18px 32px;min-width:260px;max-width:350px;align-items:center;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="color:#27ae60;font-size:1.5rem;"><i class="fas fa-check-circle"></i></span>
+        <span id="actionNotificationText" style="font-size:1.08rem;color:#333;font-weight:500;"></span>
+        <button id="closeActionNotificationBtn" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;margin-left:auto;">&times;</button>
       </div>
     </div>
     <style>
@@ -287,6 +319,8 @@ if (!isset($_SESSION['admin_id'])) {
         border-radius: 16px;
         width: 500px;
         max-width: 90vw;
+        max-height: 80vh;
+        overflow-y: auto;
         position: relative;
         box-shadow: 0 12px 48px rgba(44,62,80,0.15);
         animation: modalSlideIn 0.3s ease-out;
@@ -334,6 +368,8 @@ if (!isset($_SESSION['admin_id'])) {
         flex-direction: column;
         gap: 16px;
         margin-bottom: 24px;
+        max-height: 60vh;
+        overflow-y: auto;
       }
       .detail-row {
         display: flex;
@@ -459,6 +495,98 @@ if (!isset($_SESSION['admin_id'])) {
         font-size: 14px;
         background: #fff;
         cursor: pointer;
+      }
+
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        z-index: 10000;
+        left: 0; top: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 24px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        position: relative;
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .modal-header i {
+        font-size: 2rem;
+        margin-right: 12px;
+      }
+      .modal-header h2 {
+        font-size: 1.5rem;
+        margin: 0;
+        color: #333;
+      }
+      .modal-body {
+        margin: 12px 0 16px 0;
+        color: #555;
+        font-size: 1rem;
+      }
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+      .modal-delete-btn, .modal-cancel-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
+      }
+      .modal-delete-btn {
+        background: #e74c3c;
+        color: #fff;
+      }
+      .modal-delete-btn:hover {
+        background: #c0392b;
+      }
+      .modal-cancel-btn {
+        background: #f0f0f0;
+        color: #333;
+      }
+      .modal-cancel-btn:hover {
+        background: #e0e0e0;
+      }
+      /* Success Notification Styles */
+      #actionSuccessNotification {
+        display: none;
+        position: fixed;
+        top: 32px;
+        right: 32px;
+        z-index: 10000;
+        background: #2ecc71;
+        color: #fff;
+        padding: 18px 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(46,204,113,0.15);
+        font-size: 1.1rem;
+        font-weight: 500;
+        align-items: center;
+        gap: 16px;
+        min-width: 220px;
+      }
+      #actionSuccessNotification span {
+        display: flex;
+        align-items: center;
+      }
+      #actionSuccessNotification i {
+        margin-right: 8px;
       }
     </style>
     <!-- DataTables JS -->
@@ -720,6 +848,18 @@ if (!isset($_SESSION['admin_id'])) {
               document.getElementById('popupDeceased').textContent = (data.deceased_name || '').trim();
               document.getElementById('popupAttachment').innerHTML = data.attachment_html;
               document.getElementById('popupNicheId').textContent = data.niche_id;
+              
+              // New fields for Relocate
+              if (data.type === 'Relocate') {
+                document.getElementById('popupCurrentNicheId').textContent = data.current_niche_id || '';
+                document.getElementById('popupNewNicheId').textContent = data.new_niche_id || '';
+                document.getElementById('popupCurrentNicheIdRow').style.display = '';
+                document.getElementById('popupNewNicheIdRow').style.display = '';
+              } else {
+                document.getElementById('popupCurrentNicheIdRow').style.display = 'none';
+                document.getElementById('popupNewNicheIdRow').style.display = 'none';
+              }
+              
               // Show/hide deceased row
               document.getElementById('popupDeceasedRow').style.display = (data.deceased_name ? '' : 'none');
               // Hide middle name and suffix rows always
@@ -786,8 +926,67 @@ if (!isset($_SESSION['admin_id'])) {
         }
       });
       
-      function acceptRequest() {
-        // Get the requestId from the popup (store it globally when opening popup)
+      let pendingAction = null;
+      function showActionConfirmModal(actionType) {
+        const modal = document.getElementById('actionConfirmModal');
+        const text = document.getElementById('actionConfirmText');
+        const iconContainer = document.getElementById('actionConfirmIconContainer');
+        const iconSpan = document.getElementById('actionConfirmIcon');
+        const title = document.getElementById('actionConfirmTitle');
+        const confirmBtn = document.getElementById('modalActionConfirmBtn');
+        if (actionType === 'accept') {
+          text.innerHTML = 'Are you sure you want to <b>accept</b> this request?<br>This action cannot be undone.';
+          title.textContent = 'Confirm Accept';
+          iconContainer.style.background = '#eafaf1';
+          iconSpan.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i>';
+          confirmBtn.style.background = '#27ae60';
+          confirmBtn.style.color = '#fff';
+          pendingAction = 'accept';
+        } else if (actionType === 'deny') {
+          text.innerHTML = 'Are you sure you want to <b>deny</b> this request?<br>This action cannot be undone.';
+          title.textContent = 'Confirm Deny';
+          iconContainer.style.background = '#ffeaea';
+          iconSpan.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i>';
+          confirmBtn.style.background = '#e74c3c';
+          confirmBtn.style.color = '#fff';
+          pendingAction = 'deny';
+        }
+        modal.style.display = 'flex';
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.accept-btn').onclick = function(e) {
+          e.preventDefault();
+          showActionConfirmModal('accept');
+        };
+        document.querySelector('.deny-btn').onclick = function(e) {
+          e.preventDefault();
+          showActionConfirmModal('deny');
+        };
+        document.getElementById('modalActionCancelBtn').onclick = function() {
+          document.getElementById('actionConfirmModal').style.display = 'none';
+          pendingAction = null;
+        };
+        document.getElementById('modalActionConfirmBtn').onclick = function() {
+          if (pendingAction === 'accept') {
+            performAcceptRequest();
+          } else if (pendingAction === 'deny') {
+            performDenyRequest();
+          }
+          document.getElementById('actionConfirmModal').style.display = 'none';
+          pendingAction = null;
+        };
+        document.getElementById('closeActionNotificationBtn').onclick = function() {
+          document.getElementById('actionSuccessNotification').style.display = 'none';
+        };
+      });
+      function showActionSuccessNotification(message) {
+        const notification = document.getElementById('actionSuccessNotification');
+        const notificationText = document.getElementById('actionNotificationText');
+        notificationText.textContent = message;
+        notification.style.display = 'flex';
+        setTimeout(function() { notification.style.display = 'none'; }, 3000);
+      }
+      function performAcceptRequest() {
         if (window.currentRequestId) {
           fetch('accept_request.php', {
             method: 'POST',
@@ -798,15 +997,15 @@ if (!isset($_SESSION['admin_id'])) {
           .then(data => {
             if (data.success) {
               closePopup();
-              location.reload();
+              showActionSuccessNotification('Request accepted successfully.');
+              setTimeout(function() { location.reload(); }, 1200);
             } else {
               alert('Failed to accept request: ' + (data.message || 'Unknown error'));
             }
           });
         }
       }
-      
-      function denyRequest() {
+      function performDenyRequest() {
         if (window.currentRequestId) {
           fetch('deny_request.php', {
             method: 'POST',
@@ -817,13 +1016,13 @@ if (!isset($_SESSION['admin_id'])) {
           .then(data => {
             if (data.success) {
               closePopup();
-              location.reload();
+              showActionSuccessNotification('Request denied successfully.');
+              setTimeout(function() { location.reload(); }, 1200);
             } else {
               alert('Failed to deny request: ' + (data.message || 'Unknown error'));
-              console.error('Deny request error:', data);
             }
           })
-          .catch(error => {
+          .catch(function(error) {
             alert('Network error: ' + error);
             console.error('Network error:', error);
           });

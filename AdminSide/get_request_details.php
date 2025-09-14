@@ -50,7 +50,9 @@ if ($row = $result->fetch_assoc()) {
         'suffix' => $suffix,
         'residency' => $residency,
         'dob' => $dob,
-        'dod' => $dod
+        'dod' => $dod,
+        'current_niche_id' => isset($row['current_niche_id']) ? htmlspecialchars($row['current_niche_id']) : '',
+        'new_niche_id' => isset($row['new_niche_id']) ? htmlspecialchars($row['new_niche_id']) : ''
     ]);
 } else {
     echo json_encode(['success' => false, 'error' => 'Request not found']);

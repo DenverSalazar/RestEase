@@ -486,6 +486,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                   <span class="detail-label">Niche ID:</span>
                   <span class="detail-value" id="deniedPopupNicheId"></span>
                 </div>
+                <div class="detail-row" id="deniedPopupCurrentNicheIdRow" style="display:none;">
+                  <span class="detail-label">Current Niche ID:</span>
+                  <span class="detail-value" id="deniedPopupCurrentNicheId"></span>
+                </div>
+                <div class="detail-row" id="deniedPopupNewNicheIdRow" style="display:none;">
+                  <span class="detail-label">New Niche Location:</span>
+                  <span class="detail-value" id="deniedPopupNewNicheId"></span>
+                </div>
                 <div class="detail-row">
                   <span class="detail-label">Age:</span>
                   <span class="detail-value" id="deniedPopupAge"></span>
@@ -625,6 +633,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                       document.getElementById('deniedPopupNicheIdRow').style.display = '';
                     } else {
                       document.getElementById('deniedPopupNicheIdRow').style.display = 'none';
+                    }
+                    // Show current/new niche for Relocate
+                    if (data.type && data.type.toLowerCase() === 'relocate') {
+                      document.getElementById('deniedPopupCurrentNicheId').textContent = data.current_niche_id || '';
+                      document.getElementById('deniedPopupNewNicheId').textContent = data.new_niche_id || '';
+                      document.getElementById('deniedPopupCurrentNicheIdRow').style.display = '';
+                      document.getElementById('deniedPopupNewNicheIdRow').style.display = '';
+                    } else {
+                      document.getElementById('deniedPopupCurrentNicheIdRow').style.display = 'none';
+                      document.getElementById('deniedPopupNewNicheIdRow').style.display = 'none';
                     }
                   }
                 });

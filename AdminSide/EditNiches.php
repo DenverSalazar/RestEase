@@ -181,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
 
   // Simple required validation
   if ($firstName === '') $errors[] = "First Name is required.";
+  if ($middleName === '') $errors[] = "Middle Name is required.";
   if ($lastName === '') $errors[] = "Last Name is required.";
   if ($born === '') $errors[] = "Born date is required.";
   if ($residency === '') $errors[] = "Residency is required.";
@@ -327,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           </div>
           <div class="form-group">
             <label for="middleName">Middle Name</label>
-            <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="" readonly>
+            <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($deceased['middleName']); ?>">
           </div>
           <div class="form-group">
             <label for="lastName">Last Name</label>
@@ -337,7 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         <div class="form-row">
           <div class="form-group">
             <label for="suffix">Suffix</label>
-            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="" readonly>
+            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix']); ?>">
           </div>
           <div class="form-group" style="position:relative;">
             <label for="residency">Residency</label>

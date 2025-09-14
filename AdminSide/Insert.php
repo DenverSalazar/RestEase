@@ -112,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // Simple required validation
   if ($firstName === '') $errors[] = "First Name is required.";
+  if ($middleName === '') $errors[] = "Middle Name is required.";
   if ($lastName === '') $errors[] = "Last Name is required.";
   if ($born === '') $errors[] = "Valid Born date is required.";
   if ($residency === '') $errors[] = "Residency is required.";
