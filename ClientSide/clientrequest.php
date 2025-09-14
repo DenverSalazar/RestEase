@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $age = $_POST['age'] ?? '';
     $dob = $_POST['dob'] ?? '';
     $dod = $_POST['dod'] ?? '';
+    $dateInternment = $_POST['date_internment'] ?? '';
     $residency = $_POST['residency'] ?? '';
     $informant_name = $_POST['informant_name'] ?? '';
     $niche_id = $_POST['niche_id'] ?? '';
@@ -54,30 +55,30 @@ if (!$error) {
     } else {
         if ($type === 'Relocate' || $type === 'Transfer') {
             if ($suffix === null) {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->bind_param("issssssssssssss", 
                     $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
+                    $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
                 );
             } else {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("issssssssssssss", 
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id, current_niche_id, new_niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("isssssssssssssss", 
                     $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
+                    $suffix, $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
                 );
             }
         } else {
             if ($suffix === null) {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("issssissssss", 
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("issssissssssss", 
                     $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+                    $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id
                 );
             } else {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("isssssissssss", 
+                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("isssssissssssss", 
                     $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $suffix, $age, $dob, $dod, $residency, $informant_name, $file_upload, $niche_id
+                    $suffix, $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id
                 );
             }
         }
@@ -191,7 +192,7 @@ $stmt->close();
                             <label for="middle_name" class="form-label">Middle Name</label>
                             <input type="text" id="middle_name" name="middle_name" class="form-control">
                         </div>
-                         <div class="col-md-6">
+                        <div class="col-md-6">
                             <label for="last_name" class="form-label">Last Name</label>
                             <input type="text" id="last_name" name="last_name" class="form-control" required>
                         </div>
@@ -199,7 +200,7 @@ $stmt->close();
                             <label for="suffix" class="form-label">Suffix</label>
                             <input type="text" id="suffix" name="suffix" class="form-control" placeholder="e.g. Jr, Sr, III">
                         </div>
-                       <div class="col-md-6">
+                        <div class="col-md-6">
                             <label for="dob" class="form-label">Date of Birth</label>
                             <input type="date" id="dob" name="dob" class="form-control" required>
                         </div>
@@ -213,6 +214,10 @@ $stmt->close();
                             <input type="number" id="age_display" class="form-control" required disabled>
                             <!-- Hidden field that actually submits -->
                             <input type="hidden" id="age" name="age">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="date_internment" class="form-label">Date of Internment</label>
+                            <input type="date" id="date_internment" name="date_internment" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label for="residency" class="form-label">Residency</label>
@@ -308,11 +313,18 @@ $stmt->close();
         var nichePicker = document.getElementById('nichePickerField');
         var nicheIdField = document.getElementById('nicheIdField');
         var currentNicheField = document.getElementById('currentNicheField');
-        if (type === 'Relocate' || type === 'Transfer') {
+        if (type === 'Relocate') {
             deceasedSelector.style.display = '';
             deceasedInfoFields.style.display = '';
             deceasedInfoSection.style.display = '';
             nichePicker.style.display = '';
+            nicheIdField.style.display = 'none';
+            currentNicheField.style.display = '';
+        } else if (type === 'Transfer') {
+            deceasedSelector.style.display = '';
+            deceasedInfoFields.style.display = '';
+            deceasedInfoSection.style.display = '';
+            nichePicker.style.display = 'none'; // Hide new niche picker for Transfer
             nicheIdField.style.display = 'none';
             currentNicheField.style.display = '';
         } else {
@@ -370,6 +382,7 @@ $stmt->close();
         document.getElementById('niche_id').value = data.nicheID || '';
         document.getElementById('current_niche').value = data.nicheID || '';
         document.getElementById('current_niche_id').value = data.nicheID || '';
+        document.getElementById('date_internment').value = data.dateInternment || '';
     }
 
     function showTypeExplanation() {

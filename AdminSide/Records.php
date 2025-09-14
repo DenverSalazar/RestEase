@@ -253,8 +253,8 @@ if (!isset($_SESSION['admin_id'])) {
         <input type="text" id="search-input" placeholder="Search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
       </div>
         <div class="cemetery-masterlist-actions">
-          <a href="Insert.php"><button><i class="fas fa-plus"></i> Insert</button></a>
-          <a href="ExportPDF.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-pdf"></i> Print Masterlist</button></a>
+          <a href="Insert.php?from=records"><button><i class="fas fa-plus"></i> Insert</button></a>
+          <a href="ExportExcel.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-excel"></i> Export Masterlist</button></a>
           <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>
@@ -333,10 +333,19 @@ if (!isset($_SESSION['admin_id'])) {
             include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
             // Fetch all records (no pagination/search/filter)
-            $result = $conn->query("SELECT id, nicheID, lastName, firstName, age, born, residency, informantName, dateDied, dateInternment FROM deceased");
+            $result = $conn->query("SELECT id, nicheID, lastName, firstName, middleName, suffix, age, born, residency, informantName, dateDied, dateInternment FROM deceased");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
-                $name = htmlspecialchars($row['lastName'] . ', ' . $row['firstName']);
+                // Compose name: LastName, FirstName MiddleInitial. Suffix
+                $lastName = htmlspecialchars($row['lastName']);
+                $firstName = htmlspecialchars($row['firstName']);
+                $middleName = isset($row['middleName']) ? $row['middleName'] : '';
+                $suffix = isset($row['suffix']) ? $row['suffix'] : '';
+                $middleInitial = $middleName ? strtoupper(substr(trim($middleName), 0, 1)) . '.' : '';
+                $name = $lastName . ', ' . $firstName;
+                if ($middleInitial) $name .= ' ' . $middleInitial;
+                if ($suffix) $name .= ' ' . htmlspecialchars($suffix);
+
                 $apt = htmlspecialchars($row['nicheID']);
                 $age = htmlspecialchars($row['age']);
                 $born = htmlspecialchars($row['born']);
@@ -347,10 +356,14 @@ if (!isset($_SESSION['admin_id'])) {
                 
                 // Calculate validity date (5 years from internment)
                 $validityDate = '';
-                if (!empty($row['dateInternment'])) {
-                  $internmentDateObj = new DateTime($row['dateInternment']);
-                  $internmentDateObj->modify('+5 years');
-                  $validityDate = $internmentDateObj->format('Y-m-d');
+                if (!empty($row['dateInternment']) && $row['dateInternment'] !== '0000-00-00') {
+                  try {
+                    $internmentDateObj = new DateTime($row['dateInternment']);
+                    $internmentDateObj->modify('+5 years');
+                    $validityDate = $internmentDateObj->format('Y-m-d');
+                  } catch (Exception $e) {
+                    $validityDate = '';
+                  }
                 }
                 
                 // Build query parameters for EditNiches.php
@@ -363,7 +376,8 @@ if (!isset($_SESSION['admin_id'])) {
                   'residency' => $row['residency'],
                   'informantName' => $row['informantName'],
                   'dateDied' => $row['dateDied'],
-                  'dateInternment' => $row['dateInternment']
+                  'dateInternment' => $row['dateInternment'],
+                  'from' => 'records'
                 ]);
                 
                 // Add a data-href attribute for JS navigation

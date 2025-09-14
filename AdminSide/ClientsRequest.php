@@ -302,6 +302,14 @@ if (!isset($_SESSION['admin_id'])) {
         <button id="closeActionNotificationBtn" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;margin-left:auto;">&times;</button>
       </div>
     </div>
+    <!-- Error Notification (same design as success, but red icon/text) -->
+    <div id="actionErrorNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:9999;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:18px 32px;min-width:260px;max-width:350px;align-items:center;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="color:#e74c3c;font-size:1.5rem;"><i class="fas fa-times-circle"></i></span>
+        <span id="actionErrorNotificationText" style="font-size:1.08rem;color:#333;font-weight:500;"></span>
+        <button id="closeActionErrorNotificationBtn" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;margin-left:auto;">&times;</button>
+      </div>
+    </div>
     <style>
       /* Popup Modal Styles */
       .popup-modal {
@@ -586,6 +594,30 @@ if (!isset($_SESSION['admin_id'])) {
         align-items: center;
       }
       #actionSuccessNotification i {
+        margin-right: 8px;
+      }
+      #actionErrorNotification {
+        display: none;
+        position: fixed;
+        top: 32px;
+        right: 32px;
+        z-index: 10000;
+        background: #fff;
+        color: #e74c3c;
+        padding: 18px 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(231,76,60,0.15);
+        font-size: 1.1rem;
+        font-weight: 500;
+        align-items: center;
+        gap: 16px;
+        min-width: 220px;
+      }
+      #actionErrorNotification span {
+        display: flex;
+        align-items: center;
+      }
+      #actionErrorNotification i {
         margin-right: 8px;
       }
     </style>
@@ -978,6 +1010,9 @@ if (!isset($_SESSION['admin_id'])) {
         document.getElementById('closeActionNotificationBtn').onclick = function() {
           document.getElementById('actionSuccessNotification').style.display = 'none';
         };
+        document.getElementById('closeActionErrorNotificationBtn').onclick = function() {
+          document.getElementById('actionErrorNotification').style.display = 'none';
+        };
       });
       function showActionSuccessNotification(message) {
         const notification = document.getElementById('actionSuccessNotification');
@@ -985,6 +1020,13 @@ if (!isset($_SESSION['admin_id'])) {
         notificationText.textContent = message;
         notification.style.display = 'flex';
         setTimeout(function() { notification.style.display = 'none'; }, 3000);
+      }
+      function showActionErrorNotification(message) {
+        const notification = document.getElementById('actionErrorNotification');
+        const notificationText = document.getElementById('actionErrorNotificationText');
+        notificationText.textContent = message;
+        notification.style.display = 'flex';
+        setTimeout(function() { notification.style.display = 'none'; }, 4000);
       }
       function performAcceptRequest() {
         if (window.currentRequestId) {
@@ -1161,11 +1203,11 @@ if (!isset($_SESSION['admin_id'])) {
                     if (result.success) {
                       showActionSuccessNotification('Assessment submitted and user notified!');
                     } else {
-                      alert('Failed to submit assessment: ' + (result.message || 'Unknown error'));
+                      showActionErrorNotification('Failed to submit assessment: ' + (result.message || 'Unknown error'));
                     }
                   })
                   .catch(error => {
-                    alert('Network error: ' + error);
+                    showActionErrorNotification('Network error: ' + error);
                   });
                 };
               }

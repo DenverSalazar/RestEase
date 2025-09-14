@@ -11,7 +11,7 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // Fetch all deceased records indexed by nicheID
 $deceasedData = [];
-$result = $conn->query("SELECT nicheID, firstName, lastName, born, dateDied FROM deceased");
+$result = $conn->query("SELECT nicheID, firstName, middleName, lastName, suffix, born, dateDied FROM deceased");
 while ($row = $result->fetch_assoc()) {
     $deceasedData[$row['nicheID']] = $row;
 }
@@ -619,6 +619,16 @@ while ($row = $result->fetch_assoc()) {
                     var deceased = deceasedData[nicheID];
                     var popupContent = '';
                     if (deceased) {
+                        // Compose full name as: FirstName MiddleInitial. LastName, Suffix
+                        var firstName = deceased.firstName || '';
+                        var middleName = deceased.middleName || '';
+                        var lastName = deceased.lastName || '';
+                        var suffix = deceased.suffix || '';
+                        var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                        var fullName = firstName;
+                        if (middleInitial) fullName += ' ' + middleInitial;
+                        if (lastName) fullName += ' ' + lastName;
+                        if (suffix) fullName += ', ' + suffix;
                         popupContent = `
         <div class="popup-form-group">
             <div class="popup-form-id-label">nicheID</div>
@@ -626,7 +636,7 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="popup-form-group">
             <label class="popup-form-label">Name:</label>
-            <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
+            <input class="popup-form-input" type="text" value="${fullName}" readonly>
         </div>
         <div class="popup-form-group">
             <label class="popup-form-label">Born:</label>
@@ -1327,7 +1337,8 @@ map.on("zoomend", function(){
                 nicheID: nicheID,
                 name: name,
                 born: born,
-                died: died
+                died: died,
+                from: 'mapping'
             });
 
             window.location.href = 'EditNiches.php?' + params.toString();
