@@ -50,6 +50,36 @@ if ($stmt->fetch()) {
     $adminProfilePic = $profilePic ? $profilePic : $adminProfilePic;
 }
 $stmt->close();
+
+// Get records whose validity is closest to today (future dates only)
+$expiringRecords = [];
+$today = date('Y-m-d');
+$sql = "SELECT nicheID, lastName, firstName, middleName, suffix, dateInternment FROM deceased WHERE dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00'";
+$res = $conn->query($sql);
+if ($res && $res->num_rows > 0) {
+    while ($row = $res->fetch_assoc()) {
+        $internmentDate = $row['dateInternment'];
+        try {
+            $validityDate = (new DateTime($internmentDate))->modify('+5 years')->format('Y-m-d');
+            if ($validityDate >= $today) {
+                $name = $row['lastName'] . ', ' . $row['firstName'];
+                if (!empty($row['middleName'])) $name .= ' ' . strtoupper(substr(trim($row['middleName']), 0, 1)) . '.';
+                if (!empty($row['suffix'])) $name .= ' ' . $row['suffix'];
+                $expiringRecords[] = [
+                    'nicheID' => $row['nicheID'],
+                    'name' => $name,
+                    'validity' => $validityDate
+                ];
+            }
+        } catch (Exception $e) {}
+    }
+    // Sort by closest validity date
+    usort($expiringRecords, function($a, $b) {
+        return strcmp($a['validity'], $b['validity']);
+    });
+    // Limit to top 10 closest
+    $expiringRecords = array_slice($expiringRecords, 0, 10);
+}
 ?>
 
 <!DOCTYPE html>
@@ -185,7 +215,31 @@ $stmt->close();
         <div id="chart"></div>
       </div>
       <div class="dashboard-card dashboard-card-small">
-        <!-- Small card content here (can be left empty or add a placeholder) -->
+        <div style="padding: 18px 14px 18px 18px; width: 100%; height: 100%; display: flex; flex-direction: column;">
+          <h3 style="font-size: 1.13rem; margin-bottom: 14px; color: #374151; font-weight: 700; letter-spacing: 0.5px;">Upcoming Validity Expiry</h3>
+          <div style="flex: 1; overflow-y: auto; max-height: 260px;">
+            <?php if (count($expiringRecords) > 0): ?>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <?php foreach ($expiringRecords as $rec): ?>
+                  <li style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="margin-top: 2px;">
+                      <i class="fa-solid fa-calendar-exclamation" style="color: #eab308; font-size: 1.25rem;"></i>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); padding: 10px 14px; min-width: 0; flex: 1;">
+                      <div style="font-weight: 600; color: #1e293b; font-size: 1rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <?php echo htmlspecialchars($rec['name']); ?>
+                      </div>
+                      <div style="font-size: 0.93rem; color: #2563eb; font-weight: 500; margin-bottom: 2px;">Apt: <?php echo htmlspecialchars($rec['nicheID']); ?></div>
+                      <div style="font-size: 0.93rem; color: #eab308; font-weight: 500;">Validity: <?php echo htmlspecialchars($rec['validity']); ?></div>
+                    </div>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+            <?php else: ?>
+              <div style="color: #888; font-size: 0.97rem; text-align: center; margin-top: 40px;">No records expiring soon.</div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
     </section>
     <!-- Add gap between grids -->

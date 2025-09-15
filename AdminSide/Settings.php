@@ -502,6 +502,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                   <span class="detail-label">Attachments:</span>
                   <div class="detail-value" id="deniedPopupAttachment"></div>
                 </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date of Internment:</span>
+                  <span class="detail-value" id="deniedPopupInternmentDate"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -628,6 +632,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                     document.getElementById('deniedPopupDOD').textContent = data.dod || '';
                     document.getElementById('deniedPopupNicheId').textContent = data.niche_id || '';
                     document.getElementById('deniedPopupAttachment').innerHTML = data.attachment_html || '';
+                    document.getElementById('deniedPopupInternmentDate').textContent = data.dateInternment || '';
                     // Show Niche ID only if type is Transfer
                     if (data.type && data.type.toLowerCase() === 'transfer') {
                       document.getElementById('deniedPopupNicheIdRow').style.display = '';

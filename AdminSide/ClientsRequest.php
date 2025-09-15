@@ -266,6 +266,10 @@ if (!isset($_SESSION['admin_id'])) {
             <span class="detail-label">New Niche Location:</span>
             <span class="detail-value" id="popupNewNicheId"></span>
           </div>
+          <div class="detail-row" id="popupInternmentDateRow" style="display:none;">
+            <span class="detail-label">Date of Internment:</span>
+            <span class="detail-value" id="popupInternmentDate"></span>
+          </div>
           <div class="detail-row">
             <span class="detail-label">Attachments:</span>
             <div class="detail-value" id="popupAttachment"></div>
@@ -912,6 +916,10 @@ if (!isset($_SESSION['admin_id'])) {
               if (document.getElementById('popupDOD')) {
                 document.getElementById('popupDOD').textContent = data.dod || '';
                 document.getElementById('popupDODRow').style.display = data.dod ? '' : 'none';
+              }
+              if (document.getElementById('popupInternmentDate')) {
+                document.getElementById('popupInternmentDate').textContent = data.internment_date || '';
+                document.getElementById('popupInternmentDateRow').style.display = data.internment_date ? '' : 'none';
               }
               if (data.type === 'Transfer' || data.type === 'Exhumation') {
                 document.getElementById('popupNicheIdRow').style.display = '';

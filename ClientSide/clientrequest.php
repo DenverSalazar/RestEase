@@ -67,22 +67,32 @@ if (!$error) {
                     $suffix, $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id, $current_niche_id, $new_niche_id
                 );
             }
-        } else {
-            if ($suffix === null) {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("issssissssssss", 
-                    $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id
-                );
-            } else {
-                $stmt = $conn->prepare("INSERT INTO client_requests (user_id, type, first_name, last_name, middle_name, suffix, age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("isssssissssssss", 
-                    $user_id, $type, $first_name, $last_name, $middle_name, 
-                    $suffix, $age, $dob, $dod, $dateInternment, $residency, $informant_name, $file_upload, $niche_id
-                );
+        } else { // For type === 'New'
+                if ($suffix === null) {
+                    $stmt = $conn->prepare("INSERT INTO client_requests (
+                        user_id, type, first_name, last_name, middle_name, suffix, 
+                        age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id
+                    ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+                    $stmt->bind_param("issssisssssss", 
+                        $user_id, $type, $first_name, $last_name, $middle_name, 
+                        $age, $dob, $dod, $dateInternment, $residency, 
+                        $informant_name, $file_upload, $niche_id
+                    );
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO client_requests (
+                        user_id, type, first_name, last_name, middle_name, suffix, 
+                        age, dob, dod, dateInternment, residency, informant_name, file_upload, niche_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+                    $stmt->bind_param("isssssisssssss", 
+                        $user_id, $type, $first_name, $last_name, $middle_name, 
+                        $suffix, $age, $dob, $dod, $dateInternment, $residency, 
+                        $informant_name, $file_upload, $niche_id
+                    );
+                }
             }
-        }
-        if ($stmt->execute()) {
+                    if ($stmt->execute()) {
             $success = "Request submitted successfully!";
         } else {
             $error = "Database error: " . $conn->error;

@@ -61,5 +61,6 @@ echo json_encode([
     'niche_id' => $niche_id,
     'current_niche_id' => isset($row['current_niche_id']) ? htmlspecialchars($row['current_niche_id']) : '',
     'new_niche_id' => isset($row['new_niche_id']) ? htmlspecialchars($row['new_niche_id']) : '',
-    'attachment_html' => $attachment_html
+    'attachment_html' => $attachment_html,
+    'dateInternment' => isset($row['dateInternment']) ? htmlspecialchars($row['dateInternment']) : ''
 ]);

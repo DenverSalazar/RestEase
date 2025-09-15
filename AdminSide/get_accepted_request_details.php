@@ -41,6 +41,14 @@ $suffix = isset($row['suffix']) ? htmlspecialchars($row['suffix']) : '';
 $residency = isset($row['residency']) ? htmlspecialchars($row['residency']) : '';
 $dob = isset($row['dob']) ? htmlspecialchars($row['dob']) : '';
 $dod = isset($row['dod']) ? htmlspecialchars($row['dod']) : '';
+$internment_date = '';
+if (isset($row['internment_date'])) {
+    $internment_date = htmlspecialchars($row['internment_date']);
+} elseif (isset($row['date_of_internment'])) {
+    $internment_date = htmlspecialchars($row['date_of_internment']);
+} elseif (isset($row['dateInternment'])) {
+    $internment_date = htmlspecialchars($row['dateInternment']);
+}
 echo json_encode([
     'success' => true,
     'id' => $row['id'],
@@ -59,5 +67,6 @@ echo json_encode([
     'dob' => $dob,
     'dod' => $dod,
     'current_niche_id' => isset($row['current_niche_id']) ? htmlspecialchars($row['current_niche_id']) : '',
-    'new_niche_id' => isset($row['new_niche_id']) ? htmlspecialchars($row['new_niche_id']) : ''
+    'new_niche_id' => isset($row['new_niche_id']) ? htmlspecialchars($row['new_niche_id']) : '',
+    'internment_date' => $internment_date
 ]);
