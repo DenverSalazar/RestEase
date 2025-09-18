@@ -253,6 +253,44 @@ while ($row = $result->fetch_assoc()) {
       border-top-left-radius: 0 !important;
       border-top-right-radius: 0 !important;
     }
+    /* Custom styled select for filter */
+    .filter-select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background: #fff url('data:image/svg+xml;utf8,<svg fill="%232d8cff" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center/18px 18px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 8px 36px 8px 14px;
+      font-size: 15px;
+      color: #222;
+      font-family: 'Inter', 'Poppins', sans-serif;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: border 0.18s, box-shadow 0.18s;
+      outline: none;
+      cursor: pointer;
+      min-width: 120px;
+      margin-left: 12px;
+    }
+    .filter-select:focus {
+      border: 1.5px solid #2d8cff;
+      box-shadow: 0 0 0 2px rgba(45,140,255,0.08);
+    }
+    .filter-select option {
+      background: #fff;
+      color: #222;
+      font-weight: 500;
+      font-family: 'Inter', 'Poppins', sans-serif;
+    }
+    @media (max-width: 600px) {
+      .filter-select {
+        font-size: 13px;
+        padding: 6px 28px 6px 10px;
+        min-width: 90px;
+        margin-left: 6px;
+      }
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -696,40 +734,40 @@ while ($row = $result->fetch_assoc()) {
         map.createPane('pane_Floor1');
         map.getPane('pane_Floor1').style.zIndex = 402;
         map.getPane('pane_Floor1').style['mix-blend-mode'] = 'normal';
-        var layer_Floor1 = new L.geoJson(json_Floor1, {
+        var layer_Floor1 = new L.geoJson(json_oldmap_floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor1',
+            dataVar: 'json_oldmap_floor1',
             layerName: 'layer_Floor1',
             pane: 'pane_Floor1',
             onEachFeature: pop_Floor1,
             style: style_Floor1,
         });
         // Section 2
-        var layer_Floor1 = new L.geoJson(json_Floor1, {
+        var layer_Floor1 = new L.geoJson(json_oldmap_floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor1',
+            dataVar: 'json_oldmap_floor1',
             layerName: 'layer_Floor1',
             pane: 'pane_Floor1',
             onEachFeature: pop_Floor1,
             style: style_Floor1,
         });
         // Section 3
-        var layer_Floor1 = new L.geoJson(json_Floor1, {
+        var layer_Floor1 = new L.geoJson(json_oldmap_floor1, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor1',
+            dataVar: 'json_oldmap_floor1',
             layerName: 'layer_Floor1',
             pane: 'pane_Floor1',
             onEachFeature: pop_Floor1,
             style: style_Floor1,
         });
         // Section 4
-        var layer_Floor1_4 = new L.geoJson(json_Floor1_4, {
+        var layer_Floor1_4 = new L.geoJson(json_oldmap_floor1_4, {
             attribution: '',
             interactive: true,
-            dataVar: 'json_Floor1_4',
+            dataVar: 'json_oldmap_floor1_4',
             layerName: 'layer_Floor1_4',
             pane: 'pane_Floor1',
             onEachFeature: pop_Floor1,

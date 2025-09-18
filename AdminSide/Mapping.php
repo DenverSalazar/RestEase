@@ -63,13 +63,19 @@ while ($row = $result->fetch_assoc()) {
     }
     /* Only adjust legend position, not width */
     body.pick-niche-mode .custom-map-legend {
-      left: 24px !important;
-      right: auto !important;
+      right: 24px !important;
+      left: auto !important;
       bottom: 18px !important;
       border-radius: 10px !important;
       max-width: 260px !important;
       min-width: 140px !important;
       width: auto !important;
+    }
+    /* Position legend at lower right in all modes */
+    .custom-map-legend {
+      right: 18px !important;
+      left: auto !important;
+      bottom: 18px !important;
     }
     body.pick-niche-mode #map {
       margin: 0 !important;
@@ -268,7 +274,44 @@ while ($row = $result->fetch_assoc()) {
     .floor-control {
     margin-top: 40px; /* small gap below Layers button */
 }
-
+ /* Custom styled select for filter */
+    .filter-select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background: #fff url('data:image/svg+xml;utf8,<svg fill="%232d8cff" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 12px center/18px 18px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 8px 36px 8px 14px;
+      font-size: 15px;
+      color: #222;
+      font-family: 'Inter', 'Poppins', sans-serif;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: border 0.18s, box-shadow 0.18s;
+      outline: none;
+      cursor: pointer;
+      min-width: 120px;
+      margin-left: 12px;
+    }
+    .filter-select:focus {
+      border: 1.5px solid #2d8cff;
+      box-shadow: 0 0 0 2px rgba(45,140,255,0.08);
+    }
+    .filter-select option {
+      background: #fff;
+      color: #222;
+      font-weight: 500;
+      font-family: 'Inter', 'Poppins', sans-serif;
+    }
+    @media (max-width: 600px) {
+      .filter-select {
+        font-size: 13px;
+        padding: 6px 28px 6px 10px;
+        min-width: 90px;
+        margin-left: 6px;
+      }
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
