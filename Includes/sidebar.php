@@ -47,7 +47,8 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <!-- New Cemetery Dropdown -->
       <div class="nav-dropdown<?php if(in_array($current_page, ['Mapping.php','first_floor.php','second_floor.php','third_floor.php'])) echo ' open'; ?>" id="new-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
-          <i class="fas fa-map-marker-alt"></i>
+          
+<i class="fa-solid fa-map-location-dot"></i>
           New Cemetery
           <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
@@ -69,7 +70,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <!-- Old Cemetery Dropdown -->
       <div class="nav-dropdown<?php if($current_page == 'OldMap.php') echo ' open'; ?>" id="old-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
-          <i class="fas fa-map-marker-alt"></i>
+<i class="fa-solid fa-map-location-dot"></i>
           Old Cemetery
           <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
