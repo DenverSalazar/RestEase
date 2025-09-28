@@ -312,6 +312,44 @@ while ($row = $result->fetch_assoc()) {
         margin-left: 6px;
       }
     }
+
+    #searchErrorOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.15);
+      z-index: 9999;
+    }
+    #searchErrorPopup {
+      position: fixed;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+      z-index: 10000;
+      padding: 0;
+      min-width: 260px;
+      max-width: 340px;
+      display: none;
+    }
+    #searchErrorPopup.active, #searchErrorOverlay.active {
+      display: block !important;
+    }
+    #searchErrorPopup .popup-button {
+      background: #fb9a99;
+      color: #fff;
+      border-radius: 6px;
+      border: none;
+      padding: 8px 22px;
+      font-size: 15px;
+      font-family: 'Inter','Poppins',sans-serif;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.18s;
+    }
+    #searchErrorPopup .popup-button:hover {
+      background: #e57373;
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -404,11 +442,10 @@ while ($row = $result->fetch_assoc()) {
             <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
             <span class="search-input-icon"><i class="fas fa-search"></i></span>
         </div>
-        <select class="filter-select" id="mapFilterSelect">
-            <option value="all">All</option>
-            <option value="vacant">Vacant</option>
-            <option value="leased">Leased</option>
-        </select>
+        <div id="searchErrorMsg" style="display:none; color:#fb9a99; font-size:14px; margin-top:6px; font-family:'Inter','Poppins',sans-serif;">
+            No Niche ID or Name on the database, please check your entry and try again
+        </div>
+        <!-- Removed filter-select dropdown -->
      </div>
      <div id="map" style="margin-top:0 !important;">
         <!-- Layer Control Button -->
@@ -478,6 +515,16 @@ while ($row = $result->fetch_assoc()) {
            <button class="popup-button edit-button" id="editButton">Edit</button>
            <button class="popup-button edit-button" id="insertButton" style="display:none;">Insert</button>
            <button class="popup-button cancel-button" id="cancelButton">Cancel</button>
+       </div>
+   </div>
+   <!-- Search Error Popup -->
+   <div class="popup-overlay" id="searchErrorOverlay" style="display:none;"></div>
+   <div class="custom-popup" id="searchErrorPopup" style="display:none; max-width:340px;">
+       <div id="searchErrorContent" style="padding:24px 18px; font-size:16px; color:#fb9a99; text-align:center;">
+           No Niche ID or Name on the database, please check your entry and try again
+       </div>
+       <div style="text-align:center; margin-bottom:12px;">
+           <button class="popup-button cancel-button" id="searchErrorCloseBtn" style="margin-top:10px;">Close</button>
        </div>
    </div>
    
@@ -1313,6 +1360,11 @@ function removeSectionLabels(sectionLayer) {
     });
 }
 
+
+// Add labels only for the default visible layer
+addSectionLabels(layer_Floor1);
+resetLabels([layer_Floor1]);
+
 // Add labels only for the default visible layer
 addSectionLabels(layer_Floor1);
 resetLabels([layer_Floor1]);
@@ -1361,6 +1413,16 @@ map.on("zoomend", function(){
     if (map.hasLayer(layer_Floor1_2)) visibleLayers.push(layer_Floor1_2);
     if (map.hasLayer(layer_Floor1_3)) visibleLayers.push(layer_Floor1_3);
     if (map.hasLayer(layer_Floor1_4)) visibleLayers.push(layer_Floor1_4);
+    if (map.hasLayer(layer_Floor2)) visibleLayers.push(layer_Floor2);
+    if (map.hasLayer(layer_Floor2_2)) visibleLayers.push(layer_Floor2_2);
+    if (map.hasLayer(layer_Floor2_3)) visibleLayers.push(layer_Floor2_3);
+    if (map.hasLayer(layer_Floor2_4)) visibleLayers.push(layer_Floor2_4);
+    if (map.hasLayer(layer_Floor3)) visibleLayers.push(layer_Floor3);
+    if (map.hasLayer(layer_Floor3_2)) visibleLayers.push(layer_Floor3_2);
+    if (map.hasLayer(layer_Floor3_3)) visibleLayers.push(layer_Floor3_3);
+    if (map.hasLayer(layer_Floor3_4)) visibleLayers.push(layer_Floor3_4);
+    if (map.hasLayer(layer_OldMap_1)) visibleLayers.push(layer_OldMap_1);
+    if (map.hasLayer(layer_OldMap_4)) visibleLayers.push(layer_OldMap_4);
     resetLabels(visibleLayers);
 });
 
@@ -1483,6 +1545,110 @@ map.on("zoomend", function(){
     });
 });
 
+// --- SEARCH FUNCTIONALITY ---
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('mapSearchInput');
+    var searchErrorPopup = document.getElementById('searchErrorPopup');
+    var searchErrorOverlay = document.getElementById('searchErrorOverlay');
+    var searchErrorCloseBtn = document.getElementById('searchErrorCloseBtn');
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            var query = searchInput.value.trim().toLowerCase();
+            if (!query) return;
+
+            function normalizeName(deceased) {
+                if (!deceased) return '';
+                var firstName = deceased.firstName || '';
+                var middleName = deceased.middleName || '';
+                var lastName = deceased.lastName || '';
+                var suffix = deceased.suffix || '';
+                var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                var fullName = firstName;
+                if (middleInitial) fullName += ' ' + middleInitial;
+                if (lastName) fullName += ' ' + lastName;
+                if (suffix) fullName += ', ' + suffix;
+                return fullName.trim().toLowerCase();
+            }
+
+            var found = false;
+            var visibleLayers = [];
+            if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
+            if (map.hasLayer(layer_Floor1_2)) visibleLayers.push(layer_Floor1_2);
+            if (map.hasLayer(layer_Floor1_3)) visibleLayers.push(layer_Floor1_3);
+            if (map.hasLayer(layer_Floor1_4)) visibleLayers.push(layer_Floor1_4);
+            if (map.hasLayer(layer_Floor2)) visibleLayers.push(layer_Floor2);
+            if (map.hasLayer(layer_Floor2_2)) visibleLayers.push(layer_Floor2_2);
+            if (map.hasLayer(layer_Floor2_3)) visibleLayers.push(layer_Floor2_3);
+            if (map.hasLayer(layer_Floor2_4)) visibleLayers.push(layer_Floor2_4);
+            if (map.hasLayer(layer_Floor3)) visibleLayers.push(layer_Floor3);
+            if (map.hasLayer(layer_Floor3_2)) visibleLayers.push(layer_Floor3_2);
+            if (map.hasLayer(layer_Floor3_3)) visibleLayers.push(layer_Floor3_3);
+            if (map.hasLayer(layer_Floor3_4)) visibleLayers.push(layer_Floor3_4);
+            if (map.hasLayer(layer_OldMap_1)) visibleLayers.push(layer_OldMap_1);
+            if (map.hasLayer(layer_OldMap_4)) visibleLayers.push(layer_OldMap_4);
+
+            visibleLayers.some(function(sectionLayer) {
+                var matchLayer = null;
+                sectionLayer.eachLayer(function(layer) {
+                    var nicheID = layer.feature && layer.feature.properties['nicheID'];
+                    var deceased = deceasedData[nicheID];
+                    if (nicheID && nicheID.toLowerCase() === query) {
+                        matchLayer = layer;
+                        return;
+                    }
+                    if (deceased && normalizeName(deceased).includes(query)) {
+                        matchLayer = layer;
+                        return;
+                    }
+                });
+                if (matchLayer) {
+                    found = true;
+                    // Zoom to the center of the niche at high zoom
+                    var center;
+                    if (matchLayer.getBounds) {
+                        center = matchLayer.getBounds().getCenter();
+                    } else if (matchLayer.getLatLng) {
+                        center = matchLayer.getLatLng();
+                    }
+                    if (center) {
+                        map.setView(center, 1000, { animate: true });
+                    }
+                    highlightFeature({ target: matchLayer });
+                    setTimeout(function() {
+                        matchLayer.fire('click');
+                    }, 300);
+                    return true;
+                }
+                return false;
+            });
+
+            if (!found) {
+                searchInput.style.borderColor = '#fb9a99';
+                if (searchErrorPopup && searchErrorOverlay) {
+                    searchErrorPopup.classList.add('active');
+                    searchErrorOverlay.classList.add('active');
+                }
+            } else {
+                if (searchErrorPopup && searchErrorOverlay) {
+                    searchErrorPopup.classList.remove('active');
+                    searchErrorOverlay.classList.remove('active');
+                }
+            }
+        }
+    });
+    if (searchErrorCloseBtn && searchErrorOverlay && searchErrorPopup) {
+        searchErrorCloseBtn.addEventListener('click', function() {
+            searchErrorPopup.classList.remove('active');
+            searchErrorOverlay.classList.remove('active');
+            searchInput.style.borderColor = '';
+        });
+        searchErrorOverlay.addEventListener('click', function() {
+            searchErrorPopup.classList.remove('active');
+            searchErrorOverlay.classList.remove('active');
+            searchInput.style.borderColor = '';
+        });
+    }
+});
         </script>
 </body>
 </html>
