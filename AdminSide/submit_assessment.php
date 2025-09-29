@@ -27,6 +27,44 @@ if (!$request_id || !$user_id || !$total_fee) {
 // $stmt->execute();
 // $stmt->close();
 
+// Save assessment to database
+$type = isset($_POST['type']) ? $_POST['type'] : '';
+$informant_name = isset($_POST['informant_name']) ? $_POST['informant_name'] : '';
+$email = isset($_POST['email']) ? $_POST['email'] : '';
+$deceased_name = isset($_POST['deceased_name']) ? $_POST['deceased_name'] : '';
+$residency = isset($_POST['residency']) ? $_POST['residency'] : '';
+$dob = isset($_POST['dob']) ? $_POST['dob'] : null;
+$dod = isset($_POST['dod']) ? $_POST['dod'] : null;
+$age = isset($_POST['age']) ? $_POST['age'] : '';
+$niche_id = isset($_POST['niche_id']) ? $_POST['niche_id'] : '';
+$expiration = isset($_POST['expiration']) ? $_POST['expiration'] : '';
+$renewal_fee = isset($_POST['renewal_fee']) ? floatval($_POST['renewal_fee']) : 0;
+
+$stmt = $conn->prepare("INSERT INTO assessment 
+(request_id, user_id, type, informant_name, email, deceased_name, residency, dob, dod, age, niche_id, total_fee, expiration, renewal_fee, created_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+
+$stmt->bind_param(
+    'iisssssssssdss',
+    $request_id,
+    $user_id,
+    $type,
+    $informant_name,
+    $email,
+    $deceased_name,
+    $residency,
+    $dob,
+    $dod,
+    $age,
+    $niche_id,
+    $total_fee,
+    $expiration,
+    $renewal_fee
+);
+
+$stmt->execute();
+$stmt->close();
+
 // Insert notification for the user
 $notif_message = "Your assessment of fees is ready. Total fee: ₱ " . number_format($total_fee, 2);
 $notif_link = "clientbilling.php?request_id=$request_id"; // Adjust link as needed

@@ -16,6 +16,7 @@ if (!isset($_SESSION['admin_id'])) {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/clientsrequest.css">
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 </head>
@@ -34,6 +35,7 @@ if (!isset($_SESSION['admin_id'])) {
         <span class="clients-tab-title active" id="tab-clients-request" onclick="showTab('clients-request')">Clients Request</span>
         <span class="clients-tab-title" id="tab-accepted-request" onclick="showTab('accepted-request')">Accepted Requests</span>
         <span class="clients-tab-title" id="tab-assessment-fees" onclick="showTab('assessment-fees')">Assessment of Fees</span>
+        <span class="clients-tab-title" id="tab-done-assessment" onclick="showTab('done-assessment')">Done Assessment</span>
       </div>
     </div>
     <div id="clients-request-section">
@@ -213,6 +215,75 @@ if (!isset($_SESSION['admin_id'])) {
         </div>
       </div>
     </div>
+    <div id="done-assessment-section" style="display:none;">
+      <div class="clients-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search Done Assessments" id="done-assessment-search-input">
+        </div>
+        <div class="actions-right">
+          <div class="date-filter-container">
+            <input type="date" id="done-assessment-date-filter" class="date-input">
+            <button type="button" id="clear-done-assessment-date-filter" class="clear-date-btn" style="display:none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div class="dataTables_length">
+          <label>Show <select name="done-assessment-table_length"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label>
+        </div>
+      </div>
+      <?php
+      // Fetch all done assessments
+      $sql_assessment = "SELECT * FROM assessment ORDER BY created_at DESC";
+      $result_assessment = $conn->query($sql_assessment);
+      ?>
+      <div class="scrollable-table-container" style="max-width:100%;overflow:auto;">
+        <table class="clients-table" id="done-assessment-table" style="min-width:1400px;">
+          <thead>
+            <tr>
+              <th>Informant Name</th>
+              <th>Email</th>
+              <th>Type</th>
+              <th>Deceased Name</th>
+              <th>Residency</th>
+              <th>Date of Birth</th>
+              <th>Date of Death</th>
+              <th>Age</th>
+              <th>Niche ID</th>
+              <th>Total Fee</th>
+              <th>Expiration</th>
+              <th>Renewal Fee</th>
+              <th>Date Assessed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if ($result_assessment && $result_assessment->num_rows > 0): ?>
+              <?php while ($row = $result_assessment->fetch_assoc()): ?>
+                <tr data-assessed-date='<?php echo htmlspecialchars($row['created_at']); ?>'>
+                  <td><?php echo htmlspecialchars($row['informant_name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['email']); ?></td>
+                  <td><?php echo htmlspecialchars($row['type']); ?></td>
+                  <td><?php echo htmlspecialchars($row['deceased_name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['residency']); ?></td>
+                  <td><?php echo htmlspecialchars($row['dob']); ?></td>
+                  <td><?php echo htmlspecialchars($row['dod']); ?></td>
+                  <td><?php echo htmlspecialchars($row['age']); ?></td>
+                  <td><?php echo htmlspecialchars($row['niche_id']); ?></td>
+                  <td>₱ <?php echo number_format($row['total_fee'], 2); ?></td>
+                  <td><?php echo htmlspecialchars($row['expiration']); ?></td>
+                  <td>₱ <?php echo number_format($row['renewal_fee'], 2); ?></td>
+                  <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                </tr>
+              <?php endwhile; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+      <div class="dataTables_wrapper"></div>
+    </div>
     <!-- Popup Modal -->
     <div id="popupModal" class="popup-modal" style="display:none;">
       <div class="popup-content">
@@ -314,323 +385,13 @@ if (!isset($_SESSION['admin_id'])) {
         <button id="closeActionErrorNotificationBtn" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;margin-left:auto;">&times;</button>
       </div>
     </div>
-    <style>
-      /* Popup Modal Styles */
-      .popup-modal {
-        position: fixed;
-        z-index: 9999;
-        left: 0; top: 0; width: 100vw; height: 100vh;
-        background: rgba(44,62,80,0.25);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .popup-content {
-        background: #fff;
-        padding: 32px;
-        border-radius: 16px;
-        width: 500px;
-        max-width: 90vw;
-        max-height: 80vh;
-        overflow-y: auto;
-        position: relative;
-        box-shadow: 0 12px 48px rgba(44,62,80,0.15);
-        animation: modalSlideIn 0.3s ease-out;
-      }
-      @keyframes modalSlideIn {
-        0% { transform: scale(0.9); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-      .popup-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #e5e7eb;
-      }
-      .popup-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #374151;
-        margin: 0;
-      }
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #9ca3af;
-        cursor: pointer;
-        padding: 4px 8px;
-        line-height: 1;
-        border-radius: 50%;
-        transition: all 0.2s ease;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .close-btn:hover {
-        color: #6b7280;
-        background: #f3f4f6;
-      }
-      .popup-details {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 24px;
-        max-height: 60vh;
-        overflow-y: auto;
-      }
-      .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 8px 12px;
-        transition: background 0.2s ease;
-        border-radius: 6px;
-      }
-      .detail-row:hover {
-        background: #f9fafb;
-      }
-      .detail-label {
-        font-weight: 600;
-        color: #374151;
-        min-width: 120px;
-        font-size: 0.95rem;
-      }
-      .detail-value {
-        color: #6b7280;
-        font-size: 0.95rem;
-        text-align: right;
-        flex: 1;
-        margin-left: 16px;
-      }
-      .attachment-link {
-        color: #3b82f6;
-        text-decoration: none;
-        font-size: 0.9rem;
-        transition: color 0.2s ease;
-      }
-      .attachment-link:hover {
-        color: #2563eb;
-        text-decoration: underline;
-      }
-      .popup-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        margin-top: 24px;
-        padding-top: 16px;
-        border-top: 1px solid #e5e7eb;
-      }
-      .accept-btn, .deny-btn, .go-payment-btn {
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        border: none;
-        transition: background 0.2s;
-      }
-      .accept-btn {
-        background: #27ae60;
-        color: #fff;
-      }
-      .accept-btn:hover {
-        background: #219150;
-      }
-      .deny-btn {
-        background: #e4e9ee;
-        color: #2d3a4a;
-      }
-      .deny-btn:hover {
-        background: #d3dbe2;
-      }
-      .go-payment-btn {
-        background: #27ae60;
-        color: #fff;
-        min-width: 120px;
-      }
-      .go-payment-btn:hover {
-        background: #219150;
-      }
-      .clients-tabs-bar {
-        border-bottom: 1px solid #e0e0e0;
-        margin-bottom: 8px;
-      }
-      .clients-tabs {
-        display: flex;
-        gap: 32px;
-        align-items: center;
-      }
-      .clients-tab-title {
-        background: none;
-        border: none;
-        font-size: 1.08rem;
-        padding: 16px 0 12px 0;
-        color: #222;
-        font-weight: 600;
-        border-bottom: 2px solid transparent;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
-        border-radius: 0;
-        box-shadow: none;
-        margin-bottom: 0;
-        margin-top: 0;
-      }
-      .clients-tab-title.active {
-        border-bottom: 2.5px solid #506C84;
-        color: #506C84;
-        opacity: 1;
-      }
-      .status-badge.status-accepted {
-        background: #a6f4c5;
-        color: #22c55e;
-        padding: 4px 12px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.98rem;
-      }
-      .date-filter-container {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .date-input {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 14px;
-        background: #fff;
-        cursor: pointer;
-      }
-
-      /* Modal Styles */
-      .modal-overlay {
-        position: fixed;
-        z-index: 10000;
-        left: 0; top: 0; width: 100vw; height: 100vh;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .modal-content {
-        background: #fff;
-        padding: 24px;
-        border-radius: 12px;
-        width: 400px;
-        max-width: 90vw;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        position: relative;
-      }
-      .modal-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 16px;
-      }
-      .modal-header i {
-        font-size: 2rem;
-        margin-right: 12px;
-      }
-      .modal-header h2 {
-        font-size: 1.5rem;
-        margin: 0;
-        color: #333;
-      }
-      .modal-body {
-        margin: 12px 0 16px 0;
-        color: #555;
-        font-size: 1rem;
-      }
-      .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-      }
-      .modal-delete-btn, .modal-cancel-btn {
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        border: none;
-        transition: background 0.2s;
-      }
-      .modal-delete-btn {
-        background: #e74c3c;
-        color: #fff;
-      }
-      .modal-delete-btn:hover {
-        background: #c0392b;
-      }
-      .modal-cancel-btn {
-        background: #f0f0f0;
-        color: #333;
-      }
-      .modal-cancel-btn:hover {
-        background: #e0e0e0;
-      }
-      /* Success Notification Styles */
-      #actionSuccessNotification {
-        display: none;
-        position: fixed;
-        top: 32px;
-        right: 32px;
-        z-index: 10000;
-        background: #2ecc71;
-        color: #fff;
-        padding: 18px 32px;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(46,204,113,0.15);
-        font-size: 1.1rem;
-        font-weight: 500;
-        align-items: center;
-        gap: 16px;
-        min-width: 220px;
-      }
-      #actionSuccessNotification span {
-        display: flex;
-        align-items: center;
-      }
-      #actionSuccessNotification i {
-        margin-right: 8px;
-      }
-      #actionErrorNotification {
-        display: none;
-        position: fixed;
-        top: 32px;
-        right: 32px;
-        z-index: 10000;
-        background: #fff;
-        color: #e74c3c;
-        padding: 18px 32px;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(231,76,60,0.15);
-        font-size: 1.1rem;
-        font-weight: 500;
-        align-items: center;
-        gap: 16px;
-        min-width: 220px;
-      }
-      #actionErrorNotification span {
-        display: flex;
-        align-items: center;
-      }
-      #actionErrorNotification i {
-        margin-right: 8px;
-      }
-    </style>
+    
     <!-- DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script>
       // Initialize DataTables
-      let clientsRequestTable, acceptedTable;
+      let clientsRequestTable, acceptedTable, doneAssessmentTable;
       
       document.addEventListener('DOMContentLoaded', function() {
         // Destroy existing DataTables if they exist
@@ -640,8 +401,11 @@ if (!isset($_SESSION['admin_id'])) {
         if ($.fn.DataTable.isDataTable('#accepted-table')) {
           $('#accepted-table').DataTable().destroy();
         }
+        if ($.fn.DataTable.isDataTable('#done-assessment-table')) {
+          $('#done-assessment-table').DataTable().destroy();
+        }
 
-        // Initialize DataTables for both tables
+        // Initialize DataTables for all tables
         try {
           clientsRequestTable = $('#clients-request-table').DataTable({
             "paging": true,
@@ -706,6 +470,38 @@ if (!isset($_SESSION['admin_id'])) {
           console.error('Error initializing accepted table:', e);
         }
 
+        try {
+          doneAssessmentTable = $('#done-assessment-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "dom": 'rtip',
+            "pageLength": 10,
+            "language": {
+              "emptyTable": "No assessments found.",
+              "zeroRecords": "No matching records found",
+              "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+              "infoEmpty": "Showing 0 to 0 of 0 entries",
+              "infoFiltered": "(filtered from _MAX_ total entries)"
+            },
+            "columnDefs": [
+              { "orderable": false, "targets": [12] }
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              
+              const info = $('#done-assessment-table_info').detach();
+              const paginate = $('#done-assessment-table_paginate').detach();
+              
+              externalWrapper.empty().append(info).append(paginate);
+            }
+          });
+        } catch (e) {
+          console.error('Error initializing done assessment table:', e);
+        }
+
         // Connect search inputs with error handling
         const clientsSearchInput = document.getElementById('clients-search-input');
         if (clientsSearchInput) {
@@ -729,6 +525,19 @@ if (!isset($_SESSION['admin_id'])) {
               }
             } catch (e) {
               console.error('Error in accepted search:', e);
+            }
+          });
+        }
+
+        const doneAssessmentSearchInput = document.getElementById('done-assessment-search-input');
+        if (doneAssessmentSearchInput) {
+          doneAssessmentSearchInput.addEventListener('keyup', function() {
+            try {
+              if (doneAssessmentTable) {
+                doneAssessmentTable.search(this.value).draw();
+              }
+            } catch (e) {
+              console.error('Error in done assessment search:', e);
             }
           });
         }
@@ -814,6 +623,46 @@ if (!isset($_SESSION['admin_id'])) {
           });
         }
 
+        const doneAssessmentDateInput = document.getElementById('done-assessment-date-filter');
+        const clearDoneAssessmentDateBtn = document.getElementById('clear-done-assessment-date-filter');
+
+        if (doneAssessmentDateInput && clearDoneAssessmentDateBtn) {
+          doneAssessmentDateInput.addEventListener('change', function() {
+            const selectedDate = this.value;
+            if (selectedDate) {
+              clearDoneAssessmentDateBtn.style.display = 'block';
+              try {
+                if (doneAssessmentTable) {
+                  doneAssessmentTable.column(12).search(selectedDate, false, false).draw();
+                }
+              } catch (e) {
+                console.error('Error in done assessment date filter:', e);
+              }
+            } else {
+              clearDoneAssessmentDateBtn.style.display = 'none';
+              try {
+                if (doneAssessmentTable) {
+                  doneAssessmentTable.column(12).search('').draw();
+                }
+              } catch (e) {
+                console.error('Error clearing done assessment date filter:', e);
+              }
+            }
+          });
+
+          clearDoneAssessmentDateBtn.addEventListener('click', function() {
+            doneAssessmentDateInput.value = '';
+            this.style.display = 'none';
+            try {
+              if (doneAssessmentTable) {
+                doneAssessmentTable.column(12).search('').draw();
+              }
+            } catch (e) {
+              console.error('Error clearing done assessment date filter:', e);
+            }
+          });
+        }
+
         // Connect entries dropdowns
         const clientsLengthSelect = document.querySelector('select[name="clients-request-table_length"]');
         if (clientsLengthSelect) {
@@ -840,15 +689,30 @@ if (!isset($_SESSION['admin_id'])) {
             }
           });
         }
+
+        const doneAssessmentLengthSelect = document.querySelector('select[name="done-assessment-table_length"]');
+        if (doneAssessmentLengthSelect) {
+          doneAssessmentLengthSelect.addEventListener('change', function() {
+            try {
+              if (doneAssessmentTable) {
+                doneAssessmentTable.page.len(parseInt(this.value)).draw();
+              }
+            } catch (e) {
+              console.error('Error changing done assessment page length:', e);
+            }
+          });
+        }
       });
 
       function showTab(tab) {
         document.getElementById('clients-request-section').style.display = (tab === 'clients-request') ? '' : 'none';
         document.getElementById('accepted-request-section').style.display = (tab === 'accepted-request') ? '' : 'none';
         document.getElementById('assessment-fees-section').style.display = (tab === 'assessment-fees') ? '' : 'none';
+        document.getElementById('done-assessment-section').style.display = (tab === 'done-assessment') ? '' : 'none';
         document.getElementById('tab-clients-request').classList.toggle('active', tab === 'clients-request');
         document.getElementById('tab-accepted-request').classList.toggle('active', tab === 'accepted-request');
         document.getElementById('tab-assessment-fees').classList.toggle('active', tab === 'assessment-fees');
+        document.getElementById('tab-done-assessment').classList.toggle('active', tab === 'done-assessment');
       }
       
       function openPopup(requestId, type) {
@@ -1082,146 +946,162 @@ if (!isset($_SESSION['admin_id'])) {
         }
       }
       
-      function goToAssessment() {
-        // List of barangays in Padre Garcia, Batangas
-        const padreGarciaBarangays = [
-          'Banaba, Padre Garcia, Batangas',
-          'Banaybanay, Padre Garcia, Batangas',
-          'Bawi, Padre Garcia, Batangas',
-          'Bukal, Padre Garcia, Batangas',
-          'Castillo, Padre Garcia, Batangas',
-          'Cawongan, Padre Garcia, Batangas',
-          'Manggas, Padre Garcia, Batangas',
-          'Maugat East, Padre Garcia, Batangas',
-          'Maugat West, Padre Garcia, Batangas',
-          'Pansol, Padre Garcia, Batangas',
-          'Payapa, Padre Garcia, Batangas',
-          'Poblacion, Padre Garcia, Batangas',
-          'Quilo-quilo North, Padre Garcia, Batangas',
-          'Quilo-quilo South, Padre Garcia, Batangas',
-          'San Felipe, Padre Garcia, Batangas',
-          'San Miguel, Padre Garcia, Batangas',
-          'Tamak, Padre Garcia, Batangas',
-          'Tangob, Padre Garcia, Batangas'
-        ];
-        // Fetch the details again to ensure we have the latest data
-        let url = (window.currentRequestType === 'accepted') ? 'get_accepted_request_details.php?id=' + window.currentRequestId : 'get_request_details.php?id=' + window.currentRequestId;
-        fetch(url)
-          .then(response => response.json())
-          .then(data => {
-            if (data && data.success) {
-              let summaryHtml = '';
-              let expirationInfo = '';
-              let totalFee = 0;
-              let renewalFee = 5000;
-              let formHtml = '';
-              // Relocate logic
-              if (data.type === 'Relocate') {
-                let openingFee = 1000;
-                let remainsCount = parseInt(data.remains_count) || 1;
-                let relocationFee = 500 * remainsCount;
-                totalFee = openingFee + relocationFee;
-                summaryHtml = `
-                  <div class=\"detail-row\"><span class=\"detail-label\">Opening Fee:</span><span class=\"detail-value\">₱ 1,000.00</span></div>
-                  <div class=\"detail-row\"><span class=\"detail-label\">Relocation Fee:</span><span class=\"detail-value\">₱ 500.00 x ${remainsCount} = ₱ ${(relocationFee).toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
-                  <div class=\"detail-row\"><span class=\"detail-label\">Total Fee:</span><span class=\"detail-value\">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
-                `;
-              } else {
-                // Calculate total fee and expiration date for other types
-                let discountNote = '';
-                let babyNote = '';
-                let isBaby = false;
-                let age = parseInt(data.age);
-                if (data.type === 'New') {
-                  // Check if baby/newborn (2 years old or below)
-                  if (!isNaN(age) && age <= 2) {
-                    totalFee = 5000;
-                    babyNote = ' (Newborn/Baby Rate)';
-                    discountNote = '';
-                    isBaby = true;
-                  } else {
-                    let residency = (data.residency || '').trim();
-                    let isPadreGarcia = padreGarciaBarangays.some(function(bgy) {
-                      return residency.toLowerCase() === bgy.toLowerCase();
-                    });
-                    if (isPadreGarcia) {
-                      totalFee = 10000;
-                      discountNote = ' (Graciano discount applied)';
-                    } else {
-                      totalFee = 15000;
-                    }
-                  }
-                }
-                // Calculate expiration date (5 years from date of death)
-                let expirationDate = '';
-                if (data.dod) {
-                  let dod = new Date(data.dod);
-                  let exp = new Date(dod);
-                  exp.setFullYear(exp.getFullYear() + 5);
-                  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-                  let day = String(exp.getDate()).padStart(2, '0');
-                  let month = months[exp.getMonth()];
-                  let year = exp.getFullYear();
-                  expirationDate = `${day}-${month}-${year}`;
-                }
-                expirationInfo = expirationDate ? `<div class=\"detail-row\"><span class=\"detail-label\">Certificate Expiration:</span><span class=\"detail-value\">${expirationDate}</span></div>` : '';
-                let totalFeeInfo = totalFee ? `<div class=\"detail-row\"><span class=\"detail-label\">Total Fee:</span><span class=\"detail-value\">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}${babyNote || discountNote}</span></div>` : '';
-                let renewalInfo = `<div class=\"detail-row\"><span class=\"detail-label\">Renewal Fee:</span><span class=\"detail-value\">₱ 5,000.00</span></div>`;
-                summaryHtml = `${totalFeeInfo}${renewalInfo}${expirationInfo}`;
-              }
-              // Build the assessment form HTML (move summary fields to bottom)
-              formHtml = `
-                <div class=\"assessment-fees-container\" style=\"max-width:600px;margin:0 auto;padding:32px 0;\">
-                  <h2>Assessment of Fees</h2>
-                  <form id=\"assessmentForm">
-                    <div class=\"detail-row\"><span class=\"detail-label\">Informant Name:</span><span class=\"detail-value\">${data.informant_name || ''}</span></div>
-                    <div class=\"detail-row\"><span class=\"detail-label\">Email:</span><span class=\"detail-value\">${data.email || ''}</span></div>
-                    <div class=\"detail-row\"><span class=\"detail-label\">Type:</span><span class=\"detail-value\">${data.type || ''}</span></div>
-                    <div class=\"detail-row\" style=\"display:${data.deceased_name ? '' : 'none'};\"><span class=\"detail-label\">Name of Deceased:</span><span class=\"detail-value\">${data.deceased_name || ''}</span></div>
-                    <div class=\"detail-row\" style=\"display:${data.residency ? '' : 'none'};\"><span class=\"detail-label\">Residency:</span><span class=\"detail-value\">${data.residency || ''}</span></div>
-                    <div class=\"detail-row\" style=\"display:${data.dob ? '' : 'none'};\"><span class=\"detail-label\">Date of Birth:</span><span class=\"detail-value\">${data.dob || ''}</span></div>
-                    <div class=\"detail-row\" style=\"display:${data.dod ? '' : 'none'};\"><span class=\"detail-label\">Date of Death:</span><span class=\"detail-value\">${data.dod || ''}</span></div>
-                    <div class=\"detail-row\"><span class=\"detail-label\">Age:</span><span class=\"detail-value\">${data.age || ''}</span></div>
-                    <div class=\"detail-row\" style=\"display:${(data.type === 'Transfer' || data.type === 'Exhumation') ? '' : 'none'};\"><span class=\"detail-label\">Niche ID:</span><span class=\"detail-value\">${data.niche_id || ''}</span></div>
-                  
-                    <hr style=\"margin:24px 0;\">
-                    ${summaryHtml}
-                    <div style=\"text-align:right;margin-top:24px;\">
-                      <button type=\"submit\" class=\"accept-btn\">Submit Assessment</button>
-                    </div>
-                  </form>
-                </div>
-              `;
-              document.getElementById('assessment-fees-section').innerHTML = formHtml;
-              showTab('assessment-fees');
-              closePopup();
-              // Add form submission handler to send AJAX request
-              const assessmentForm = document.getElementById('assessmentForm');
-              if (assessmentForm) {
-                assessmentForm.onsubmit = function(e) {
-                  e.preventDefault();
-                  // Send AJAX request to submit_assessment.php
-                  fetch('submit_assessment.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `request_id=${encodeURIComponent(data.id)}&user_id=${encodeURIComponent(data.user_id)}&total_fee=${encodeURIComponent(totalFee)}`
-                  })
-                  .then(response => response.json())
-                  .then(result => {
-                    if (result.success) {
-                      showActionSuccessNotification('Assessment submitted and user notified!');
-                    } else {
-                      showActionErrorNotification('Failed to submit assessment: ' + (result.message || 'Unknown error'));
-                    }
-                  })
-                  .catch(error => {
-                    showActionErrorNotification('Network error: ' + error);
-                  });
-                };
-              }
-            }
-          });
+
+function goToAssessment() {
+  // List of barangays in Padre Garcia, Batangas
+  const padreGarciaBarangays = [
+    'Banaba, Padre Garcia, Batangas',
+    'Banaybanay, Padre Garcia, Batangas',
+    'Bawi, Padre Garcia, Batangas',
+    'Bukal, Padre Garcia, Batangas',
+    'Castillo, Padre Garcia, Batangas',
+    'Cawongan, Padre Garcia, Batangas',
+    'Manggas, Padre Garcia, Batangas',
+    'Maugat East, Padre Garcia, Batangas',
+    'Maugat West, Padre Garcia, Batangas',
+    'Pansol, Padre Garcia, Batangas',
+    'Payapa, Padre Garcia, Batangas',
+    'Poblacion, Padre Garcia, Batangas',
+    'Quilo-quilo North, Padre Garcia, Batangas',
+    'Quilo-quilo South, Padre Garcia, Batangas',
+    'San Felipe, Padre Garcia, Batangas',
+    'San Miguel, Padre Garcia, Batangas',
+    'Tamak, Padre Garcia, Batangas',
+    'Tangob, Padre Garcia, Batangas'
+  ];
+
+  // Fetch the request details
+  const url = (window.currentRequestType === 'accepted') 
+    ? 'get_accepted_request_details.php?id=' + window.currentRequestId 
+    : 'get_request_details.php?id=' + window.currentRequestId;
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (!data || !data.success) return;
+
+      let summaryHtml = '';
+      let expirationDate = '';
+      let totalFee = 0;
+      let renewalFee = 5000;
+
+      // Calculate fees and expiration
+      if (data.type === 'Relocate') {
+        const openingFee = 1000;
+        const remainsCount = parseInt(data.remains_count) || 1;
+        const relocationFee = 500 * remainsCount;
+        totalFee = openingFee + relocationFee;
+        summaryHtml = `
+          <div class="detail-row"><span class="detail-label">Opening Fee:</span><span class="detail-value">₱ 1,000.00</span></div>
+          <div class="detail-row"><span class="detail-label">Relocation Fee:</span><span class="detail-value">₱ 500.00 x ${remainsCount} = ₱ ${relocationFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+          <div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+        `;
+      } else {
+        const age = parseInt(data.age);
+        let babyNote = '';
+        let discountNote = '';
+
+        if (data.type === 'New') {
+          if (!isNaN(age) && age <= 2) {
+            totalFee = 5000;
+            babyNote = ' (Newborn/Baby Rate)';
+          } else {
+            const residency = (data.residency || '').trim();
+            const isPadreGarcia = padreGarciaBarangays.some(bgy => residency.toLowerCase() === bgy.toLowerCase());
+            totalFee = isPadreGarcia ? 10000 : 15000;
+            discountNote = isPadreGarcia ? ' (Graciano discount applied)' : '';
+          }
+        }
+
+        // Expiration date (5 years from date of death)
+        if (data.dod) {
+          const dod = new Date(data.dod);
+          const exp = new Date(dod);
+          exp.setFullYear(exp.getFullYear() + 5);
+          const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+          const day = String(exp.getDate()).padStart(2, '0');
+          const month = months[exp.getMonth()];
+          const year = exp.getFullYear();
+          expirationDate = `${day}-${month}-${year}`;
+        }
+
+        summaryHtml = `
+          <div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}${babyNote || discountNote}</span></div>
+          <div class="detail-row"><span class="detail-label">Renewal Fee:</span><span class="detail-value">₱ ${renewalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+          ${expirationDate ? `<div class="detail-row"><span class="detail-label">Certificate Expiration:</span><span class="detail-value">${expirationDate}</span></div>` : ''}
+        `;
       }
+
+      // Build the form HTML
+      const formHtml = `
+        <div class="assessment-fees-container" style="max-width:600px;margin:0 auto;padding:32px 0;">
+          <h2>Assessment of Fees</h2>
+          <form id="assessmentForm">
+            <div class="detail-row"><span class="detail-label">Informant Name:</span><span class="detail-value">${data.informant_name || ''}</span></div>
+            <div class="detail-row"><span class="detail-label">Email:</span><span class="detail-value">${data.email || ''}</span></div>
+            <div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value">${data.type || ''}</span></div>
+            <div class="detail-row" style="display:${data.deceased_name ? '' : 'none'};"><span class="detail-label">Name of Deceased:</span><span class="detail-value">${data.deceased_name || ''}</span></div>
+            <div class="detail-row" style="display:${data.residency ? '' : 'none'};"><span class="detail-label">Residency:</span><span class="detail-value">${data.residency || ''}</span></div>
+            <div class="detail-row" style="display:${data.dob ? '' : 'none'};"><span class="detail-label">Date of Birth:</span><span class="detail-value">${data.dob || ''}</span></div>
+            <div class="detail-row" style="display:${data.dod ? '' : 'none'};"><span class="detail-label">Date of Death:</span><span class="detail-value">${data.dod || ''}</span></div>
+            <div class="detail-row"><span class="detail-label">Age:</span><span class="detail-value">${data.age || ''}</span></div>
+            <div class="detail-row" style="display:${(data.type === 'Transfer' || data.type === 'Exhumation') ? '' : 'none'};"><span class="detail-label">Niche ID:</span><span class="detail-value">${data.niche_id || ''}</span></div>
+
+            <hr style="margin:24px 0;">
+            ${summaryHtml}
+            <div style="text-align:right;margin-top:24px;">
+              <button type="submit" class="accept-btn">Submit Assessment</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.getElementById('assessment-fees-section').innerHTML = formHtml;
+      showTab('assessment-fees');
+      closePopup();
+
+      // Form submission using URLSearchParams
+      const assessmentForm = document.getElementById('assessmentForm');
+      assessmentForm.onsubmit = function(e) {
+        e.preventDefault();
+
+        const params = new URLSearchParams({
+          request_id: data.id,
+          user_id: data.user_id,
+          total_fee: totalFee,
+          type: data.type || '',
+          informant_name: data.informant_name || '',
+          email: data.email || '',
+          deceased_name: data.deceased_name || '',
+          residency: data.residency || '',
+          dob: data.dob || '',
+          dod: data.dod || '',
+          age: data.age || '',
+          niche_id: data.niche_id || '',
+          expiration: expirationDate || '',
+          renewal_fee: renewalFee || 0
+        });
+
+        fetch('submit_assessment.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            showActionSuccessNotification('Assessment submitted and user notified!');
+          } else {
+            showActionErrorNotification('Failed to submit assessment: ' + (result.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          showActionErrorNotification('Network error: ' + error);
+        });
+      };
+    });
+}
+
     </script>
   </main>
 

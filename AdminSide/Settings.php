@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         <div class="settings-tabs">
           <div class="settings-tab active" data-tab="account">Account</div>
           <div class="settings-tab" data-tab="archive">Archive</div>
-          <div class="settings-tab" data-tab="notification">Notification</div>
+          <div class="settings-tab" data-tab="notification" id="notificationTabBtn" style="position:relative;">Notification <span id="notifBadge" style="display:none;position:absolute;top:-8px;right:0;background:#e74c3c;color:#fff;font-size:0.85rem;font-weight:600;padding:2px 7px;border-radius:12px;min-width:22px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.08);"></span></div>
         </div>
         <div class="settings-card" id="accountTab">
           <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Account</div>
@@ -676,8 +676,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
           <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
-          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">
-            Notification settings and preferences will be shown here.
+          <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">Notification settings and preferences will be shown here.</div>
+          <!-- Notification Sub-tabs -->
+          <div style="border-bottom:1px solid #e0e0e0; margin-bottom: 10px; margin-top: 18px;">
+            <div id="notifSubTabs" style="display:flex;gap:32px;">
+              <div class="notif-subtab active" data-notiftab="all" id="notifAllTabBtn" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">All</div>
+              <div class="notif-subtab" data-notiftab="newusers" id="notifNewUsersTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">New Users</div>
+              <div class="notif-subtab" data-notiftab="newrequests" id="notifNewRequestsTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">New Requests</div>
+            </div>
+          </div>
+          <!-- Notification Tab Contents -->
+          <div id="notifAllTab">
+            <div id="systemNotifications">
+              <?php
+              // Show notification for new client requests with client name
+              include_once '../Includes/db.php';
+              $result = $conn->query("SELECT cr.id, u.first_name, u.last_name FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC LIMIT 5");
+              if ($result && $result->num_rows > 0) {
+                $notifArr = [];
+                while ($row = $result->fetch_assoc()) {
+                  $clientName = htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name']));
+                  $notifArr[] = [
+                    'id' => $row['id'],
+                    'name' => $clientName
+                  ];
+                }
+                echo '<script>var systemNotifs = ' . json_encode($notifArr) . '; localStorage.setItem("systemNotifs", JSON.stringify(systemNotifs));</script>';
+                echo '<div id="notifList"></div>';
+              } else {
+                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new client requests.</div>';
+              }
+              ?>
+            </div>
+          </div>
+          <div id="notifNewUsersTab" style="display:none;">
+            <div id="newUsersNotifications">
+              <?php
+              // Show notification for new users
+              $result_users = $conn->query("SELECT id, first_name, last_name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+              if ($result_users && $result_users->num_rows > 0) {
+                $userArr = [];
+                while ($row = $result_users->fetch_assoc()) {
+                  $userArr[] = [
+                    'id' => $row['id'],
+                    'name' => htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name'])),
+                    'email' => htmlspecialchars($row['email']),
+                    'created_at' => htmlspecialchars($row['created_at'])
+                  ];
+                }
+                echo '<script>var newUserNotifs = ' . json_encode($userArr) . '; localStorage.setItem("newUserNotifs", JSON.stringify(newUserNotifs));</script>';
+                echo '<div id="newUserNotifList"></div>';
+              } else {
+                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new users found.</div>';
+              }
+              ?>
+            </div>
+          </div>
+          <div id="notifNewRequestsTab" style="display:none;">
+            <div id="newRequestsNotifications">
+              <?php
+              // Show notification for new client requests (same as All)
+              $result = $conn->query("SELECT cr.id, u.first_name, u.last_name FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC LIMIT 5");
+              if ($result && $result->num_rows > 0) {
+                $notifArr = [];
+                while ($row = $result->fetch_assoc()) {
+                  $clientName = htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name']));
+                  $notifArr[] = [
+                    'id' => $row['id'],
+                    'name' => $clientName
+                  ];
+                }
+                echo '<script>var newRequestNotifs = ' . json_encode($notifArr) . '; localStorage.setItem("newRequestNotifs", JSON.stringify(newRequestNotifs));</script>';
+                echo '<div id="newRequestNotifList"></div>';
+              } else {
+                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new client requests.</div>';
+              }
+              ?>
+            </div>
           </div>
         </div>
         <!-- Unsaved changes bar -->
@@ -1008,6 +1083,193 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           });
         });
       }
+    });
+
+    // Notification read/unread logic
+    function renderNotifications() {
+      if (typeof systemNotifs === 'undefined') return;
+      var notifList = document.getElementById('notifList');
+      if (!notifList) return;
+      notifList.innerHTML = '';
+      var unreadCount = 0;
+      systemNotifs.forEach(function(notif) {
+        var readKey = 'notif_read_' + notif.id;
+        var isRead = localStorage.getItem(readKey) === '1';
+        if (!isRead) unreadCount++;
+        var notifDiv = document.createElement('div');
+        notifDiv.style.display = 'flex';
+        notifDiv.style.alignItems = 'center';
+        notifDiv.style.justifyContent = 'space-between';
+        notifDiv.style.padding = '14px 18px';
+        notifDiv.style.background = '#f8f9fa';
+        notifDiv.style.borderRadius = '10px';
+        notifDiv.style.marginBottom = '10px';
+        notifDiv.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
+        notifDiv.style.fontSize = '1.05rem';
+        notifDiv.style.border = '1px solid #e3e7ed';
+        var span = document.createElement('span');
+        span.textContent = 'New client request received from ' + notif.name;
+        span.style.color = '#222';
+        span.style.fontWeight = isRead ? '400' : '700';
+        var a = document.createElement('a');
+        a.href = 'ClientsRequest.php';
+        a.title = 'View Requests';
+        a.style.marginLeft = '18px';
+        a.style.display = 'inline-flex';
+        a.style.alignItems = 'center';
+        a.style.justifyContent = 'center';
+        a.style.background = '#f1f3f6';
+        a.style.borderRadius = '50%';
+        a.style.width = '32px';
+        a.style.height = '32px';
+        a.style.textDecoration = 'none';
+        var icon = document.createElement('i');
+        icon.className = 'fas fa-arrow-right';
+        icon.style.color = '#888';
+        icon.style.fontSize = '1.25rem';
+        a.appendChild(icon);
+        a.onclick = function() {
+          localStorage.setItem(readKey, '1');
+          span.style.fontWeight = '400';
+          updateNotifBadge();
+        };
+        notifDiv.appendChild(span);
+        notifDiv.appendChild(a);
+        notifList.appendChild(notifDiv);
+      });
+      updateNotifBadge(unreadCount);
+    }
+    function updateNotifBadge(count) {
+      var badges = document.querySelectorAll('#notifBadge');
+      if (typeof count === 'undefined') {
+        // Recalculate if not provided
+        if (typeof systemNotifs === 'undefined') return;
+        count = 0;
+        systemNotifs.forEach(function(notif) {
+          var readKey = 'notif_read_' + notif.id;
+          if (localStorage.getItem(readKey) !== '1') count++;
+        });
+      }
+      badges.forEach(function(badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = '';
+        } else {
+          badge.textContent = '';
+          badge.style.display = 'none';
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      renderNotifications();
+      updateNotifBadge();
+    });
+
+    // Notification sub-tab switching
+    const notifTabs = document.querySelectorAll('.notif-subtab');
+    const notifTabContents = {
+      all: document.getElementById('notifAllTab'),
+      newusers: document.getElementById('notifNewUsersTab'),
+      newrequests: document.getElementById('notifNewRequestsTab')
+    };
+    notifTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        notifTabs.forEach(t => {
+          t.classList.remove('active');
+          t.style.color = '';
+          t.style.borderBottom = '';
+        });
+        this.classList.add('active');
+        this.style.color = '#2d72d9';
+        this.style.borderBottom = '2px solid #2d72d9';
+        Object.values(notifTabContents).forEach(tc => tc.style.display = 'none');
+        notifTabContents[this.dataset.notiftab].style.display = '';
+      });
+    });
+    // Render notifications for new users
+    function renderNewUserNotifications() {
+      if (typeof newUserNotifs === 'undefined') return;
+      var newUserNotifList = document.getElementById('newUserNotifList');
+      if (!newUserNotifList) return;
+      newUserNotifList.innerHTML = '';
+      newUserNotifs.forEach(function(user) {
+        var notifDiv = document.createElement('div');
+        notifDiv.style.display = 'flex';
+        notifDiv.style.alignItems = 'center';
+        notifDiv.style.justifyContent = 'space-between';
+        notifDiv.style.padding = '14px 18px';
+        notifDiv.style.background = '#f8f9fa';
+        notifDiv.style.borderRadius = '10px';
+        notifDiv.style.marginBottom = '10px';
+        notifDiv.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
+        notifDiv.style.fontSize = '1.05rem';
+        notifDiv.style.border = '1px solid #e3e7ed';
+        var span = document.createElement('span');
+        span.textContent = 'New user registered: ' + user.name + ' (' + user.email + ')';
+        span.style.color = '#222';
+        span.style.fontWeight = '700';
+        var dateSpan = document.createElement('span');
+        dateSpan.textContent = new Date(user.created_at).toLocaleString();
+        dateSpan.style.color = '#888';
+        dateSpan.style.fontSize = '0.95rem';
+        dateSpan.style.marginLeft = '18px';
+        notifDiv.appendChild(span);
+        notifDiv.appendChild(dateSpan);
+        newUserNotifList.appendChild(notifDiv);
+      });
+    }
+    // Render notifications for new requests
+    function renderNewRequestNotifications() {
+      if (typeof newRequestNotifs === 'undefined') return;
+      var newRequestNotifList = document.getElementById('newRequestNotifList');
+      if (!newRequestNotifList) return;
+      newRequestNotifList.innerHTML = '';
+      newRequestNotifs.forEach(function(notif) {
+        var notifDiv = document.createElement('div');
+        notifDiv.style.display = 'flex';
+        notifDiv.style.alignItems = 'center';
+        notifDiv.style.justifyContent = 'space-between';
+        notifDiv.style.padding = '14px 18px';
+        notifDiv.style.background = '#f8f9fa';
+        notifDiv.style.borderRadius = '10px';
+        notifDiv.style.marginBottom = '10px';
+        notifDiv.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
+        notifDiv.style.fontSize = '1.05rem';
+        notifDiv.style.border = '1px solid #e3e7ed';
+        var span = document.createElement('span');
+        span.textContent = 'New client request received from ' + notif.name;
+        span.style.color = '#222';
+        span.style.fontWeight = '700';
+        var a = document.createElement('a');
+        a.href = 'ClientsRequest.php';
+        a.title = 'View Requests';
+        a.style.marginLeft = '18px';
+        a.style.display = 'inline-flex';
+        a.style.alignItems = 'center';
+        a.style.justifyContent = 'center';
+        a.style.background = '#f1f3f6';
+        a.style.borderRadius = '50%';
+        a.style.width = '32px';
+        a.style.height = '32px';
+        a.style.textDecoration = 'none';
+        var icon = document.createElement('i');
+        icon.className = 'fas fa-arrow-right';
+        icon.style.color = '#888';
+        icon.style.fontSize = '1.25rem';
+        a.appendChild(icon);
+        a.onclick = function() {
+          span.style.fontWeight = '400';
+        };
+        notifDiv.appendChild(span);
+        notifDiv.appendChild(a);
+        newRequestNotifList.appendChild(notifDiv);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      renderNotifications();
+      renderNewUserNotifications();
+      renderNewRequestNotifications();
+      updateNotifBadge();
     });
   </script>
   <style>
