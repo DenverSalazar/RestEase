@@ -101,6 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   <link rel="stylesheet" href="../css/Settings.css">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+  <style>
+#archive-clients-table_filter {
+  display: none !important;
+}
+  </style>
 </head>
 <body>
    <!-- Sidebar -->
@@ -179,16 +184,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           <div style="color: #888; font-size: 0.97rem; margin-bottom: 10px;">
             Modify your password
           </div>
-          <div class="settings-fields-row" style="max-width: 350px;">
-            <div class="settings-field-group" style="width: 100%;">
-              <label for="currentPassword">Current password</label>
-              <div style="position: relative;">
-                <input type="password" id="currentPassword" value="passwordpassword" style="width: 100%; padding-right: 38px;">
-                <span id="togglePassword" style="position: absolute; right: -40px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;">
-                  <i class="fa fa-eye"></i>
-                </span>
+          <div id="changePasswordForm" autocomplete="off">
+            <div class="settings-fields-row password-row" style="display:flex;gap:18px;">
+              <div class="settings-field-group" style="flex:1;min-width:0;">
+                <label for="currentPassword">Current password</label>
+                <div style="position: relative;">
+                  <input type="password" id="currentPassword" name="currentPassword" class="settings-input" autocomplete="off">
+                  <span id="togglePassword" class="password-eye-icon">
+                    <i class="fa fa-eye"></i>
+                  </span>
+                </div>
+                <div id="currentPasswordError" style="color:#e74c3c;font-size:0.95em;margin-top:4px;display:none;"></div>
+              </div>
+              <div class="settings-field-group" style="flex:1;min-width:0;">
+                <label for="newPassword">New password</label>
+                <div style="position: relative;">
+                  <input type="password" id="newPassword" name="newPassword" class="settings-input" disabled autocomplete="off">
+                  <span id="toggleNewPassword" class="password-eye-icon">
+                    <i class="fa fa-eye"></i>
+                  </span>
+                </div>
+                <div id="newPasswordError" style="color:#e74c3c;font-size:0.95em;margin-top:4px;display:none;"></div>
+              </div>
+              <div class="settings-field-group" style="flex:1;min-width:0;">
+                <label for="confirmPassword">Confirm new password</label>
+                <div style="position: relative;">
+                  <input type="password" id="confirmPassword" name="confirmPassword" class="settings-input" disabled autocomplete="off">
+                  <span id="toggleConfirmPassword" class="password-eye-icon">
+                    <i class="fa fa-eye"></i>
+                  </span>
+                </div>
+                <div id="confirmPasswordError" style="color:#e74c3c;font-size:0.95em;margin-top:4px;display:none;"></div>
               </div>
             </div>
+            <button id="changePasswordBtn" name="change_password" type="button" style="background:#2d72d9;color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:1rem;font-weight:600;box-shadow:0 2px 8px rgba(44,130,201,0.10);cursor:pointer;margin-top:10px;display:none;">Change Password</button>
           </div>
           <button id="cardSaveBtn" name="save_profile" type="submit" style="position:absolute;right:32px;bottom:32px;z-index:10;background:#2ecc71;color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:1.1rem;font-weight:600;box-shadow:0 4px 16px rgba(46,204,113,0.15);cursor:pointer;display:none;">
             Save Changes
@@ -215,57 +244,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
                   <input type="text" placeholder="Search Clients" id="archiveClientsSearchInput">
                 </span>
               </div>
-              <div style="overflow-x:auto;">
-                <table id="archiveClientsTable" class="archive-table" style="width:100%;border-collapse:separate;border-spacing:0 4px;font-size:0.97rem;">
+              <div class="clients-table-container">
+                <table class="clients-table" id="archive-clients-table">
                   <thead>
-                    <tr style="background:#fafbfc;">
-                      <th style="padding:10px 8px;text-align:left;">Avatar</th>
-                      <th style="padding:10px 8px;text-align:left;">Client Name</th>
-                      <th style="padding:10px 8px;text-align:left;">Email</th>
-                      <th style="padding:10px 8px;text-align:left;">Contact</th>
-                      <th style="padding:10px 8px;text-align:left;">Status</th>
+                    <tr>
+                      <th>Client Name</th>
+                      <th>Email</th>
+                      <th>Contact</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     <?php
                     $conn = new mysqli("localhost", "root", "", "cemeterydb");
                     if ($conn->connect_error) {
-                      echo '<tr><td colspan="5">Database connection failed.</td></tr>';
+                      echo "<tr><td colspan='5'>Database connection failed.</td></tr>";
                     } else {
                       $result = $conn->query("SELECT * FROM archive_clients ORDER BY archived_at DESC");
                       if ($result && $result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
-                          $firstName = htmlspecialchars($row['first_name']);
-                          $lastName = htmlspecialchars($row['last_name']);
+                          $firstName = htmlspecialchars($row['first_name'] ?? '');
+                          $lastName = htmlspecialchars($row['last_name'] ?? '');
                           $name = $firstName . ' ' . $lastName;
-                          $email = htmlspecialchars($row['email']);
-                          $contact = htmlspecialchars($row['contact_no']);
-                          $profilePic = isset($row['profile_pic']) && $row['profile_pic'] ? $row['profile_pic'] : '';
-                          $initials = strtoupper(mb_substr($firstName, 0, 1, 'UTF-8') . mb_substr($lastName, 0, 1, 'UTF-8'));
-                          $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                          $colorClass = "avatar-color-$colorIndex";
-                          echo '<tr style="background:#fff;">';
-                          echo '<td style="padding:8px 8px;">';
-                          if ($profilePic) {
-                            echo '<img src="' . htmlspecialchars($profilePic) . '" alt="Avatar" class="avatar-img" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">';
+                          $email = htmlspecialchars($row['email'] ?? '');
+                          $contact = htmlspecialchars($row['contact_no'] ?? '');
+                          $profilePicture = htmlspecialchars($row['profile_pic'] ?? '');
+                          $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                          if ($hasProfilePicture) {
+                            $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
                           } else {
-                            echo '<div class="avatar-img ' . $colorClass . '" style="width:36px;height:36px;border-radius:50%;font-weight:600;font-size:1.1em;color:#fff;line-height:36px;text-align:center;">' . $initials . '</div>';
+                            $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                            $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                            $colorClass = "avatar-color-$colorIndex";
+                            $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
                           }
-                          echo '</td>';
-                          echo '<td style="padding:8px 8px;">' . $name . '</td>';
-                          echo '<td style="padding:8px 8px;">' . $email . '</td>';
-                          echo '<td style="padding:8px 8px;">' . $contact . '</td>';
-                          echo '<td style="padding:8px 8px;"><span style="background:#f8d7da;color:#c0392b;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span></td>';
-                          echo '</tr>';
+                          $statusHtml = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span>';
+                          echo "<tr>
+                            <td style='white-space: nowrap;'>
+                              $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
+                            </td>
+                            <td>$email</td>
+                            <td>$contact</td>
+                            <td>$statusHtml</td>
+                            <td>
+                              <button class=\"restore-btn\" style=\"background:#2d72d9;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:1rem;font-weight:500;cursor:pointer;\"><i class=\"fas fa-undo\"></i> Restore</button>
+                            </td>
+                          </tr>";
                         }
                       } else {
-                        echo '<tr><td colspan="5">No archived clients found.</td></tr>';
+                        echo "<tr><td colspan='5'>No archived clients found.</td></tr>";
                       }
-                      // $conn->close();
                     }
                     ?>
                   </tbody>
                 </table>
+              </div>
+              <div class="dataTables_wrapper"></div>
+              <!-- Restore Confirmation Modal (styled like archive modal) -->
+              <div id="restoreModal" class="modal-overlay" style="display:none;">
+                <div class="modal-content" style="margin:auto;">
+                  <div class="modal-header">
+                    <i class="fas fa-exclamation-triangle" style="color:#2ecc71;font-size:2rem;margin-bottom:8px;"></i>
+                    <h2 style="color:#2ecc71;margin:0;font-size:1.3rem;">Confirm Restore</h2>
+                  </div>
+                  <div class="modal-body" style="margin:18px 0 24px 0;">
+                    <p style="color:#444;font-size:1.07rem;margin:0;">
+                      Are you sure you want to restore this client?<br>
+                      This action will move the client back to the active clients list.
+                    </p>
+                  </div>
+                  <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+                    <button id="modalRestoreBtn" class="modal-delete-btn" style="background:#2ecc71;">Restore</button>
+                    <button id="modalCancelRestoreBtn" class="modal-cancel-btn">Cancel</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Success Notification for Restore -->
+              <div id="restoreSuccessNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+                <span><i class="fas fa-check-circle" style="margin-right:8px;"></i>Client successfully restored.</span>
+                <button id="closeRestoreNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
               </div>
             </div>
           </div>
@@ -767,6 +825,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <script>
+    // Password change logic
+    $(function() {
+      const currentPasswordInput = $('#currentPassword');
+      const newPasswordInput = $('#newPassword');
+      const confirmPasswordInput = $('#confirmPassword');
+      const changePasswordBtn = $('#changePasswordBtn');
+      const currentPasswordError = $('#currentPasswordError');
+      const newPasswordError = $('#newPasswordError');
+      let currentPasswordValid = false;
+
+      // Validate current password via AJAX
+      currentPasswordInput.on('input', function() {
+        const val = $(this).val();
+        if (val.length === 0) {
+          currentPasswordError.hide();
+          newPasswordInput.prop('disabled', true);
+          confirmPasswordInput.prop('disabled', true);
+          changePasswordBtn.hide();
+          currentPasswordValid = false;
+          return;
+        }
+        $.post('validate_admin_password.php', { password: val }, function(data) {
+          if (data.success) {
+            currentPasswordError.hide();
+            newPasswordInput.prop('disabled', false);
+            confirmPasswordInput.prop('disabled', false);
+            currentPasswordValid = true;
+          } else {
+            currentPasswordError.text('Current password is incorrect.').show();
+            newPasswordInput.prop('disabled', true);
+            confirmPasswordInput.prop('disabled', true);
+            changePasswordBtn.hide();
+            currentPasswordValid = false;
+          }
+        }, 'json');
+      });
+
+      // Enable button if new/confirm password match and not empty
+      $('#newPassword, #confirmPassword').on('input', function() {
+        if (!currentPasswordValid) return;
+        const newPass = newPasswordInput.val();
+        const confirmPass = confirmPasswordInput.val();
+        if (newPass.length < 6) {
+          newPasswordError.text('Password must be at least 6 characters.').show();
+          $('#confirmPasswordError').hide();
+          changePasswordBtn.hide();
+        } else {
+          newPasswordError.hide();
+          // Only show match error if confirmPassword is not empty
+          if (confirmPasswordInput.val() && newPass !== confirmPasswordInput.val()) {
+            $('#confirmPasswordError').text('Passwords do not match.').show();
+            changePasswordBtn.hide();
+          } else {
+            $('#confirmPasswordError').hide();
+            if (confirmPasswordInput.val()) changePasswordBtn.show();
+          }
+        }
+      });
+      $('#confirmPassword').on('input', function() {
+        if (!currentPasswordValid) return;
+        const newPass = newPasswordInput.val();
+        const confirmPass = confirmPasswordInput.val();
+        if (newPass.length < 6) {
+          newPasswordError.text('Password must be at least 6 characters.').show();
+          $('#confirmPasswordError').hide();
+          changePasswordBtn.hide();
+          return;
+        }
+        if (newPass !== confirmPass) {
+          $('#confirmPasswordError').text('Passwords do not match.').show();
+          changePasswordBtn.hide();
+        } else {
+          $('#confirmPasswordError').hide();
+          $('#newPasswordError').hide();
+          changePasswordBtn.show();
+        }
+      });
+
+      // Handle password change submit
+      $('#changePasswordBtn').on('click', function(e) {
+        e.preventDefault();
+        if (!currentPasswordValid) return;
+        const newPass = newPasswordInput.val();
+        const confirmPass = confirmPasswordInput.val();
+        if (newPass.length < 6) {
+          $('#newPasswordError').text('Password must be at least 6 characters.').show();
+          $('#confirmPasswordError').hide();
+          return;
+        }
+        if (newPass !== confirmPass) {
+          $('#confirmPasswordError').text('Passwords do not match.').show();
+          $('#newPasswordError').hide();
+          return;
+        }
+        $.post('update_admin_password.php', { new_password: newPass }, function(data) {
+          if (data.success) {
+            newPasswordError.css('color','#27ae60').text('Password changed successfully!').show();
+            setTimeout(function(){
+              newPasswordError.hide();
+              currentPasswordInput.val('');
+              newPasswordInput.val('');
+              confirmPasswordInput.val('');
+              newPasswordInput.prop('disabled', true);
+              confirmPasswordInput.prop('disabled', true);
+              changePasswordBtn.hide();
+            }, 1800);
+          } else {
+            newPasswordError.text('Failed to change password.').show();
+          }
+        }, 'json');
+      });
+    });
+
     // Track if there are unsaved changes
     let unsaved = false;
     // Store original values for reset
@@ -778,7 +949,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
     // Mark as unsaved on input change
     // Only mark unsaved for profile form fields, not search boxes
     const profileInputIds = [
-      'displayName', 'firstName', 'lastName', 'email', 'phone', 'role', 'currentPassword'
+      'displayName', 'firstName', 'lastName', 'email', 'phone', 'role'
     ];
     document.querySelectorAll('.settings-card input').forEach(input => {
       if (profileInputIds.includes(input.id)) {
@@ -907,9 +1078,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
     // Password show/hide logic
     const currentPasswordInput = document.getElementById('currentPassword');
     const togglePassword = document.getElementById('togglePassword');
+    const newPasswordInputEl = document.getElementById('newPassword');
+    const toggleNewPassword = document.getElementById('toggleNewPassword');
+    const confirmPasswordInputEl = document.getElementById('confirmPassword');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
     togglePassword.onclick = function() {
       const isHidden = currentPasswordInput.type === 'password';
       currentPasswordInput.type = isHidden ? 'text' : 'password';
+      this.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
+    };
+    toggleNewPassword.onclick = function() {
+      const isHidden = newPasswordInputEl.type === 'password';
+      newPasswordInputEl.type = isHidden ? 'text' : 'password';
+      this.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
+    };
+    toggleConfirmPassword.onclick = function() {
+      const isHidden = confirmPasswordInputEl.type === 'password';
+      confirmPasswordInputEl.type = isHidden ? 'text' : 'password';
       this.querySelector('i').className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
     };
 
@@ -920,10 +1105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       records: document.getElementById('archiveRecordsTab'),
       requests: document.getElementById('archiveRequestsTab')
     };
+    let archiveClientsTableInstance = null;
     let archiveRequestsTableInstance = null;
     archiveTabs.forEach(tab => {
       tab.addEventListener('click', function() {
-        // Restore original tab active logic
         archiveTabs.forEach(t => {
           t.classList.remove('active');
           t.style.color = '';
@@ -934,65 +1119,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         this.style.borderBottom = '2px solid #2d72d9';
         Object.values(archiveTabContents).forEach(tc => tc.style.display = 'none');
         archiveTabContents[this.dataset.archivetab].style.display = '';
+        // DataTable logic for Archive Clients
+        if (this.dataset.archivetab === 'clients') {
+          if ($.fn.DataTable.isDataTable('#archive-clients-table')) {
+            $('#archive-clients-table').DataTable().destroy();
+          }
+          var $table = $('#archive-clients-table');
+          var hasDataRows = $table.find('tbody tr').length > 0 && !$table.find('tbody tr td').first().text().includes('No archived clients found');
+          if ($table.is(':visible') && $table.find('thead tr th').length > 0 && hasDataRows) {
+            archiveClientsTableInstance = $table.DataTable({
+              dom: 'lftip', // Hide default search box
+              paging: true,
+              searching: true,
+              ordering: true,
+              info: true,
+              autoWidth: false,
+              language: {
+                lengthMenu: 'Show _MENU_ entries',
+                zeroRecords: 'No clients found',
+                emptyTable: 'No clients available',
+                infoEmpty: '',
+                info: 'Showing _START_ to _END_ of _TOTAL_',
+                infoFiltered: '',
+                paginate: {
+                  first: 'First',
+                  last: 'Last',
+                  next: 'Next',
+                  previous: 'Previous'
+                }
+              }
+            });
+            $('#archiveClientsSearchInput').off('keyup').on('keyup', function() {
+              archiveClientsTableInstance.search(this.value).draw();
+            });
+          }
+        } else {
+          if ($.fn.DataTable.isDataTable('#archive-clients-table')) {
+            $('#archive-clients-table').DataTable().destroy();
+          }
+        }
         // DataTable logic for Archive Requests
         if (this.dataset.archivetab === 'requests') {
-          // Destroy previous instance if exists
           if ($.fn.DataTable.isDataTable('#archiveRequestsTable')) {
             $('#archiveRequestsTable').DataTable().destroy();
           }
-          // Only initialize if table is visible, has thead, and has more than just the 'No denied requests found.' row
           try {
             var $table = $('#archiveRequestsTable');
             var hasDataRows = $table.find('tbody tr').length > 0 && !$table.find('tbody tr td').first().text().includes('No denied requests found');
             if ($table.is(':visible') && $table.find('thead tr th').length > 0 && hasDataRows) {
               archiveRequestsTableInstance = $table.DataTable({
-                dom: 'lrtip', // Hide default DataTables search bar
+                dom: 'lrtip',
                 paging: true,
                 searching: true,
                 ordering: true,
                 info: true,
                 autoWidth: false
               });
-              // Custom search
               $('#archiveRequestSearchInput').off('keyup').on('keyup', function() {
                 archiveRequestsTableInstance.search(this.value).draw();
               });
             }
           } catch (e) {
-            // Suppress DataTables warning
             console.warn('DataTables init suppressed:', e);
           }
         } else {
-          // Destroy DataTable if leaving requests tab
           if ($.fn.DataTable.isDataTable('#archiveRequestsTable')) {
             $('#archiveRequestsTable').DataTable().destroy();
           }
         }
       });
     });
-    // Archive Request search filter
-    document.addEventListener('DOMContentLoaded', function() {
-      var searchInput = document.getElementById('archiveRequestSearchInput');
-      if (searchInput) {
-        searchInput.addEventListener('keyup', function() {
-          var filter = searchInput.value.toLowerCase();
-          var table = document.getElementById('archiveRequestTableBody');
-          var trs = table.getElementsByTagName('tr');
-          for (var i = 0; i < trs.length; i++) {
-            var tds = trs[i].getElementsByTagName('td');
-            var found = false;
-            for (var j = 0; j < tds.length; j++) {
-              if (tds[j].textContent.toLowerCase().indexOf(filter) > -1) {
-                found = true;
-                break;
-              }
+    // Always initialize DataTable for Archive Clients on page load
+    $(document).ready(function() {
+      var $table = $('#archive-clients-table');
+      var hasDataRows = $table.find('tbody tr').length > 0 && !$table.find('tbody tr td').first().text().includes('No archived clients found');
+      if ($table.find('thead tr th').length > 0 && hasDataRows) {
+        if ($.fn.DataTable.isDataTable('#archive-clients-table')) {
+          $('#archive-clients-table').DataTable().destroy();
+        }
+        archiveClientsTableInstance = $table.DataTable({
+          dom: 'lftip', // Hide default search box
+          paging: true,
+          searching: true,
+          ordering: true,
+          info: true,
+          autoWidth: false,
+          language: {
+            lengthMenu: 'Show _MENU_ entries',
+            zeroRecords: 'No clients found',
+            emptyTable: 'No clients available',
+            infoEmpty: '',
+            info: 'Showing _START_ to _END_ of _TOTAL_',
+            infoFiltered: '',
+            paginate: {
+              first: 'First',
+              last: 'Last',
+              next: 'Next',
+              previous: 'Previous'
             }
-            trs[i].style.display = found ? '' : 'none';
           }
+        });
+        $('#archiveClientsSearchInput').off('keyup').on('keyup', function() {
+          archiveClientsTableInstance.search(this.value).draw();
         });
       }
     });
-
     // Action buttons in archive clients table (restore and delete)
     document.querySelectorAll('.restore-btn').forEach(btn => {
       btn.onclick = function() {
@@ -1271,6 +1502,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       renderNewRequestNotifications();
       updateNotifBadge();
     });
+
+    // Restore modal logic for Archive Clients
+    let restoreTargetRow = null;
+    let restoreTargetEmail = null;
+    // Attach click event to all restore buttons
+    document.querySelectorAll('.restore-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var row = this.closest('tr');
+        var email = row.querySelector('td:nth-child(2)').textContent.trim();
+        restoreTargetRow = row;
+        restoreTargetEmail = email;
+        document.getElementById('restoreModal').style.display = 'flex';
+      });
+    });
+    // Cancel button closes modal
+    document.getElementById('modalCancelRestoreBtn').addEventListener('click', function() {
+      document.getElementById('restoreModal').style.display = 'none';
+      restoreTargetRow = null;
+      restoreTargetEmail = null;
+    });
+    // Restore button confirms restore, removes row, and shows notification
+    document.getElementById('modalRestoreBtn').addEventListener('click', function() {
+      if (!restoreTargetEmail || !restoreTargetRow) return;
+      const restoreBtn = this;
+      const modal = document.getElementById('restoreModal');
+      const cancelBtn = document.getElementById('modalCancelRestoreBtn');
+      // Show loading state
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = 'Restoring...';
+      cancelBtn.disabled = true;
+                $.post('restore_client.php', { email: restoreTargetEmail }, function(response) {
+        if (response.success) {
+          if (typeof archiveClientsTableInstance !== 'undefined' && archiveClientsTableInstance) {
+            archiveClientsTableInstance.row($(restoreTargetRow)).remove().draw();
+          } else {
+            restoreTargetRow.parentNode.removeChild(restoreTargetRow);
+          }
+          showRestoreSuccessNotification('Client successfully restored');
+          modal.style.display = 'none';
+        } else {
+          alert('Failed to restore client.');
+        }
+      }, 'json').fail(function() {
+        alert('An error occurred while restoring. Please try again.');
+      }).always(function() {
+        restoreBtn.disabled = false;
+        restoreBtn.textContent = 'Restore';
+        cancelBtn.disabled = false;
+        restoreTargetRow = null;
+        restoreTargetEmail = null;
+      });
+    });
+    // Show restore success notification
+    function showRestoreSuccessNotification(message) {
+      const notif = document.getElementById('restoreSuccessNotification');
+      notif.querySelector('span').innerHTML = `<i class=\"fas fa-check-circle\" style=\"margin-right:8px;\"></i>${message}`;
+      notif.style.display = 'flex';
+      notif.style.background = '#2ecc71';
+      // Auto-close after 3 seconds
+      const timeout = setTimeout(() => {
+        notif.style.display = 'none';
+      }, 3000);
+      document.getElementById('closeRestoreNotificationBtn').onclick = function() {
+        notif.style.display = 'none';
+        clearTimeout(timeout);
+      };
+    }
   </script>
   <style>
 .clients-table {
@@ -1317,7 +1616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   font-size: 1rem;
   font-weight: 400;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+   transition: background 0.2s, box-shadow 0.2s;
   box-shadow: none;
   outline: none;
   letter-spacing: 0.5px;
@@ -1359,6 +1658,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
 .avatar-color-8 { background: #16a085 !important; }
 .avatar-color-9 { background: #d35400 !important; }
 .avatar-color-10 { background: #2980b9 !important; }
+  </style>
+  <style>
+  .modal-overlay {
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(44,62,80,0.18);
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay[style*="display: flex"] {
+    display: flex !important;
+  }
+  .modal-content {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    padding: 32px 32px 24px 32px;
+    min-width: 340px;
+    max-width: 95vw;
+    text-align: center;
+    position: relative;
+    margin: auto;
+  }
+  .modal-header h2 {
+    margin: 0;
+  }
+  .modal-footer {
+    margin-top: 10px;
+  }
+  .modal-delete-btn {
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 1.08rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s;
+  }
+  .modal-delete-btn:hover {
+    background: #27ae60;
+  }
+  .modal-cancel-btn {
+    background: #f4f6fa;
+    color: #444;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 1.08rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s;
+  }
+  .modal-cancel-btn:hover {
+    background: #e0e0e0;
+  }
+  .settings-fields-row {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 0;
+  }
+  .settings-field-group {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .settings-field-group label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 4px;
+  }
+  .settings-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 38px 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    font-family: inherit;
+    transition: border 0.2s;
+    outline: none;
+    height: 40px;
+    line-height: 1.2;
+  }
+  .settings-input:disabled {
+    background: #f5f5f5;
+    color: #aaa;
+  }
+  .password-eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    z-index: 2;
+    font-size: 1.1em;
+    padding: 2px 6px;
+    background: transparent;
+    border-radius: 50%;
+    transition: background 0.2s;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .password-eye-icon:hover {
+    background: #f1f3f6;
+  }
+  .settings-field-group .settings-input {
+    margin-bottom: 0;
+  }
+  .settings-field-group .error-message {
+    color: #e74c3c;
+    font-size: 0.95em;
+    margin-top: 4px;
+    display: none;
+  }
+ .settings-fields-row.password-row {
+    margin-bottom: 75px;
+  }
   </style>
 </body>
 </html>

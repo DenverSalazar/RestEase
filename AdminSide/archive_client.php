@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_client_email'
         // Start transaction
         $conn->begin_transaction();
 
-        // Get user data
-        $checkUser = $conn->prepare("SELECT first_name, last_name, email, contact_no FROM users WHERE email = ?");
+        // Get user data and id (including password)
+        $checkUser = $conn->prepare("SELECT id, first_name, last_name, email, contact_no, password FROM users WHERE email = ?");
         if (!$checkUser) {
             throw new Exception("Failed to prepare user check query");
         }
@@ -26,18 +26,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['archive_client_email'
         }
 
         $userData = $userResult->fetch_assoc();
+        $userId = $userData['id'];
         
-        // Insert into archive_clients
-        $insertArchive = $conn->prepare("INSERT INTO archive_clients (first_name, last_name, email, contact_no, archived_at) VALUES (?, ?, ?, ?, NOW())");
+        // Delete all client_requests for this user
+        $delReq = $conn->prepare('DELETE FROM client_requests WHERE user_id = ?');
+        $delReq->bind_param('i', $userId);
+        $delReq->execute();
+        $delReq->close();
+        
+        // Insert into archive_clients (include password)
+        $insertArchive = $conn->prepare("INSERT INTO archive_clients (first_name, last_name, email, contact_no, password, archived_at) VALUES (?, ?, ?, ?, ?, NOW())");
         if (!$insertArchive) {
             throw new Exception("Failed to prepare archive insert query");
         }
 
-        $insertArchive->bind_param("ssss", 
+        $insertArchive->bind_param("sssss", 
             $userData['first_name'],
             $userData['last_name'],
             $userData['email'],
-            $userData['contact_no']
+            $userData['contact_no'],
+            $userData['password']
         );
 
         if (!$insertArchive->execute()) {

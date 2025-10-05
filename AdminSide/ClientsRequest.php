@@ -19,6 +19,61 @@ if (!isset($_SESSION['admin_id'])) {
   <link rel="stylesheet" href="../css/clientsrequest.css">
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+  <style>
+    /* Match Records.php table style for done assessment */
+    .cemetery-masterlist-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+    }
+    .cemetery-masterlist-table th, .cemetery-masterlist-table td {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 0.82rem;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cemetery-masterlist-table th {
+      background: #f7f8fa;
+      font-weight: 500;
+      color: #333;
+      font-size: 0.77rem;
+    }
+    .cemetery-masterlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    /* Specific column widths for better date display */
+    .cemetery-masterlist-table th:nth-child(1), .cemetery-masterlist-table td:nth-child(1) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(2), .cemetery-masterlist-table td:nth-child(2) { width: 14%; }
+    .cemetery-masterlist-table th:nth-child(3), .cemetery-masterlist-table td:nth-child(3) { width: 7%; }
+    .cemetery-masterlist-table th:nth-child(4), .cemetery-masterlist-table td:nth-child(4) { width: 14%; }
+    .cemetery-masterlist-table th:nth-child(5), .cemetery-masterlist-table td:nth-child(5) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(6), .cemetery-masterlist-table td:nth-child(6) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(7), .cemetery-masterlist-table td:nth-child(7) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(8), .cemetery-masterlist-table td:nth-child(8) { width: 7%; }
+    .cemetery-masterlist-table th:nth-child(9), .cemetery-masterlist-table td:nth-child(9) { width: 8%; }
+    .cemetery-masterlist-table th:nth-child(10), .cemetery-masterlist-table td:nth-child(10) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(11), .cemetery-masterlist-table td:nth-child(11) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(12), .cemetery-masterlist-table td:nth-child(12) { width: 10%; }
+    .cemetery-masterlist-table th:nth-child(13), .cemetery-masterlist-table td:nth-child(13) { width: 12%; }
+    @media (max-width: 900px) {
+      .cemetery-masterlist-table th, .cemetery-masterlist-table td {
+        font-size: 0.78rem;
+        padding: 6px 6px;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Sidebar -->
@@ -240,8 +295,8 @@ if (!isset($_SESSION['admin_id'])) {
       $sql_assessment = "SELECT * FROM assessment ORDER BY created_at DESC";
       $result_assessment = $conn->query($sql_assessment);
       ?>
-      <div class="scrollable-table-container" style="max-width:100%;overflow:auto;">
-        <table class="clients-table" id="done-assessment-table" style="min-width:1400px;">
+      <div style="overflow-x:auto;">
+        <table class="cemetery-masterlist-table" id="done-assessment-table">
           <thead>
             <tr>
               <th>Informant Name</th>

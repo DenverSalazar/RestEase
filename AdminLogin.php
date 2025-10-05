@@ -9,33 +9,55 @@ if ($conn->connect_error) {
 
 $admin_error = "";
 $admin_success = false;
+// $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secret key here
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+   // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
+    // Basic validation
     if (!$email || !$password) {
-        $admin_error = "Please enter both email and password.";
-    } else {
-        $stmt = $conn->prepare("SELECT id, password FROM admin_accounts WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows == 1) {
-            $stmt->bind_result($admin_id, $hashed_password);
-            $stmt->fetch();
-            if (password_verify($password, $hashed_password)) {
-                 $_SESSION['admin_id'] = $admin_id;
-                // Redirect to admin dashboard on successful login
-                header("Location: AdminSide/Dashboard.php");
-                exit;
-            } else {
-                $admin_error = "Incorrect password.";
-            }
+        $admin_error = "All fields are required.";
+    // } elseif (empty($recaptcha_response)) {
+    //     $admin_error = "Please complete the reCAPTCHA.";
+    // } else {
+
+        // reCAPTCHA validation
+    //     $recaptcha_verify = file_get_contents(
+    //         "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+    //     );
+    //     $recaptcha_success = json_decode($recaptcha_verify);
+    //     if (!$recaptcha_success->success) {
+    //         $admin_error = "reCAPTCHA verification failed. Please try again.";
+    //     }
+     }
+
+    // Only proceed if no error
+    if (!$admin_error) {
+        if (!$email || !$password) {
+            $admin_error = "Please enter both email and password.";
         } else {
-            $admin_error = "No admin account found with that email.";
+            $stmt = $conn->prepare("SELECT id, password FROM admin_accounts WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows == 1) {
+                $stmt->bind_result($admin_id, $hashed_password);
+                $stmt->fetch();
+                if (password_verify($password, $hashed_password)) {
+                    $_SESSION['admin_id'] = $admin_id;
+                    // Redirect to admin dashboard on successful login
+                    header("Location: AdminSide/Dashboard.php");
+                    exit;
+                } else {
+                    $admin_error = "Incorrect password.";
+                }
+            } else {
+                $admin_error = "No admin account found with that email.";
+            }
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
 ?>
@@ -138,6 +160,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
+
+                            <!-- reCAPTCHA widget -->
+                            <!-- <div class="mb-3 w-100 recaptcha-fullwidth">
+                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
+                            </div> -->
+
                             <button type="submit" class="btn btn-primary w-100" style="margin-top: 10px;">Sign in</button>
                         </form>
                     </div>

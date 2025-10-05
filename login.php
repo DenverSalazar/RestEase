@@ -9,26 +9,28 @@ if ($conn->connect_error) {
 
 $login_error = "";
 $login_success = false;
+//$recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secret key here
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+   // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
     // Basic validation
     if (!$email || !$password) {
         $login_error = "All fields are required.";
-    // } elseif (empty($recaptcha_response)) {
-    //     $login_error = "Please complete the reCAPTCHA.";
-    } else {
-        // reCAPTCHA validation
-        // $recaptcha_verify = file_get_contents(
-        //     "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-        // );
-        // $recaptcha_success = json_decode($recaptcha_verify);
-        // if (!$recaptcha_success->success) {
-        //     $login_error = "reCAPTCHA verification failed. Please try again.";
-        // }
+    //      } elseif (empty($recaptcha_response)) {
+    //          $login_error = "Please complete the reCAPTCHA.";
+    // } else {
+
+    //     // reCAPTCHA validation
+    //      $recaptcha_verify = file_get_contents(
+    //          "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+    //      );
+    //      $recaptcha_success = json_decode($recaptcha_verify);
+    //      if (!$recaptcha_success->success) {
+    //          $login_error = "reCAPTCHA verification failed. Please try again.";
+    //      }
     }
 
     // Only proceed if no error
@@ -43,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($stmt->num_rows == 1) {
                 $stmt->bind_result($user_id, $hashed_password, $user_status);
                 $stmt->fetch();
-                
+
                 // Check if account is disabled
                 if ($user_status === 'disabled') {
                     $login_error = "Your account has been disabled. Please contact support.";
@@ -65,6 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -79,6 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Add Google Sign-In Meta Tag -->
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
@@ -117,23 +121,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <h2>Sign In</h2>
                         <!-- Login result toast -->
                         <?php if ($login_error || $login_success): ?>
-                        <div id="customToast" class="custom-toast <?php echo $login_success ? 'success' : 'error'; ?>">
-                            <div class="toast-icon">
-                                <?php if ($login_success): ?>
-                                    <i class="fas fa-check-circle"></i>
-                                <?php else: ?>
-                                    <i class="fas fa-exclamation-circle"></i>
-                                <?php endif; ?>
+                            <div id="customToast" class="custom-toast <?php echo $login_success ? 'success' : 'error'; ?>">
+                                <div class="toast-icon">
+                                    <?php if ($login_success): ?>
+                                        <i class="fas fa-check-circle"></i>
+                                    <?php else: ?>
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="toast-message">
+                                    <?php if ($login_success): ?>
+                                        Login successful!
+                                    <?php else: ?>
+                                        <?php echo $login_error; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="toast-close" onclick="closeToast()">&times;</span>
                             </div>
-                            <div class="toast-message">
-                                <?php if ($login_success): ?>
-                                    Login successful!
-                                <?php else: ?>
-                                    <?php echo $login_error; ?>
-                                <?php endif; ?>
-                            </div>
-                            <span class="toast-close" onclick="closeToast()">&times;</span>
-                        </div>
                         <?php endif; ?>
                         <!-- End Toast -->
                         <form id="loginForm" method="POST" action="">
@@ -161,10 +165,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
-                            
+
                             <!-- reCAPTCHA widget -->
-                            <!--
-                            <div class="mb-3 w-100 recaptcha-fullwidth">
+                            
+                            <!-- <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
                             </div>
                             -->
@@ -193,13 +197,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <script src="https://apis.google.com/js/platform.js" async defer></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
         // Password toggle functionality
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');
 
-        togglePassword.addEventListener('click', function (e) {
+        togglePassword.addEventListener('click', function(e) {
             const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
             password.setAttribute('type', type);
             this.classList.toggle('fa-eye');
@@ -222,14 +226,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Get user profile information
                 const profile = googleUser.getBasicProfile();
                 const id_token = googleUser.getAuthResponse().id_token;
-                
+
                 // Here you would typically send the id_token to your server
                 // for verification and to create a session
                 console.log('ID Token:', id_token);
                 console.log('User ID:', profile.getId());
                 console.log('Name:', profile.getName());
                 console.log('Email:', profile.getEmail());
-                
+
                 // Redirect to dashboard or handle the sign-in as needed
                 // window.location.href = 'dashboard.html';
             }).catch(function(error) {
@@ -245,11 +249,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }, 300);
         }
         <?php if ($login_error || $login_success): ?>
-        document.addEventListener('DOMContentLoaded', function() {
-            var toast = document.getElementById('customToast');
-            toast.style.opacity = '1';
-            setTimeout(closeToast, 4000);
-        });
+            document.addEventListener('DOMContentLoaded', function() {
+                var toast = document.getElementById('customToast');
+                toast.style.opacity = '1';
+                setTimeout(closeToast, 4000);
+            });
         <?php endif; ?>
 
         // Email validation function
@@ -322,7 +326,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: flex;
             align-items: center;
             background: #fff;
-            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 32px rgba(60, 60, 60, 0.18), 0 1.5px 6px rgba(0, 0, 0, 0.08);
             border-radius: 1rem;
             padding: 1.1rem 1.5rem;
             z-index: 9999;
@@ -331,23 +335,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             opacity: 0;
             transition: opacity 0.3s;
         }
+
         .custom-toast.success {
             border-left: 6px solid #38d39f;
         }
+
         .custom-toast.error {
             border-left: 6px solid #e74c3c;
         }
+
         .custom-toast .toast-icon {
             font-size: 2rem;
             margin-right: 1rem;
             color: #38d39f;
         }
+
         .custom-toast.error .toast-icon {
             color: #e74c3c;
         }
+
         .custom-toast .toast-message {
             flex: 1;
         }
+
         .custom-toast .toast-close {
             font-size: 1.5rem;
             color: #888;
@@ -355,21 +365,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-left: 1rem;
             transition: color 0.2s;
         }
+
         .custom-toast .toast-close:hover {
             color: #222;
         }
+
         .is-invalid {
             border-color: #e74c3c !important;
-            box-shadow: 0 0 0 0.2rem rgba(231,76,60,.25);
+            box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, .25);
             background-image: none !important;
             padding-right: 0.75rem !important;
         }
+
         .invalid-feedback {
             color: #e74c3c;
             font-size: 0.95rem;
             margin-top: 0.25rem;
             padding-left: 0;
         }
+
         @media (max-width: 600px) {
             .custom-toast {
                 right: 10px !important;
@@ -380,5 +394,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     </style>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
+
 </html>
