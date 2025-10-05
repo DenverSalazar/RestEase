@@ -152,7 +152,14 @@ $stmt->close();
     <div class="client-request-outer">
         <div class="client-request-card">
             <div class="client-request-form-card">
-                <h2>Fill up form</h2>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <!-- Back button at the leftmost part -->
+                    <button type="button" onclick="window.history.back();" class="btn btn-link" style="font-size:1.1rem;padding:0;margin-right:10px;">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                </div>
+                    <h2 style="margin-bottom:0;">Fill up form</h2>
+                
                 <p>Please complete the form below with accurate information to proceed with your request.</p>
                 <div id="type-explanation-new" class="alert alert-info mb-3" style="font-size:0.98rem; display:none;">
                     <b>New</b> – Request to register your loved one and lease a burial plot.
@@ -282,6 +289,7 @@ $stmt->close();
                             Upload file
                             <input type="file" id="file-upload" name="file_upload">
                         </label>
+                        <div id="file-preview" style="margin-top:10px;"></div> <!-- Add preview area -->
                     </div>
                     <div class="file-note mb-3">
                         Attach file. File size of your documents should not exceed 10MB
@@ -417,6 +425,27 @@ $stmt->close();
         if (event.data && event.data.nicheID) {
             document.getElementById('niche_picker').value = event.data.nicheID;
             document.getElementById('new_niche_id').value = event.data.nicheID;
+        }
+    });
+
+    // File preview logic
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const preview = document.getElementById('file-preview');
+        preview.innerHTML = '';
+        const file = e.target.files[0];
+        if (!file) return;
+        // Show file name
+        const nameDiv = document.createElement('div');
+        nameDiv.textContent = 'Selected file: ' + file.name;
+        preview.appendChild(nameDiv);
+        // If image, show thumbnail
+        if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.style.maxWidth = '180px';
+            img.style.maxHeight = '120px';
+            img.style.marginTop = '8px';
+            img.src = URL.createObjectURL(file);
+            preview.appendChild(img);
         }
     });
     </script>

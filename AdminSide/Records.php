@@ -254,7 +254,7 @@ if (!isset($_SESSION['admin_id'])) {
       </div>
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php?from=records"><button><i class="fas fa-plus"></i> Insert</button></a>
-          <a href="ExportExcel.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-excel"></i> Export Masterlist</button></a>
+          <a href="ExportExcel.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-excel"></i> Export Data</button></a>
           <button id="delete-toggle-btn" type="button"><i class="fas fa-trash"></i> Delete</button>
         </div>
       </div>

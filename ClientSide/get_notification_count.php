@@ -19,7 +19,7 @@ if ($user_id) {
         }
     }
     $stmt->close();
-    // Accepted requests
+    // Accepted requests (last 1 day)
     $stmt = $conn->prepare("SELECT COUNT(*) FROM accepted_request WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -27,13 +27,21 @@ if ($user_id) {
     $stmt->fetch();
     $new_count += $count_acc;
     $stmt->close();
-    // Denied requests
+    // Denied requests (last 1 day)
     $stmt = $conn->prepare("SELECT COUNT(*) FROM denied_request WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $stmt->bind_result($count_den);
     $stmt->fetch();
     $new_count += $count_den;
+    $stmt->close();
+    // Assessments (last 1 day)
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->bind_result($count_assess);
+    $stmt->fetch();
+    $new_count += $count_assess;
     $stmt->close();
 }
 echo json_encode(['count' => $new_count]);
