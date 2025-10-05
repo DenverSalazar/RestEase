@@ -68,6 +68,10 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
     <div class="container py-4 flex-grow-1">
+        <!-- Back button above the card, leftmost -->
+        <button type="button" onclick="window.history.back();" class="btn btn-link" style="font-size:1.1rem;padding:0;margin-bottom:10px;">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
         <div class="details-card bg-white p-4" style="margin-left:auto;margin-right:auto;">
             <?php if ($notif): ?>
                 <div class="details-title mb-3 text-center">

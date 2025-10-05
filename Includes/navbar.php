@@ -198,10 +198,10 @@ function toggleNotificationDropdown(e) {
     var bell = document.getElementById('notificationBell');
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
-        // Position dropdown relative to bell
-        var bellRect = bell.getBoundingClientRect();
-        dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
-        dropdown.style.right = '0px';
+        // Mark notifications as viewed (remove badge)
+        var badge = document.querySelector('#notificationBell span');
+        if (badge) badge.style.display = 'none';
+        localStorage.setItem('notif_viewed', '1');
         setTimeout(function() {
             document.addEventListener('click', closeDropdown);
         }, 0);
@@ -216,7 +216,15 @@ function toggleNotificationDropdown(e) {
         }
     }
 }
+
+// Real-time notification badge updater
 function updateNotificationBadge() {
+    // Only show badge if not viewed
+    if (localStorage.getItem('notif_viewed') === '1') {
+        var badge = document.querySelector('#notificationBell span');
+        if (badge) badge.style.display = 'none';
+        return;
+    }
     fetch('../ClientSide/get_notification_count.php')
         .then(response => response.json())
         .then(data => {
@@ -244,6 +252,66 @@ function updateNotificationBadge() {
             }
         });
 }
-setInterval(updateNotificationBadge, 5000);
-document.addEventListener('DOMContentLoaded', updateNotificationBadge);
+
+// Real-time notification dropdown update
+function updateNotificationDropdown() {
+    fetch('../ClientSide/get_latest_notifications.php')
+        .then(response => response.json())
+        .then(data => {
+            var dropdown = document.getElementById('notificationDropdown');
+            var container = dropdown.querySelector('div[max-height]');
+            if (!container) {
+                container = dropdown.querySelector('div[style*="max-height"]');
+            }
+            if (!container) return;
+            container.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(function(notif) {
+                    let icon = '';
+                    let title = '';
+                    if (notif.status === 'accepted') {
+                        icon = '<i class="fas fa-check-circle" style="color:#2ecc71;font-size:1.25rem;"></i>';
+                        title = 'Request Accepted';
+                    } else if (notif.status === 'denied') {
+                        icon = '<i class="fas fa-times-circle" style="color:#e74c3c;font-size:1.25rem;"></i>';
+                        title = 'Request Denied';
+                    } else if (notif.status === 'welcome') {
+                        icon = '<i class="fas fa-smile-beam" style="color:#4B7BEC;font-size:1.25rem;"></i>';
+                        title = 'Welcome to RestEase!';
+                    } else if (notif.status === 'assessment') {
+                        icon = '<i class="fas fa-file-invoice-dollar" style="color:#f39c12;font-size:1.25rem;"></i>';
+                        title = 'Assessment of Fees';
+                    }
+                    let html = `<div style="padding:0.85rem 1.25rem;border-bottom:1px solid #f2f2f2;display:flex;align-items:flex-start;gap:0.75rem;">
+                        <div style="flex-shrink:0;">${icon}</div>
+                        <div style="flex:1;min-width:0;">
+                            <span style="font-weight:500;font-size:1rem;">${title}</span><br>`;
+                    if (notif.status === 'accepted' || notif.status === 'denied') {
+                        html += `<span style="font-size:0.97rem;">Type: <b>${notif.type ?? ''}</b></span><br>
+                                 <span style="font-size:0.97rem;">Name: <b>${notif.name ?? ''}</b></span><br>`;
+                    } else if (notif.status === 'assessment') {
+                        html += `<span style="font-size:0.97rem;">${notif.message}</span><br>`;
+                    }
+                    html += `<small style="color:#888;font-size:0.93rem;display:block;margin-top:2px;">${notif.created_at}</small>
+                        </div>
+                    </div>`;
+                    container.innerHTML += html;
+                });
+            } else {
+                container.innerHTML = '<div style="padding:1.25rem;text-align:center;color:#888;font-size:1rem;">No notifications yet.</div>';
+            }
+        });
+}
+
+// Poll every 5 seconds for badge and dropdown
+setInterval(function() {
+    updateNotificationBadge();
+    updateNotificationDropdown();
+}, 5000);
+document.addEventListener('DOMContentLoaded', function() {
+    // Reset badge if dropdown is closed (for next session)
+    localStorage.removeItem('notif_viewed');
+    updateNotificationBadge();
+    updateNotificationDropdown();
+});
 </script>

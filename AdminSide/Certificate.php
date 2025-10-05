@@ -5,6 +5,37 @@ if (!isset($_SESSION['admin_id'])) {
     header("Location: ../AdminLogin.php"); // Adjust the path if needed
     exit;
 }
+
+// --- Suggestion Data for Deceased Name field ---
+$deceasedNameSuggestions = [];
+include_once '../Includes/db.php';
+$deceasedResult = $conn->query("SELECT DISTINCT firstName, middleName, lastName, suffix FROM deceased WHERE firstName IS NOT NULL AND lastName IS NOT NULL AND firstName != '' AND lastName != ''");
+if ($deceasedResult && $deceasedResult->num_rows > 0) {
+    while ($row = $deceasedResult->fetch_assoc()) {
+        $fullName = trim($row['firstName'] . ' ' . $row['middleName'] . ' ' . $row['lastName']);
+        if (!empty($row['suffix'])) {
+            $fullName .= ' ' . trim($row['suffix']);
+        }
+        $fullName = preg_replace('/\s+/', ' ', $fullName);
+        if ($fullName !== '') $deceasedNameSuggestions[$fullName] = true;
+    }
+}
+$deceasedNameSuggestions = array_keys($deceasedNameSuggestions);
+
+// --- AJAX endpoint for deceased info autofill ---
+if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0) {
+    include_once '../Includes/db.php';
+    $name = $_GET['get_deceased_info'];
+    $stmt = $conn->prepare("SELECT firstName, middleName, lastName, suffix, residency, nicheID, dateDied, informantName FROM deceased WHERE CONCAT_WS(' ', firstName, middleName, lastName, suffix) = ? LIMIT 1");
+    $stmt->bind_param("s", $name);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $info = $res->fetch_assoc();
+    $stmt->close();
+    header('Content-Type: application/json');
+    echo json_encode($info ?: []);
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -256,23 +287,41 @@ if (!isset($_SESSION['admin_id'])) {
       <h2 style="margin-left:0;margin-bottom:18px;font-size:1.25rem;font-weight:600;">New Certificate</h2>
       <!-- Certificate Template Form -->
       <form method="post" autocomplete="off" style="width:100%;" id="certificateForm">
+        <!-- Deceased Information Section (moved to top) -->
+        <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;">Deceased Information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
+          <div>
+            <label>Deceased Name:</label>
+            <input type="text" name="deceased" id="deceasedField" value="<?php echo isset($_POST['deceased']) ? htmlspecialchars($_POST['deceased']) : ''; ?>" style="width:90%;" autocomplete="off" list="deceasedNameSuggestions">
+            <datalist id="deceasedNameSuggestions">
+              <?php foreach ($deceasedNameSuggestions as $suggestion): ?>
+                <option value="<?php echo htmlspecialchars($suggestion); ?>"></option>
+              <?php endforeach; ?>
+            </datalist>
+            <div id="deceasedWarning" style="display:none;color:#e74c3c;font-size:0.98rem;margin-top:2px;">Deceased Name must not contain numbers or symbols.</div>
+          </div>
+          <div>
+            <label>Date Died:</label>
+            <input type="date" name="date_died" id="dateDiedField" value="<?php echo isset($_POST['date_died']) ? htmlspecialchars($_POST['date_died']) : ''; ?>" style="width:90%;">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
+          <div>
+            <label>Apartment No.:</label>
+            <input type="text" name="apartment" id="apartmentField" value="<?php echo isset($_POST['apartment']) ? htmlspecialchars($_POST['apartment']) : ''; ?>" required style="width:90%;">
+          </div>
+          <div>
+            <label>Barangay:</label>
+            <input type="text" name="barangay" id="barangayField" value="<?php echo isset($_POST['barangay']) ? htmlspecialchars($_POST['barangay']) : ''; ?>" required style="width:90%;">
+          </div>
+        </div>
         <!-- Personal Information Section -->
-        <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;">Personal Information</div>
+        <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;margin-top:24px;">Personal Information</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div>
             <label>Name:</label>
             <input type="text" name="name" id="nameField" value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>" required style="width:90%;">
             <div id="nameWarning" style="display:none;color:#e74c3c;font-size:0.98rem;margin-top:2px;">Name must not contain numbers or symbols.</div>
-          </div>
-          <div>
-            <label>Barangay:</label>
-            <input type="text" name="barangay" value="<?php echo isset($_POST['barangay']) ? htmlspecialchars($_POST['barangay']) : ''; ?>" required style="width:90%;">
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;margin-top:18px;">
-          <div>
-            <label>Apartment No.:</label>
-            <input type="text" name="apartment" value="<?php echo isset($_POST['apartment']) ? htmlspecialchars($_POST['apartment']) : ''; ?>" required style="width:90%;">
           </div>
           <div>
             <label>Date:</label>
@@ -307,24 +356,7 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
         </div>
         <hr style="margin:24px 0 18px 0; border:0; border-top:1px solid #ececec;">
-        <!-- Deceased Information Section -->
-        <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;">Deceased Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
-          <div>
-            <label>Deceased Name:</label>
-            <input type="text" name="deceased" id="deceasedField" value="<?php echo isset($_POST['deceased']) ? htmlspecialchars($_POST['deceased']) : ''; ?>" style="width:90%;">
-            <div id="deceasedWarning" style="display:none;color:#e74c3c;font-size:0.98rem;margin-top:2px;">Deceased Name must not contain numbers or symbols.</div>
-          </div>
-          <div>
-            <label>Date Died:</label>
-            <input type="date" name="date_died" value="<?php echo isset($_POST['date_died']) ? htmlspecialchars($_POST['date_died']) : ''; ?>" style="width:90%;">
-          </div>
-        </div>
-        <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
-          <button type="submit" class="btn" style="width: 140px; padding: 12px 0; font-size:1.08rem;">Preview</button>
-        </div>
-      </form>
-      <!-- Certificate Preview -->
+             <!-- Certificate Preview -->
       <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
         <hr style="border:0; border-top:3px solid #bbb; margin:32px 0 32px 0;">
         <?php $mc_no = '2024-001'; // Static MC No. ?>
@@ -427,6 +459,11 @@ if (!isset($_SESSION['admin_id'])) {
           </div>
         </div>
       <?php endif; ?>
+        <!-- Preview Button at the bottom -->
+        <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
+          <button type="submit" class="btn" style="width: 140px; padding: 12px 0; font-size:1.08rem;">Preview</button>
+        </div>
+      </form>
     </div>
     <script>
       function showTab(tabId) {
@@ -541,16 +578,23 @@ if (!isset($_SESSION['admin_id'])) {
         // Set default to All
         document.querySelector('.cert-filter-btn[data-filter="all"]').click();
       })();
+
+      // Autofill fields when deceased is selected
+      document.getElementById('deceasedField').addEventListener('change', function() {
+        const name = this.value;
+        if (!name) return;
+        fetch('?get_deceased_info=' + encodeURIComponent(name))
+          .then(res => res.json())
+          .then(data => {
+            if (!data) return;
+            if (data.dateDied) document.getElementById('dateDiedField').value = data.dateDied;
+            if (data.nicheID) document.getElementById('apartmentField').value = data.nicheID;
+            if (data.residency) document.getElementById('barangayField').value = data.residency;
+            if (data.informantName) document.getElementById('nameField').value = data.informantName;
+          });
+      });
     </script>
   </main>
 
-</body>
-</html>
-</body>
-</html>
-</body>
-</html>
-</body>
-</html>
 </body>
 </html>

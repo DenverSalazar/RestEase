@@ -1146,6 +1146,7 @@ function goToAssessment() {
         .then(result => {
           if (result.success) {
             showActionSuccessNotification('Assessment submitted and user notified!');
+            updateDoneAssessmentTable(); // <-- Add this line
           } else {
             showActionErrorNotification('Failed to submit assessment: ' + (result.message || 'Unknown error'));
           }
@@ -1157,6 +1158,147 @@ function goToAssessment() {
     });
 }
 
+function updateDoneAssessmentTable() {
+  fetch('get_done_assessments.php')
+    .then(response => response.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        const tbody = document.querySelector('#done-assessment-table tbody');
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.setAttribute('data-assessed-date', row.created_at);
+          tr.innerHTML = `
+            <td>${row.informant_name}</td>
+            <td>${row.email}</td>
+            <td>${row.type}</td>
+            <td>${row.deceased_name}</td>
+            <td>${row.residency}</td>
+            <td>${row.dob}</td>
+            <td>${row.dod}</td>
+            <td>${row.age}</td>
+            <td>${row.niche_id}</td>
+            <td>₱ ${parseFloat(row.total_fee).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+            <td>${row.expiration}</td>
+            <td>₱ ${parseFloat(row.renewal_fee).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+            <td>${row.created_at}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        // Redraw DataTable
+        if (window.doneAssessmentTable) {
+          window.doneAssessmentTable.clear().destroy();
+          window.doneAssessmentTable = $('#done-assessment-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "dom": 'rtip',
+            "pageLength": 10,
+            "language": {
+              "emptyTable": "No assessments found.",
+              "zeroRecords": "No matching records found",
+              "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+              "infoEmpty": "Showing 0 to 0 of 0 entries",
+              "infoFiltered": "(filtered from _MAX_ total entries)"
+            },
+            "columnDefs": [
+              { "orderable": false, "targets": [12] }
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              
+              const info = $('#done-assessment-table_info').detach();
+              const paginate = $('#done-assessment-table_paginate').detach();
+              
+              externalWrapper.empty().append(info).append(paginate);
+            }
+          });
+        }
+      }
+    });
+}
+
+// Polling function to fetch and update client requests table
+function fetchAndUpdateClientRequestsTable() {
+  fetch('get_client_requests.php')
+    .then(response => response.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        const tbody = document.querySelector('#clients-request-table tbody');
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          // Avatar logic (same as PHP)
+          let avatarHtml = '';
+          if (row.profile_picture && row.profile_picture !== '' && row.profile_picture !== null) {
+            avatarHtml = `<img src="../uploads/${row.profile_picture}" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">`;
+          } else {
+            const initials = ((row.first_name || '').charAt(0) + (row.last_name || '').charAt(0)).toUpperCase();
+            const colorIndex = (Math.abs(crc32(row.first_name + row.last_name)) % 10) + 1;
+            avatarHtml = `<div class="avatar-img avatar-google avatar-color-${colorIndex}" style="display:inline-flex;">${initials}</div>`;
+          }
+          const requestDate = row.created_at ? row.created_at.substring(0, 10) : 'N/A';
+          tbody.innerHTML += `
+            <tr data-request-date="${requestDate}">
+              <td>
+                ${avatarHtml}
+                <span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;">${row.first_name} ${row.last_name}</span>
+              </td>
+              <td>${row.email}</td>
+              <td>${row.type}</td>
+              <td>${requestDate}</td>
+              <td><span class="status-badge status-pending">Pending</span></td>
+              <td><button class="view-btn" onclick="openPopup(${row.id}, 'pending')">View</button></td>
+            </tr>
+          `;
+        });
+        // Redraw DataTable
+        if (window.clientsRequestTable) {
+          window.clientsRequestTable.clear().destroy();
+          window.clientsRequestTable = $('#clients-request-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "dom": 'rtip',
+            "pageLength": 10,
+            "language": {
+              "emptyTable": "No client requests found.",
+              "zeroRecords": "No matching records found",
+              "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+              "infoEmpty": "Showing 0 to 0 of 0 entries",
+              "infoFiltered": "(filtered from _MAX_ total entries)"
+            },
+            "columnDefs": [
+              { "orderable": false, "targets": [5] }
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#clients-request-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              const info = $('#clients-request-table_info').detach();
+              const paginate = $('#clients-request-table_paginate').detach();
+              externalWrapper.empty().append(info).append(paginate);
+            }
+          });
+        }
+      }
+    });
+}
+
+// Helper for JS crc32
+function crc32(str) {
+  let crc = 0 ^ (-1);
+  for (let i = 0; i < str.length; i++) {
+    crc = (crc >>> 8) ^ [0, 1996959894, 3993919788, 2567524794, 124634137, 1886057615, 3915621680, 3929699850, 668119635, 251722036, 2875272554, 3710493301, 4152554867, 1732584193, 2396949568, 3453421203][(crc ^ str.charCodeAt(i)) & 0xFF];
+  }
+  return (crc ^ (-1)) >>> 0;
+}
+
+// Start polling every 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+  setInterval(fetchAndUpdateClientRequestsTable, 5000);
+});
     </script>
   </main>
 

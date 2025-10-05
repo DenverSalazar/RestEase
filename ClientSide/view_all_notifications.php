@@ -126,7 +126,13 @@ if ($user_id) {
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
     <div class="container py-4 flex-grow-1">
-        <h2 class="mb-0 text-center">All Notifications</h2>
+        <div class="d-flex align-items-center mb-3" style="gap:12px;">
+            <!-- Back button leftmost, beside header -->
+            <button type="button" onclick="window.history.back();" class="btn btn-link" style="font-size:1.1rem;padding:0;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <h2 class="mb-0 text-center" style="flex:1;">All Notifications</h2>
+        </div>
         <div class="d-flex justify-content-end align-items-center mb-4" id="delete-mode-controls" style="gap: 0.5rem;">
             <button id="delete-all-btn" class="btn btn-danger btn-sm" style="display:none;">Delete All</button>
             <button id="main-delete-btn" class="btn btn-outline-danger btn-sm ms-2" title="Delete Notifications">
