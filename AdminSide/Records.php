@@ -315,8 +315,9 @@ if (!isset($_SESSION['admin_id'])) {
               $deleteIds = array_map('intval', $_POST['delete_ids']);
               $placeholders = str_repeat('?,', count($deleteIds) - 1) . '?';
               
-              // Move to archive
-              $stmt = $conn->prepare("INSERT INTO archive_deceased SELECT * FROM deceased WHERE id IN ($placeholders)");
+              // Move to archive (map columns explicitly)
+              $sql = "INSERT INTO archive_deceased (id, firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) SELECT id, firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName FROM deceased WHERE id IN ($placeholders)";
+              $stmt = $conn->prepare($sql);
               $stmt->bind_param(str_repeat('i', count($deleteIds)), ...$deleteIds);
               $stmt->execute();
               

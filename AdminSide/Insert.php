@@ -156,6 +156,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 // Get 'from' parameter to determine redirect destination
 $from = $_GET['from'] ?? '';
+
+// Fetch and display details from ledger, deceased, or assessment_done based on ID
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$ledger = null;
+$deceased = null;
+$assessment = null;
+$accepted_request = null;
+$parsedAssessmentName = [
+    'firstName' => '',
+    'middleName' => '',
+    'lastName' => '',
+    'suffix' => ''
+];
+
+if ($id) {
+    // Fetch ledger entry
+    $stmt = $conn->prepare("SELECT * FROM ledger WHERE id = ?");
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $ledger = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($ledger) {
+        // 1. Try to fetch from deceased/records table by ApartmentNo (nicheID)
+        if (!empty($ledger['ApartmentNo'])) {
+            $stmt = $conn->prepare("SELECT * FROM deceased WHERE nicheID = ? LIMIT 1");
+            $stmt->bind_param('s', $ledger['ApartmentNo']);
+            $stmt->execute();
+            $deceased = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        }
+        // 2. If not found in deceased, try to fetch from assessment table using user_id (foreign key)
+        if (!$deceased) {
+            // Try to get user_id from users table by matching Payee (informant name)
+            $payee = $ledger['Payee'];
+            $user_id = null;
+            $nameParts = explode(' ', $payee, 2);
+            if (count($nameParts) == 2) {
+                $first = $nameParts[0];
+                $last = $nameParts[1];
+                $stmt = $conn->prepare("SELECT id FROM users WHERE first_name = ? AND last_name = ? LIMIT 1");
+                $stmt->bind_param('ss', $first, $last);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($row = $result->fetch_assoc()) {
+                    $user_id = $row['id'];
+                }
+                $stmt->close();
+            }
+            // If user_id found, get latest assessment for that user
+            if ($user_id) {
+                $stmt = $conn->prepare("SELECT * FROM assessment WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+                $stmt->bind_param('i', $user_id);
+                $stmt->execute();
+                $assessment = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                // Fetch accepted_request for this assessment if possible
+                if ($assessment && isset($assessment['request_id'])) {
+                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
+                    $stmt->bind_param('i', $assessment['request_id']);
+                    $stmt->execute();
+                    $accepted_request = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                }
+            } else {
+                // Fallback: try to match by informant_name and deceased_name
+                $stmt = $conn->prepare("SELECT * FROM assessment WHERE informant_name = ? AND deceased_name = ? LIMIT 1");
+                $stmt->bind_param('ss', $ledger['Payee'], $ledger['Description']);
+                $stmt->execute();
+                $assessment = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                // Fetch accepted_request for this assessment if possible
+                if ($assessment && isset($assessment['request_id'])) {
+                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
+                    $stmt->bind_param('i', $assessment['request_id']);
+                    $stmt->execute();
+                    $accepted_request = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                }
+            }
+            // --- Split deceased_name for type New ---
+            if ($assessment && isset($assessment['type']) && $assessment['type'] === 'New' && !empty($assessment['deceased_name'])) {
+                $name = trim($assessment['deceased_name']);
+                // Try to split by space, handle suffix (Jr., Sr., III, etc.)
+                $parts = preg_split('/\s+/', $name);
+                $suffixes = ['JR.', 'SR.', 'III', 'IV', 'JR', 'SR', 'II', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'JR,', 'SR,'];
+                $suffix = '';
+                if (count($parts) > 2) {
+                    // If last part is a suffix
+                    $lastPart = strtoupper(str_replace('.', '', end($parts)));
+                    if (in_array($lastPart, $suffixes)) {
+                        $suffix = array_pop($parts);
+                    }
+                }
+                // Assign
+                $parsedAssessmentName['firstName'] = $parts[0] ?? '';
+                $parsedAssessmentName['middleName'] = (count($parts) > 2) ? $parts[1] : '';
+                $parsedAssessmentName['lastName'] = (count($parts) > 2) ? $parts[2] : ($parts[1] ?? '');
+                $parsedAssessmentName['suffix'] = $suffix;
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -167,6 +270,16 @@ $from = $_GET['from'] ?? '';
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/Insert.css">
+  <link rel="stylesheet" href="../css/Clients.css">
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #f7f8fa; }
+    .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px; }
+    h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 18px; }
+    .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .details-table th, .details-table td { padding: 8px 10px; font-size: 0.95rem; border-bottom: 1px solid #eee; text-align: left; }
+    .details-table th { background: #f7f8fa; font-weight: 500; }
+    .details-table tr:last-child td { border-bottom: none; }
+  </style>
 </head>
 <body>
   <!-- Sidebar -->
@@ -280,26 +393,26 @@ $from = $_GET['from'] ?? '';
           <div class="form-row">
             <div class="form-group">
               <label for="firstName">First Name</label>
-              <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($_POST['firstName'] ?? ''); ?>">
+              <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName'] ?? ($parsedAssessmentName['firstName'] ?? ($assessment['deceased_name'] ?? $_POST['firstName'] ?? ''))); ?>">
             </div>
             <div class="form-group">
               <label for="middleName">Middle Name</label>
-              <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($_POST['middleName'] ?? ''); ?>">
+              <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? $_POST['middleName'] ?? '')); ?>">
             </div>
             <div class="form-group">
               <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($_POST['lastName'] ?? ''); ?>">
+              <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName'] ?? ($parsedAssessmentName['lastName'] ?? $_POST['lastName'] ?? '')); ?>">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="suffix">Suffix</label>
-              <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($_POST['suffix'] ?? ''); ?>">
+              <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix'] ?? ($parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? '')); ?>">
             </div>
             <div class="form-group" style="position:relative;">
               <label for="residency">Residency</label>
               <div style="position:relative;">
-                <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($_POST['residency'] ?? ''); ?>" autocomplete="off" style="padding-right:36px;">
+                <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($deceased['residency'] ?? $assessment['residency'] ?? $_POST['residency'] ?? ''); ?>" autocomplete="off" style="padding-right:36px;">
                 <button type="button" id="residency-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:2;">
                   <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
                 </button>
@@ -327,28 +440,28 @@ $from = $_GET['from'] ?? '';
             </div>
             <div class="form-group">
               <label for="born">Born</label>
-              <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($_POST['born'] ?? ''); ?>">
+              <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born'] ?? $assessment['dob'] ?? $_POST['born'] ?? ''); ?>">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="dateDied">Date Died</label>
-              <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($_POST['dateDied'] ?? ''); ?>">
+              <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied'] ?? $assessment['dod'] ?? $_POST['dateDied'] ?? ''); ?>">
             </div>
             <div class="form-group">
               <label for="age">Age</label>
-              <input type="text" id="age" name="age" placeholder="Age" readonly>
+              <input type="text" id="age" name="age" placeholder="Age" readonly value="<?php echo htmlspecialchars($deceased['age'] ?? $assessment['age'] ?? $_POST['age'] ?? ''); ?>">
             </div>
             <div class="form-group">
               <label for="dateInternment">Date of Internment</label>
-              <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($_POST['dateInternment'] ?? ''); ?>">
+              <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment'] ?? ($accepted_request['dateInternment'] ?? ($assessment['dateInternment'] ?? $_POST['dateInternment'] ?? ''))); ?>">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="apartmentNo">Apartment No.</label>
               <div class="niche-picker-group">
-                <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo isset($_GET['nicheID']) ? htmlspecialchars($_GET['nicheID']) : (htmlspecialchars($_POST['apartmentNo'] ?? '')); ?>">
+                <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID'] ?? $ledger['ApartmentNo'] ?? $_POST['apartmentNo'] ?? ''); ?>">
                 <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
                   <i class="fas fa-map-marker-alt"></i>
                 </button>
@@ -356,7 +469,7 @@ $from = $_GET['from'] ?? '';
             </div>
             <div class="form-group">
               <label for="informantName">Informant Name</label>
-              <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($_POST['informantName'] ?? ''); ?>" autocomplete="off" list="informantNameList">
+              <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName'] ?? $assessment['informant_name'] ?? $ledger['Payee'] ?? $_POST['informantName'] ?? ''); ?>" autocomplete="off" list="informantNameList">
               <datalist id="informantNameList">
                 <?php foreach ($informantSuggestions as $suggestion): ?>
                   <option value="<?php echo htmlspecialchars($suggestion); ?>"></option>

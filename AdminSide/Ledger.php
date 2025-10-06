@@ -47,7 +47,6 @@ $showLedgerSuccessModal = false;
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['ApartmentNo']) && isset($_POST['Payee']) && isset($_POST['Amount']) &&
-    trim($_POST['ApartmentNo']) !== '' &&
     trim($_POST['Payee']) !== '' &&
     trim(str_replace([',', '₱', ' '], '', $_POST['Amount'])) !== ''
 ) {
@@ -76,11 +75,7 @@ if (
     $showLedgerSuccessModal = true;
     // Do NOT redirect or echo JS alert here
     // exit; <-- REMOVE THIS LINE
-} else if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ApartmentNo']) && isset($_POST['Payee'])) {
-    echo '<script>alert("Please select an accepted request first using Go to Payment."); window.location.href="Ledger.php";</script>';
-    exit;
-}
-
+} 
 function generateUniqueORNumber($conn) {
   $count = 0;
   do {
@@ -161,6 +156,8 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       margin-top: 18px;
       overflow: visible;
       border: 1px solid #ececec;
+      max-width: 100%;
+      padding: 0 0 32px 0;
     }
     .ledger-table {
       width: 100%;
@@ -172,19 +169,25 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       margin-bottom: 1rem;
       font-family: 'Poppins', sans-serif;
+      font-size: 0.98rem;
     }
     .ledger-table th, .ledger-table td {
-      padding: 10px 12px;
+      padding: 7px 8px;
       text-align: left;
-      font-size: 0.98rem;
+      font-size: 0.92rem;
+      font-weight: 400;
       border-bottom: 1px solid #eee;
       background: #fff;
       font-family: 'Poppins', sans-serif;
+      height: 36px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .ledger-table th {
       background: #f7f8fa;
       font-weight: 500;
       color: #333;
+      height: 40px;
     }
     .ledger-table tr:last-child td {
       border-bottom: none;
@@ -237,8 +240,12 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         font-size: 1.3rem;
       }
       .ledger-table th, .ledger-table td {
-        padding: 10px 6px;
+        padding: 10px 8px;
         font-size: 0.95rem;
+        height: 40px;
+      }
+      .ledger-table th {
+        height: 44px;
       }
       .ledger-search-container {
         min-width: 0;
@@ -311,7 +318,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       font-size: 1rem;
       margin-top: 2px;
     }
-    #nicheDropdown option {
+     #nicheDropdown option {
       padding: 8px 12px;
       cursor: pointer;
       border-bottom: 1px solid #f0f0f0;
@@ -353,86 +360,12 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <!-- Tabs -->
     <div style="border-bottom:1px solid #e0e0e0;margin-bottom:8px;">
       <div style="display:flex;gap:32px;align-items:center;">
-        <button id="paymentTabBtn" class="tab active">Payment Details</button>
-        <button id="ledgerTabBtn" class="tab">Ledger Information</button>
+        <button id="ledgerTabBtn" class="tab active">Ledger Information</button>
+        <button id="paymentTabBtn" class="tab">Payment Details</button>
       </div>
     </div>
-    <!-- Payment Details Section -->
-    <div id="paymentDetailsSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:24px;">
-        <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
-        <!-- Removed buttons from here -->
-      </div>
-      <form id="ledgerDeleteForm" method="post" style="margin:0;">
-      <div style="overflow-x:auto;">
-        <table class="ledger-table" id="paymentDetailsTable" style="min-width:900px;">
-          <thead>
-            <tr>
-              <th>Apt No.</th>
-              <th>Payee</th>
-              <th>Date Paid</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Validity</th>
-              <th>OR Number</th>
-              <th>MC No.</th>
-              <th id="ledgerDeleteTh" style="display:none;">
-                <input type="checkbox" id="ledgerSelectAllCheckbox" style="display:none;">
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-            // Fetch payment details (where DatePaid is NOT NULL and not empty)
-            $paymentResult = $conn->query("SELECT * FROM ledger WHERE DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC");
-            if ($paymentResult && $paymentResult->num_rows > 0) {
-              while ($row = $paymentResult->fetch_assoc()) {
-                echo '<tr>';
-                echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
-                echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
-                echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
-                // MCNo can be null, show empty string if so
-                echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
-                echo '<td><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '"></td>';
-                echo '</tr>';
-              }
-            }
-            ?>
-          </tbody>
-        </table>
-      </div>
-      </form>
-      <!-- Delete Confirmation Modal (proper popup modal, overlays the page) -->
-      <div id="ledgerDeleteModal" class="modal-overlay" style="display:none;position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
-        <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
-          <div class="modal-header">
-            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
-            <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
-          </div>
-          <div class="modal-body" style="margin:18px 0 24px 0;">
-            <p id="ledgerDeleteModalText" style="color:#444;font-size:1.07rem;margin:0;">
-              Are you sure you want to delete this ledger entry?<br>
-              This action will move the record to the archive section.
-            </p>
-          </div>
-          <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
-            <button id="ledgerModalDeleteBtn" class="modal-delete-btn" style="background:#e74c3c;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Delete</button>
-            <button id="ledgerModalCancelBtn" class="modal-cancel-btn" style="background:#95a5a6;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Cancel</button>
-          </div>
-        </div>
-      </div>
-      <!-- Success Notification -->
-      <div id="ledgerSuccessNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
-        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i><span id="ledgerNotificationText">Ledger entry deleted.</span></span>
-        <button id="ledgerCloseNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
-      </div>
-    </div>
-    <!-- Ledger Information Section (now comes second, hidden by default) -->
-    <div id="ledgerInfoSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box; display:none;">
+    <!-- Ledger Information Section (now comes first, visible by default) -->
+    <div id="ledgerInfoSection" class="card" style="width: 100%; max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px 32px 32px 32px; box-sizing: border-box;">
       <div style="font-size:1.25rem;font-weight:600;margin-bottom:24px;letter-spacing:0.5px;">Ledger Information</div>
       <form id="ledgerForm" method="post" action="" enctype="multipart/form-data" autocomplete="off" style="width:100%;">
         <!-- Section: Basic Information -->
@@ -449,7 +382,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;position:relative;">
             <label for="formApartmentNo" style="font-weight:500;">Apt No.</label>
-            <input type="text" id="formApartmentNo" name="ApartmentNo" required placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
+            <input type="text" id="formApartmentNo" name="ApartmentNo" placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
             <!-- NicheID dropdown (hidden by default) -->
             <select id="nicheDropdown"></select>
           </div>
@@ -469,7 +402,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;margin-top:18px;">Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <label for="formDescription" style="font-weight:500;">Description</label>
+            <label for="formDescription" style="font-weight:500;">Description / Type</label>
             <input
               type="text"
               id="formDescription"
@@ -507,6 +440,83 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         </div>
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($ledgerEntry['id'] ?? ''); ?>">
       </form>
+    </div>
+    <!-- Payment Details Section (now comes second, hidden by default) -->
+    <div id="paymentDetailsSection" class="card ledger-table-container" style="max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 0 0 32px 0; box-sizing: border-box; display:none; margin-top: 18px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 32px 32px 0 32px; margin-bottom:24px;">
+        <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
+        <!-- Removed buttons from here -->
+      </div>
+      <form id="ledgerDeleteForm" method="post" style="margin:0;">
+        <div style="overflow-x:auto; padding: 0 32px;">
+          <table class="ledger-table" id="paymentDetailsTable" style="min-width:1100px;">
+            <thead>
+              <tr>
+                <th>Apt No.</th>
+                <th>Payee</th>
+                <th>Date Paid</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Validity</th>
+                <th>OR Number</th>
+                <th>MC No.</th>
+                <th>Action</th>
+                <th id="ledgerDeleteTh" style="display:none;">
+                  <input type="checkbox" id="ledgerSelectAllCheckbox" style="display:none;">
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+              // Fetch payment details (where DatePaid is NOT NULL and not empty)
+              $paymentResult = $conn->query("SELECT * FROM ledger WHERE DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC");
+              if ($paymentResult && $paymentResult->num_rows > 0) {
+                while ($row = $paymentResult->fetch_assoc()) {
+                  echo '<tr>';
+                  echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
+                  echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
+                  // MCNo can be null, show empty string if so
+                  echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
+                  // Action button
+                  echo '<td><a href="insert.php?id=' . $row['id'] . '" class="action-btn" style="background:#2563eb;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
+                  echo '<td><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '"></td>';
+                  echo '</tr>';
+                }
+              }
+              ?>
+            </tbody>
+          </table>
+        </div>
+      </form>
+      <!-- Delete Confirmation Modal (proper popup modal, overlays the page) -->
+      <div id="ledgerDeleteModal" class="modal-overlay" style="display:none;position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
+          <div class="modal-header">
+            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
+            <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
+          </div>
+          <div class="modal-body" style="margin:18px 0 24px 0;">
+            <p id="ledgerDeleteModalText" style="color:#444;font-size:1.07rem;margin:0;">
+              Are you sure you want to delete this ledger entry?<br>
+              This action will move the record to the archive section.
+            </p>
+          </div>
+          <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+            <button id="ledgerModalDeleteBtn" class="modal-delete-btn" style="background:#e74c3c;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Delete</button>
+            <button id="ledgerModalCancelBtn" class="modal-cancel-btn" style="background:#95a5a6;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Success Notification -->
+      <div id="ledgerSuccessNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i><span id="ledgerNotificationText">Ledger entry deleted.</span></span>
+        <button id="ledgerCloseNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
+      </div>
     </div>
     <style>
       @media (max-width: 900px) {
@@ -548,16 +558,21 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     </script>
     <?php endif; ?>
     <script>
-      // Tab switching logic for two tabs (Payment Details is default)
+      // Tab switching logic for two tabs (Ledger Information is default)
       const ledgerTabBtn = document.getElementById('ledgerTabBtn');
       const paymentTabBtn = document.getElementById('paymentTabBtn');
       const ledgerInfoSection = document.getElementById('ledgerInfoSection');
       const paymentDetailsSection = document.getElementById('paymentDetailsSection');
-      // Set Payment Details as default visible
-      paymentTabBtn.classList.add('active');
-      ledgerTabBtn.classList.remove('active');
-      paymentDetailsSection.style.display = '';
-      ledgerInfoSection.style.display = 'none';
+      // Set Ledger Information as default visible
+      ledgerTabBtn.classList.add('active');
+      paymentTabBtn.classList.remove('active');
+      ledgerInfoSection.style.display = '';
+      paymentDetailsSection.style.display = 'none';
+
+      // DataTables lazy initialization for Payment Details
+      let paymentDetailsDataTable = null;
+      let paymentTabInitialized = false;
+
       ledgerTabBtn.addEventListener('click', function() {
         ledgerTabBtn.classList.add('active');
         paymentTabBtn.classList.remove('active');
@@ -569,6 +584,21 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         paymentTabBtn.classList.add('active');
         ledgerInfoSection.style.display = 'none';
         paymentDetailsSection.style.display = '';
+        // Initialize DataTables only once, after table is visible
+        if (!paymentTabInitialized) {
+          paymentDetailsDataTable = $('#paymentDetailsTable').DataTable({
+            paging: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            dom: 'lrtip' // Remove default search box
+          });
+          // Connect top search bar to DataTables search
+          document.getElementById('ledger-search-input').addEventListener('keyup', function() {
+            paymentDetailsDataTable.search(this.value).draw();
+          });
+          paymentTabInitialized = true;
+        }
       });
     </script>
     <!-- Add SheetJS for Excel export -->
@@ -741,21 +771,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <!-- DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script>
-      // DataTables initialization for both tables
-      const paymentDetailsDataTable = $('#paymentDetailsTable').DataTable({
-        paging: true,
-        searching: true,
-        ordering: true,
-        info: true,
-        dom: 'lrtip' // Remove default search box
-      });
-
-      // Connect top search bar to DataTables search
-      document.getElementById('ledger-search-input').addEventListener('keyup', function() {
-        paymentDetailsDataTable.search(this.value).draw();
-      });
-    </script>
     <script>
       // --- Autofill Apt No. with dropdown if multiple nicheIDs for Payee ---
       const informantNicheMap = <?php echo json_encode($informantNicheMap); ?>;
