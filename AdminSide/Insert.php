@@ -28,6 +28,8 @@ if ($informantResult && $informantResult->num_rows > 0) {
 $informantSuggestions = array_keys($informantSuggestions);
 
 $errors = [];
+$fieldErrors = []; // Track errors per field
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Add date validation and conversion
   function validateAndFormatDate($dateString) {
@@ -129,15 +131,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   // Simple required validation
-  if ($firstName === '') $errors[] = "First Name is required.";
-  if ($middleName === '') $errors[] = "Middle Name is required.";
-  if ($lastName === '') $errors[] = "Last Name is required.";
-  if ($born === '') $errors[] = "Valid Born date is required.";
-  if ($residency === '') $errors[] = "Residency is required.";
-  if ($dateDied === '') $errors[] = "Valid Date Died is required.";
-  if ($dateInternment === '') $errors[] = "Valid Date of Internment is required.";
-  if ($apartmentNo === '') $errors[] = "Apartment No. is required.";
-  if ($informantName === '') $errors[] = "Informant Name is required.";
+  if ($firstName === '') {
+    $errors[] = "First Name is required.";
+    $fieldErrors['firstName'] = "First Name is required.";
+  }
+  if ($middleName === '') {
+    $errors[] = "Middle Name is required.";
+    $fieldErrors['middleName'] = "Middle Name is required.";
+  }
+  if ($lastName === '') {
+    $errors[] = "Last Name is required.";
+    $fieldErrors['lastName'] = "Last Name is required.";
+  }
+  if ($born === '') {
+    $errors[] = "Valid Born date is required.";
+    $fieldErrors['born'] = "Valid Born date is required.";
+  }
+  if ($residency === '') {
+    $errors[] = "Residency is required.";
+    $fieldErrors['residency'] = "Residency is required.";
+  }
+  if ($dateDied === '') {
+    $errors[] = "Valid Date Died is required.";
+    $fieldErrors['dateDied'] = "Valid Date Died is required.";
+  }
+  if ($dateInternment === '') {
+    $errors[] = "Valid Date of Internment is required.";
+    $fieldErrors['dateInternment'] = "Valid Date of Internment is required.";
+  }
+  if ($apartmentNo === '') {
+    $errors[] = "Apartment No. is required.";
+    $fieldErrors['apartmentNo'] = "Apartment No. is required.";
+  }
+  if ($informantName === '') {
+    $errors[] = "Informant Name is required.";
+    $fieldErrors['informantName'] = "Informant Name is required.";
+  }
 
   if (empty($errors)) {
     $stmt = $conn->prepare("INSERT INTO deceased (firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -279,43 +308,23 @@ if ($id) {
     .details-table th, .details-table td { padding: 8px 10px; font-size: 0.95rem; border-bottom: 1px solid #eee; text-align: left; }
     .details-table th { background: #f7f8fa; font-weight: 500; }
     .details-table tr:last-child td { border-bottom: none; }
+    .field-error {
+      color: #e74c3c;
+      font-size: 0.92em;
+      margin-top: 4px;
+      margin-bottom: 0;
+      font-weight: 500;
+      letter-spacing: 0.1px;
+    }
+    .input-error {
+      border-color: #e74c3c !important;
+      box-shadow: 0 0 0 2px rgba(231,76,60,0.12);
+    }
   </style>
 </head>
 <body>
   <!-- Sidebar -->
   <?php include '../Includes/sidebar.php'; ?>
-
-  <!-- Error Popup Notification -->
-  <?php if (!empty($errors)): ?>
-    <div class="popup-error-overlay" id="popupErrorOverlay"></div>
-    <div class="popup-error-modal" id="popupErrorModal">
-      <div class="popup-error-header">
-        <i class="fas fa-exclamation-circle"></i> Please fix the following:
-      </div>
-      <ul class="popup-error-list">
-        <?php foreach ($errors as $error): ?>
-          <li><?php echo htmlspecialchars($error); ?></li>
-        <?php endforeach; ?>
-      </ul>
-      <button class="popup-error-close" id="popupErrorCloseBtn">Close</button>
-    </div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var overlay = document.getElementById('popupErrorOverlay');
-        var modal = document.getElementById('popupErrorModal');
-        var closeBtn = document.getElementById('popupErrorCloseBtn');
-        function closePopup() {
-          if (overlay) overlay.style.display = 'none';
-          if (modal) modal.style.display = 'none';
-        }
-        if (closeBtn) closeBtn.onclick = closePopup;
-        if (overlay) overlay.onclick = closePopup;
-        document.addEventListener('keydown', function(e) {
-          if (e.key === "Escape") closePopup();
-        });
-      });
-    </script>
-  <?php endif; ?>
 
   <div class="main-content">
     <div class="cemetery-masterlist-container">
@@ -389,30 +398,49 @@ if ($id) {
         };
       </script>
       <div class="form-container">
-        <form method="post" autocomplete="off">
+        <form method="post" autocomplete="off" id="insertForm">
           <div class="form-row">
             <div class="form-group">
               <label for="firstName">First Name</label>
-              <input type="text" id="firstName" name="firstName" placeholder="First Name" value="<?php echo htmlspecialchars($deceased['firstName'] ?? ($parsedAssessmentName['firstName'] ?? ($assessment['deceased_name'] ?? $_POST['firstName'] ?? ''))); ?>">
+              <input type="text" id="firstName" name="firstName" placeholder="First Name"
+                value="<?php echo htmlspecialchars($deceased['firstName'] ?? ($parsedAssessmentName['firstName'] ?? ($assessment['deceased_name'] ?? $_POST['firstName'] ?? ''))); ?>"
+                class="<?php echo isset($fieldErrors['firstName']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['firstName'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['firstName']; ?></div>
+              <?php endif; ?>
             </div>
             <div class="form-group">
               <label for="middleName">Middle Name</label>
-              <input type="text" id="middleName" name="middleName" placeholder="Middle Name" value="<?php echo htmlspecialchars($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? $_POST['middleName'] ?? '')); ?>">
+              <input type="text" id="middleName" name="middleName" placeholder="Middle Name"
+                value="<?php echo htmlspecialchars($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? $_POST['middleName'] ?? '')); ?>"
+                class="<?php echo isset($fieldErrors['middleName']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['middleName'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['middleName']; ?></div>
+              <?php endif; ?>
             </div>
             <div class="form-group">
               <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" name="lastName" placeholder="Last Name" value="<?php echo htmlspecialchars($deceased['lastName'] ?? ($parsedAssessmentName['lastName'] ?? $_POST['lastName'] ?? '')); ?>">
+              <input type="text" id="lastName" name="lastName" placeholder="Last Name"
+                value="<?php echo htmlspecialchars($deceased['lastName'] ?? ($parsedAssessmentName['lastName'] ?? $_POST['lastName'] ?? '')); ?>"
+                class="<?php echo isset($fieldErrors['lastName']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['lastName'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['lastName']; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="suffix">Suffix</label>
-              <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix'] ?? ($parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? '')); ?>">
+              <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III"
+                value="<?php echo htmlspecialchars($deceased['suffix'] ?? ($parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? '')); ?>">
             </div>
             <div class="form-group" style="position:relative;">
               <label for="residency">Residency</label>
               <div style="position:relative;">
-                <input type="text" id="residency" name="residency" class="form-control" placeholder="Enter Residency" required value="<?php echo htmlspecialchars($deceased['residency'] ?? $assessment['residency'] ?? $_POST['residency'] ?? ''); ?>" autocomplete="off" style="padding-right:36px;">
+                <input type="text" id="residency" name="residency" class="form-control <?php echo isset($fieldErrors['residency']) ? 'input-error' : ''; ?>"
+                  placeholder="Enter Residency" required
+                  value="<?php echo htmlspecialchars($deceased['residency'] ?? $assessment['residency'] ?? $_POST['residency'] ?? ''); ?>"
+                  autocomplete="off" style="padding-right:36px;">
                 <button type="button" id="residency-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:2;">
                   <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
                 </button>
@@ -437,44 +465,74 @@ if ($id) {
                   <li data-value="Tangob, Padre Garcia, Batangas">Tangob, Padre Garcia, Batangas</li>
                 </ul>
               </div>
+              <?php if (isset($fieldErrors['residency'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['residency']; ?></div>
+              <?php endif; ?>
             </div>
             <div class="form-group">
               <label for="born">Born</label>
-              <input type="date" id="born" name="born" placeholder="Born" value="<?php echo htmlspecialchars($deceased['born'] ?? $assessment['dob'] ?? $_POST['born'] ?? ''); ?>">
+              <input type="date" id="born" name="born" placeholder="Born"
+                value="<?php echo htmlspecialchars($deceased['born'] ?? $assessment['dob'] ?? $_POST['born'] ?? ''); ?>"
+                class="<?php echo isset($fieldErrors['born']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['born'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['born']; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="dateDied">Date Died</label>
-              <input type="date" id="dateDied" name="dateDied" placeholder="Date Died" value="<?php echo htmlspecialchars($deceased['dateDied'] ?? $assessment['dod'] ?? $_POST['dateDied'] ?? ''); ?>">
+              <input type="date" id="dateDied" name="dateDied" placeholder="Date Died"
+                value="<?php echo htmlspecialchars($deceased['dateDied'] ?? $assessment['dod'] ?? $_POST['dateDied'] ?? ''); ?>"
+                class="<?php echo isset($fieldErrors['dateDied']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['dateDied'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['dateDied']; ?></div>
+              <?php endif; ?>
             </div>
             <div class="form-group">
               <label for="age">Age</label>
-              <input type="text" id="age" name="age" placeholder="Age" readonly value="<?php echo htmlspecialchars($deceased['age'] ?? $assessment['age'] ?? $_POST['age'] ?? ''); ?>">
+              <input type="text" id="age" name="age" placeholder="Age" readonly
+                value="<?php echo htmlspecialchars($deceased['age'] ?? $assessment['age'] ?? $_POST['age'] ?? ''); ?>">
             </div>
             <div class="form-group">
               <label for="dateInternment">Date of Internment</label>
-              <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment" value="<?php echo htmlspecialchars($deceased['dateInternment'] ?? ($accepted_request['dateInternment'] ?? ($assessment['dateInternment'] ?? $_POST['dateInternment'] ?? ''))); ?>">
+              <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment"
+                value="<?php echo htmlspecialchars($deceased['dateInternment'] ?? ($accepted_request['dateInternment'] ?? ($assessment['dateInternment'] ?? $_POST['dateInternment'] ?? ''))); ?>"
+                class="<?php echo isset($fieldErrors['dateInternment']) ? 'input-error' : ''; ?>">
+              <?php if (isset($fieldErrors['dateInternment'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['dateInternment']; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label for="apartmentNo">Apartment No.</label>
               <div class="niche-picker-group">
-                <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly value="<?php echo htmlspecialchars($deceased['nicheID'] ?? $ledger['ApartmentNo'] ?? $_POST['apartmentNo'] ?? ''); ?>">
+                <input type="text" id="apartmentNo" name="apartmentNo" placeholder="Apartment No." readonly
+                  value="<?php echo htmlspecialchars($deceased['nicheID'] ?? $ledger['ApartmentNo'] ?? $_POST['apartmentNo'] ?? ''); ?>"
+                  class="<?php echo isset($fieldErrors['apartmentNo']) ? 'input-error' : ''; ?>">
                 <button type="button" id="pickNicheBtn" class="btn pick-niche-btn" title="Pick Niche">
                   <i class="fas fa-map-marker-alt"></i>
                 </button>
               </div>
+              <?php if (isset($fieldErrors['apartmentNo'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['apartmentNo']; ?></div>
+              <?php endif; ?>
             </div>
             <div class="form-group">
               <label for="informantName">Informant Name</label>
-              <input type="text" id="informantName" name="informantName" placeholder="Informant Name" value="<?php echo htmlspecialchars($deceased['informantName'] ?? $assessment['informant_name'] ?? $ledger['Payee'] ?? $_POST['informantName'] ?? ''); ?>" autocomplete="off" list="informantNameList">
+              <input type="text" id="informantName" name="informantName" placeholder="Informant Name"
+                value="<?php echo htmlspecialchars($deceased['informantName'] ?? $assessment['informant_name'] ?? $ledger['Payee'] ?? $_POST['informantName'] ?? ''); ?>"
+                autocomplete="off" list="informantNameList"
+                class="<?php echo isset($fieldErrors['informantName']) ? 'input-error' : ''; ?>">
               <datalist id="informantNameList">
                 <?php foreach ($informantSuggestions as $suggestion): ?>
                   <option value="<?php echo htmlspecialchars($suggestion); ?>"></option>
                 <?php endforeach; ?>
               </datalist>
+              <?php if (isset($fieldErrors['informantName'])): ?>
+                <div class="field-error"><?php echo $fieldErrors['informantName']; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="form-actions">

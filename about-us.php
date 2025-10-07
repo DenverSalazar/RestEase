@@ -121,11 +121,11 @@
     <div class="container">
         <div class="section-divider"></div>
     </div>
-
-    <!-- Footer (same as index.html) -->
-    <footer class="footer py-4 d-flex align-items-center" style="background-color: #506C84; color: white; height: 345px;">
-        <div class="container">
-            <!-- Logo and Navigation Links -->
+    <?php include 'Includes/footer.php'; ?>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
             <div class="row mb-4">
                 <!-- Logo -->
                 <div class="col-12 col-md-3 text-center text-md-start mb-3 mb-md-0">

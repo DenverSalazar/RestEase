@@ -33,9 +33,9 @@
         </nav>
         <div class="hero-content">
             <h1>RestEase: Web-Based Cemetery Records & <br> Certificate Management of Padre Garcia Batangas</h1>
-            <p>Designed for managing ossuary vault records and certificates in Padre Garcia, Batangas. It simplifies tracking vaults, renewals, and documents. The system also includes a front-view vault mapping for easy reference without real-world tracking.</p>
+            <p>Designed for managing cemetery apartment records and certificates in Padre Garcia, Batangas. It simplifies tracking niche, renewals, and documents. The system also includes a front-view niche mapping for easy reference without real-world tracking.</p>
             <div class="btn-container mb-5">
-                <a href="#" class="btn btn-primary btn-custom">Reserve Now</a>
+                <a href="login.php" class="btn btn-primary btn-custom">Reserve Now</a>
                 <a href="#" class="btn btn-dark btn-custom">Explore</a>
             </div>
         </div>
@@ -43,12 +43,8 @@
             <p class="text-center"><b>Associated By:</b></p>
             <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
                 <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 60px; width: auto;">
-                <img src="assets/Logo garcia.png" alt="Logo 2" style="height: 60px; width: auto;">
-                <img src="assets/Logo garcia.png" alt="Logo 3" style="height: 60px; width: auto;">
-                <img src="assets/Logo garcia.png" alt="Logo 4" style="height: 60px; width: auto;">
-                <img src="assets/Logo garcia.png" alt="Logo 5" style="height: 60px; width: auto;">
-                <img src="assets/Logo garcia.png" alt="Logo 5" style="height: 60px; width: auto;">
-
+                <img src="assets/Seal_of_Batangas.png" alt="Logo 2" style="height: 50px; width: auto;">
+               
             </div>
         </div>
     </section>
@@ -59,9 +55,9 @@
                 <div class="col-md-6">
                     <h2 class="section-title">Who we are</h2>
                     <p class="section-description">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                        RestEase is a web-based Cemetery Records and Certificate Management System designed for the Municipal Planning and Development Office (MPDO) of Padre Garcia, Batangas. The system was created to modernize cemetery operations by shifting from manual, paper-based processes to a digital platform that ensures organized record management, efficient niche tracking, and automated renewal reminders.
                     </p>
-                    <a href="#" class="btn btn-primary btn-read-more">Read More</a>
+                    <a href="about-us.php" class="btn btn-primary btn-read-more">Read More</a>
                 </div>
                 <!-- Image -->
                 <div class="col-md-6 text-center">
@@ -73,20 +69,20 @@
             <div class="text-center mt-5 pt-5">
                 <h2 class="section-title">Our Services</h2>
                 <p class="section-description">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do <br> eiusmod dolore magna aliqua.
+                    RestEase offers a modern, efficient, and transparent approach to cemetery management through digital innovation.
                 </p>
                 <div class="row mt-4 d-flex align-items-stretch">
                     <!-- Card 1 -->
                     <div class="col-md-4 d-flex">
                         <div class="service-card flex-grow-1">
                             <div class="d-flex align-items-center">
-                                <h3 class="service-title flex-grow-1">Certificate Issuance</h3>
+                                <h3 class="service-title flex-grow-1">Record Keeping</h3>
                                 <div class="icon">
                                     <img src="assets/certification.png" alt="Certificate Issuance" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                                We provide a secure and organized digital database that allows administrators to easily store, access, and manage burial and certificate records, ensuring data accuracy and long-term preservation.
                             </p>
                         </div>
                     </div>
@@ -94,13 +90,13 @@
                     <div class="col-md-4 d-flex">
                         <div class="service-card flex-grow-1">
                             <div class="d-flex align-items-center">
-                                <h3 class="service-title flex-grow-1">Renewal Management</h3>
+                                <h3 class="service-title flex-grow-1">Cemetery Mapping</h3>
                                 <div class="icon">
                                     <img src="assets/renewal.png" alt="Renewal Management" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                                Using GIS technology, we offer an interactive digital map that helps users and administrators locate niches, track availability, and visualize the layout of the cemetery in real time.
                             </p>
                         </div>
                     </div>
@@ -108,13 +104,13 @@
                     <div class="col-md-4 d-flex">
                         <div class="service-card flex-grow-1">
                             <div class="d-flex align-items-center">
-                                <h3 class="service-title flex-grow-1">Record Keeping</h3>
+                                <h3 class="service-title flex-grow-1">Notifications and Reminders</h3>
                                 <div class="icon">
                                     <img src="assets/record.png" alt="Record Keeping" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                                Our automated notification system keeps families informed by sending timely alerts for certificate renewals, updates, and important announcements—ensuring no deadlines are missed.
                             </p>
                         </div>
                     </div>
@@ -190,48 +186,7 @@
             </div>
         </div>
     </section>
-    <footer class="footer py-4 d-flex align-items-center" style="background-color: #506C84; color: white; height: 345px;">
-        <div class="container">
-            <!-- Logo and Navigation Links -->
-            <div class="row mb-4">
-                <!-- Logo -->
-                <div class="col-12 col-md-3 text-center text-md-start mb-3 mb-md-0">
-                    <img src="assets/RE Logo New White.png" alt="RestEase Logo" style="height: 31px;">
-                </div>
-                <!-- Navigation Links -->
-                <div class="col-12 col-md-6 text-center mb-3 mb-md-0">
-                    <div class="d-flex flex-column flex-md-row justify-content-center gap-2 gap-md-3">
-                        <a href="index.php" class="text-white text-decoration-none">Home</a>
-                        <a href="about-us.php" class="text-white text-decoration-none">About Us</a>
-                        <a href="#" class="text-white text-decoration-none">Terms & Condition</a>
-                        <a href="#" class="text-white text-decoration-none">Data Privacy & Policy</a>
-                    </div>
-                </div>
-                <!-- Social Media Icons -->
-                <div class="col-12 col-md-3 text-center mb-3 mb-md-0">
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
-                    </div>
-                </div>
-            </div>
-
-            <hr style="border: 1px solid white;">
-
-            <!-- Copyright and Credits -->
-            <div class="row pt-3">
-                <div class="col-12 col-md-6 text-center text-md-start mb-2 mb-md-0">
-                    <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
-                </div>
-                <div class="col-12 col-md-6 text-center text-md-end">
-                    <p class="mb-0">Designed By: Biringan IT Corps.</p>
-                </div>
-            </div>
-        </div>
-    </footer> 
+    <?php include 'Includes/footer.php'; ?>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

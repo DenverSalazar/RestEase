@@ -139,199 +139,11 @@ if (!$apartment && !$informant && !$ledgerEntry) {
   <title>RestEase Ledger</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/Clients.css">
+  <link rel="stylesheet" href="../css/Ledger.css">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
-    /* ...existing code... */
-    .ledger-header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 0px;
-    }
-    .ledger-header .subtitle {
-      font-size: 1.04rem;
-      color: #6b7280;
-      margin-bottom: 18px;
-    }
-    .ledger-table-container {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      margin-top: 18px;
-      overflow: visible;
-      border: 1px solid #ececec;
-      max-width: 100%;
-      padding: 0 0 32px 0;
-    }
-    .ledger-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-      margin-bottom: 1rem;
-      font-family: 'Poppins', sans-serif;
-      font-size: 0.98rem;
-    }
-    .ledger-table th, .ledger-table td {
-      padding: 7px 8px;
-      text-align: left;
-      font-size: 0.92rem;
-      font-weight: 400;
-      border-bottom: 1px solid #eee;
-      background: #fff;
-      font-family: 'Poppins', sans-serif;
-      height: 36px;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    .ledger-table th {
-      background: #f7f8fa;
-      font-weight: 500;
-      color: #333;
-      height: 40px;
-    }
-    .ledger-table tr:last-child td {
-      border-bottom: none;
-    }
-    .ledger-table tr:hover {
-      background: #f5f7fa;
-    }
-    .ledger-search-container {
-      flex: 1 1 320px;
-      max-width: 420px;
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid #ececec;
-      padding: 0 16px;
-      height: 40px;
-      min-width: 320px;
-      box-shadow: 0 1px 4px rgba(60,72,88,0.03);
-      margin-bottom: 18px;
-    }
-    .ledger-search-container i {
-      color: #b0b0b0;
-      margin-right: 8px;
-      font-size: 1.1rem;
-    }
-    .ledger-search-container input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 1.04rem;
-      width: 100%;
-      color: #222;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-    }
-    .ledger-search-container input::placeholder {
-      color: #b0b0b0;
-      font-weight: 400;
-      opacity: 1;
-    }
-    @media (max-width: 1100px) {
-      .main-content {
-        min-width: 0;
-        max-width: 100vw;
-        padding: 24px 8px 0 8px;
-      }
-      .ledger-header h1 {
-        font-size: 1.3rem;
-      }
-      .ledger-table th, .ledger-table td {
-        padding: 10px 8px;
-        font-size: 0.95rem;
-        height: 40px;
-      }
-      .ledger-table th {
-        height: 44px;
-      }
-      .ledger-search-container {
-        min-width: 0;
-        padding: 0 8px;
-        height: 34px;
-      }
-    }
-    .tab {
-      background: none;
-      border: none;
-      font-size: 1.08rem;
-      padding: 16px 0 12px 0;
-      color: #222;
-      font-weight: 600;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
-    }
-    .tab.active {
-      border-bottom: 2.5px solid #506C84;
-      color: #506C84;
-      opacity: 1;
-    }
-    .search-container {
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid #ececec;
-      padding: 0 16px;
-      height: 40px;
-      box-shadow: 0 1px 4px rgba(60,72,88,0.03);
-      margin-bottom: 18px;
-    }
-    .search-container i {
-      color: #b0b0b0;
-      margin-right: 8px;
-      font-size: 1.1rem;
-    }
-    .search-container input {
-      border: none;
-      background: transparent;
-      outline: none;
-      font-size: 1rem;
-      width: 100%;
-      color: #222;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-    }
-    .search-container input::placeholder {
-      color: #b0b0b0;
-      font-weight: 400;
-      opacity: 1;
-    }
-    /* Dropdown for nicheID selection */
-    #nicheDropdown {
-      display: none;
-      position: absolute;
-      z-index: 100;
-      background: #fff;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-      min-width: 180px;
-      max-width: 320px;
-      max-height: 220px;
-      overflow-y: auto;
-      font-size: 1rem;
-      margin-top: 2px;
-    }
-     #nicheDropdown option {
-      padding: 8px 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    #nicheDropdown option:last-child {
-      border-bottom: none;
-    }
-    /* ...existing code... */
+
   </style>
 </head>
 <body>
@@ -354,6 +166,9 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
+        <button id="importExcelBtn" style="background:#22c55e;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <i class="fas fa-file-import"></i> Import Data
+        </button>
         <button id="exportExcelBtn" style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
           <i class="fas fa-file-excel"></i> Export Data
         </button>
@@ -362,6 +177,57 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         </button>
       </div>
     </div>
+    <!-- Import Excel Modal for Ledger -->
+    <div id="ledgerExcelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.25); z-index:1000; align-items:center; justify-content:center;">
+      <div class="import-modal-content">
+        <button type="button" id="closeLedgerModal" class="modal-close-btn">&times;</button>
+        <div class="modal-header">
+          <i class="fas fa-file-excel" style="color:#27ae60; font-size:2.5rem; margin-bottom:12px;"></i>
+          <h3>Import Excel File</h3>
+          <p>Upload your Excel file to import multiple ledger records at once</p>
+        </div>
+        <form action="ImportLedgerExcel.php" method="post" enctype="multipart/form-data" class="import-form">
+          <div class="file-upload-area">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <input type="file" name="excel_file" accept=".xls,.xlsx,.csv" required id="ledgerFileInput">
+            <label for="ledgerFileInput" class="file-upload-label">
+              <span class="upload-text">Choose File</span>
+              <span class="file-name">No file selected</span>
+            </label>
+          </div>
+          <div class="file-info">
+            <i class="fas fa-info-circle"></i>
+            Supported formats: CSV, XLS, XLSX files
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="cancelLedgerBtn" class="btn-cancel">Cancel</button>
+            <button type="submit" class="btn-upload">
+              <i class="fas fa-upload"></i>
+              Upload File
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script>
+      // Import Excel Modal logic for Ledger
+      document.getElementById('importExcelBtn').onclick = function() {
+        document.getElementById('ledgerExcelModal').style.display = 'flex';
+      };
+      document.getElementById('closeLedgerModal').onclick = function() {
+        document.getElementById('ledgerExcelModal').style.display = 'none';
+      };
+      document.getElementById('cancelLedgerBtn').onclick = function() {
+        document.getElementById('ledgerExcelModal').style.display = 'none';
+      };
+      document.getElementById('ledgerExcelModal').onclick = function(e) {
+        if (e.target === this) this.style.display = 'none';
+      };
+      document.getElementById('ledgerFileInput').onchange = function() {
+        const fileName = this.files[0] ? this.files[0].name : 'No file selected';
+        document.querySelector('#ledgerExcelModal .file-name').textContent = fileName;
+      };
+    </script>
     <!-- Tabs -->
     <div style="border-bottom:1px solid #e0e0e0;margin-bottom:8px;">
       <div style="display:flex;gap:32px;align-items:center;">
@@ -478,7 +344,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
               if ($paymentResult && $paymentResult->num_rows > 0) {
                 while ($row = $paymentResult->fetch_assoc()) {
                   echo '<tr>';
-                  echo '<td>' . htmlspecialchars($row['ApartmentNo']) . '</td>';
+                  echo '<td>' . htmlspecialchars($row['ApartmentNo'] ?? '') . '</td>';
                   echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
                   echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
                   echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
