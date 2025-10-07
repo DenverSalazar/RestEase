@@ -326,7 +326,16 @@ if (!isset($_SESSION['admin_id'])) {
                   <td><?php echo htmlspecialchars($row['dob']); ?></td>
                   <td><?php echo htmlspecialchars($row['dod']); ?></td>
                   <td><?php echo htmlspecialchars($row['age']); ?></td>
-                  <td><?php echo htmlspecialchars($row['niche_id']); ?></td>
+                  <td>
+                    <?php
+                      // For Relocate, show current_niche_id if available, otherwise niche_id
+                      if ($row['type'] === 'Relocate' && !empty($row['current_niche_id'])) {
+                        echo htmlspecialchars($row['current_niche_id']);
+                      } else {
+                        echo htmlspecialchars($row['niche_id']);
+                      }
+                    ?>
+                  </td>
                   <td>₱ <?php echo number_format($row['total_fee'], 2); ?></td>
                   <td><?php echo htmlspecialchars($row['expiration']); ?></td>
                   <td>₱ <?php echo number_format($row['renewal_fee'], 2); ?></td>
