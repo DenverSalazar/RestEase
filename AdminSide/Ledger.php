@@ -91,13 +91,18 @@ function generateUniqueORNumber($conn) {
 }
 
 function generateUniqueMCNumber($conn) {
-  // Get the highest MC No. and increment by 1, starting from 0
-  $result = $conn->query("SELECT MAX(CAST(MCNo AS UNSIGNED)) as max_mc FROM ledger WHERE MCNo REGEXP '^[0-9]+$'");
-  $maxMC = -1; // Start from -1 so first number will be 0
+  $year = date('Y');
+  // Find the highest MCNo for the current year
+  $result = $conn->query("SELECT MCNo FROM ledger WHERE MCNo LIKE '{$year}-%' ORDER BY MCNo DESC LIMIT 1");
+  $nextNum = 1;
   if ($result && $row = $result->fetch_assoc()) {
-    $maxMC = intval($row['max_mc']);
+    // Extract the numeric part and increment
+    $parts = explode('-', $row['MCNo']);
+    if (count($parts) == 2 && is_numeric($parts[1])) {
+      $nextNum = intval($parts[1]) + 1;
+    }
   }
-  return strval($maxMC + 1);
+  return sprintf('%s-%03d', $year, $nextNum);
 }
 
 if ($entry_id && !$ledgerEntry) {
@@ -394,7 +399,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             <label for="formAmount" style="font-weight:500;">Amount</label>
             <div style="position:relative;">
               <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#888;font-size:1.08rem;">₱</span>
-              <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:100%;box-sizing:border-box;padding-left:28px;padding-right:12px;padding-top:10px;padding-bottom:10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
+              <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:104.5%;box-sizing:border-box;padding-left:28px;padding-right:12px;padding-top:10px;padding-bottom:10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
             </div>
           </div>
         </div>
@@ -432,7 +437,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formMCNo" style="font-weight:500;">MC No.</label>
             <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;"
-              value="<?php echo isset($ledgerEntry['MCNo']) && $ledgerEntry['MCNo'] !== null ? htmlspecialchars($ledgerEntry['MCNo']) : ''; ?>">
+              value="<?php echo isset($ledgerEntry['MCNo']) && $ledgerEntry['MCNo'] !== null ? htmlspecialchars($ledgerEntry['MCNo']) : htmlspecialchars($mcNumber); ?>">
           </div>
         </div>
         <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
@@ -816,7 +821,32 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         }
       });
 
-      // ...existing code...
+      // --- Amount field auto-format with commas ---
+      const amountInput = document.getElementById('formAmount');
+      function formatPesoAmount(value) {
+        // Remove non-numeric except dot
+        value = value.replace(/[^\d.]/g, '');
+        // Split integer and decimal
+        let parts = value.split('.');
+        let intPart = parts[0];
+        let decPart = parts[1] || '';
+        // Format integer part with commas
+        intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        // Limit to 2 decimal places
+        if (decPart.length > 2) decPart = decPart.slice(0,2);
+        return decPart ? intPart + '.' + decPart : intPart;
+      }
+      amountInput.addEventListener('input', function(e) {
+        let cursorPos = this.selectionStart;
+        let raw = this.value.replace(/[^\d.]/g, '');
+        let formatted = formatPesoAmount(raw);
+        this.value = formatted;
+        // Try to restore cursor position (best effort)
+        this.setSelectionRange(this.value.length, this.value.length);
+      });
+      amountInput.addEventListener('blur', function() {
+        this.value = formatPesoAmount(this.value);
+      });
     </script>
     <!-- ...existing code... -->
 </body>
