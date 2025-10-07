@@ -289,7 +289,7 @@ if (!isset($_SESSION['admin_id'])) {
           <thead>
             <tr>
               <th>Apt No.</th>
-              <th>Name of Deceases</th>
+              <th>Name of Deceased</th>
               <th>Age</th>
               <th>Date of Birth</th>
               <th>Address of Deceased</th>

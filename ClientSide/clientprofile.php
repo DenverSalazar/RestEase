@@ -461,7 +461,7 @@ $avatar_html = $has_profile_picture
         </div>
     </div>
 
-    <?php include '../includes/footer.php'; ?>
+    <?php include '../Includes/footer.php'; ?>
     <link rel="stylesheet" href="../css/clientprofile.css">
     <script>
     // Custom Toast Logic (copied from register.php)

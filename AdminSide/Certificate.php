@@ -158,6 +158,43 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
         padding: 12px 0 8px 0;
       }
     }
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #certificatePreview, #certificatePreview * {
+        visibility: visible !important;
+      }
+      #certificatePreview {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100vw !important;
+        max-width: none !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        z-index: 9999;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #certificatePreview img {
+        display: block !important;
+        max-width: 100% !important;
+        height: auto !important;
+        visibility: visible !important;
+      }
+      /* Fix icon image size for print */
+      #certificatePreview img[alt="Padre Garcia Icon"],
+      #certificatePreview img[alt="Batangas Seal"] {
+        height: 80px !important;
+        width: auto !important;
+        max-width: none !important;
+      }
+      /* Hide print button itself */
+      .print-btn {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 
@@ -717,6 +754,11 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
             if (data.informantName) document.getElementById('nameField').value = data.informantName;
           });
       });
+
+      // Print only the certificate preview
+      function printCertificate() {
+        window.print();
+      }
     </script>
   </main>
 </body>
