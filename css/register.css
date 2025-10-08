@@ -169,21 +169,21 @@ body {
 }
 
 .terms-link {
-    color: #506C84;
+    color: #0077b6;
     text-decoration: none;
     font-weight: 500;
 }
 
 /* Button styles */
 .btn-primary {
-    background-color: #506C84;
+    background-color: #0077b6;
     border: none;
     padding: 12px;
     font-weight: 500;
 }
 
 .btn-primary:hover {
-    background-color: #3d5266;
+    background-color: #005f8e;
 }
 
 /* Sign In Link */
@@ -193,7 +193,7 @@ body {
 }
 
 .signup-text a {
-    color: #506C84;
+    color: #0077b6;
     text-decoration: none;
     font-weight: 500;
 }

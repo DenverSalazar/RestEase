@@ -134,12 +134,12 @@ body {
     background-color: #005f8e;
 }
 .btn-dark {
-    background-color: black;
+    background-color: #0077b6;
     color: white;
     border: none;
 }
 .btn-dark:hover {
-    background-color: #333;
+    background-color: #005f8e;
 }
 .associated-by {
     position: absolute;

@@ -13,12 +13,14 @@
         body {
             font-family: 'Poppins', Arial, sans-serif;
             background: #fff;
+            padding-top: 80px; /* Add space for navbar */
         }
         .terms-container {
             max-width: 900px;
             margin: 60px auto 0 auto;
             background: #fff;
             padding: 0 32px 32px 32px;
+            margin-top: 40px; /* Extra margin to avoid navbar overlap */
         }
         .terms-title {
             font-size: 2.5rem;
@@ -88,6 +90,10 @@
     </nav>
 
     <div class="terms-container">
+        <!-- Back Button -->
+        <button type="button" class="btn btn-link" style="padding-left:0;margin-bottom:12px;" onclick="history.back();">
+            &larr; Back
+        </button>
         <div class="terms-subtitle">AGREEMENT</div>
         <div class="terms-title">Terms and Conditions</div>
         <div class="terms-content">
@@ -110,10 +116,6 @@
                 <li>Incomplete or incorrect submissions may cause delays or disapproval.</li>
             </ul>
             By using this system, you also agree to respect the privacy, integrity, and purpose of the platform. For questions, please contact your local MPDO office.
-        </div>
-        <div class="terms-buttons">
-            <button class="btn btn-outline-secondary">Not right now..</button>
-            <button class="btn btn-primary">I agree with terms</button>
         </div>
     </div>
     <?php include 'Includes/footer.php'; ?>

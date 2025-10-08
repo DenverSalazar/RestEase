@@ -117,12 +117,18 @@ if (isset($_POST['mark_all_read'])) {
                     <span style="position:absolute;top:-7px;right:-7px;background:#e74c3c;color:#fff;border-radius:50%;font-size:0.7rem;padding:1px 5px;font-weight:600;min-width:16px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.12);z-index:2;"> <?php echo $new_count; ?> </span>
                 <?php endif; ?>
             </a>
-            <a href="#" id="navbarAvatar" style="position:relative;display:inline-block;">
-                <?php echo $user_avatar_html; ?>
-            </a>
-            <div class="avatar-dropdown dropdown-menu dropdown-menu-end" id="avatarDropdown" style="display:none;position:absolute;top:44px;right:0;min-width:180px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
-                <a class="dropdown-item" href="../ClientSide/clientprofile.php" style="padding:10px 18px;">My Profile</a>
-                <a class="dropdown-item" href="../login.php" style="padding:10px 18px;">Logout</a>
+            <a href="#" id="profileAvatar" onclick="toggleProfileDropdown(event)"><?php echo $user_avatar_html; ?></a>
+            <div class="profile-dropdown" id="profileDropdown" style="display:none;position:absolute;top:44px;right:0;width:180px;background:#fff;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,0.13);z-index:1000;overflow:hidden;">
+                <div style="padding:0.75rem 1rem;border-bottom:1px solid #e5e9f2;display:flex;align-items:center;gap:0.7rem;cursor:pointer;"
+                     onclick="window.location.href='../ClientSide/clientprofile.php'">
+                    <i class="fas fa-user" style="color:#4B7BEC;font-size:1.1rem;"></i>
+                    <span style="font-size:1rem;font-weight:500;">My Profile</span>
+                </div>
+                <div style="padding:0.75rem 1rem;display:flex;align-items:center;gap:0.7rem;cursor:pointer;color:#e74c3c;font-weight:500;"
+                     onclick="window.location.href='../logout.php'">
+                    <i class="fas fa-sign-out-alt" style="color:#e74c3c;font-size:1.1rem;"></i>
+                    <span style="font-size:1rem;">Log Out</span>
+                </div>
             </div>
             <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
                 <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e9f2;font-weight:600;display:flex;justify-content:space-between;align-items:center;background:#f7faff;">
@@ -201,32 +207,30 @@ function toggleNotificationDropdown(e) {
         }
     }
 }
-// Avatar dropdown logic
-document.addEventListener('DOMContentLoaded', function() {
-    var avatar = document.getElementById('navbarAvatar');
-    var dropdown = document.getElementById('avatarDropdown');
-    if (avatar && dropdown) {
-        avatar.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
-                dropdown.style.display = 'block';
-                setTimeout(function() {
-                    document.addEventListener('click', closeAvatarDropdown);
-                }, 0);
-            } else {
-                dropdown.style.display = 'none';
-                document.removeEventListener('click', closeAvatarDropdown);
-            }
-        });
-        function closeAvatarDropdown(event) {
-            if (!dropdown.contains(event.target) && event.target !== avatar) {
-                dropdown.style.display = 'none';
-                document.removeEventListener('click', closeAvatarDropdown);
-            }
+function toggleProfileDropdown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var dropdown = document.getElementById('profileDropdown');
+    var avatar = document.getElementById('profileAvatar');
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+        var avatarRect = avatar.getBoundingClientRect();
+        dropdown.style.top = (avatar.offsetTop + avatar.offsetHeight + 8) + 'px';
+        dropdown.style.right = '0px';
+        setTimeout(function() {
+            document.addEventListener('click', closeProfileDropdown);
+        }, 0);
+    } else {
+        dropdown.style.display = 'none';
+        document.removeEventListener('click', closeProfileDropdown);
+    }
+    function closeProfileDropdown(event) {
+        if (!dropdown.contains(event.target) && event.target !== avatar) {
+            dropdown.style.display = 'none';
+            document.removeEventListener('click', closeProfileDropdown);
         }
     }
-});
+}
 function updateNotificationBadge() {
     fetch('../ClientSide/get_notification_count.php')
         .then(response => response.json())

@@ -56,6 +56,78 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/register.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .btn-success {
+            background-color: #0077b6 !important;
+            border: none !important;
+        }
+        .btn-success:hover, .btn-success:focus {
+            background-color: #005f8e !important;
+        }
+
+        /* Custom Toast */
+        .custom-toast {
+            position: fixed !important;
+            top: 40px !important;
+            right: 40px !important;
+            left: auto !important;
+            transform: none !important;
+            min-width: 320px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            border-radius: 1rem;
+            padding: 1.1rem 1.5rem;
+            z-index: 9999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.08rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .custom-toast.success {
+            border-left: 6px solid #38d39f;
+        }
+        .custom-toast .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #38d39f;
+        }
+        .custom-toast .toast-message {
+            flex: 1;
+        }
+        .custom-toast .toast-close {
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+            margin-left: 1rem;
+            transition: color 0.2s;
+        }
+        .custom-toast .toast-close:hover {
+            color: #222;
+        }
+        .eye-icon-wrapper {
+        border: none !important;
+        background: transparent !important;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    .eye-icon-wrapper i {
+        padding-bottom: 10px;
+        vertical-align: middle;
+    }
+
+        @media (max-width: 600px) {
+            .custom-toast {
+                right: 10px !important;
+                left: 10px !important;
+                min-width: unset;
+                max-width: unset;
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light">

@@ -1,20 +1,21 @@
-        body {
+body {
             font-family: 'Poppins', sans-serif;
             background: #f6f8fa;
         }
        
         /* Header section */
         .main-bg-bar {
-            background: linear-gradient(180deg, #94B2CC 0%, #728FA8 60%, #506C84 100%);
-            padding: 32px 0 60px 0;
+            background: #caf0f8;
+            padding: 100px 0 100px 0;
         }
         .dashboard-header {
             background: #fff;
             border-radius: 16px;
-            padding: 44px 48px 36px 48px;
-            margin: 0 auto;
+            padding: 80px 48px 72px 48px;
+            margin: -100px auto 0 auto; /* Push up by 48px */
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             max-width: 100%;
+            min-height: 400px;
         }
         .dashboard-header h2 {
             font-size: 1.25rem;
@@ -170,7 +171,7 @@
         /* Themed button for View Cemetery Maps */
         .btn-map-themed {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(90deg, #4d8fd3 0%, #2d8cff 100%);
+            background: #0077b6 !important;
             color: #fff;
             border: none;
             border-radius: 30px;
@@ -187,7 +188,7 @@
             letter-spacing: 0.5px;
         }
         .btn-map-themed:hover, .btn-map-themed:focus {
-            background: linear-gradient(90deg, #2d8cff 0%, #4d8fd3 100%);
+            background: #0096c7 !important;
             box-shadow: 0 6px 24px rgba(77,143,211,0.18);
             transform: translateY(-2px) scale(1.03);
             color: #fff;
@@ -195,4 +196,3 @@
         .btn-map-themed i {
             font-size: 1.2em;
         }
-        

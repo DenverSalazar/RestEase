@@ -165,7 +165,7 @@ while ($row = $result->fetch_assoc()) {
 </head>
 <body>
   <?php if (!isset($_GET['embed'])): ?>
-    <?php include '../Includes/navbar.php'; ?>
+    <?php include '../Includes/navbar2.php'; ?>
   <?php endif; ?>
 
     <div id="map-wrapper" style="display: flex; justify-content: center;">
