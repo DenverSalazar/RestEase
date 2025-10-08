@@ -10,6 +10,9 @@
 7. git push origin <branchname>
 8. git checkout main
 9. Punta sa GitHub, create pull request tas si totoy na bahala mag merge
+10. git stash
+11. git pull origin --rebase
+12. git stash pop
 
 ## Live Demo 🚀
 Testing lang ito haha
