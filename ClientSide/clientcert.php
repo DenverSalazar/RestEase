@@ -129,11 +129,11 @@ if ($user) {
         overflow-x: auto; /* Add horizontal scroll for responsiveness */
       }
       .cert-list-title {
-        font-size: 1.35rem;
+        font-size: 2rem;
         font-weight: 600;
         margin-bottom: 18px;
-        color: #222;
-        text-align: left;
+        color: #333;
+        text-align: center;
       }
       .cert-list-back {
         display: inline-block;

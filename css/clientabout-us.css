@@ -4,11 +4,11 @@ body {
 }
 /* About Hero Section */
 .about-hero {
-    background-color: #506C84;
-    color: white;
+    background-color: #caf0f8;
+    color: black;
     padding: 100px 20px 60px 20px;
     text-align: center;
-    min-height: 535px;
+    min-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -35,7 +35,7 @@ body {
 
 /* Team Photos Grid */
 .team-photos {
-    margin-top: -100px;
+    margin-top: -50px;
     padding: 0 20px 60px;
     position: relative;
     z-index: 2;
