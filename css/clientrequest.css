@@ -3,7 +3,7 @@ font-family: 'Poppins', Arial, sans-serif;
 background: #f4f7fa;
 }
 .client-request-outer {
-max-width: 1200px;
+max-width: 1250px;
 margin: 48px auto; /* Same gap top and bottom */
 padding: 0 24px;
 }
@@ -106,19 +106,18 @@ flex: 1 1 320px;
 display: flex;
 align-items: stretch;
 justify-content: center;
-min-width: 260px;
+min-width: 520px; /* Increased from 300px */
 height: auto;
 min-height: 100%;
 }
 .client-request-image img {
-width: 100%;
+width: 500px;
 height: 100%;
 border-radius: 16px;
 object-fit: cover;
 box-shadow: 0 2px 16px rgba(0,0,0,0.10);
 display: block;
-max-width: 430px;
-min-width: 180px;
+
 min-height: 260px;
 }
 @media (max-width: 991px) {

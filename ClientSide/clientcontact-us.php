@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="../css/clientcontact-us.css">
 </head>
 <body>
-   <?php include '../Includes/navbar.php'; ?>
+   <?php include '../Includes/navbar2.php'; ?>
    
     <!-- Contact Hero Section -->
     <section class="contact-hero">

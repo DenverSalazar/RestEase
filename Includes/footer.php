@@ -1,4 +1,6 @@
- <footer class="footer py-4 d-flex align-items-center" style="background-color: #03045e; color: white; height: 345px;">
+<!-- Add Font Awesome CDN for social icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<footer class="footer py-4 d-flex align-items-center" style="background-color: #03045e; color: white; height: 345px;">
         <div class="container">
             <!-- Logo and Navigation Links -->
             <div class="row mb-4">
@@ -9,10 +11,10 @@
                 <!-- Navigation Links -->
                 <div class="col-12 col-md-6 text-center mb-3 mb-md-0">
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-2 gap-md-3">
-                        <a href="index.php" class="text-white text-decoration-none">Home</a>
-                        <a href="about-us.php" class="text-white text-decoration-none">About Us</a>
-                        <a href="../termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
-                        <a href="#" class="text-white text-decoration-none">Data Privacy & Policy</a>
+                        <a href="/index.php" class="text-white text-decoration-none">Home</a>
+                        <a href="/about-us.php" class="text-white text-decoration-none">About Us</a>
+                        <a href="/termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
+                        <a href="/privacy_policy.php" class="text-white text-decoration-none">Data Privacy & Policy</a>
                     </div>
                 </div>
                 <!-- Social Media Icons -->
@@ -39,4 +41,4 @@
                 </div>
             </div>
         </div>
-    </footer> 
+    </footer>

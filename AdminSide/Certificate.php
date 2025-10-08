@@ -353,7 +353,7 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
           <div id="certificatePreview" class="card" style="max-width:850px; width:850px; background:#f9f9f9;">
             <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0;">
               <!-- Left Logo -->
-              <img src="../css/images/garciaIcon.jpg" alt="Padre Garcia Icon" style="height:80px;width:auto;margin-right:32px;align-self:center;">
+              <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon" style="height:80px;width:auto;margin-right:32px;align-self:center;">
               <div style="flex:1;text-align:center;">
                 <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
                   Republic of the Philippines<br>
@@ -373,7 +373,7 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
                 </div>
               </div>
               <!-- Right Logo -->
-              <img src="../css/images/Seal_of_Batangas.png" alt="Batangas Seal" style="height:80px;width:auto;margin-left:32px;align-self:center;">
+              <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal" style="height:80px;width:auto;margin-left:32px;align-self:center;">
             </div>
             <div style="margin-top:20px;">
               <!-- MC No. on the far right between CERTIFICATION and certificate body -->

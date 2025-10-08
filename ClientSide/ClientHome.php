@@ -24,12 +24,15 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="../css/clienthome.css">
 </head>
 <body>
-    <?php include '../Includes/navbar.php'; ?>
-    <div class="main-bg-bar" style="padding-top: 100;">
+    <?php include '../Includes/navbar2.php'; ?>
+    <div class="main-bg-bar" style="padding-top: 180px;">
         <div class="container">
-            <div class="dashboard-header">
-                <h2>Your trusted digital companion<br>for cemetery mapping and memorial services</h2>
-                <p>#1 Online Platform for Niche Management & Certificate Services<br>in Padre Garcia, Batangas</p>
+            <div class="dashboard-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h2>Your trusted digital companion<br>for cemetery mapping and memorial services</h2>
+                    <p>#1 Online Platform for Niche Management & Certificate Services<br>in Padre Garcia, Batangas</p>
+                </div>
+                <img src="../assets/Under Construction.jpg" alt="RestEase Hero" style="max-width:320px;width:100%;height:auto;border-radius:16px;">
             </div>
         </div>
     </div>
@@ -43,30 +46,30 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             <div class="row g-4">
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
                         <div style="font-weight:500;font-size:1.08rem;">Submit Request</div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Easily send your request for services or updates through the system.
                         </div>
-                        <a href="clientrequest.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientrequest.php" class="btn btn-primary w-100 rounded-3 view-btn" style="background:#0077b6;border:none;">Request</a>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
                         <div style="font-weight:500;font-size:1.08rem;">Records</div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
-                            Easily send your request for services or updates through the system.
+                            Quickly access and review stored cemetery and client records.
                         </div>
-                        <a href="clientrecords.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientrecords.php" class="btn btn-primary w-100 rounded-3 view-btn" style="background:#0077b6;border:none;">View</a>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
                         <div style="font-weight:500;font-size:1.08rem;">Certificate</div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
-                            Easily send your request for services or updates through the system.
+                           View and manage issued or renewal certificates online.<br> </br>
                         </div>
-                        <a href="clientcert.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="clientcert.php" class="btn btn-primary w-100 rounded-3 view-btn" style="background:#0077b6;border:none;">View</a>
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
@@ -96,7 +99,7 @@ if (!isset($_SESSION['user_id'])) {
                 </iframe>
             
             <a href="ClientMap.php" style="text-decoration:none;">
-                <button class="btn-map-themed">
+                <button class="btn-map-themed" style="background:#0077b6;">
                     <i class="fas fa-map-marked-alt"></i>
                     View Cemetery Maps
                 </button>

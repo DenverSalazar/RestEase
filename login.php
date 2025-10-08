@@ -384,6 +384,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             padding-left: 0;
         }
 
+        .btn-primary.w-100 {
+            background-color: #0077b6 !important;
+            border-color: #0077b6 !important;
+        }
+
+        .btn-primary.w-100:hover,
+        .btn-primary.w-100:focus {
+            background-color: #005a8d !important;
+            border-color: #005a8d !important;
+        }
+
         @media (max-width: 600px) {
             .custom-toast {
                 right: 10px !important;

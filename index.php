@@ -78,7 +78,7 @@
                             <div class="d-flex align-items-center">
                                 <h3 class="service-title flex-grow-1">Record Keeping</h3>
                                 <div class="icon">
-                                    <img src="assets/certification.png" alt="Certificate Issuance" class="img-fluid">
+                                    <img src="assets/record.png" alt="Record Keeping" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
@@ -92,7 +92,7 @@
                             <div class="d-flex align-items-center">
                                 <h3 class="service-title flex-grow-1">Cemetery Mapping</h3>
                                 <div class="icon">
-                                    <img src="assets/renewal.png" alt="Renewal Management" class="img-fluid">
+                                    <img src="" alt="Cemetery Mapping" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
@@ -106,7 +106,7 @@
                             <div class="d-flex align-items-center">
                                 <h3 class="service-title flex-grow-1">Notifications and Reminders</h3>
                                 <div class="icon">
-                                    <img src="assets/record.png" alt="Record Keeping" class="img-fluid">
+                                    <img src="" alt="Notifications and Reminders" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description">
@@ -173,7 +173,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <img src="assets/Poster.jpeg" alt="Testimony Image" class="img-fluid rounded">
+                    <img src="../assets/Poster.jfif" alt="Testimony Image" class="img-fluid rounded">
                 </div>
                 <div class="col-md-8">
                     <blockquote class="blockquote">

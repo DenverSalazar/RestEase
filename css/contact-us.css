@@ -1,7 +1,7 @@
 /* Contact Hero Section */
 .contact-hero {
-    background-color: #506C84;
-    color: white;
+    background-color: #caf0f8; /* Changed from #506C84 */
+    color: black;
     padding: 60px 20px;
     text-align: center;
     min-height: 400px;
@@ -59,7 +59,7 @@ textarea.form-control {
 }
 
 .submit-btn {
-    background-color: #506C84;
+    background-color: #0077b6; /* Changed from #506C84 */
     color: white;
     border: none;
     padding: 12px 30px;
@@ -76,7 +76,7 @@ textarea.form-control {
 
 /* Contact Info Box */
 .contact-info {
-    background-color: #506C84;
+    background-color: #0077b6; /* Changed from #506C84 */
     color: white;
     padding: 30px;
     border-radius: 10px;
