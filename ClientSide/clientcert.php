@@ -41,6 +41,33 @@ if ($user) {
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <style>
+      body {
+        font-family: 'Poppins', sans-serif;
+        background: #fafbfc;
+        margin: 0;
+        color: #222;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .main-content {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 60vh;
+      }
+      .footer {
+        flex-shrink: 0;
+      }
+      .no-cert-msg {
+        color: #888;
+        font-size: 1.15rem;
+        text-align: center;
+        margin: 48px 0 24px 0;
+        font-weight: 500;
+      }
       /* Responsive and scrollable certificate preview modal */
       #certPreviewModal {
         display: none;
@@ -64,6 +91,7 @@ if ($user) {
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+        font-family: 'Poppins', sans-serif; /* Ensure modal uses Poppins by default */
       }
       @media (max-width: 700px) {
         #certPreviewContent {
@@ -84,13 +112,118 @@ if ($user) {
         justify-content: center;
         gap: 18px;
         flex-wrap: wrap;
+        font-family: 'Poppins', sans-serif; /* Ensure header uses Poppins */
       }
       .cert-title {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'Times New Roman', Times, serif; /* Only the title uses Times New Roman */
         font-size: 1.7rem;
         font-weight: 900;
         letter-spacing: 1px;
         margin: 8px 0;
+      }
+      .cert-list-container {
+        margin-top: 32px;
+        margin-bottom: 32px;
+        width: 100%;
+        max-width: 1300px;
+        overflow-x: auto; /* Add horizontal scroll for responsiveness */
+      }
+      .cert-list-title {
+        font-size: 1.35rem;
+        font-weight: 600;
+        margin-bottom: 18px;
+        color: #222;
+        text-align: left;
+      }
+      .cert-list-back {
+        display: inline-block;
+        color: #506C84;
+        font-size: 1.08rem;
+        font-weight: 500;
+        margin-bottom: 12px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.18s;
+      }
+      .cert-list-back:hover {
+        color: #39546a;
+        text-decoration: underline;
+      }
+      .cert-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .cert-list-item {
+        background: #f4fbff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+        margin-bottom: 18px;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: box-shadow 0.18s;
+        border: 1px solid #e0e7ef;
+      }
+      .cert-list-item:hover {
+        box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+      }
+      .cert-list-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cert-list-name {
+        font-size: 1.08rem;
+        font-weight: 600;
+        color: #506C84;
+        margin-bottom: 2px;
+      }
+      .cert-list-details {
+        font-size: 0.98rem;
+        color: #222;
+        margin-bottom: 2px;
+      }
+      .cert-list-date {
+        font-size: 0.95rem;
+        color: #888;
+      }
+      .cert-list-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .cert-list-btn {
+        background: #1976d2;
+        color: #fff;
+        border: none;
+        padding: 8px 24px;
+        font-size: 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.18s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cert-list-btn:hover {
+        background: #115293;
+      }
+      @media (max-width: 700px) {
+        .cert-list-container {
+          padding: 0 2vw;
+          overflow-x: auto; /* Ensure scroll on small screens */
+        }
+        .cert-list-item {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 14px 8px;
+        }
+        .cert-list-actions {
+          margin-top: 10px;
+        }
       }
     </style>
 </head>
@@ -98,32 +231,40 @@ if ($user) {
    <?php include '../Includes/navbar2.php'; ?>
 
    <!-- Main Content -->
-   <main style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
-     <div style="width:100%;max-width:900px;">
-       <h2 style="color:#506C84;font-weight:600;margin-bottom:12px;text-align:center;">Certification</h2>
+   <div class="main-content">
+     <div class="cert-list-container">
+       <a href="javascript:history.back()" class="cert-list-back"><i class="fas fa-arrow-left"></i> Back</a>
+       <div class="cert-list-title text-muted">Your Certificate</div>
        <?php if (count($certificates) === 0): ?>
-         <p class="text-muted" style="color:#888;font-size:1.15rem;text-align:center;">
+         <div class="no-cert-msg text-muted">
            No certificate available yet.<br>
            Please contact the administrator or check back later.
-         </p>
+         </div>
        <?php else: ?>
-         <!-- List of certificates -->
-         <ul style="list-style:none;padding:0;margin:0;">
+         <ul class="cert-list">
            <?php foreach ($certificates as $idx => $cert): ?>
-             <li style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(44,62,80,0.08);margin-bottom:18px;padding:18px 18px 18px 18px;display:flex;align-items:center;justify-content:space-between;">
-               <div>
-                 <div style="font-size:1.08rem;font-weight:600;color:#506C84;">
+             <li class="cert-list-item">
+               <div class="cert-list-info">
+                 <!-- Show deceased's name instead of informant -->
+                 <div class="cert-list-name">
                    <?php echo htmlspecialchars($cert['NameOfDeceased']); ?>
                  </div>
-                 <div style="font-size:0.98rem;color:#666;">
+                 <div class="cert-list-details">
                    Apartment No: <strong><?php echo htmlspecialchars($cert['AptNo']); ?></strong>
                    | MC No: <strong><?php echo htmlspecialchars($cert['MCNo']); ?></strong>
                  </div>
-                 <div style="font-size:0.95rem;color:#888;">
+                 <div class="cert-list-date">
                    Date Paid: <?php echo htmlspecialchars($cert['DatePaid']); ?>
                  </div>
                </div>
-               <button type="button" class="btn btn-primary" style="padding:8px 24px;font-size:1rem;border-radius:8px;" onclick="showCertPreview(<?php echo $idx; ?>)">Preview</button>
+               <div class="cert-list-actions">
+                 <button type="button" class="cert-list-btn" onclick="window.print()">
+                   <i class="fas fa-print"></i> Print
+                 </button>
+                 <button type="button" class="cert-list-btn" onclick="showCertPreview(<?php echo $idx; ?>)">
+                   <i class="fas fa-eye"></i> View
+                 </button>
+               </div>
              </li>
            <?php endforeach; ?>
          </ul>
@@ -139,7 +280,6 @@ if ($user) {
            var certificates = <?php echo json_encode($certificates); ?>;
            function showCertPreview(idx) {
              var cert = certificates[idx];
-             // Always display all actions, only first checkbox has deceased name
              var actions = [
                {
                  key: 'DNew',
@@ -167,6 +307,8 @@ if ($user) {
                var checked = cert[action.key] === '✔' ? 'checked' : '';
                actionsHtml += '<li style="margin-bottom:14px;"><input type="checkbox" ' + checked + ' disabled style="margin-right:8px;"> ' + action.label + '</li>';
              });
+             // Admin name logic: uppercase, fallback to empty string
+             var adminName = cert.AdminName ? cert.AdminName.toUpperCase() : '';
              var html = `
                <div class="cert-preview-header">
                  <img src="../css/images/garciaIcon.jpg" alt="Padre Garcia Icon" style="height:60px;width:auto;">
@@ -208,7 +350,7 @@ if ($user) {
                    <div>
                      <strong>Recommending Approval:</strong><br>
                      <div style="height:32px;"></div>
-                     <span style="font-weight:600;">${cert.MCNo}</span><br>
+                     <span style="font-weight:600;">${adminName}</span><br>
                      MPDC/ZA
                    </div>
                    <div>
@@ -238,9 +380,9 @@ if ($user) {
          </script>
        <?php endif; ?>
      </div>
-   </main>
+   </div>
 
-    <?php include '../Includes/footer.php'; ?>
+   <?php include '../Includes/footer.php'; ?>
     <!-- Bootstrap JS (optional, for responsive navbar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

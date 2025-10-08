@@ -71,11 +71,11 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
-                        <div style="font-weight:500;font-size:1.08rem;">Billing and Processing</div>
+                        <div style="font-weight:500;font-size:1.08rem;">Track Status</div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
-                            Easily send your request for services or updates through the system.
+                            Monitor the progress of your requests and see admin updates.
                         </div>
-                        <a href="clientbilling.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="track.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@ if (!isset($_SESSION['user_id'])) {
 
         <!-- Map Section -->
         <section class="map-section">
-            <div class="map-container">
+            
                 <!-- Embed the real interactive map, view-only, zoom in/out only, no navbar/footer -->
                 <iframe
                     class="map-iframe"
@@ -94,7 +94,7 @@ if (!isset($_SESSION['user_id'])) {
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
-            </div>
+            
             <a href="ClientMap.php" style="text-decoration:none;">
                 <button class="btn-map-themed">
                     <i class="fas fa-map-marked-alt"></i>
@@ -103,36 +103,6 @@ if (!isset($_SESSION['user_id'])) {
             </a>
         </section>
     </div> 
-    <style>
-    /* Themed button for View Cemetery Maps */
-    .btn-map-themed {
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(90deg, #4d8fd3 0%, #2d8cff 100%);
-        color: #fff;
-        border: none;
-        border-radius: 30px;
-        padding: 12px 32px;
-        font-size: 1.1rem;
-        font-weight: 500;
-        box-shadow: 0 4px 16px rgba(77,143,211,0.12);
-        transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
-        margin: 32px auto 0 auto;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        cursor: pointer;
-        letter-spacing: 0.5px;
-    }
-    .btn-map-themed:hover, .btn-map-themed:focus {
-        background: linear-gradient(90deg, #2d8cff 0%, #4d8fd3 100%);
-        box-shadow: 0 6px 24px rgba(77,143,211,0.18);
-        transform: translateY(-2px) scale(1.03);
-        color: #fff;
-    }
-    .btn-map-themed i {
-        font-size: 1.2em;
-    }
-    </style>
 
     <?php include '../Includes/footer.php'; ?>
     <!-- Bootstrap JS Bundle -->

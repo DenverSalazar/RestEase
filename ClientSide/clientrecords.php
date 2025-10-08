@@ -40,14 +40,53 @@ $stmt->close();
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
+    <style>
+      body {
+        font-family: 'Poppins', sans-serif;
+        background: #fafbfc;
+        color: #222;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .main-content {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 60vh;
+      }
+      .footer {
+        flex-shrink: 0;
+      }
+      .no-records-msg {
+        color: #888;
+        font-size: 1.15rem;
+        text-align: center;
+        margin: 48px 0 24px 0;
+        font-weight: 500;
+      }
+    </style>
 
 </head>
 <body>
    <?php include '../Includes/navbar2.php'; ?>
-   <div class="container my-4">
-       <h2 class="mb-3">My Deceased Records</h2>
+   <div style="width:100%;display:flex;justify-content:flex-start;">
+     <a href="javascript:history.back()" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;margin:18px 0 0 120px;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+       <i class="fas fa-arrow-left"></i> Back
+     </a>
+   </div>
+   <div class="main-content container my-4 text-muted">
+       <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 12px;">
+         <h2 class="mb-0" style="font-weight:600;">My Deceased Records</h2>
+       </div>
        <?php if (count($deceased_list) === 0): ?>
-           <div class="alert alert-info">No records found.</div>
+           <div class="no-records-msg text-muted">
+             No records available yet.<br>
+             Please contact the administrator or check back later.
+           </div>
        <?php else: ?>
        <div class="mb-3">
            <input type="text" id="searchInput" class="form-control" placeholder="Search by name...">

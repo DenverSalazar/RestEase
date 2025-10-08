@@ -117,7 +117,13 @@ if (isset($_POST['mark_all_read'])) {
                     <span style="position:absolute;top:-7px;right:-7px;background:#e74c3c;color:#fff;border-radius:50%;font-size:0.7rem;padding:1px 5px;font-weight:600;min-width:16px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.12);z-index:2;"> <?php echo $new_count; ?> </span>
                 <?php endif; ?>
             </a>
-            <a href="#"><?php echo $user_avatar_html; ?></a>
+            <a href="#" id="navbarAvatar" style="position:relative;display:inline-block;">
+                <?php echo $user_avatar_html; ?>
+            </a>
+            <div class="avatar-dropdown dropdown-menu dropdown-menu-end" id="avatarDropdown" style="display:none;position:absolute;top:44px;right:0;min-width:180px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
+                <a class="dropdown-item" href="../ClientSide/clientprofile.php" style="padding:10px 18px;">My Profile</a>
+                <a class="dropdown-item" href="../login.php" style="padding:10px 18px;">Logout</a>
+            </div>
             <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
                 <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e9f2;font-weight:600;display:flex;justify-content:space-between;align-items:center;background:#f7faff;">
                     <span style="font-size:1.05rem;letter-spacing:0.5px;">Notifications</span>
@@ -195,6 +201,32 @@ function toggleNotificationDropdown(e) {
         }
     }
 }
+// Avatar dropdown logic
+document.addEventListener('DOMContentLoaded', function() {
+    var avatar = document.getElementById('navbarAvatar');
+    var dropdown = document.getElementById('avatarDropdown');
+    if (avatar && dropdown) {
+        avatar.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                dropdown.style.display = 'block';
+                setTimeout(function() {
+                    document.addEventListener('click', closeAvatarDropdown);
+                }, 0);
+            } else {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeAvatarDropdown);
+            }
+        });
+        function closeAvatarDropdown(event) {
+            if (!dropdown.contains(event.target) && event.target !== avatar) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeAvatarDropdown);
+            }
+        }
+    }
+});
 function updateNotificationBadge() {
     fetch('../ClientSide/get_notification_count.php')
         .then(response => response.json())

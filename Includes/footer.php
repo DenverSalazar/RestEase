@@ -4,14 +4,14 @@
             <div class="row mb-4">
                 <!-- Logo -->
                 <div class="col-12 col-md-3 text-center text-md-start mb-3 mb-md-0">
-                    <img src="assets/RE Logo New White.png" alt="RestEase Logo" style="height: 31px;">
+                    <img src="../assets/RE Logo New White.png" alt="RestEase Logo" style="height: 31px;">
                 </div>
                 <!-- Navigation Links -->
                 <div class="col-12 col-md-6 text-center mb-3 mb-md-0">
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-2 gap-md-3">
                         <a href="index.php" class="text-white text-decoration-none">Home</a>
                         <a href="about-us.php" class="text-white text-decoration-none">About Us</a>
-                        <a href="termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
+                        <a href="../termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
                         <a href="#" class="text-white text-decoration-none">Data Privacy & Policy</a>
                     </div>
                 </div>
@@ -35,7 +35,7 @@
                     <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
                 </div>
                 <div class="col-12 col-md-6 text-center text-md-end">
-                    <p class="mb-0">Designed By: Biringan IT Corps.</p>
+                    <p class="mb-0">Designed By: RestEase Team</p>
                 </div>
             </div>
         </div>

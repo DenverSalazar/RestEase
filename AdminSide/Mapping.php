@@ -1489,6 +1489,20 @@ map.on("zoomend", function(){
             [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4, layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4, layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4, layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
+
+            // --- Border layer visibility logic ---
+            if (floor === "4") {
+                // Remove border for Old Cemetery
+                if (map.hasLayer(layer_border_1)) {
+                    map.removeLayer(layer_border_1);
+                }
+            } else {
+                // Add border for other floors
+                if (!map.hasLayer(layer_border_1)) {
+                    map.addLayer(layer_border_1);
+                }
+            }
+
             if (floor === "1") {
                 currentFloor = 1;
                 map.addLayer(layer_Floor1);

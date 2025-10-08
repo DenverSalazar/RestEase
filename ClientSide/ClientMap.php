@@ -33,7 +33,55 @@ while ($row = $result->fetch_assoc()) {
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clientmap.css">
-    
+    <style>
+          body {
+        font-family: 'Poppins', sans-serif;
+        background: #fafbfc;
+        color: #222;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .main-content {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 60vh;
+      }
+      
+      .footer {
+        flex-shrink: 0;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overflow-y: auto; /* Ensure vertical scroll is enabled */
+      }
+      #map-wrapper {
+        min-height: 87vh; /* Fill the viewport */
+        /* Remove align-items: stretch if present */
+        display: flex;
+        justify-content: center;
+      }
+      #map-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        min-height: 87vh; /* Fill the viewport */
+        display: flex;
+        flex-direction: column;
+      }
+      #map {
+        flex: 1 1 auto;
+        min-height: 80vh;
+        /* Or use: height: calc(100vh - 120px); */
+      }
+    </style>
   <script>
     // Pass PHP deceased data to JS
     var deceasedData = <?php echo json_encode($deceasedData); ?>;
@@ -120,39 +168,59 @@ while ($row = $result->fetch_assoc()) {
     <?php include '../Includes/navbar.php'; ?>
   <?php endif; ?>
 
-    <div id="map-wrapper">
-        <div id="map">
-            <!-- Layer Control Button -->
-            <div class="layer-control">
-                <button class="layer-control-btn">
-                    <i class="fas fa-layer-group"></i>
-                    <span>Layers</span>
-                </button>
-                <div class="layer-control-content">
-                    <div class="layer-section">
-                        <h4>Sections</h4>
-                        <div class="section-buttons">
-                            <button class="section-btn active" data-section="1">Section 1</button>
-                            <button class="section-btn" data-section="2">Section 2</button>
-                            <button class="section-btn" data-section="3">Section 3</button>
-                            <button class="section-btn" data-section="4">Section 4</button>
-                            <button class="section-btn show-all-btn" data-section="all">
-                                <i class="fas fa-th-large"></i>
-                                Show All Sections
-                            </button>
+    <div id="map-wrapper" style="display: flex; justify-content: center;">
+        <div id="map-container">
+            <div id="map">
+                <!-- Layer Control Button -->
+                <div class="layer-control">
+                    <button class="layer-control-btn">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Layers</span>
+                    </button>
+                    <div class="layer-control-content">
+                        <div class="layer-section">
+                            <h4>Sections</h4>
+                            <div class="section-buttons" id="sectionButtons">
+                                <button class="section-btn active" data-section="1">Section 1</button>
+                                <button class="section-btn" data-section="2">Section 2</button>
+                                <button class="section-btn" data-section="3">Section 3</button>
+                                <button class="section-btn" data-section="4">Section 4</button>
+                                <button class="section-btn show-all-btn" data-section="all">
+                                    <i class="fas fa-th-large"></i>
+                                    Show All Sections
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <!-- Custom Legend -->
-            <div class="custom-map-legend" id="customMapLegend">
-                <div class="legend-row">
-                    <span class="legend-dot vacant"></span>
-                    <span class="legend-label">Vacant</span>
+                <!-- Floor Control Button (added for client map) -->
+                <div class="layer-control floor-control" style="margin-top:40px;">
+                    <button class="layer-control-btn" id="floorControlBtn">
+                        <i class="fas fa-building"></i>
+                        <span>Select Floor</span>
+                    </button>
+                    <div class="layer-control-content" id="floorControlContent">
+                        <div class="layer-section">
+                            <h4>Floors</h4>
+                            <div class="section-buttons" id="floorButtons">
+                                <button class="section-btn active" data-floor="1">First Floor</button>
+                                <button class="section-btn" data-floor="2">Second Floor</button>
+                                <button class="section-btn" data-floor="3">Third Floor</button>
+                                <button class="section-btn" data-floor="4">Old Cemetery</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="legend-row">
-                    <span class="legend-dot sold"></span>
-                    <span class="legend-label">Sold</span>
+                <!-- Custom Legend -->
+                <div class="custom-map-legend" id="customMapLegend">
+                    <div class="legend-row">
+                        <span class="legend-dot vacant"></span>
+                        <span class="legend-label">Vacant</span>
+                    </div>
+                    <div class="legend-row">
+                        <span class="legend-dot sold"></span>
+                        <span class="legend-label">Leased</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -178,11 +246,22 @@ while ($row = $result->fetch_assoc()) {
    <script src="../js/rbush.min.js"></script>
    <script src="../js/labelgun.min.js"></script>
    <script src="../js/labels.js"></script>
+   <script src="../data/OldMap/border_1.js"></script>
    <script src="../data/border_1.js"></script>
    <script src="../data/floor1.js"></script>
    <script src="../data/floor1_2.js"></script>
    <script src="../data/floor1_3.js"></script>
    <script src="../data/floor1_4.js"></script>
+   <script src="../data/floor2.js"></script>
+   <script src="../data/floor2_2.js"></script>
+   <script src="../data/floor2_3.js"></script>
+   <script src="../data/floor2_4.js"></script>
+   <script src="../data/floor3.js"></script>
+   <script src="../data/floor3_2.js"></script>
+   <script src="../data/floor3_3.js"></script>
+   <script src="../data/floor3_4.js"></script>
+   <script src="../data/oldmap/floor1.js"></script>
+   <script src="../data/oldmap/floor1_4.js"></script>
    <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -329,7 +408,7 @@ while ($row = $result->fetch_assoc()) {
                 },
                 mouseover: highlightFeature,
                 click: function(e) {
-                    // Remove admin-only functionality: niche picker, edit, insert
+                    // No zoom or fitBounds logic here
                     var nicheID = feature.properties['nicheID'];
                     var deceased = deceasedData[nicheID];
                     var popupContent = '';
@@ -492,82 +571,190 @@ while ($row = $result->fetch_assoc()) {
             style: style_Floor1_0,
         });
 
-        bounds_group.addLayer(layer_Floor1);
-        bounds_group.addLayer(layer_Floor1_2);
-        bounds_group.addLayer(layer_Floor1_3);
-        bounds_group.addLayer(layer_Floor1_4);
+        // Add similar for Floor2, Floor3, OldMap
+        var layer_Floor2 = new L.geoJson(json_Floor2, { attribution: '', interactive: true, dataVar: 'json_Floor2', layerName: 'layer_Floor2', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor2_2 = new L.geoJson(json_Floor2_2, { attribution: '', interactive: true, dataVar: 'json_Floor2_2', layerName: 'layer_Floor2_2', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor2_3 = new L.geoJson(json_Floor2_3, { attribution: '', interactive: true, dataVar: 'json_Floor2_3', layerName: 'layer_Floor2_3', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor2_4 = new L.geoJson(json_Floor2_4, { attribution: '', interactive: true, dataVar: 'json_Floor2_4', layerName: 'layer_Floor2_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
 
-        // Only add Section 1 by default
-        map.addLayer(layer_Floor1);
-        map.addLayer(layer_Floor1_2);
-        map.addLayer(layer_Floor1_3);
-        map.addLayer(layer_Floor1_4);
-        addSectionLabels(layer_Floor1);
-        addSectionLabels(layer_Floor1_2);
-        addSectionLabels(layer_Floor1_3);
-        addSectionLabels(layer_Floor1_4);
-        resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+        var layer_Floor3 = new L.geoJson(json_Floor3, { attribution: '', interactive: true, dataVar: 'json_Floor3', layerName: 'layer_Floor3', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor3_2 = new L.geoJson(json_Floor3_2, { attribution: '', interactive: true, dataVar: 'json_Floor3_2', layerName: 'layer_Floor3_2', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor3_3 = new L.geoJson(json_Floor3_3, { attribution: '', interactive: true, dataVar: 'json_Floor3_3', layerName: 'layer_Floor3_3', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_Floor3_4 = new L.geoJson(json_Floor3_4, { attribution: '', interactive: true, dataVar: 'json_Floor3_4', layerName: 'layer_Floor3_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
 
-        // --- Section Toggle Button Logic ---
-        function showSection(section) {
-            // Remove all section layers
-            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4].forEach(function(l) {
+        var layer_OldMap_1 = new L.geoJson(json_oldmap_floor1, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1', layerName: 'layer_OldMap_1', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        var layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1_4', layerName: 'layer_OldMap_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+
+        // --- Floor Control Logic ---
+        var currentFloor = 1; // 1: First, 2: Second, 3: Third, 4: Old
+        function showFloor(floor) {
+            // Remove all section layers for all floors
+            [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4,
+             layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4,
+             layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4,
+             layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
-            
-            if (section === 'all') {
-                // Add all sections
+
+            // --- Border layer visibility logic ---
+            if (floor == 4 || floor == "4") {
+                // Remove border for Old Cemetery
+                if (map.hasLayer(layer_border_1)) {
+                    map.removeLayer(layer_border_1);
+                }
+                // Set larger max bounds for Old Cemetery
+                var oldMapBounds = layer_OldMap_1.getBounds().extend(layer_OldMap_4.getBounds());
+                var oldMapPaddedBounds = expandBounds(oldMapBounds, 2.0); // 100% larger for more panning
+                map.setMaxBounds(oldMapPaddedBounds);
+            } else {
+                // Add border for other floors
+                if (!map.hasLayer(layer_border_1)) {
+                    map.addLayer(layer_border_1);
+                }
+                // Reset to default padded bounds for other floors
+                map.setMaxBounds(paddedBounds);
+            }
+            // Show section buttons for selected floor
+            var sectionButtons = document.getElementById('sectionButtons');
+            sectionButtons.innerHTML = '';
+            if (floor == 1 || floor == "1") {
+                currentFloor = 1;
+                sectionButtons.innerHTML = `
+                    <button class="section-btn active" data-section="1">Section 1</button>
+                    <button class="section-btn" data-section="2">Section 2</button>
+                    <button class="section-btn" data-section="3">Section 3</button>
+                    <button class="section-btn" data-section="4">Section 4</button>
+                    <button class="section-btn show-all-btn" data-section="all">
+                        <i class="fas fa-th-large"></i>
+                        Show All Sections
+                    </button>
+                `;
                 map.addLayer(layer_Floor1);
                 map.addLayer(layer_Floor1_2);
                 map.addLayer(layer_Floor1_3);
                 map.addLayer(layer_Floor1_4);
-                
-                // Add labels for all sections
-                addSectionLabels(layer_Floor1);
-                addSectionLabels(layer_Floor1_2);
-                addSectionLabels(layer_Floor1_3);
-                addSectionLabels(layer_Floor1_4);
-                resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+            } else if (floor == 2 || floor == "2") {
+                currentFloor = 2;
+                sectionButtons.innerHTML = `
+                    <button class="section-btn active" data-section="1">Section 1</button>
+                    <button class="section-btn" data-section="2">Section 2</button>
+                    <button class="section-btn" data-section="3">Section 3</button>
+                    <button class="section-btn" data-section="4">Section 4</button>
+                    <button class="section-btn show-all-btn" data-section="all">
+                        <i class="fas fa-th-large"></i>
+                        Show All Sections
+                    </button>
+                `;
+                map.addLayer(layer_Floor2);
+                map.addLayer(layer_Floor2_2);
+                map.addLayer(layer_Floor2_3);
+                map.addLayer(layer_Floor2_4);
+            } else if (floor == 3 || floor == "3") {
+                currentFloor = 3;
+                sectionButtons.innerHTML = `
+                    <button class="section-btn active" data-section="1">Section 1</button>
+                    <button class="section-btn" data-section="2">Section 2</button>
+                    <button class="section-btn" data-section="3">Section 3</button>
+                    <button class="section-btn" data-section="4">Section 4</button>
+                    <button class="section-btn show-all-btn" data-section="all">
+                        <i class="fas fa-th-large"></i>
+                        Show All Sections
+                    </button>
+                `;
+                map.addLayer(layer_Floor3);
+                map.addLayer(layer_Floor3_2);
+                map.addLayer(layer_Floor3_3);
+                map.addLayer(layer_Floor3_4);
+            } else if (floor == 4 || floor == "4") {
+                currentFloor = 4;
+                sectionButtons.innerHTML = `
+                    <button class="section-btn active" data-section="1">Section 1</button>
+                    <button class="section-btn" data-section="4">Section 4</button>
+                    <button class="section-btn show-all-btn" data-section="all">
+                        <i class="fas fa-th-large"></i>
+                        Show All Sections
+                    </button>
+                `;
+                map.addLayer(layer_OldMap_1);
+                map.addLayer(layer_OldMap_4);
+            }
+            // Re-bind section button events
+            bindSectionButtonEvents();
+        }
+
+        function showSection(section) {
+            // Remove all section layers for current floor
+            var layers = [];
+            if (currentFloor == 1) layers = [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4];
+            else if (currentFloor == 2) layers = [layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4];
+            else if (currentFloor == 3) layers = [layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4];
+            else if (currentFloor == 4) layers = [layer_OldMap_1, layer_OldMap_4];
+            layers.forEach(function(l) { if (map.hasLayer(l)) map.removeLayer(l); });
+            // Add selected section(s)
+            if (section === 'all') {
+                layers.forEach(function(l) { map.addLayer(l); });
             } else {
-                // Add selected section
-                switch(section) {
-                    case 1: map.addLayer(layer_Floor1); break;
-                    case 2: map.addLayer(layer_Floor1_2); break;
-                    case 3: map.addLayer(layer_Floor1_3); break;
-                    case 4: map.addLayer(layer_Floor1_4); break;
-                }
+                var idx = Number(section) - 1;
+                if (layers[idx]) map.addLayer(layers[idx]);
             }
         }
-        document.addEventListener("DOMContentLoaded", function() {
-            const layerControlBtn = document.querySelector('.layer-control-btn');
-            const layerControl = document.querySelector('.layer-control');
-            
-            // Toggle layer control
-            layerControlBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                layerControl.classList.toggle('active');
-            });
 
-            // Close layer control when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!layerControl.contains(e.target)) {
-                    layerControl.classList.remove('active');
-                }
-            });
-
-            // Section button click handlers
-            const sectionBtns = document.querySelectorAll('.section-btn');
+        function bindSectionButtonEvents() {
+            var sectionBtns = document.querySelectorAll('#sectionButtons .section-btn');
             sectionBtns.forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     sectionBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    
-                    const section = btn.getAttribute('data-section');
-                    showSection(section === 'all' ? 'all' : Number(section));
-                    
-                    // Optionally close the layer control after selection
-                    layerControl.classList.remove('active');
+                    var section = btn.getAttribute('data-section');
+                    showSection(section === 'all' ? 'all' : section);
                 });
+            });
+        }
+
+        // Initial floor and section setup
+        document.addEventListener("DOMContentLoaded", function() {
+            showFloor(1); // Default to first floor
+            // Floor control toggle
+            var floorControl = document.querySelector('.floor-control');
+            var floorControlBtn = document.getElementById('floorControlBtn');
+            var floorControlContent = document.getElementById('floorControlContent');
+            floorControlBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                floorControl.classList.toggle('active');
+                // Close Layers control if open
+                var layersControl = document.querySelector('.layer-control:not(.floor-control)');
+                if (layersControl) layersControl.classList.remove('active');
+            });
+            document.addEventListener('click', function(e) {
+                if (!floorControl.contains(e.target)) {
+                    floorControl.classList.remove('active');
+                }
+            });
+            // Floor button click handlers
+            var floorBtns = document.querySelectorAll('#floorButtons .section-btn');
+            floorBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    floorBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    var floor = btn.getAttribute('data-floor');
+                    showFloor(floor);
+                    floorControl.classList.remove('active');
+                });
+            });
+
+            // --- Layers control toggle logic ---
+            var layersControl = document.querySelector('.layer-control:not(.floor-control)');
+            var layersControlBtn = layersControl.querySelector('.layer-control-btn');
+            layersControlBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                layersControl.classList.toggle('active');
+                // Close Floor control if open
+                if (floorControl) floorControl.classList.remove('active');
+            });
+            document.addEventListener('click', function(e) {
+                if (!layersControl.contains(e.target)) {
+                    layersControl.classList.remove('active');
+                }
             });
         });
         // --- Tooltips and Labels for all sections ---
@@ -705,3 +892,4 @@ window.focusNiche = function(nicheID) {
 </script>
 </body>
 </html>
+

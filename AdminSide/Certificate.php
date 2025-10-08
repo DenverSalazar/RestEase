@@ -808,15 +808,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
   }
   $validity = $_POST['renewal'] ?? '';
   $payee = $informantName;
+  // Get accurate admin display name (same logic as preview)
+  $adminDisplayName = '';
+  if (isset($_SESSION['admin_id'])) {
+      $adminId = $_SESSION['admin_id'];
+      $profileRes = $conn->query("SELECT display_name, first_name, last_name FROM admin_profiles WHERE admin_id = $adminId LIMIT 1");
+      if ($profileRes && $profileRes->num_rows > 0) {
+          $profile = $profileRes->fetch_assoc();
+          if (!empty($profile['display_name'])) {
+              $adminDisplayName = $profile['display_name'];
+          } else {
+              $adminDisplayName = trim($profile['first_name'] . ' ' . $profile['last_name']);
+          }
+      }
+  }
+  $adminDisplayName = strtoupper($adminDisplayName);
   $masterlistFields = [
     'AptNo', 'NameOfDeceased', 'InformantName', 'InformantAddress', 'AddressOfDeceased',
     'DateDied', 'DateInternment', 'DNew', 'DRenew', 'DTransfer', 'DReOpen', 'DReEnter',
     'DatePaid', 'Payee', 'Amount', 'ORNumber', 'Validity', 'MCNo'
   ];
   // Insert into certification table
-  $stmt = $conn->prepare("INSERT INTO certification (AptNo, NameOfDeceased, InformantName, InformantAddress, AddressOfDeceased, DateDied, DateInternment, DNew, DRenew, DTransfer, DReOpen, DReEnter, DatePaid, Payee, Amount, ORNumber, Validity, MCNo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  $stmt = $conn->prepare("INSERT INTO certification (AptNo, NameOfDeceased, InformantName, InformantAddress, AddressOfDeceased, DateDied, DateInternment, DNew, DRenew, DTransfer, DReOpen, DReEnter, DatePaid, Payee, Amount, ORNumber, Validity, MCNo, AdminName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
   $stmt->bind_param(
-    'ssssssssssssssssss',
+    'sssssssssssssssssss',
     $aptNo,
     $nameOfDeceased,
     $informantName,
@@ -834,7 +849,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
     $amount,
     $orNo,
     $validity,
-    $mc_no
+    $mc_no,
+    $adminDisplayName // <-- Save admin name
   );
   $stmt->execute();
   $stmt->close();
