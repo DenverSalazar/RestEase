@@ -73,12 +73,12 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff;">
+                    <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
                         <div style="font-weight:500;font-size:1.08rem;">Track Status</div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Monitor the progress of your requests and see admin updates.
                         </div>
-                        <a href="track.php" class="btn btn-primary w-100 rounded-3" style="background:#3973f4;border:none;">View</a>
+                        <a href="track.php" class="btn btn-primary w-100 rounded-3 view-btn" style="background:#0077b6;border:none;">View</a>
                     </div>
                 </div>
             </div>

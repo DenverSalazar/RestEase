@@ -94,8 +94,8 @@ if ($user_id) {
         padding: 0 15px;
       }
       .cert-list-title {
-        font-size: 1.5rem;
-        font-weight: 500;
+        font-size: 2rem;
+        font-weight: 600;
         margin: 30px 0 15px 0;
         text-align: center;
         color: #333;

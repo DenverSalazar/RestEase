@@ -28,7 +28,7 @@ if (!isset($_SESSION['user_id'])) {
     <section class="about-hero">
         <div class="container">
             <h1>About Us</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod dolore magna aliqua</p>
+            <p>RestEase is a digital cemetery management system that helps Padre Garcia keep records organized, certificates updated, and families informed with secure and efficient services.</p>
         </div>
     </section>
 
