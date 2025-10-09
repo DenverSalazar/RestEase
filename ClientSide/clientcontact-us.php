@@ -109,7 +109,7 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </section>
 
-    <?php include '../Includes/footer.php'; ?>
+    <?php include '../Includes/footer-client.php'; ?>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

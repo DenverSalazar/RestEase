@@ -143,7 +143,7 @@
                 </div>
             </div>
             <div class="privacy-image">
-                <img src="../assets/privacy.png" alt="Data Privacy Illustration">
+                <img src="./assets/privacy.png" alt="Data Privacy Illustration">
             </div>
         </div>
     </div>

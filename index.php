@@ -173,7 +173,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <img src="../assets/Poster.jfif" alt="Testimony Image" class="img-fluid rounded">
+                    <img src="./assets/Poster.jfif" alt="Testimony Image" class="img-fluid rounded">
                 </div>
                 <div class="col-md-8">
                     <blockquote class="blockquote">

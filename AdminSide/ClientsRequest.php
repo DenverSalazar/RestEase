@@ -203,7 +203,13 @@ if (!isset($_SESSION['admin_id'])) {
       
       <?php
       // Fetch all accepted requests with user info including profile_picture
-      $sql_accepted = "SELECT ar.*, u.first_name AS user_first_name, u.last_name AS user_last_name, u.email, u.profile_picture FROM accepted_request ar JOIN users u ON ar.user_id = u.id ORDER BY ar.created_at DESC";
+      // Only show accepted requests NOT yet assessed
+      $sql_accepted = "SELECT ar.*, u.first_name AS user_first_name, u.last_name AS user_last_name, u.email, u.profile_picture 
+        FROM accepted_request ar 
+        JOIN users u ON ar.user_id = u.id 
+        LEFT JOIN assessment a ON ar.id = a.request_id 
+        WHERE a.id IS NULL 
+        ORDER BY ar.created_at DESC";
       $result_accepted = $conn->query($sql_accepted);
       ?>
       <div class="clients-table-container">
@@ -1154,6 +1160,12 @@ function goToAssessment() {
         .then(response => response.json())
         .then(result => {
           if (result.success) {
+            // Remove from accepted_request table
+            fetch('delete_accepted_request.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: 'id=' + encodeURIComponent(data.id)
+            });
             showActionSuccessNotification('Assessment submitted and user notified!');
             updateDoneAssessmentTable(); // <-- Add this line
           } else {
