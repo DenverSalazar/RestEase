@@ -27,8 +27,8 @@ if (!isset($_SESSION['user_id'])) {
     <!-- About Us Hero Section -->
     <section class="about-hero">
         <div class="container">
-            <h1>About Us</h1>
-            <p>RestEase is a digital cemetery management system that helps Padre Garcia keep records organized, certificates updated, and families informed with secure and efficient services.</p>
+            <h1 class="fade-in-up delay-1">About Us</h1>
+            <p class="fade-in-up delay-2">RestEase is a digital cemetery management system that helps Padre Garcia keep records organized, certificates updated, and families informed with secure and efficient services.</p>
         </div>
     </section>
 
@@ -37,23 +37,23 @@ if (!isset($_SESSION['user_id'])) {
         <div class="container">
             <div class="row g-4">
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
-                        <img src="../assets/abt1.jpg" alt="Team Member 1">
+                    <div class="team-photo fade-in-up delay-1">
+                        <img src="../assets/abt1.jpg" alt="Team Member 1" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
-                        <img src="../assets/abt2.jpg" alt="Team Member 2">
+                    <div class="team-photo fade-in-up delay-2">
+                        <img src="../assets/abt2.jpg" alt="Team Member 2" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
-                        <img src="../assets/abt3.jpg" alt="Team Member 3">
+                    <div class="team-photo fade-in-up delay-3">
+                        <img src="../assets/abt3.jpg" alt="Team Member 3" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
-                        <img src="../assets/abt4.jpg" alt="Team Member 4">
+                    <div class="team-photo fade-in-up delay-4">
+                        <img src="../assets/abt4.jpg" alt="Team Member 4" loading="lazy">
                     </div>
                 </div>
             </div>
@@ -63,17 +63,17 @@ if (!isset($_SESSION['user_id'])) {
     <!-- Who We Are Section -->
     <section class="who-we-are-section">
         <div class="container">
-            <h2>Who we are</h2>
-            <div class="main-description">
+            <h2 class="fade-in-up delay-1">Who we are</h2>
+            <div class="main-description fade-in-up delay-2">
                 <p>RestEase is an innovative online ossuary vault management system designed to streamline record-keeping, certificate issuance, and renewal processes for the Municipal Planning and Development Offices of Padre Garcia, Batangas. It simplifies tracking vaults, renewals, and documents while providing a front-view vault mapping feature for easy reference without the need for real-world tracking.</p>
             </div>
 
             <div class="mission-vision">
-                <div class="our-mission">
+                <div class="our-mission fade-in-up delay-3">
                     <h3>Our Mission</h3>
                     <p>Our mission is to modernize ossuary vault management by offering a digital platform that enhances organization, transparency, and accessibility. We aim to simplify vault tracking, document management, and renewal processes while ensuring families can easily locate and honor their loved ones.</p>
                 </div>
-                <div class="our-vision">
+                <div class="our-vision fade-in-up delay-4">
                     <h3>Our Vision</h3>
                     <p>We envision a future where cemetery and vault management is seamlessly digital, reducing administrative burdens while preserving historical and cultural records. RestEase aspires to be the leading ossuary vault management system, bringing innovation, efficiency, and peace of mind to local governments and communities.</p>
                 </div>

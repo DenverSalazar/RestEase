@@ -5,6 +5,17 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php"); // Adjust the path if needed
     exit;
 }
+
+// Personalized Welcome Section DB connection and user fetch
+include '../Includes/db.php'; // make sure this connects to your DB
+
+$user_id = $_SESSION['user_id'];
+$query = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ?");
+$query->bind_param("i", $user_id);
+$query->execute();
+$result = $query->get_result();
+$user = $result->fetch_assoc();
+$username = isset($user['first_name'], $user['last_name']) ? $user['first_name'] . ' ' . $user['last_name'] : 'User';
 ?>
 
 
@@ -25,7 +36,9 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body>
     <?php include '../Includes/navbar2.php'; ?>
+
     <div class="main-bg-bar" style="padding-top: 180px;">
+        
         <div class="container">
             <div class="dashboard-header d-flex align-items-center justify-content-between">
                 <div>
