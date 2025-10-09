@@ -236,7 +236,7 @@ while ($row = $result->fetch_assoc()) {
     </div>
 
   <?php if (!isset($_GET['embed'])): ?>
-    <?php include '../Includes/footer.php'; ?>
+    <?php include '../Includes/footer-client.php'; ?>
   <?php endif; ?>
    <script src="../js/leaflet.js"></script>
    <script src="../js/L.Control.Layers.Tree.min.js"></script>

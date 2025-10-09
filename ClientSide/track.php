@@ -326,7 +326,7 @@ if ($user_id) {
      </div>
    </div>
 
-   <?php include '../includes/footer.php'; ?>
+   <?php include '../includes/footer-client.php'; ?>
    
     <!-- Bootstrap JS (optional, for responsive navbar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
