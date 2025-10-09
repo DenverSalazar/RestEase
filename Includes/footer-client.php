@@ -13,8 +13,8 @@
                     <div class="d-flex flex-column flex-md-row justify-content-center gap-2 gap-md-3">
                         <a href="ClientHome.php" class="text-white text-decoration-none">Home</a>
                         <a href="clientabout-us.php" class="text-white text-decoration-none">About Us</a>
-                        <a href="termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
-                        <a href="privacy_policy.php" class="text-white text-decoration-none">Data Privacy & Policy</a>
+                        <a href="client-termscondtion.php" class="text-white text-decoration-none">Terms & Condition</a>
+                        <a href="client-privacy_policy.php" class="text-white text-decoration-none">Data Privacy & Policy</a>
                     </div>
                 </div>
                 <!-- Social Media Icons -->
