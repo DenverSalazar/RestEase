@@ -199,7 +199,7 @@ if ($user_id) {
         <?php endif; ?>
     </div>
     <footer style="margin-top:auto;">
-        <?php include '../Includes/footer.php'; ?>
+        <?php include '../Includes/footer-client.php'; ?>
     </footer>
     <script>
     // Deletion mode logic
