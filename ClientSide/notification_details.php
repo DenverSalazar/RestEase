@@ -168,7 +168,7 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
         </div>
     </div>
     <footer style="margin-top:auto;">
-        <?php include '../Includes/footer.php'; ?>
+        <?php include '../Includes/footer-client.php'; ?>
     </footer>
 </body>
 </html>
