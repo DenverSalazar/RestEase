@@ -1123,6 +1123,9 @@ function goToAssessment() {
               <button type="submit" class="accept-btn">Submit Assessment</button>
             </div>
           </form>
+          <div id="assessmentLoadingSpinner" style="display:none;justify-content:center;align-items:center;margin-top:18px;">
+            <div style="display:inline-block;width:38px;height:38px;border:4px solid #27ae60;border-top:4px solid #e0e0e0;border-radius:50%;animation:spin 1s linear infinite;"></div>
+          </div>
         </div>
       `;
 
@@ -1132,9 +1135,10 @@ function goToAssessment() {
 
       // Form submission using URLSearchParams
       const assessmentForm = document.getElementById('assessmentForm');
+      const loadingSpinner = document.getElementById('assessmentLoadingSpinner');
       assessmentForm.onsubmit = function(e) {
         e.preventDefault();
-
+        if (loadingSpinner) loadingSpinner.style.display = 'flex';
         const params = new URLSearchParams({
           request_id: data.id,
           user_id: data.user_id,
@@ -1159,6 +1163,7 @@ function goToAssessment() {
         })
         .then(response => response.json())
         .then(result => {
+          if (loadingSpinner) loadingSpinner.style.display = 'none';
           if (result.success) {
             // Remove from accepted_request table
             fetch('delete_accepted_request.php', {
@@ -1167,12 +1172,13 @@ function goToAssessment() {
               body: 'id=' + encodeURIComponent(data.id)
             });
             showActionSuccessNotification('Assessment submitted and user notified!');
-            updateDoneAssessmentTable(); // <-- Add this line
+            updateDoneAssessmentTable();
           } else {
             showActionErrorNotification('Failed to submit assessment: ' + (result.message || 'Unknown error'));
           }
         })
         .catch(error => {
+          if (loadingSpinner) loadingSpinner.style.display = 'none';
           showActionErrorNotification('Network error: ' + error);
         });
       };

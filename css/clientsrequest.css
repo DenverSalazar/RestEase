@@ -1,5 +1,4 @@
-
-      /* Popup Modal Styles */
+/* Popup Modal Styles */
       .popup-modal {
         position: fixed;
         z-index: 9999;
@@ -308,4 +307,7 @@
       #actionErrorNotification i {
         margin-right: 8px;
       }
- 
+      @keyframes spin {
+        0% { transform: rotate(0deg);}
+        100% { transform: rotate(360deg);}
+      }

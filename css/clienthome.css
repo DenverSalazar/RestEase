@@ -4,10 +4,41 @@ body {
         }
        
         /* Header section */
-        .main-bg-bar {
-            background: #caf0f8;
-            padding: 100px 0 100px 0;
-        }
+        /* Animated gradient hero background */
+.main-bg-bar {
+    background: linear-gradient(270deg, #caf0f8, #90e0ef, #ade8f4, #48cae4);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    padding: 100px 0 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Optional: subtle floating particle effect */
+.main-bg-bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: floatPattern 40s linear infinite;
+    z-index: 0;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes floatPattern {
+    from { background-position: 0 0; }
+    to { background-position: 1000px 1000px; }
+}
+
         .dashboard-header {
             background: #fff;
             border-radius: 16px;
@@ -29,6 +60,31 @@ body {
             margin-bottom: 0;
             font-weight: 400;
         }
+
+        /* Hero content fade/slide animation */
+.dashboard-header h2, 
+.dashboard-header p, 
+.dashboard-header img {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 1s ease forwards;
+}
+
+/* Stagger the animation for natural flow */
+.dashboard-header h2 { animation-delay: 0.3s; }
+.dashboard-header p { animation-delay: 0.6s; }
+.dashboard-header img { animation-delay: 0.9s; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+    position: relative;
+    z-index: 1;
+}
+
         /* Portal section */
         .portal-section {
             margin-top: 32px;
@@ -168,31 +224,43 @@ body {
                 height: 180px;
             }
         }
-        /* Themed button for View Cemetery Maps */
-        .btn-map-themed {
-            font-family: 'Poppins', sans-serif;
-            background: #0077b6 !important;
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            padding: 12px 32px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            box-shadow: 0 4px 16px rgba(77,143,211,0.12);
-            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
-            margin: 32px auto 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-        }
-        .btn-map-themed:hover, .btn-map-themed:focus {
-            background: #0096c7 !important;
-            box-shadow: 0 6px 24px rgba(77,143,211,0.18);
-            transform: translateY(-2px) scale(1.03);
-            color: #fff;
-        }
-        .btn-map-themed i {
-            font-size: 1.2em;
-        }
+        /* Button hover effect for portal and map buttons */
+.btn-primary,
+.view-btn {
+    transition: all 0.25s ease;
+}
+
+.btn-primary:hover,
+.view-btn:hover {
+    background: #0096c7 !important;
+    color: #fff !important;
+    transform: translateY(-6px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+/* Themed button for View Cemetery Maps */
+.btn-map-themed {
+    font-family: 'Poppins', sans-serif;
+    background: #0077b6 !important;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(77,143,211,0.12);
+    transition: all 0.25s ease;
+    margin: 32px auto 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+}
+.btn-map-themed:hover, .btn-map-themed:focus {
+    background: #0096c7 !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    transform: translateY(-6px) scale(1.03);
+    color: #fff;
+}      
+

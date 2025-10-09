@@ -5,7 +5,9 @@ body {
 
 /* Contact Hero Section */
 .contact-hero {
-    background-color: #caf0f8;
+    background: linear-gradient(270deg, #caf0f8, #90e0ef, #ade8f4, #48cae4);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
     color: black;
     padding: 100px 20px 60px 20px;
     text-align: center;
@@ -13,11 +15,28 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.contact-hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: floatPattern 40s linear infinite;
+    z-index: 0;
 }
 
 .contact-hero .container {
     max-width: 800px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
 .contact-hero h1 {
@@ -114,6 +133,31 @@ textarea.form-control {
     border-radius: 10px;
     width: 100%;
     height: 450px;
+}
+
+/* Fade-in-up animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+.fade-in-up {
+    opacity: 0;
+    animation: fadeInUp 1s ease forwards;
+}
+.fade-in-up.delay-1 { animation-delay: 0.2s; }
+.fade-in-up.delay-2 { animation-delay: 0.4s; }
+.fade-in-up.delay-3 { animation-delay: 0.6s; }
+.fade-in-up.delay-4 { animation-delay: 0.8s; }
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes floatPattern {
+    from { background-position: 0 0; }
+    to { background-position: 1000px 1000px; }
 }
 
 /* Responsive Adjustments */
