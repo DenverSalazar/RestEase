@@ -367,11 +367,14 @@ if (!isset($_SESSION['admin_id'])) {
                   }
                 }
                 
-                // Build query parameters for EditNiches.php
+                // Build query parameters for EditNiches.php, include unique id and all fields
                 $queryParams = http_build_query([
+                  'id' => $row['id'],
                   'nicheID' => $row['nicheID'],
                   'lastName' => $row['lastName'],
                   'firstName' => $row['firstName'],
+                  'middleName' => $row['middleName'],
+                  'suffix' => $row['suffix'],
                   'age' => $row['age'],
                   'born' => $row['born'],
                   'residency' => $row['residency'],

@@ -11,9 +11,13 @@ if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
 // Fetch all deceased records indexed by nicheID
 $deceasedData = [];
-$result = $conn->query("SELECT nicheID, firstName, lastName, born, dateDied FROM deceased");
+$result = $conn->query("SELECT nicheID, firstName, middleName, lastName, suffix, born, dateDied FROM deceased");
 while ($row = $result->fetch_assoc()) {
-    $deceasedData[$row['nicheID']] = $row;
+    $nicheID = $row['nicheID'];
+    if (!isset($deceasedData[$nicheID])) {
+        $deceasedData[$nicheID] = [];
+    }
+    $deceasedData[$nicheID][] = $row;
 }
 ?>
 <!DOCTYPE html>
@@ -438,12 +442,23 @@ while ($row = $result->fetch_assoc()) {
                     }
                 },
                 mouseover: function(e) {
-                    // Show tooltip with nicheID, and name if leased
                     var nicheID = feature.properties['nicheID'];
-                    var deceased = deceasedData[nicheID];
+                    var deceasedEntry = deceasedData[nicheID];
                     var tooltipContent = '';
-                    if (deceased) {
-                        tooltipContent = `<strong>Niche ID:</strong> ${nicheID}<br><strong>Name:</strong> ${deceased.firstName} ${deceased.lastName}`;
+                    if (deceasedEntry && deceasedEntry.length > 0) {
+                        var names = deceasedEntry.map(function(d) {
+                            var firstName = d.firstName || '';
+                            var middleName = d.middleName || '';
+                            var lastName = d.lastName || '';
+                            var suffix = d.suffix || '';
+                            var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                            var fullName = firstName;
+                            if (middleInitial) fullName += ' ' + middleInitial;
+                            if (lastName) fullName += ' ' + lastName;
+                            if (suffix) fullName += ', ' + suffix;
+                            return `Name: ${fullName.trim()}`;
+                        });
+                        tooltipContent = `<strong>Niche ID:</strong> ${nicheID}<br>${names.join('<br>')}`;
                     } else {
                         tooltipContent = `<strong>Niche ID:</strong> ${nicheID}`;
                     }
@@ -464,28 +479,54 @@ while ($row = $result->fetch_assoc()) {
                         return;
                     }
                     var nicheID = feature.properties['nicheID'];
-                    var deceased = deceasedData[nicheID];
+                    var deceasedEntry = deceasedData[nicheID];
+                    var deceasedList = Array.isArray(deceasedEntry) ? deceasedEntry : (deceasedEntry ? [deceasedEntry] : []);
+                    var deceasedIndex = 0;
                     var popupContent = '';
-                    if (deceased) {
-                        // ...existing code for deceased popup...
-                        popupContent = `
-<div class="plaque-popup">
-    <div class="plaque-header">IN LOVING MEMORY OF</div>
-    <div class="plaque-icon"><i class="fas fa-dove"></i></div>
-    <div class="plaque-name">${deceased.firstName || ''} ${deceased.lastName || ''}</div>
-    <div class="plaque-dates">
-        ${deceased.born ? new Date(deceased.born).toLocaleDateString() : ''} - 
-        ${deceased.dateDied ? new Date(deceased.dateDied).toLocaleDateString() : ''}
+
+                    function renderPlaque(index) {
+                        var deceased = deceasedList[index];
+                        if (deceased) {
+                            var firstName = deceased.firstName || '';
+                            var middleName = deceased.middleName || '';
+                            var lastName = deceased.lastName || '';
+                            var suffix = deceased.suffix || '';
+                            var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                            var fullName = firstName;
+                            if (middleInitial) fullName += ' ' + middleInitial;
+                            if (lastName) fullName += ' ' + lastName;
+                            if (suffix) fullName += ', ' + suffix;
+                            popupContent = `
+<div style="display:flex; align-items:center; justify-content:space-between;">
+   <button id="prevDeceasedBtn" 
+  style="background:none; border:none; cursor:pointer; ${deceasedList.length > 1 ? '' : 'visibility:hidden'}">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" 
+    fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>
+</button>
+    <div style="flex:1;">
+        <div class="plaque-popup">
+            <div class="plaque-header">IN LOVING MEMORY OF</div>
+            <div class="plaque-icon"><i class="fas fa-dove"></i></div>
+            <div class="plaque-name">${fullName}</div>
+            <div class="plaque-dates">
+                ${deceased.born ? new Date(deceased.born).toLocaleDateString() : ''} - 
+                ${deceased.dateDied ? new Date(deceased.dateDied).toLocaleDateString() : ''}
+            </div>
+        </div>
     </div>
+   <button id="nextDeceasedBtn" style="background:none; border:none; cursor:pointer; ${deceasedList.length > 1 ? '' : 'visibility:hidden'}">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" 
+    fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"></polyline>
+  </svg>
+</button>
 </div>
 `;
-                        setTimeout(function() {
-                            document.getElementById('editButton').style.display = '';
-                            document.getElementById('insertButton').style.display = 'none';
-                        }, 0);
-                    } else {
-                        // Show popup for vacant niche
-                        popupContent = `
+                        } else {
+                            // Vacant niche popup
+                            popupContent = `
 <div class="plaque-popup">
     <div class="plaque-header">VACANT NICHE</div>
     <div class="plaque-icon"><i class="fas fa-cube"></i></div>
@@ -495,10 +536,25 @@ while ($row = $result->fetch_assoc()) {
     <div class="plaque-ref" style="margin-bottom:8px;">Contact admin for details.</div>
 </div>
 `;
+                        }
+                        document.getElementById('popupContent').innerHTML = popupContent;
+                        document.getElementById('popupOverlay').classList.add('active');
+                        document.getElementById('customPopup').classList.add('active');
+                        // Add navigation event listeners if needed
+                        if (deceasedList.length > 1) {
+                            var prevBtn = document.getElementById('prevDeceasedBtn');
+                            var nextBtn = document.getElementById('nextDeceasedBtn');
+                            if (prevBtn) prevBtn.onclick = function() {
+                                deceasedIndex = (deceasedIndex - 1 + deceasedList.length) % deceasedList.length;
+                                renderPlaque(deceasedIndex);
+                            };
+                            if (nextBtn) nextBtn.onclick = function() {
+                                deceasedIndex = (deceasedIndex + 1) % deceasedList.length;
+                                renderPlaque(deceasedIndex);
+                            };
+                        }
                     }
-                    document.getElementById('popupContent').innerHTML = popupContent;
-                    document.getElementById('popupOverlay').classList.add('active');
-                    document.getElementById('customPopup').classList.add('active');
+                    renderPlaque(deceasedIndex);
                 }
             });
         }

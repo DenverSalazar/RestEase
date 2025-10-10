@@ -32,6 +32,21 @@ $recordId = $_GET['id'] ?? '';
 $nicheID = $_GET['nicheID'] ?? '';
 $from = $_GET['from'] ?? ''; // Track where the user came from
 
+// Gather all possible deceased fields from query string
+$queryFields = [
+  'firstName' => $_GET['firstName'] ?? '',
+  'middleName' => $_GET['middleName'] ?? '',
+  'lastName' => $_GET['lastName'] ?? '',
+  'suffix' => $_GET['suffix'] ?? '',
+  'born' => $_GET['born'] ?? '',
+  'dateDied' => $_GET['dateDied'] ?? '',
+  'age' => $_GET['age'] ?? '',
+  'residency' => $_GET['residency'] ?? '',
+  'dateInternment' => $_GET['dateInternment'] ?? '',
+  'nicheID' => $_GET['nicheID'] ?? '',
+  'informantName' => $_GET['informantName'] ?? ''
+];
+
 $deceased = [
   'firstName' => '',
   'middleName' => '',
@@ -49,8 +64,39 @@ $deceased = [
 // Get original nicheID from query string or from database
 $originalNicheID = $_GET['nicheID'] ?? '';
 
-// If editing by ID, fetch data for this record
-if ($recordId) {
+// Add this variable to store the editing record's id
+$editingRecordId = null;
+
+// If all deceased fields are present, search for a matching record
+if (
+  $queryFields['firstName'] !== '' &&
+  $queryFields['middleName'] !== '' &&
+  $queryFields['lastName'] !== '' &&
+  $queryFields['born'] !== '' &&
+  $queryFields['dateDied'] !== ''
+) {
+  // Build SQL WHERE clause for all fields
+  $sql = "SELECT * FROM deceased WHERE firstName=? AND middleName=? AND lastName=? AND born=? AND dateDied=? AND nicheID=? LIMIT 1";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param(
+    "ssssss",
+    $queryFields['firstName'],
+    $queryFields['middleName'],
+    $queryFields['lastName'],
+    $queryFields['born'],
+    $queryFields['dateDied'],
+    $queryFields['nicheID']
+  );
+  $stmt->execute();
+  $result = $stmt->get_result();
+  if ($result && $row = $result->fetch_assoc()) {
+    $deceased = $row;
+    $originalNicheID = $row['nicheID'];
+    $editingRecordId = $row['id']; // Store the id for later update
+  }
+  $stmt->close();
+} elseif ($recordId) {
+  // If editing by ID, fetch data for this record
   $stmt = $conn->prepare("SELECT * FROM deceased WHERE id = ? LIMIT 1");
   $stmt->bind_param("i", $recordId);
   $stmt->execute();
@@ -58,6 +104,7 @@ if ($recordId) {
   if ($result && $row = $result->fetch_assoc()) {
     $deceased = $row;
     $originalNicheID = $row['nicheID'];
+    $editingRecordId = $row['id'];
   }
   $stmt->close();
 } elseif ($nicheID) {
@@ -68,6 +115,7 @@ if ($recordId) {
   $result = $stmt->get_result();
   if ($result && $row = $result->fetch_assoc()) {
     $deceased = $row;
+    $editingRecordId = $row['id'];
   }
   $stmt->close();
 }
@@ -215,60 +263,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   if (empty($errors)) {
     // If the nicheID (apartmentNo) was changed, move the record
     if ($originalNicheID !== $apartmentNo && $originalNicheID !== '') {
-      // First, get the ID of the record we want to update
-      $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
-      $stmt->bind_param("s", $originalNicheID);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $record = $result->fetch_assoc();
-      $stmt->close();
-
-      if ($record) {
-        $recordId = $record['id'];
+      // Only update the specific record by its ID
+      if ($editingRecordId) {
+        $updateStmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
+        $updateStmt->bind_param("ssssissssssi", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $editingRecordId);
+        $updateStmt->execute();
+        $updateStmt->close();
         
-        // Check if new nicheID is already occupied
-        $checkStmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? AND id != ? LIMIT 1");
-        $checkStmt->bind_param("si", $apartmentNo, $recordId);
-        $checkStmt->execute();
-        $checkStmt->store_result();
-        
-        if ($checkStmt->num_rows > 0) {
-          $errors[] = "The selected Apartment No. is already occupied.";
-          $checkStmt->close();
+        // Redirect to correct page
+        if (!empty($_GET['from']) && $_GET['from'] === 'records') {
+          header("Location: Records.php");
         } else {
-          $checkStmt->close();
-          
-          // Update the specific record by its ID
-          $updateStmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
-          $updateStmt->bind_param("ssssissssssi", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $recordId);
-          $updateStmt->execute();
-          $updateStmt->close();
-          
-          // Redirect to correct page
-          if (!empty($_GET['from']) && $_GET['from'] === 'records') {
-            header("Location: Records.php");
-          } else {
-            header("Location: Mapping.php");
-          }
-          exit();
+          header("Location: Mapping.php");
         }
+        exit();
       }
     } else {
       // If not changed, just update as usual
-      $stmt = $conn->prepare("SELECT id FROM deceased WHERE nicheID = ? LIMIT 1");
-      $stmt->bind_param("s", $apartmentNo);
-      $stmt->execute();
-      $stmt->store_result();
-      if ($stmt->num_rows > 0) {
-        $stmt->close();
-        // Update including middleName and suffix
-        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=? WHERE nicheID=?");
-        $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo);
+      if ($editingRecordId) {
+        // Update only the specific record by id
+        $stmt = $conn->prepare("UPDATE deceased SET firstName=?, middleName=?, lastName=?, suffix=?, age=?, born=?, residency=?, dateDied=?, dateInternment=?, informantName=?, nicheID=? WHERE id=?");
+        $stmt->bind_param("ssssissssssi", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $informantName, $apartmentNo, $editingRecordId);
         $stmt->execute();
         $stmt->close();
       } else {
-        $stmt->close();
-        // Insert including middleName and suffix
+        // Insert new record if not found (should not happen for normal edit)
         $stmt = $conn->prepare("INSERT INTO deceased (firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $apartmentNo, $informantName);
         $stmt->execute();
@@ -442,7 +461,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         </div>
         <div class="form-actions">
           <button type="submit" class="btn save-btn">Save</button>
-          <a href="<?php echo (!empty($from) && $from === 'records') ? 'Records.php' : 'Mapping.php'; ?>" class="btn cancel-btn" style="margin-left:12px;background:#eaf3fa;color:#2471a3;border:1px solid #d4e6f1;">Cancel</a>
+          <a href="<?php echo (!empty($from) && $from === 'records') ? 'Records.php' : 'Mapping.php'; ?>" class="btn secondary" style="margin-left:12px;">Cancel</a>
         </div>
       </form>
 
@@ -804,9 +823,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
 
     // Modal for blocking sidebar navigation
     function showSidebarBlockModal(targetHref) {
-      if (!document.getElementById('sidebarBlockModal')) {
-        var modal = document.createElement('div');
+      let modal = document.getElementById('sidebarBlockModal');
+      if (!modal) {
+        modal = document.createElement('div');
         modal.id = 'sidebarBlockModal';
+        modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+          <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
+            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e74c3c;font-weight:600;letter-spacing:0.5px;">
+              <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
+            </h2>
+            <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">
+              Please complete the editing or click "Cancel" to leave before navigating to another section.
+            </p>
+            <button id="sidebarBlockCloseBtn" style="background:#e74c3c;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        // Add close logic
+        modal.querySelector('#sidebarBlockCloseBtn').onclick = function() {
+          modal.style.display = 'none';
+        };
+        modal.onclick = function(e) {
+          if (e.target === modal) modal.style.display = 'none';
+        };
+      }
+      modal.style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
         modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
         modal.innerHTML = `
           <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
@@ -821,6 +867,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         `;
         document.body.appendChild(modal);
         document.getElementById('sidebarBlockCloseBtn').onclick = function() {
+          modal.style.display = 'none';
+        };
+        modal.onclick = function(e) {
+          if (e.target === modal) modal.style.display = 'none';
+        };
+      } else {
+        document.getElementById('sidebarBlockModal').style.display = 'flex';
+      }
+    }
+  </script>
+</body>
+</html>
           modal.style.display = 'none';
         };
         modal.onclick = function(e) {

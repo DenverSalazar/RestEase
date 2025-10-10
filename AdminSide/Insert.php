@@ -709,13 +709,13 @@ if ($id) {
         modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
         modal.innerHTML = `
           <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
-            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e67e22;font-weight:600;letter-spacing:0.5px;">
+            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e74c3c;font-weight:600;letter-spacing:0.5px;">
               <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
             </h2>
             <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">
               Please complete the insertion or click "Back" to cancel before navigating to another section.
             </p>
-            <button id="sidebarBlockCloseBtn" style="background:#e67e22;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
+            <button id="sidebarBlockCloseBtn" style="background:#e74c3c;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
           </div>
         `;
         document.body.appendChild(modal);

@@ -495,13 +495,13 @@ letter-spacing: 0.5px;
       background: #b52a2a;
     }
     .btn.upload {
-      background: #27ae60 !important;
+      background: #19d64c !important;
       color: #fff !important;
       border: none !important;
       transition: background 0.18s;
     }
     .btn.upload:hover, .btn.upload:focus {
-      background: #219150 !important;
+      background: #19d64c !important;
       color: #fff !important;
     }
     .main-content {
@@ -674,7 +674,7 @@ letter-spacing: 0.5px;
     }
 
     .file-upload-area:hover {
-      border-color: #27ae60;
+      border-color: #19d64c;
       background: #f0f9f4;
     }
 
@@ -752,7 +752,7 @@ letter-spacing: 0.5px;
     }
 
     .btn-upload {
-      background: #27ae60;
+      background: #19d64c;
       color: #fff;
       border: none;
       border-radius: 8px;

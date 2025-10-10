@@ -303,8 +303,8 @@ letter-spacing: 0.5px;
   border-color: #bfc9d1;
 }
 .btn.delete-btn {
-  background: #f8d7da;
-  color: #d9534f;
+  background: #e74c3c;
+  color: white;
   border: none;
   margin-right: 0;
   min-width: 90px;
@@ -314,12 +314,12 @@ letter-spacing: 0.5px;
   padding: 8px 22px;
 }
 .btn.delete-btn:hover, .btn.delete-btn:focus {
-  background: #f5c6cb;
-  color: #b52a2a;
+   background: #f5c6cb;
+  background-color: #c35346;
 }
 .btn.save-btn {
-  background: #c8f7d8;
-  color: #2ecc40;
+  background: #19d64c;
+  color: white;
   border: none;
   min-width: 90px;
   font-weight: 500;
@@ -330,7 +330,7 @@ letter-spacing: 0.5px;
 }
 .btn.save-btn:hover, .btn.save-btn:focus {
   background: #b2f2c9;
-  color: #1e9c31;
+  background-color: #13b53e;
 }
 .btn.cancel-btn {
   background: #f8d7da;
