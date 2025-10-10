@@ -1,3 +1,4 @@
+<?php include '../Includes/navbar2.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,7 +101,6 @@
     </style>
 </head>
 <body>
-    <?php include '../Includes/navbar2.php'; ?>
     <div class="privacy-container">
         <div class="privacy-row">
             <div class="privacy-content">
