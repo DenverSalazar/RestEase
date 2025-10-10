@@ -1,3 +1,4 @@
+<?php include '../Includes/navbar2.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,7 +70,6 @@
     </style>
 </head>
 <body>
-    <?php include '../Includes/navbar2.php'; ?>
 
     <div class="terms-container">
         <div class="terms-subtitle">AGREEMENT</div>

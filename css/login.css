@@ -76,7 +76,7 @@ body {
 
 /* Left side styles */
 .left-side {
-    background: url('../assets/garcia.jpg') center/cover no-repeat;
+    background: url('../assets/garcia.webp') center/cover no-repeat;
     position: relative;
     min-height: calc(100vh - 97px); /* Adjust for navbar space */
 }
@@ -176,10 +176,14 @@ body {
 
 /* Buttons */
 .btn-primary {
-    background-color: #506C84;
+    background-color: #0077b6;
     border: none;
     padding: 12px;
     font-weight: 500;
+}
+
+.btn-primary:hover {
+    background-color: #005f8e;
 }
 
 .btn-google {

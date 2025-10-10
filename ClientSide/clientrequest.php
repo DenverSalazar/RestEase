@@ -153,11 +153,11 @@ $stmt->close();
         <div class="client-request-card">
             <div class="client-request-form-card">
                 <div style="display:flex;align-items:center;gap:12px;">
-                    <!-- Back button at the leftmost part -->
-                    <button type="button" onclick="window.history.back();" class="btn btn-link" style="font-size:1.1rem;padding:0;margin-right:10px;">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
-                </div>
+                 
+                        <a href="javascript:history.back()" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+                       <i class="fas fa-arrow-left"></i> Back
+                     </a>
+                 </div>
                     <h2 style="margin-bottom:0;">Fill up form</h2>
                 
                 <p>Please complete the form below with accurate information to proceed with your request.</p>
@@ -303,7 +303,7 @@ $stmt->close();
                 </form>
             </div>
             <div class="client-request-image">
-                <img src="../assets/garcia.jpg" alt="Flag Ceremony" />
+                <img src="../assets/garcia.webp" alt="Flag Ceremony" />
             </div>
         </div>
     </div>

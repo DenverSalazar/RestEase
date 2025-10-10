@@ -32,9 +32,9 @@
             </div>
         </nav>
         <div class="hero-content">
-            <h1>RestEase: Web-Based Cemetery Records & <br> Certificate Management of Padre Garcia Batangas</h1>
-            <p>Designed for managing cemetery apartment records and certificates in Padre Garcia, Batangas. It simplifies tracking niche, renewals, and documents. The system also includes a front-view niche mapping for easy reference without real-world tracking.</p>
-            <div class="btn-container mb-5">
+            <h1 class="fade-in-up delay-1">RestEase: Web-Based Cemetery Records & <br> Certificate Management of Padre Garcia Batangas</h1>
+            <p class="fade-in-up delay-2">Designed for managing cemetery apartment records and certificates in Padre Garcia, Batangas. It simplifies tracking niche, renewals, and documents. The system also includes a front-view niche mapping for easy reference without real-world tracking.</p>
+            <div class="btn-container mb-5 fade-in-up delay-3">
                 <a href="login.php" class="btn btn-primary btn-custom">Reserve Now</a>
                 <a href="#" class="btn btn-dark btn-custom">Explore</a>
             </div>
@@ -61,7 +61,7 @@
                 </div>
                 <!-- Image -->
                 <div class="col-md-6 text-center">
-                    <img src="assets/testimony-image.png" alt="Who we are" class="img-fluid rounded">
+                    <img src="assets/testimony-image.webp" alt="Who we are" class="img-fluid rounded">
                 </div>
             </div>
 
@@ -173,7 +173,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <img src="./assets/Poster.jfif" alt="Testimony Image" class="img-fluid rounded">
+                    <img src="./assets/Poster.webp" alt="Testimony Image" class="img-fluid rounded">
                 </div>
                 <div class="col-md-8">
                     <blockquote class="blockquote">

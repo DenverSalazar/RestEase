@@ -350,6 +350,18 @@ while ($row = $result->fetch_assoc()) {
     #searchErrorPopup .popup-button:hover {
       background: #e57373;
     }
+    .custom-niche-tooltip {
+    background: #fff;
+    color: #222;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(60,60,60,0.12);
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    font-weight: 500;
+    z-index: 9999;
+}
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -689,13 +701,41 @@ while ($row = $result->fetch_assoc()) {
         function pop_Floor1(feature, layer) {
             layer.on({
                 mouseout: function(e) {
+                    // Remove tooltip on mouseout
+                    layer.unbindTooltip();
                     for (var i in e.target._eventParents) {
                         if (typeof e.target._eventParents[i].resetStyle === 'function') {
                             e.target._eventParents[i].resetStyle(e.target);
                         }
                     }
                 },
-                mouseover: highlightFeature,
+                mouseover: function(e) {
+                    // Show tooltip with nicheID, and name if leased
+                    var nicheID = feature.properties['nicheID'];
+                    var deceased = deceasedData[nicheID];
+                    var tooltipContent = '';
+                    if (deceased) {
+                        // Compose full name as: FirstName MiddleInitial. LastName, Suffix
+                        var firstName = deceased.firstName || '';
+                        var middleName = deceased.middleName || '';
+                        var lastName = deceased.lastName || '';
+                        var suffix = deceased.suffix || '';
+                        var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                        var fullName = firstName;
+                        if (middleInitial) fullName += ' ' + middleInitial;
+                        if (lastName) fullName += ' ' + lastName;
+                        if (suffix) fullName += ', ' + suffix;
+                        tooltipContent = `<strong>Niche ID:</strong> ${nicheID}<br><strong>Name:</strong> ${fullName}`;
+                    } else {
+                        tooltipContent = `<strong>Niche ID:</strong> ${nicheID}`;
+                    }
+                    layer.bindTooltip(tooltipContent, {
+                        direction: 'top',
+                        className: 'custom-niche-tooltip',
+                        sticky: true
+                    }).openTooltip();
+                    highlightFeature(e);
+                },
                 click: function(e) {
                     // Add this block for niche picker mode
                     if (window.location.search.includes('pickNiche=1')) {

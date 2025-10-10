@@ -36,8 +36,8 @@
     <!-- Contact Hero Section -->
     <section class="contact-hero" style="padding-top: 110px;">
         <div class="container">
-            <h1>Contact Us</h1>
-            <p>Have questions or need assistance? We're here to help! Reach out to us for any inquiries about our system, services, or support.</p>
+            <h1 class="fade-in-up delay-1">Contact Us</h1>
+            <p class="fade-in-up delay-2">Have questions or need assistance? We're here to help! Reach out to us for any inquiries about our system, services, or support.</p>
         </div>
     </section>
 

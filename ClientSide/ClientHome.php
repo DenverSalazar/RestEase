@@ -99,6 +99,14 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
         <!-- End Your Portal Section -->
 
         <!-- Map Section -->
+
+        <!-- Add extra spacing between Portal and Cemetery Mapping -->
+        <div style="height:48px;"></div>
+
+        <div class="portal-title mb-1" style="font-size:1.45rem;font-weight:500;">Cemetery Mapping</div>
+        <div class="portal-desc mb-4" style="color:#444;font-size:1.04rem;">
+             Explore an interactive digital map that helps you easily locate burial plots, view grave details, and navigate the cemetery with ease and accuracy.
+        </div>
         <section class="map-section">
             
                 <!-- Embed the real interactive map, view-only, zoom in/out only, no navbar/footer -->
@@ -111,7 +119,7 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
             
-            <a href="ClientMap.php" style="text-decoration:none;">
+            <a href="ViewMap.php" style="text-decoration:none;">
                 <button class="btn-map-themed" style="background:#0077b6;">
                     <i class="fas fa-map-marked-alt"></i>
                     View Cemetery Maps
