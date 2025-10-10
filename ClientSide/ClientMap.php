@@ -455,40 +455,46 @@ while ($row = $result->fetch_assoc()) {
                     highlightFeature(e);
                 },
                 click: function(e) {
-                    // No zoom or fitBounds logic here
+                    // Add this block for niche picker mode
+                    if (window.location.search.includes('pickNiche=1')) {
+                        if (window.opener) {
+                            window.opener.postMessage({ nicheID: feature.properties['nicheID'] }, '*');
+                            window.close();
+                        }
+                        return;
+                    }
                     var nicheID = feature.properties['nicheID'];
                     var deceased = deceasedData[nicheID];
                     var popupContent = '';
                     if (deceased) {
+                        // ...existing code for deceased popup...
                         popupContent = `
-                    <div class="popup-form-group">
-                        <div class="popup-form-id-label">nicheID</div>
-                        <div class="popup-form-id-value">${nicheID}</div>
-                    </div>
-                    <div class="popup-form-group">
-                        <label class="popup-form-label">Name:</label>
-                        <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
-                    </div>
-                    <div class="popup-form-group">
-                        <label class="popup-form-label">Born:</label>
-                        <input class="popup-form-input" type="text" value="${deceased.born}" readonly>
-                    </div>
-                    <div class="popup-form-group">
-                        <label class="popup-form-label">Date Died:</label>
-                        <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
-                    </div>
-                  `;
+<div class="plaque-popup">
+    <div class="plaque-header">IN LOVING MEMORY OF</div>
+    <div class="plaque-icon"><i class="fas fa-dove"></i></div>
+    <div class="plaque-name">${deceased.firstName || ''} ${deceased.lastName || ''}</div>
+    <div class="plaque-dates">
+        ${deceased.born ? new Date(deceased.born).toLocaleDateString() : ''} - 
+        ${deceased.dateDied ? new Date(deceased.dateDied).toLocaleDateString() : ''}
+    </div>
+</div>
+`;
+                        setTimeout(function() {
+                            document.getElementById('editButton').style.display = '';
+                            document.getElementById('insertButton').style.display = 'none';
+                        }, 0);
                     } else {
+                        // Show popup for vacant niche
                         popupContent = `
-                    <div class="popup-form-group">
-                        <div class="popup-form-id-label">nicheID</div>
-                        <div class="popup-form-id-value">${nicheID}</div>
-                    </div>
-                    <div class="popup-form-group">
-                        <label class="popup-form-label">Status:</label>
-                        <input class="popup-form-input" type="text" value="Vacant" readonly>
-                    </div>
-                                    `;
+<div class="plaque-popup">
+    <div class="plaque-header">VACANT NICHE</div>
+    <div class="plaque-icon"><i class="fas fa-cube"></i></div>
+    <div class="plaque-name">${nicheID}</div>
+    <div class="plaque-dates"></div>
+    <div class="plaque-verse">This niche is available for lease.</div>
+    <div class="plaque-ref" style="margin-bottom:8px;">Contact admin for details.</div>
+</div>
+`;
                     }
                     document.getElementById('popupContent').innerHTML = popupContent;
                     document.getElementById('popupOverlay').classList.add('active');
@@ -1038,6 +1044,65 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+    /* ...existing code... */
+    .plaque-popup {
+      background: #f7f7f7;
+      border: 2px solid #222;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(60,60,60,0.13);
+      padding: 28px 18px 18px 18px;
+      text-align: center;
+      font-family: 'Poppins', 'Times New Roman', serif;
+      position: relative;
+      margin-bottom: 12px;
+      max-width: 340px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .plaque-header {
+      font-size: 1.08rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      color: #222;
+      font-family: 'Poppins', serif;
+    }
+    .plaque-icon {
+      font-size: 2.2rem;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    .plaque-name {
+      font-family: 'Poppins', cursive, 'Times New Roman', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .plaque-dates {
+      font-family: 'Poppins', cursive, 'Times New Roman', serif;
+      font-size: 1.15rem;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    .plaque-verse {
+      font-family: 'Poppins', cursive, 'Times New Roman', serif;
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 4px;
+      font-style: italic;
+    }
+    .plaque-ref {
+      font-size: 0.95rem;
+      color: #888;
+      font-family: 'Poppins', serif;
+      margin-bottom: 0;
+    }
+    /* ...existing code... */
+   </style>
 </body>
 </html>
 

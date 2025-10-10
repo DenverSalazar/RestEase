@@ -555,10 +555,11 @@ if ($id) {
       }
     });
 
-    // Listen for message from Mapping.php
+    // Listen for message from Mapping.php (niche picker)
     window.addEventListener('message', function(event) {
       if (event.data && event.data.nicheID) {
-        document.getElementById('apartmentNo').value = event.data.nicheID;
+        var aptField = document.getElementById('apartmentNo'); // <-- use lowercase 'a'
+        if (aptField) aptField.value = event.data.nicheID;
       }
     });
 
@@ -728,6 +729,16 @@ if ($id) {
         document.getElementById('sidebarBlockModal').style.display = 'flex';
       }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    // Get nicheID from URL
+    var params = new URLSearchParams(window.location.search);
+    var nicheID = params.get('nicheID');
+    if (nicheID) {
+        var aptField = document.getElementById('apartmentNo'); // <-- use lowercase 'a'
+        if (aptField) aptField.value = nicheID;
+    }
+});
   </script>
 
 </body>

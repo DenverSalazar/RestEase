@@ -305,6 +305,68 @@ while ($row = $result->fetch_assoc()) {
     font-weight: 500;
     z-index: 9999;
 }
+.plaque-popup {
+      background: #f7f7f7;
+      border: 2px solid #222;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(60,60,60,0.13);
+      padding: 28px 18px 18px 18px;
+      text-align: center;
+      font-family: 'Poppins', 'Times New Roman', serif;
+      position: relative;
+      margin-bottom: 12px;
+      max-width: 340px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .plaque-header {
+      font-size: 1.08rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      color: #222;
+      font-family: 'Poppins', serif;
+    }
+    .plaque-icon {
+      font-size: 2.2rem;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    .plaque-name {
+      font-family: 'Dancing Script', cursive, 'Times New Roman', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .plaque-dates {
+      font-family: 'Dancing Script', cursive, 'Times New Roman', serif;
+      font-size: 1.15rem;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    .plaque-verse {
+      font-family: 'Dancing Script', cursive, 'Times New Roman', serif;
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 4px;
+      font-style: italic;
+    }
+    .plaque-ref {
+      font-size: 0.95rem;
+      color: #888;
+      font-family: 'Poppins', serif;
+      margin-bottom: 0;
+    }
+      .popup-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 18px;
+      margin-bottom: 0;
+      padding: 0;
+    }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -648,38 +710,31 @@ while ($row = $result->fetch_assoc()) {
                     var popupContent = '';
                     if (deceased) {
                         popupContent = `
-        <div class="popup-form-group">
-            <div class="popup-form-id-label">nicheID</div>
-            <div class="popup-form-id-value">${nicheID}</div>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Name:</label>
-            <input class="popup-form-input" type="text" value="${deceased.firstName} ${deceased.lastName}" readonly>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Born:</label>
-            <input class="popup-form-input" type="text" value="${deceased.born}" readonly>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Date Died:</label>
-            <input class="popup-form-input" type="text" value="${deceased.dateDied}" readonly>
-        </div>
-                  `;
+<div class="plaque-popup">
+    <div class="plaque-header">IN LOVING MEMORY OF</div>
+    <div class="plaque-icon"><i class="fas fa-dove"></i></div>
+    <div class="plaque-name">${deceased.firstName} ${deceased.lastName}</div>
+    <div class="plaque-dates">
+        ${deceased.born ? new Date(deceased.born).toLocaleDateString() : ''} - 
+        ${deceased.dateDied ? new Date(deceased.dateDied).toLocaleDateString() : ''}
+   
+`;
                         setTimeout(function() {
                             document.getElementById('editButton').style.display = '';
                             document.getElementById('insertButton').style.display = 'none';
                         }, 0);
                     } else {
+                        // Use plaque style for vacant
                         popupContent = `
-        <div class="popup-form-group">
-            <div class="popup-form-id-label">nicheID</div>
-            <div class="popup-form-id-value">${nicheID}</div>
-        </div>
-        <div class="popup-form-group">
-            <label class="popup-form-label">Status:</label>
-            <input class="popup-form-input" type="text" value="Vacant" readonly>
-        </div>
-                        `;
+<div class="plaque-popup">
+    <div class="plaque-header">VACANT NICHE</div>
+    <div class="plaque-icon"><i class="fas fa-cube"></i></div>
+    <div class="plaque-name">${nicheID}</div>
+    <div class="plaque-dates"></div>
+    <div class="plaque-verse">This niche is available for lease.</div>
+    <div class="plaque-ref" style="margin-bottom:8px;">Contact admin for details.</div>
+</div>
+`;
                         setTimeout(function() {
                             document.getElementById('editButton').style.display = 'none';
                             document.getElementById('insertButton').style.display = '';
@@ -971,34 +1026,55 @@ map.on("zoomend", function(){
 
 
 // Add event listeners for popup buttons
-        document.getElementById('cancelButton').addEventListener('click', function() {
-            document.getElementById('popupOverlay').classList.remove('active');
-            document.getElementById('customPopup').classList.remove('active');
-        });
+document.getElementById('cancelButton').addEventListener('click', function() {
+    document.getElementById('popupOverlay').classList.remove('active');
+    document.getElementById('customPopup').classList.remove('active');
+});
 
-        document.getElementById('editButton').addEventListener('click', function() {
-            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
-            var name = document.querySelectorAll('.popup-form-input')[0].value.trim();
-            var born = document.querySelectorAll('.popup-form-input')[1].value.trim();
-            var died = document.querySelectorAll('.popup-form-input')[2].value.trim();
+document.getElementById('editButton').addEventListener('click', function() {
+    var plaqueName = document.querySelector('.plaque-name');
+    var nicheID = '';
+    if (plaqueName) {
+        // Try to match the plaque name to a deceased record, otherwise fallback to nicheID
+        var foundNicheID = '';
+        for (var key in deceasedData) {
+            var d = deceasedData[key];
+            var firstName = d.firstName || '';
+            var lastName = d.lastName || '';
+            var fullName = firstName;
+            if (lastName) fullName += ' ' + lastName;
+            if (plaqueName.textContent.trim() === fullName.trim()) {
+                foundNicheID = key;
+                break;
+            }
+        }
+        nicheID = foundNicheID || plaqueName.textContent.trim();
+    }
+    var deceased = deceasedData[nicheID];
+    var params = new URLSearchParams();
+    params.set('nicheID', nicheID);
+    if (deceased) {
+        params.set('firstName', deceased.firstName || '');
+        params.set('lastName', deceased.lastName || '');
+        params.set('born', deceased.born || '');
+        params.set('dateDied', deceased.dateDied || '');
+    }
+    window.location.href = 'EditNiches.php?' + params.toString();
+});
 
-            var params = new URLSearchParams({
-                nicheID: nicheID,
-                name: name,
-                born: born,
-                died: died
-            });
-
-            window.location.href = 'EditNiches.php?' + params.toString();
-        });
-
-        document.getElementById('insertButton').addEventListener('click', function() {
-            var nicheID = document.querySelector('.popup-form-id-value').textContent.trim();
-            var params = new URLSearchParams({
-                nicheID: nicheID
-            });
-            window.location.href = 'insert.php?' + params.toString();
-        });
+document.getElementById('insertButton').addEventListener('click', function() {
+    // Extract nicheID from the popup content
+    var nicheID = '';
+    var plaqueName = document.querySelector('.plaque-name');
+    if (plaqueName) {
+        nicheID = plaqueName.textContent.trim();
+    }
+    if (!nicheID) return;
+    var params = new URLSearchParams({
+        nicheID: nicheID
+    });
+    window.location.href = 'insert.php?' + params.toString();
+});
 
         // Close popup when clicking outside
         document.getElementById('popupOverlay').addEventListener('click', function() {
