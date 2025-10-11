@@ -114,6 +114,30 @@ body {
   color: var(--primary-color);
   border-bottom: 2.5px solid var(--primary-color);
 }
+.clients-tab-title.active {
+  border-bottom: 2.5px solid #0077b6 !important;
+  color: #0077b6 !important;
+  opacity: 1;
+}
+
+/* Export Data and Insert buttons */
+.btn-export,
+.btn-insert,
+button.btn-export,
+button.btn-insert {
+  background: #0077b6 !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.btn-export:hover,
+.btn-insert:hover,
+button.btn-export:hover,
+button.btn-insert:hover {
+  background: #005f8a !important;
+}
 
 /* --- SEARCH & ACTIONS --- */
 .clients-actions {
@@ -253,6 +277,12 @@ body {
 
 .clients-table tr:hover {
   background: #f5f7fa;
+}
+
+/* Active status badge - more saturated green */
+.clients-table td span[style*="background:#d4edda"] {
+    background: #19d64c !important;
+    color: #fff !important;
 }
 
 /* --- PAGINATION --- */

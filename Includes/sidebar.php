@@ -27,12 +27,12 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <img src="../assets/logo.png" alt="RestEase" style="width: 55px; height: 55px; border-radius: 50%; margin-right: 0.85rem;">
       <div style="display: flex; flex-direction: column; align-items: flex-start;">
         <div style="font-size: 1.35em; font-weight: 700; color: #222; line-height: 1;">RestEase</div>
-        <div style="font-size: 0.95em; color: #888; font-weight: 500; margin-top: 0.15rem; letter-spacing: 1px;">MPDO</div>
+        <div style="font-size: 0.95em; color: #000000ff; font-weight: 500; margin-top: 0.15rem; letter-spacing: 1px;">MPDO</div>
       </div>
     </div>
     <nav class="nav-links">
         <!-- Main Menu Section -->
-      <div class="nav-section text-muted" style="padding: 0.10rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Main Menu</div>
+      <div class="nav-section text-muted" style="padding: 0.10rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">Main Menu</div>
       <a href="Dashboard.php" class="nav-item<?php if($current_page == 'Dashboard.php') echo ' active'; ?>">
         <i class="fas fa-pie-chart"></i>
         Dashboard
@@ -43,7 +43,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       </a>
       
       <!-- Mapping Section -->
-      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">Mapping</div>
+      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">Mapping</div>
       <!-- New Cemetery Dropdown -->
       <div class="nav-dropdown<?php if(in_array($current_page, ['Mapping.php','first_floor.php','second_floor.php','third_floor.php'])) echo ' open'; ?>" id="new-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
@@ -83,7 +83,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       </div>
       
        <!-- General Section -->
-      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #b0b3b8; letter-spacing: 1px; font-weight: 600;">General</div>
+      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">General</div>
      
       <a href="Clients.php" class="nav-item<?php if(in_array($current_page, $clients_pages)) echo ' active'; ?>">
         <i class="fas fa-users"></i>

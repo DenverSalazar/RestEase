@@ -1,0 +1,120 @@
+body {
+    background: #f6f8fa;
+    min-height: 100vh;
+    font-family: 'Poppins', Arial, sans-serif;
+}
+.notif-header-bar, .notif-list-table, .notif-row, .notif-divider {
+    display: none !important;
+}
+.notif-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    min-height: 520px; /* Ensures space even with few notifications */
+    max-height: 520px; /* Optional: limit max height for scrolling */
+    overflow-y: auto;
+}
+.notif-card-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+    margin-bottom: 18px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: box-shadow 0.18s;
+    border: 1px solid #e0e7ef;
+}
+.notif-card-wrapper:hover {
+    box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+}
+.notif-icon {
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    text-align: center;
+    font-size: 1.5rem;
+    margin-right: 18px;
+    vertical-align: middle;
+}
+.notif-main {
+    font-weight: 600;
+    font-size: 1.08rem;
+    color: #222;
+}
+.notif-desc {
+    color: #666;
+    font-size: 0.97rem;
+}
+.notif-time {
+    color: #888;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    margin-left: 18px;
+}
+.notif-actions {
+    text-align: right;
+    margin-left: 18px;
+}
+.notif-checkbox {
+    margin-right: 18px;
+    accent-color: #3973f4;
+}
+.notif-delete-btn, .notif-delete-all-btn, .notif-cancel-btn {
+    border: none;
+    background: none;
+    color: #e74c3c;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-left: 8px;
+    padding: 0 8px;
+}
+.notif-delete-btn:hover, .notif-delete-all-btn:hover, .notif-cancel-btn:hover {
+    color: #b71c1c;
+    background: #fbe9e7;
+    border-radius: 4px;
+}
+.notif-delete-all-btn {
+    color: #3973f4;
+}
+.notif-cancel-btn {
+    color: #888;
+}
+.no-records-msg {
+    color: #888;
+    font-size: 1.15rem;
+    text-align: center;
+    margin: 48px 0 24px 0;
+    font-weight: 500;
+}
+.cert-list-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 30px 0 15px 0;
+    text-align: center;
+    color: #333;
+}
+.cert-list-back {
+    color: #506C84;
+    font-size: 1.08rem;
+    font-weight: 500;
+    margin-bottom: 0px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.18s;
+    display: inline-block;
+}
+.cert-list-container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+@media (max-width: 600px) {
+    .cert-list-title { font-size: 1.1rem; }
+    .notif-main { font-size: 0.98rem; }
+    .notif-desc { font-size: 0.93rem; }
+    .notif-time { font-size: 0.9rem; }
+    .notif-card-wrapper { padding: 12px 8px; }
+}

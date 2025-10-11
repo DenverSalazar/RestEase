@@ -38,14 +38,13 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
     <?php include '../Includes/navbar2.php'; ?>
 
     <div class="main-bg-bar" style="padding-top: 180px;">
-        
         <div class="container">
-            <div class="dashboard-header d-flex align-items-center justify-content-between">
+            <div class="dashboard-header hero-container d-flex align-items-center justify-content-between">
                 <div>
                     <h2>Your trusted digital companion<br>for cemetery mapping and memorial services</h2>
                     <p>#1 Online Platform for Niche Management & Certificate Services<br>in Padre Garcia, Batangas</p>
                 </div>
-                <img src="../assets/Under Construction.jpg" alt="RestEase Hero" style="max-width:320px;width:100%;height:auto;border-radius:16px;">
+                <img src="../assets/oldcemetery.webp" alt="RestEase Hero" style="max-width:420px;width:100%;height:auto;border-radius:16px;">
             </div>
         </div>
     </div>
@@ -60,7 +59,10 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
             <div class="row g-4">
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
-                        <div style="font-weight:500;font-size:1.08rem;">Submit Request</div>
+                        <div style="font-weight:500;font-size:1.08rem;">
+                            <img src="../assets/send.png" alt="Submit Request" style="width:22px;height:22px;margin-right:7px;vertical-align:middle;">
+                            Submit Request
+                        </div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Easily send your request for services or updates through the system.
                         </div>
@@ -69,7 +71,10 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
-                        <div style="font-weight:500;font-size:1.08rem;">Records</div>
+                        <div style="font-weight:500;font-size:1.08rem;">
+                            <img src="../assets/recordsicon.png" alt="Records" style="width:22px;height:22px;margin-right:7px;vertical-align:middle;">
+                            Records
+                        </div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Quickly access and review stored cemetery and client records.
                         </div>
@@ -78,7 +83,10 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
-                        <div style="font-weight:500;font-size:1.08rem;">Certificate</div>
+                        <div style="font-weight:500;font-size:1.08rem;">
+                            <img src="../assets/cert.png" alt="Certificate" style="width:22px;height:22px;margin-right:7px;vertical-align:middle;">
+                            Certificate
+                        </div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                            View and manage issued or renewal certificates online.<br> </br>
                         </div>
@@ -87,7 +95,10 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
                 </div>
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="shadow-sm rounded-4 p-4 h-100 text-center" style="background:#fff; border:2px solid #0077b6;">
-                        <div style="font-weight:500;font-size:1.08rem;">Track Status</div>
+                        <div style="font-weight:500;font-size:1.08rem;">
+                            <img src="../assets/status.png" alt="Track Status" style="width:22px;height:22px;margin-right:7px;vertical-align:middle;">
+                            Track Status
+                        </div>
                         <div style="font-size:0.97rem;color:#6c757d;margin:12px 0 18px 0;">
                             Monitor the progress of your requests and see admin updates.
                         </div>

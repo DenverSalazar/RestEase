@@ -154,9 +154,9 @@ $stmt->close();
             <div class="client-request-form-card">
                 <div style="display:flex;align-items:center;gap:12px;">
                  
-                        <a href="javascript:history.back()" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;">
-                       <i class="fas fa-arrow-left"></i> Back
-                     </a>
+                        <a href="ClientHome.php" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
                  </div>
                     <h2 style="margin-bottom:0;">Fill up form</h2>
                 
@@ -283,13 +283,16 @@ $stmt->close();
                         </div>
                     </div>
                     <div class="section-title">Upload Files</div>
-                    <div class="upload-area mb-2">
+                    <div class="upload-area mb-2" id="upload-area">
                         <label for="file-upload" class="upload-label">
                             <span class="upload-icon"><i class="fas fa-upload"></i></span>
                             Upload file
                             <input type="file" id="file-upload" name="file_upload">
                         </label>
-                        <div id="file-preview" style="margin-top:10px;"></div> <!-- Add preview area -->
+                        <div id="file-preview" style="margin-top:10px;"></div>
+                        <div id="upload-required-msg" style="display:none;color:#d32f2f;font-size:0.97rem;margin-top:10px;">
+        Uploading a document is required for "New" requests.
+    </div>
                     </div>
                     <div class="file-note mb-3">
                         Attach file. File size of your documents should not exceed 10MB
@@ -446,6 +449,32 @@ $stmt->close();
             img.style.marginTop = '8px';
             img.src = URL.createObjectURL(file);
             preview.appendChild(img);
+        }
+    });
+
+    function checkUploadRequirement() {
+    var type = document.getElementById('type').value;
+    var fileInput = document.getElementById('file-upload');
+    var uploadArea = document.getElementById('upload-area');
+    var msg = document.getElementById('upload-required-msg');
+    if (type === 'New' && (!fileInput.files || fileInput.files.length === 0)) {
+        uploadArea.classList.add('upload-required');
+        msg.style.display = '';
+    } else {
+        uploadArea.classList.remove('upload-required');
+        msg.style.display = 'none';
+    }
+}
+document.getElementById('type').addEventListener('change', checkUploadRequirement);
+document.getElementById('file-upload').addEventListener('change', checkUploadRequirement);
+    document.getElementById('client-request-form').addEventListener('submit', function(e) {
+        var type = document.getElementById('type').value;
+        var fileInput = document.getElementById('file-upload');
+        if (type === 'New' && (!fileInput.files || fileInput.files.length === 0)) {
+            checkUploadRequirement();
+            fileInput.focus();
+            e.preventDefault();
+            return false;
         }
     });
     </script>

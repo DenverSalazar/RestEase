@@ -165,8 +165,8 @@
         margin-top: 0;
       }
       .clients-tab-title.active {
-        border-bottom: 2.5px solid #506C84;
-        color: #506C84;
+        border-bottom: 2.5px solid #0077b6 !important;
+        color: #0077b6 !important;
         opacity: 1;
       }
       .status-badge.status-accepted {
@@ -310,4 +310,36 @@
       @keyframes spin {
         0% { transform: rotate(0deg);}
         100% { transform: rotate(360deg);}
+      }
+      .view-btn {
+        background: #0077b6 !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 18px;
+        font-size: 0.98rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.18s;
+      }
+      .view-btn:hover {
+        background: #005f8a !important;
+      }
+      /* Export Data and Insert buttons */
+      .btn-export,
+      .btn-insert,
+      button.btn-export,
+      button.btn-insert {
+        background: #0077b6 !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.18s;
+      }
+      .btn-export:hover,
+      .btn-insert:hover,
+      button.btn-export:hover,
+      button.btn-insert:hover {
+        background: #005f8a !important;
       }

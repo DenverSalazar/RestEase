@@ -18,13 +18,10 @@
                     </div>
                 </div>
                 <!-- Social Media Icons -->
-                <div class="col-12 col-md-3 text-center mb-3 mb-md-0">
-                    <div class="d-flex justify-content-center gap-3">
-                        <a href="#" class="text-white"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
+                <div class="col-12 col-md-3 text-center text-md-end mb-3 mb-md-0">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3">
+                       <a href="https://www.facebook.com/PadreGarcia" class="text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="https://www.padregarcia.gov.ph/" class="text-white"><i class="fas fa-globe"></i></a>
                     </div>
                 </div>
             </div>
