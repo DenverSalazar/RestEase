@@ -42,9 +42,9 @@
         <div class="associated-by mt-4">
             <p class="text-center"><b>Associated By:</b></p>
             <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
-                <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 60px; width: auto;">
-                <img src="assets/Seal_of_Batangas.png" alt="Logo 2" style="height: 50px; width: auto;">
-               
+                <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 70px; width: auto;">
+                <img src="assets/Seal_of_Batangas.png" alt="Logo 2" style="height: 50px; width: auto; margin-right: 32px;">
+                <img src="assets/RestLogo.webp" alt="Logo 3" style="height: 60px; width: auto;">
             </div>
         </div>
     </section>
@@ -78,7 +78,7 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <h3 class="service-title flex-grow-1">Record Keeping</h3>
                                 <div class="icon">
-                                    <img src="assets/record.png" alt="Record Keeping" class="img-fluid">
+                                    <img src="assets/recordsicon.png" alt="Record Keeping" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description" style="text-align: center;">
@@ -92,7 +92,7 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <h3 class="service-title flex-grow-1">Cemetery Mapping</h3>
                                 <div class="icon">
-                                    <img src="" alt="Cemetery Mapping" class="img-fluid">
+                                    <img src="assets/mappicon.png" alt="Cemetery Mapping" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description" style="text-align: center;">
@@ -106,7 +106,7 @@
                             <div class="d-flex align-items-center justify-content-center">
                                 <h3 class="service-title flex-grow-1">Notifications and Reminders</h3>
                                 <div class="icon">
-                                    <img src="" alt="Notifications and Reminders" class="img-fluid">
+                                    <img src="assets/notificon.png" alt="Notifications and Reminders" class="img-fluid">
                                 </div>
                             </div>
                             <p class="service-description" style="text-align: center;">

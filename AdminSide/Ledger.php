@@ -166,10 +166,10 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
-        <button id="importExcelBtn" style="background:#22c55e;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
           <i class="fas fa-file-import"></i> Import Data
         </button>
-        <button id="exportExcelBtn" style="background:#2563eb;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <button id="exportExcelBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
           <i class="fas fa-file-excel"></i> Export Data
         </button>
         <button id="ledgerDeleteBtn" type="button" style="background:#e74c3c;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -307,7 +307,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           </div>
         </div>
         <div style="margin-top:32px;text-align:right;border-top:1px solid #f0f0f0;padding-top:24px;">
-          <button type="submit" class="btn upload" style="width: 140px; padding: 12px 0; font-size:1.08rem;background:#506C84;color:#fff;border-radius:8px;">Submit</button>
+          <button type="submit" class="btn upload" style="width: 140px; padding: 12px 0; font-size:1.08rem;background:#0077b6;color:#fff;border-radius:8px;">Submit</button>
         </div>
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($ledgerEntry['id'] ?? ''); ?>">
       </form>
@@ -354,7 +354,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                   // MCNo can be null, show empty string if so
                   echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
                   // Action button
-                  echo '<td><a href="insert.php?id=' . $row['id'] . '" class="action-btn" style="background:#2563eb;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
+                  echo '<td><a href="insert.php?id=' . $row['id'] . '" class="action-btn" style="background:#0077b6;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
                   echo '<td><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '"></td>';
                   echo '</tr>';
                 }

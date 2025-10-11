@@ -157,8 +157,8 @@ body {
   transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
 }
 .tab.active {
-  border-bottom: 2.5px solid #506C84;
-  color: #506C84;
+  border-bottom: 2.5px solid #0077b6 !important;
+  color: #0077b6 !important;
   opacity: 1;
 }
 
@@ -283,8 +283,8 @@ body {
   position: relative;
 }
 .file-upload-area:hover {
-  border-color: #27ae60;
-  background: #f0f9f4;
+  border-color: #0077b6;
+  background: #caf0f8; /* changed from #f0f9f4 to #caf0f8 */
 }
 .file-upload-area i {
   font-size: 2.5rem;
@@ -350,7 +350,7 @@ body {
   background: #d3dbe2;
 }
 .btn-upload {
-  background: #27ae60;
+  background: #0077b6;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -363,7 +363,26 @@ body {
   transition: background 0.2s;
 }
 .btn-upload:hover {
-  background: #219150;
+  background: #0a5882; /* changed from #219150 to #0077b6 */
+}
+
+/* Export Data and Insert buttons */
+.btn-export,
+.btn-insert,
+button.btn-export,
+button.btn-insert {
+  background: #0077b6 !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.btn-export:hover,
+.btn-insert:hover,
+button.btn-export:hover,
+button.btn-insert:hover {
+  background: #005f8a !important;
 }
 
 /* Responsive for Ledger Info Section */

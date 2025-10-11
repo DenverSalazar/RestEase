@@ -147,7 +147,7 @@ if ($user) {
       }
       .cert-list-back:hover {
         color: #39546a;
-        text-decoration: underline;
+        text-decoration: none;
       }
       .cert-list {
         list-style: none;

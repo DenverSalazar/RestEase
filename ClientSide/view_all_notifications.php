@@ -1,6 +1,5 @@
 <?php
 session_start();
-include '../Includes/navbar2.php';
 include_once '../Includes/db.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
@@ -87,116 +86,91 @@ if ($user_id) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
-    <link rel="stylesheet" href="../css/clienthome.css">
-    <style>
-        .notification-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        .notification-time {
-            color: #888;
-            font-size: 0.95rem;
-        }
-        .notification-status-accepted {
-            color: #2ecc71;
-        }
-        .notification-status-denied {
-            color: #e74c3c;
-        }
-        #delete-mode-controls {
-            min-width: 180px;
-        }
-        #main-delete-btn, #delete-all-btn, #cancel-delete-btn {
-            min-width: 38px;
-            min-height: 38px;
-            padding: 0 12px;
-            font-size: 1rem;
-        }
-        #main-delete-btn i, #delete-all-btn i, #cancel-delete-btn i {
-            font-size: 1.1rem;
-        }
-        .notification-card-wrapper {
-            margin-bottom: 0.5rem;
-        }
-        .notification-card {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/view_all_notif.css">
 </head>
-<body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
-    <div class="container py-4 flex-grow-1">
-        <div class="d-flex align-items-center mb-3" style="gap:12px;">
-            <!-- Back button leftmost, beside header -->
-            <button type="button" onclick="window.history.back();" class="btn btn-link" style="font-size:1.1rem;padding:0;">
+<body>
+    <?php include '../Includes/navbar2.php'; ?>
+    <div class="main-content">
+        <div class="cert-list-container">
+            <div style="height:32px;"></div>
+            <a href="ClientHome.php" class="cert-list-back" style="display:inline-block;color:#506C84;font-size:1.08rem;font-weight:500;margin-bottom:0px;text-decoration:none;cursor:pointer;transition:color 0.18s;">
                 <i class="fas fa-arrow-left"></i> Back
-            </button>
-            <h2 class="mb-0 text-center" style="flex:1;">All Notifications</h2>
-        </div>
-        <div class="d-flex justify-content-end align-items-center mb-4" id="delete-mode-controls" style="gap: 0.5rem;">
-            <button id="delete-all-btn" class="btn btn-danger btn-sm" style="display:none;">Delete All</button>
-            <button id="main-delete-btn" class="btn btn-outline-danger btn-sm ms-2" title="Delete Notifications">
-                <i class="fas fa-trash-alt"></i> Delete
-            </button>
-            <button id="cancel-delete-btn" class="btn btn-secondary btn-sm ms-2" style="display:none;">Cancel</button>
-        </div>
-        <?php if ($user_id && count($notifications) > 0): ?>
-            <div class="row g-4" id="notifications-list">
-                <?php foreach ($notifications as $idx => $notif): ?>
-                    <div class="col-12 col-sm-6 col-md-4 notification-card-wrapper" style="position:relative;">
-                        <div class="card shadow-sm h-100 notification-card" data-idx="<?php echo $idx; ?>" style="transition:box-shadow 0.2s;">
-                            <div class="card-body d-flex flex-row align-items-center justify-content-between" style="min-height:140px;">
-                                <div style="flex:1;">
-                                    <span class="notification-title d-block mb-2">
-                                        <?php if ($notif['status'] === 'accepted'): ?>
-                                            <i class="fas fa-check-circle notification-status-accepted"></i> Request Accepted
-                                        <?php elseif ($notif['status'] === 'denied'): ?>
-                                            <i class="fas fa-times-circle notification-status-denied"></i> Request Denied
-                                        <?php elseif ($notif['status'] === 'welcome'): ?>
-                                            <i class="fas fa-smile-beam" style="color:#4B7BEC;"></i> Welcome to RestEase!
-                                        <?php elseif ($notif['status'] === 'assessment'): ?>
-                                            <i class="fas fa-file-invoice-dollar" style="color:#f39c12;"></i> Assessment of Fees
-                                        <?php endif; ?>
-                                    </span>
-                                    <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
-                                        <span>Type: <b><?php echo htmlspecialchars($notif['type'] ?? ''); ?></b></span><br>
-                                        <span>Name: <b><?php echo htmlspecialchars($notif['name'] ?? ''); ?></b></span><br>
-                                    <?php elseif ($notif['status'] === 'assessment'): ?>
-                                        <span><?php echo htmlspecialchars($notif['message']); ?></span><br>
-                                    <?php endif; ?>
-                                    <span class="notification-time d-block mt-2"><?php echo date('M d, Y h:i A', strtotime($notif['created_at'])); ?></span>
-                                </div>
-                                <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
-                                    <a href="notification_details.php?id=<?php echo isset($notif['id']) ? urlencode($notif['id']) : ''; ?>&type=<?php echo urlencode($notif['status']); ?>" class="btn btn-light border-0 ms-3" style="border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.08);" title="View Details">
-                                        <i class="fas fa-arrow-right" style="font-size:1.25rem;color:#4B7BEC;"></i>
-                                    </a>
-                                <?php elseif ($notif['status'] === 'assessment'): ?>
-                                    <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" class="btn btn-light border-0 ms-3" style="border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.08);" title="View Assessment Details">
-                                        <i class="fas fa-arrow-right" style="font-size:1.25rem;color:#f39c12;"></i>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
-                            <!-- Checkbox for deletion mode -->
-                            <input type="checkbox" class="form-check-input notif-checkbox" style="position:absolute;top:12px;right:12px;display:none;z-index:2;width:20px;height:20px;" 
+            </a>
+            <div class="cert-list-title text-muted" style="margin-bottom:18px;">All Notifications</div>
+            <div class="notif-controls" style="margin-bottom:18px;display:flex;gap:10px;">
+                <button id="delete-all-btn" class="notif-delete-all-btn" style="display:none;" title="Delete All"><i class="fas fa-trash"></i></button>
+                <button id="main-delete-btn" class="notif-delete-btn" title="Delete Selected"><i class="fas fa-trash-alt"></i></button>
+                <button id="cancel-delete-btn" class="notif-cancel-btn" style="display:none;" title="Cancel"><i class="fas fa-times"></i></button>
+            </div>
+            <?php if ($user_id && count($notifications) > 0): ?>
+                <ul class="notif-list">
+                    <div id="notifications-list">
+                    <?php foreach ($notifications as $idx => $notif): 
+                        // Color and icon logic
+                        $borderColor = $notif['status'] === 'accepted' ? '#198754' : ($notif['status'] === 'denied' ? '#DC3545' : ($notif['status'] === 'welcome' ? '#4B7BEC' : '#FFC107'));
+                        $bgColor = $notif['status'] === 'accepted' ? '#E9F7EF' : ($notif['status'] === 'denied' ? '#FDEDEC' : ($notif['status'] === 'welcome' ? '#EAF1FF' : '#FFF8E1'));
+                        $icon = $notif['status'] === 'accepted' ? 'fa-check-circle' : ($notif['status'] === 'denied' ? 'fa-times-circle' : ($notif['status'] === 'welcome' ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
+                        $iconColor = $notif['status'] === 'accepted' ? '#198754' : ($notif['status'] === 'denied' ? '#DC3545' : ($notif['status'] === 'welcome' ? '#4B7BEC' : '#FFC107'));
+                    ?>
+                        <li class="notif-card-wrapper" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;border-radius:12px;box-shadow:0 2px 8px rgba(44,62,80,0.08);margin-bottom:18px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;transition:box-shadow 0.18s;border:1px solid #e0e7ef;">
+                            <input type="checkbox" class="notif-checkbox" style="margin-right:18px;display:none;"
                                 data-status="<?php echo htmlspecialchars($notif['status']); ?>"
                                 data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>"
                                 data-created_at="<?php echo isset($notif['created_at']) ? htmlspecialchars($notif['created_at']) : ''; ?>"
                             >
-                        </div>
+                            <span class="notif-icon" style="color:<?php echo $iconColor; ?>;margin-right:18px;font-size:1.5rem;">
+                                <i class="fas <?php echo $icon; ?>"></i>
+                            </span>
+                            <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                                <div class="notif-main" style="font-weight:600;font-size:1.08rem;color:#222;">
+                                    <?php if ($notif['status'] === 'accepted'): ?>
+                                        Request Accepted
+                                    <?php elseif ($notif['status'] === 'denied'): ?>
+                                        Request Denied
+                                    <?php elseif ($notif['status'] === 'welcome'): ?>
+                                        Welcome to RestEase!
+                                    <?php elseif ($notif['status'] === 'assessment'): ?>
+                                        Assessment of Fees
+                                    <?php endif; ?>
+                                </div>
+                                <div class="notif-desc" style="color:#666;font-size:0.97rem;">
+                                    <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
+                                        Type: <b><?php echo htmlspecialchars($notif['type'] ?? ''); ?></b>
+                                        &nbsp;|&nbsp; Name: <b><?php echo htmlspecialchars($notif['name'] ?? ''); ?></b>
+                                    <?php elseif ($notif['status'] === 'assessment'): ?>
+                                        <?php echo htmlspecialchars($notif['message']); ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="notif-time" style="color:#888;font-size:0.95rem;white-space:nowrap;margin-left:18px;">
+                                <?php echo date('M d, Y h:i A', strtotime($notif['created_at'])); ?>
+                            </div>
+                            <div class="notif-actions" style="text-align:right;margin-left:18px;">
+                                <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
+                                    <a href="notification_details.php?id=<?php echo isset($notif['id']) ? urlencode($notif['id']) : ''; ?>&type=<?php echo urlencode($notif['status']); ?>" title="View Details">
+                                        <i class="fas fa-arrow-right" style="font-size:1.25rem;color:#4B7BEC;"></i>
+                                    </a>
+                                <?php elseif ($notif['status'] === 'assessment'): ?>
+                                    <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details">
+                                        <i class="fas fa-arrow-right" style="font-size:1.25rem;color:#f39c12;"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body text-center">
-                            <span class="notification-title">No notifications yet.</span>
+                </ul>
+            <?php else: ?>
+                <div class="main-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;">
+                    <div class="cert-list-container" style="max-width:500px;width:100%;margin-top:48px;">
+                        <div class="no-records-msg text-muted" style="color:#888;font-size:1.15rem;text-align:center;margin:48px 0 24px 0;font-weight:500;">
+                            No notifications available yet.<br>
+                            Please contact the administrator or check back later.
                         </div>
                     </div>
                 </div>
-            </div>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
     <footer style="margin-top:auto;">
         <?php include '../Includes/footer-client.php'; ?>
@@ -207,22 +181,14 @@ if ($user_id) {
     const deleteAllBtn = document.getElementById('delete-all-btn');
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const notifCheckboxes = () => document.querySelectorAll('.notif-checkbox');
-    const notificationCards = () => document.querySelectorAll('.notification-card-wrapper');
     let deletionMode = false;
 
     function setDeletionMode(on) {
         deletionMode = on;
-        notifCheckboxes().forEach(cb => cb.style.display = on ? 'block' : 'none');
-        notificationCards().forEach(card => {
-            card.style.transition = 'box-shadow 0.2s';
-            card.style.boxShadow = ''; // Remove red outline
-            card.style.opacity = on ? '0.97' : '1';
-        });
+        notifCheckboxes().forEach(cb => cb.style.display = on ? 'inline-block' : 'none');
         deleteAllBtn.style.display = on ? 'inline-block' : 'none';
         cancelDeleteBtn.style.display = on ? 'inline-block' : 'none';
-        mainDeleteBtn.classList.toggle('btn-outline-danger', !on);
-        mainDeleteBtn.classList.toggle('btn-danger', on);
-        mainDeleteBtn.innerHTML = on ? '<i class="fas fa-trash-alt"></i> Delete Selected' : '<i class="fas fa-trash-alt"></i> Delete';
+        mainDeleteBtn.innerHTML = on ? '<i class="fas fa-trash-alt"></i>' : '<i class="fas fa-trash-alt"></i>';
         if (!on) notifCheckboxes().forEach(cb => cb.checked = false);
     }
 
@@ -230,7 +196,6 @@ if ($user_id) {
         if (!deletionMode) {
             setDeletionMode(true);
         } else {
-            // Delete selected
             const selected = Array.from(notifCheckboxes()).filter(cb => cb.checked);
             if (selected.length === 0) {
                 alert('Select at least one notification to delete.');
@@ -250,7 +215,7 @@ if ($user_id) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    selected.forEach(cb => cb.closest('.notification-card-wrapper').remove());
+                    selected.forEach(cb => cb.closest('.notif-card-wrapper').remove());
                     setDeletionMode(false);
                 } else {
                     alert('Failed to delete selected notifications.');
@@ -297,8 +262,4 @@ if ($user_id) {
     </script>
 </body>
 </html>
-</body>
-</html>
-</html>
-</body>
-</html>
+

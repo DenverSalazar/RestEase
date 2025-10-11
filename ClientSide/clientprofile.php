@@ -438,6 +438,10 @@ $avatar_html = $has_profile_picture
     <div class="profile-container">
         <div class="profile-header"></div>
         <div class="profile-content">
+            <!-- Add Back Button -->
+            <a href="ClientHome.php" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+                &larr; Back
+            </a>
             <h2>My Profile</h2>
             <p class="subtitle">Real-time information and activities of your property.</p>
             <?php if ($show_toast): ?>
@@ -508,8 +512,9 @@ $avatar_html = $has_profile_picture
                         </div>
                     </div>
                     <div class="form-section d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-                        <button type="button" class="btn btn-success" id="saveBtn">Save</button>
+                        <!-- Hide Cancel and Save buttons by default -->
+                        <button type="button" class="btn btn-secondary" id="cancelBtn" style="display:none;">Cancel</button>
+                        <button type="button" class="btn btn-success" id="saveBtn" style="display:none;">Save</button>
                         <button type="submit" id="realSubmit" name="save_profile" style="display:none;"></button>
                     </div>
                 </form>
@@ -556,35 +561,74 @@ $avatar_html = $has_profile_picture
     });
     <?php endif; ?>
 
-    // Cancel button logic: reset form to original values
     document.addEventListener('DOMContentLoaded', function() {
         var form = document.getElementById('profileForm');
         var cancelBtn = document.getElementById('cancelBtn');
+        var saveBtn = document.getElementById('saveBtn');
+        var uploadInput = document.getElementById('uploadInput');
+        var profilePictureAction = document.getElementById('profile_picture_action');
         var initial = {
             first_name: form.first_name.value,
             last_name: form.last_name.value,
             email: form.email.value,
             contact_no: form.contact_no.value,
             profile_picture: document.getElementById('current_profile_picture').value,
-            profile_img: document.getElementById('profileAvatarContainer').innerHTML // Get the current avatar HTML
+            profile_img: document.getElementById('profileAvatarContainer').innerHTML
         };
+
+        // Helper to check if any field or profile picture changed
+        function isChanged() {
+            return (
+                form.first_name.value !== initial.first_name ||
+                form.last_name.value !== initial.last_name ||
+                form.email.value !== initial.email ||
+                form.contact_no.value !== initial.contact_no ||
+                profilePictureAction.value !== ''
+            );
+        }
+
+        // Show/hide Cancel and Save buttons based on changes
+        function updateActionButtons() {
+            if (isChanged()) {
+                cancelBtn.style.display = '';
+                saveBtn.style.display = '';
+            } else {
+                cancelBtn.style.display = 'none';
+                saveBtn.style.display = 'none';
+            }
+        }
+
+        // Listen for changes on all profile fields
+        ['first_name', 'last_name', 'email', 'contact_no'].forEach(function(field) {
+            form[field].addEventListener('input', updateActionButtons);
+        });
+
+        // Profile picture change listeners
+        uploadInput.addEventListener('change', function() {
+            profilePictureAction.value = 'upload';
+            updateActionButtons();
+        });
+        document.getElementById('deleteBtn').addEventListener('click', function() {
+            profilePictureAction.value = 'delete';
+            updateActionButtons();
+        });
+
+        // Cancel button logic: reset form to original values
         cancelBtn.addEventListener('click', function(e) {
             form.first_name.value = initial.first_name;
             form.last_name.value = initial.last_name;
             form.email.value = initial.email;
             form.contact_no.value = initial.contact_no;
-            document.getElementById('profile_picture_action').value = '';
+            profilePictureAction.value = '';
             document.getElementById('current_profile_picture').value = initial.profile_picture;
-            document.getElementById('profileAvatarContainer').innerHTML = initial.profile_img; // Reset avatar
+            document.getElementById('profileAvatarContainer').innerHTML = initial.profile_img;
+            uploadInput.value = '';
+            updateActionButtons();
         });
 
         // Profile picture preview logic
         var uploadBtn = document.getElementById('uploadBtn');
-        var uploadInput = document.getElementById('uploadInput');
-        var deleteBtn = document.getElementById('deleteBtn');
         var profileAvatar = document.getElementById('profileAvatarContainer'); // Target the container
-        var profilePictureAction = document.getElementById('profile_picture_action');
-        var currentProfilePicture = document.getElementById('current_profile_picture');
         var originalImg = profileAvatar.innerHTML; // Get the current avatar HTML
         var fileToUpload = null;
 
@@ -610,7 +654,7 @@ $avatar_html = $has_profile_picture
                 fileToUpload = file;
             }
         });
-        deleteBtn.addEventListener('click', function() {
+        document.getElementById('deleteBtn').addEventListener('click', function() {
             // Swap image with initials live
             var avatarContainer = document.getElementById('profileAvatarContainer');
             avatarContainer.innerHTML = '<div class="profile-avatar-initials" style="width:56px;height:56px;">' + '<?php echo $initials; ?>' + '</div>';
@@ -620,7 +664,6 @@ $avatar_html = $has_profile_picture
         });
 
         // Save button logic with confirmation modal (pay-confirm-modal style)
-        var saveBtn = document.getElementById('saveBtn');
         var realSubmit = document.getElementById('realSubmit');
         var profileConfirmModal = document.getElementById('profilePayConfirmModal');
         var profileConfirmModalOverlay = document.getElementById('profileConfirmModalOverlay');

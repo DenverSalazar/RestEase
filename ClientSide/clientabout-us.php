@@ -27,8 +27,8 @@ if (!isset($_SESSION['user_id'])) {
     <!-- About Us Hero Section -->
     <section class="about-hero">
         <div class="container">
-            <h1>About Us</h1>
-            <p>RestEase is a digital cemetery management system that helps Padre Garcia keep records organized, certificates updated, and families informed with secure and efficient services.</p>
+            <h1 class="fade-in-up delay-1">About Us</h1>
+            <p class="fade-in-up delay-2">RestEase is a digital cemetery management system that helps Padre Garcia keep records organized, certificates updated, and families informed with secure and efficient services.</p>
         </div>
     </section>
 
@@ -37,22 +37,22 @@ if (!isset($_SESSION['user_id'])) {
         <div class="container">
             <div class="row g-4">
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
+                    <div class="team-photo fade-in-up delay-1">
                         <img src="../assets/abt1.webp" alt="Team Member 1" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
+                    <div class="team-photo fade-in-up delay-2">
                         <img src="../assets/abt2.webp" alt="Team Member 2" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
+                    <div class="team-photo fade-in-up delay-3">
                         <img src="../assets/abt3.webp" alt="Team Member 3" loading="lazy">
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                    <div class="team-photo">
+                    <div class="team-photo fade-in-up delay-2">
                         <img src="../assets/abt4.webp" alt="Team Member 4" loading="lazy">
                     </div>
                 </div>

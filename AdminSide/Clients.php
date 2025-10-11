@@ -105,7 +105,7 @@ if (!isset($_SESSION['admin_id'])) {
                         $disableButtonText = '<i class="fas fa-user-check"></i> Enable';
                         $disableButtonClass = 'enable';
                     } else {
-                        $statusHtml = '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
+                        $statusHtml = '<span style="background:#19d64c;color:#fff;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
                         $disableButtonText = '<i class="fas fa-user-slash"></i> Disable';
                         $disableButtonClass = 'disable';
                     }
@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.classList.remove('disable');
                         this.classList.add('enable');
                     } else {
-                        statusCell.innerHTML = '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
+                        statusCell.innerHTML = '<span style="background:#19d64c;color:#fff;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
                         this.innerHTML = '<i class="fas fa-user-slash"></i> Disable';
                         this.classList.remove('enable');
                         this.classList.add('disable');
