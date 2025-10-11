@@ -31,6 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
         $show_error = true;
         $error_msg = 'Phone number must contain only numbers and allowed symbols.';
     } else {
+        // Fetch old name before update
+        $stmt = $conn->prepare("SELECT first_name, last_name FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->bind_result($old_first_name, $old_last_name);
+        $stmt->fetch();
+        $stmt->close();
+        $old_fullname = trim($old_first_name . ' ' . $old_last_name);
+        $new_fullname = trim($new_first_name . ' ' . $new_last_name);
+
         // Handle profile picture upload or delete
         $profile_picture_action = $_POST['profile_picture_action'] ?? '';
         $current_profile_picture = $_POST['current_profile_picture'] ?? '';
@@ -66,10 +76,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
             }
         }
         if (!$show_error) {
+            // Update users table
             $stmt = $conn->prepare('UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_no = ?, profile_picture = ? WHERE id = ?');
             $stmt->bind_param('sssssi', $new_first_name, $new_last_name, $new_email, $new_contact_no, $new_profile_picture, $user_id);
             $stmt->execute();
+            $stmt->close();
             $show_toast = true;
+
+            // If name changed, update all related tables
+            if ($old_fullname !== $new_fullname) {
+                // Update informantName in deceased
+                $stmt = $conn->prepare("UPDATE deceased SET informantName = ? WHERE informantName = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update Payee in ledger
+                $stmt = $conn->prepare("UPDATE ledger SET Payee = ? WHERE Payee = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update informant_name in client_requests
+                $stmt = $conn->prepare("UPDATE client_requests SET informant_name = ? WHERE informant_name = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update informant_name in accepted_request
+                $stmt = $conn->prepare("UPDATE accepted_request SET informant_name = ? WHERE informant_name = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update informant_name in assessment
+                $stmt = $conn->prepare("UPDATE assessment SET informant_name = ? WHERE informant_name = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update InformantName and Payee in certification
+                $stmt = $conn->prepare("UPDATE certification SET InformantName = ? WHERE InformantName = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                $stmt = $conn->prepare("UPDATE certification SET Payee = ? WHERE Payee = ?");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update name in archive_clients (all matching old name, case-insensitive)
+                $stmt = $conn->prepare("UPDATE archive_clients SET first_name = ?, last_name = ? WHERE LOWER(TRIM(first_name)) = LOWER(?) AND LOWER(TRIM(last_name)) = LOWER(?)");
+                $stmt->bind_param("ssss", $new_first_name, $new_last_name, $old_first_name, $old_last_name);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update informantName in archive_deceased (all matching old_fullname, case-insensitive)
+                $stmt = $conn->prepare("UPDATE archive_deceased SET informantName = ? WHERE LOWER(TRIM(informantName)) = LOWER(?)");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+
+                // Update informant_name in denied_request (archive requests)
+                $stmt = $conn->prepare("UPDATE denied_request SET informant_name = ? WHERE LOWER(TRIM(informant_name)) = LOWER(?)");
+                $stmt->bind_param("ss", $new_fullname, $old_fullname);
+                $stmt->execute();
+                $stmt->close();
+            }
         }
     }
 }
@@ -605,6 +679,12 @@ $avatar_html = $has_profile_picture
             }
             hideProfileConfirmModal();
         });
+    });
+    </script>
+    <!-- Bootstrap JS (optional, for responsive navbar) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
     });
     </script>
     <!-- Bootstrap JS (optional, for responsive navbar) -->

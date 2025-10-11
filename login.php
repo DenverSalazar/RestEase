@@ -9,35 +9,50 @@ if ($conn->connect_error) {
 
 $login_error = "";
 $login_success = false;
-//$recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secret key here
+$recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secret key here
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-   // $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+  //  $recaptcha_response = $_POST['g-recaptcha-response'] ?? ''; // <-- FIXED
 
     // Basic validation
     if (!$email || !$password) {
         $login_error = "All fields are required.";
-    //      } elseif (empty($recaptcha_response)) {
-    //          $login_error = "Please complete the reCAPTCHA.";
+    // } elseif (empty($recaptcha_response)) {
+    //     $login_error = "Please complete the reCAPTCHA.";
     // } else {
 
     //     // reCAPTCHA validation
-    //      $recaptcha_verify = file_get_contents(
-    //          "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-    //      );
-    //      $recaptcha_success = json_decode($recaptcha_verify);
-    //      if (!$recaptcha_success->success) {
-    //          $login_error = "reCAPTCHA verification failed. Please try again.";
-    //      }
+    //     $recaptcha_verify = file_get_contents(
+    //         "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+    //     );
+    //     $recaptcha_success = json_decode($recaptcha_verify);
+    //     if (!$recaptcha_success->success) {
+    //         $login_error = "reCAPTCHA verification failed. Please try again.";
+    //     }
     }
-
     // Only proceed if no error
     if (!$login_error) {
-        if (!$email || !$password) {
-            $login_error = "Please enter both email and password.";
+        // Try admin login first
+        $stmt = $conn->prepare("SELECT id, password FROM admin_accounts WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows == 1) {
+            $stmt->bind_result($admin_id, $hashed_password);
+            $stmt->fetch();
+            if (password_verify($password, $hashed_password)) {
+                $_SESSION['admin_id'] = $admin_id;
+                header("Location: AdminSide/Dashboard.php");
+                exit;
+            } else {
+                $login_error = "Incorrect password.";
+            }
+            $stmt->close();
         } else {
+            $stmt->close();
+            // Try client login
             $stmt = $conn->prepare("SELECT id, password, status FROM users WHERE email = ?");
             $stmt->bind_param("s", $email);
             $stmt->execute();
@@ -45,13 +60,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($stmt->num_rows == 1) {
                 $stmt->bind_result($user_id, $hashed_password, $user_status);
                 $stmt->fetch();
-
-                // Check if account is disabled
                 if ($user_status === 'disabled') {
                     $login_error = "Your account has been disabled. Please contact support.";
                 } elseif (password_verify($password, $hashed_password)) {
                     $_SESSION['user_id'] = $user_id;
-                    // Redirect to client home on successful login
                     header("Location: ClientSide/ClientHome.php");
                     exit;
                 } else {
@@ -145,7 +157,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input type="email" class="form-control" placeholder="Email" id="email" name="email" required
                                     value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES); ?>">
                                 <div class="invalid-feedback" id="emailError" style="display:none;">
-                                    Email must end with @yahoo.com or @gmail.com.
+                                    Email must end with @yahoo.com, @gmail.com, or @restease.com.
                                 </div>
                             </div>
                             <div class="mb-3 password-container">
@@ -165,8 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
-
-                            <!-- reCAPTCHA widget -->
+                                <!-- reCAPTCHA widget -->
                             
                             <!-- <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
@@ -177,12 +188,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="divider">
                                 <span>or</span>
                             </div>
-
                             <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
                                 <img src="assets/google-icon.png" alt="Google">
                                 Sign in with Google
                             </button>
-
                             <p class="signup-text mt-4 text-center">
                                 Don't have an account? <a href="register.php">Sign Up</a>
                             </p>
@@ -258,7 +267,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Email validation function
         function validateEmail(email) {
-            return email.endsWith('@yahoo.com') || email.endsWith('@gmail.com');
+            return email.endsWith('@yahoo.com') || email.endsWith('@gmail.com') || email.endsWith('@restease.com');
         }
 
         let attemptedSubmit = false;

@@ -635,9 +635,11 @@ if ($id) {
     // Calculate age on page load
     calculateAge();
 
-    // Add event listeners
+    // Add event listeners for both change and input events
     document.getElementById('born').addEventListener('change', calculateAge);
+    document.getElementById('born').addEventListener('input', calculateAge);
     document.getElementById('dateDied').addEventListener('change', calculateAge);
+    document.getElementById('dateDied').addEventListener('input', calculateAge);
 
     function setResidencyFromDropdown(select) {
       if (select.value) {

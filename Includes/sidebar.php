@@ -108,7 +108,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
         Settings
         <span id="notifBadge" style="display:none;position:absolute;top:50%;right:18px;transform:translateY(-50%);background:#e74c3c;color:#fff;font-size:0.85rem;font-weight:600;padding:2px 7px;border-radius:12px;min-width:22px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.08);"></span>
       </a>
-      <a href="./../AdminLogin.php" class="nav-item">
+      <a href="./../login.php" class="nav-item">
         <i class="fas fa-sign-out-alt"></i>
         Logout
       </a>

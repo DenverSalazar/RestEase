@@ -164,6 +164,74 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-color: #e74c3c !important;
             box-shadow: 0 0 0 0.2rem rgba(231,76,60,.25);
         }
+        #termsModal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(44,62,80,0.18);
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+        #termsModal.show {
+            opacity: 1;
+        }
+        .terms-modal-content {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+            position: relative;
+            font-family: 'Poppins', Arial, sans-serif;
+            animation: fadeInModal 0.2s;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.97);}
+            to { opacity: 1; transform: scale(1);}
+        }
+        .terms-modal-close {
+            position: absolute;
+            font-size: 1.7rem;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.18s;
+        }
+        .terms-modal-close:hover {
+            color: #222;
+        }
+        .terms-modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .terms-modal-subtitle {
+            color: #888;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .terms-modal-content-inner {
+            font-size: 1.08rem;
+            margin-bottom: 18px;
+        }
+        .terms-modal-list {
+            margin-bottom: 18px;
+            padding-left: 18px;
+        }
+        .terms-modal-list li {
+            margin-bottom: 8px;
+        }
+        @media (max-width: 600px) {
+            .terms-modal-content {
+                max-width: 98vw !important;
+                height: 90vh !important;
+                padding: 12px 4px 12px 4px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -265,7 +333,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input <?php if($field_errors['terms']) echo 'is-invalid'; ?>"
                                     id="terms" name="terms" required <?php if($input['terms']) echo 'checked'; ?>>
-                                <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link">Terms & Conditions</a></label>
+                                <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link" id="openTermsModal">Terms & Conditions</a></label>
                             </div>
                             <!-- reCAPTCHA widget -->
                             <!--
@@ -321,6 +389,73 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             setTimeout(closeToast, 5000); // Auto-close after 5 seconds
         });
         <?php endif; ?>
+
+        // Terms & Conditions Modal Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            var termsModal = document.getElementById('termsModal');
+            var openTermsBtn = document.getElementById('openTermsModal');
+            var closeTermsBtn = document.getElementById('closeTermsModal');
+            openTermsBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                termsModal.style.display = 'flex';
+                setTimeout(function() {
+                    termsModal.classList.add('show');
+                }, 10);
+            });
+            closeTermsBtn.addEventListener('click', function() {
+                termsModal.classList.remove('show');
+                setTimeout(function() {
+                    termsModal.style.display = 'none';
+                }, 200);
+            });
+            // Close modal when clicking outside content
+            termsModal.addEventListener('click', function(e) {
+                if (e.target === termsModal) {
+                    closeTermsBtn.click();
+                }
+            });
+            // Escape key closes modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "Escape" && termsModal.style.display === 'flex') {
+                    closeTermsBtn.click();
+                }
+            });
+        });
     </script>
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal">
+        <div class="terms-modal-content" style="max-width: 480px; width: 100%; min-width: 320px; padding: 44px 32px 36px 32px; box-sizing: border-box; height: 650px; display: flex; flex-direction: column;">
+            <button class="terms-modal-close" id="closeTermsModal" aria-label="Close" style="top:8px;right:18px;">&times;</button>
+            <div style="flex:1; overflow-y:auto; padding-right:6px;">
+                <div class="terms-modal-subtitle">AGREEMENT</div>
+                <div class="terms-modal-title">Terms and Conditions</div>
+                <div class="terms-modal-content-inner">
+                    To proceed with managing cemetery records or requesting certificates through RestEase, you must first agree to these User Terms. By clicking "I AGREE", you confirm that you have read and accepted the responsibilities outlined below:
+                </div>
+                <div class="terms-modal-content-inner">
+                    <strong>As a User, You Agree That:</strong>
+                    <ul class="terms-modal-list">
+                        <li>All information you provide (e.g., deceased details, applicant name, contact info) is accurate and complete.</li>
+                        <li>You are authorized to request records or certificates for the deceased individuals listed.</li>
+                        <li>You are using this system for legitimate and respectful purposes only.</li>
+                        <li>Issuance of certificates (e.g., interment, renewal) is subject to review and approval by the Municipal Planning and Development Office (MPDO).</li>
+                        <li>You will comply with all local rules and requirements related to cemetery management.</li>
+                        <li>Providing false or misleading information may result in request rejection and possible account suspension.</li>
+                    </ul>
+                    <strong>Before Submitting Any Request:</strong>
+                    <ul class="terms-modal-list">
+                        <li>Ensure that all required documents are uploaded, clear, and complete.</li>
+                        <li>Double-check your entries for accuracy before final submission.</li>
+                        <li>Incomplete or incorrect submissions may cause delays or disapproval.</li>
+                    </ul>
+                    By using this system, you also agree to respect the privacy, integrity, and purpose of the platform. For questions, please contact your local MPDO office.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+        </div>
+    </div>
 </body>
 </html>

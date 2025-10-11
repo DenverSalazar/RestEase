@@ -69,7 +69,7 @@
                 </div>
                 
                 <div class="col-lg-5">
-                    <div class="contact-info">
+                   <div class="contact-info d-flex flex-column justify-content-center h-100" style="min-height: 400px;">
                         <h3>Address</h3>
                         <p>
                             <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
