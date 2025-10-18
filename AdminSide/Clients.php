@@ -15,12 +15,14 @@ if (!isset($_SESSION['admin_id'])) {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Clients.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/header.css">
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
 </head>
 <body>
   <!-- Sidebar -->
   <?php include '../Includes/sidebar.php'; ?>
+   <?php include '../Includes/header.php'; ?>
 
   <!-- Main Content -->
   <main class="main-content">

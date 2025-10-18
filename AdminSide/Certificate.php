@@ -225,6 +225,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Reports.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/header.css">
   <style>
     :root {
       --primary-color: #1a1a1a;
@@ -391,6 +392,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
 <body>
    <!-- Sidebar -->
    <?php include '../Includes/sidebar.php'; ?>
+   <?php include '../Includes/header.php'; ?>
 
   <!-- Main Content -->
 <main class="main-content">
@@ -1124,6 +1126,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
   }
 
   body {
+    print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
     font-family: "Poppins", "Times New Roman", serif;
     display: flex;

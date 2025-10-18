@@ -598,6 +598,12 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       </div>
       <div class="user-profile">
         <div class="profile-info">
+            <!-- notification bell placed to the left of the avatar; inline styles keep layout/size unchanged -->
+      <button class="notif-bell" aria-label="Notifications" title="Notifications"
+        onclick="window.location.href='/RestEase/AdminSide/Notifications.php';"
+        style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;">
+        <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
+      </button>
           <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
           <div>
             <div class="profile-name"><?php echo htmlspecialchars($adminName); ?></div>

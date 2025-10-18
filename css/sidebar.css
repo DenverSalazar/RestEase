@@ -3,7 +3,7 @@
   --sidebar-width: 240px;
   --header-height: 60px;
   --border-radius: 8px;
-  --sidebar-bg: white;
+  --sidebar-bg: #fafbfc;;
   /* --sidebar-bg: linear-gradient(180deg, #caf0f8 0%, #d8ebef 50%, #caf0f8 100%); */
   --sidebar-highlight: #0077b6;
 }

@@ -141,6 +141,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/Ledger.css">
   <link rel="stylesheet" href="../css/sidebar.css">
+  <link rel="stylesheet" href="../css/header.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
     /* Ledger filter button boxed style + active underline (matches Certification Masterlist) */
@@ -178,6 +179,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
 <body>
   <!-- Sidebar -->
   <?php include '../Includes/sidebar.php'; ?>
+   <?php include '../Includes/header.php'; ?>
 
   <!-- Main Content -->
   <main class="main-content">

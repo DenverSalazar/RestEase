@@ -120,6 +120,9 @@ if (isset($_POST['mark_all_read'])) {
     .navbar-links .notification-bell-desktop { display:none !important; }
     .mobile-only-profile { display:block; }
     .mobile-only-logout { display:block; }
+
+    /* Hide profile avatar on small devices - avatar not needed in mobile view */
+    #profileAvatar { display: none !important; }
 }
 </style>
 

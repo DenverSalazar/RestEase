@@ -17,6 +17,7 @@ if (!isset($_SESSION['admin_id'])) {
   <link rel="stylesheet" href="../css/Analytics.css">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/Records.css">
+  <link rel="stylesheet" href="../css/header.css">
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
@@ -30,6 +31,8 @@ if (!isset($_SESSION['admin_id'])) {
 <body>
   <!-- Sidebar -->
   <?php include '../Includes/sidebar.php'; ?>
+   <?php include '../Includes/header.php'; ?>
+
 
   <!-- Main Content -->
   <main class="main-content">
