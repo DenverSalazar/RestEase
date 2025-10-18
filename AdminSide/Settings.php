@@ -145,6 +145,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
 #archive-clients-table_filter {
   display: none !important;
 }
+/* Ensure the tabs are clickable and visible above other elements */
+.settings-tabs {
+  position: relative;
+  z-index: 60; /* bring tabs above overlays/containers */
+}
+.settings-tab {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.notif-left {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:72px; /* reduced since icon box is removed */
+}
+
+/* add mail icon styling */
+.notif-icon{
+  width:36px;
+  height:36px;
+  border-radius:6px;
+  background:#f5f7fa;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#2d72d9;
+  font-weight:700;
+  flex: 0 0 36px;
+}
+
+/* Add highlight style and make dot/icon clickable */
+.notif-dot { cursor: pointer; }
+.notif-icon { cursor: pointer; }
+
+/* visual highlight when user "selects" the unread notif by clicking the green dot */
+.notif-selected {
+  background: linear-gradient(90deg, rgba(45,114,217,0.03), rgba(45,114,217,0.02));
+  border: 1px solid rgba(45,114,217,0.06);
+  box-shadow: 0 2px 10px rgba(45,114,217,0.03);
+}
+
+/* ensure title weight toggles smoothly */
+.notif-title span { transition: font-weight 120ms ease; }
   </style>
 </head>
 <body>
@@ -780,87 +824,480 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           </script>
         </div>
         <div class="settings-card" id="notificationTab" style="display:none;">
+          <!-- Replaced notification UI to match provided design -->
           <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
           <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">Notification settings and preferences will be shown here.</div>
-          <!-- Notification Sub-tabs -->
-          <div style="border-bottom:1px solid #e0e0e0; margin-bottom: 10px; margin-top: 18px;">
-            <div id="notifSubTabs" style="display:flex;gap:32px;">
-              <div class="notif-subtab active" data-notiftab="all" id="notifAllTabBtn" style="padding-bottom:6px;cursor:pointer;border-bottom:2px solid #2d72d9;font-weight:500;color:#2d72d9;">All</div>
-              <div class="notif-subtab" data-notiftab="newusers" id="notifNewUsersTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">New Users</div>
-              <div class="notif-subtab" data-notiftab="newrequests" id="notifNewRequestsTabBtn" style="padding-bottom:6px;cursor:pointer;color:#888;">New Requests</div>
+
+          <!-- New notification header area (tabs + search) -->
+          <div class="notif-list-wrapper" style="background:transparent;">
+            <div class="notif-list-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:18px;">
+                <div class="notif-tabs" style="display:flex;gap:12px;align-items:center;">
+                  <button class="notif-list-tab active" data-filter="all">
+                    <span class="tab-count" id="tabAllCount">0</span>
+                    <span>All</span>
+                  </button>
+                  <button class="notif-list-tab" data-filter="archive">
+                    <span class="tab-count" id="tabArchiveCount">0</span>
+                    <span>Archive</span>
+                  </button>
+                  <button class="notif-list-tab" data-filter="favorite">
+                    <span class="tab-count" id="tabFavCount">0</span>
+                    <span>Favorite</span>
+                  </button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="position:relative;">
+                  <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#999;"></i>
+                  <input id="notifSearch" type="text" placeholder="Search by Name Product" style="padding:10px 14px 10px 36px;border:1px solid #e3e7ed;border-radius:20px;min-width:240px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification list -->
+            <div id="notifListContainer" style="display:flex;flex-direction:column;gap:10px;">
+              <!-- JS will populate notification items here -->
             </div>
           </div>
-          <!-- Notification Tab Contents -->
-          <div id="notifAllTab">
-            <div id="systemNotifications">
-              <?php
-              // Show notification for new client requests with client name
-              include_once '../Includes/db.php';
-              $result = $conn->query("SELECT cr.id, u.first_name, u.last_name FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC LIMIT 5");
-              if ($result && $result->num_rows > 0) {
-                $notifArr = [];
-                while ($row = $result->fetch_assoc()) {
-                  $clientName = htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name']));
-                  $notifArr[] = [
-                    'id' => $row['id'],
-                    'name' => $clientName
-                  ];
-                }
-                echo '<script>var systemNotifs = ' . json_encode($notifArr) . '; localStorage.setItem("systemNotifs", JSON.stringify(systemNotifs));</script>';
-                echo '<div id="notifList"></div>';
-              } else {
-                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new client requests.</div>';
+
+          <!-- Small template styles for list (moved inline for single-file change) -->
+          <style>
+            .notif-list-item {
+              display:flex;
+              align-items:center;
+              background:#fff;
+              padding:12px 16px;
+              border-radius:10px;
+              box-shadow:0 1px 4px rgba(0,0,0,0.04);
+              border:1px solid #eef2f5;
+              gap:12px;
+            }
+            .notif-left {
+              display:flex;
+              align-items:center;
+              gap:8px;
+              min-width:72px; /* reduced since icon box is removed */
+            }
+            .notif-dot {
+              width:10px;
+              height:10px;
+              border-radius:50%;
+              background:#b6dca6; /* green unread */
+              display:inline-block;
+              box-shadow:0 1px 2px rgba(0,0,0,0.06);
+            }
+            .notif-dot.read {
+              background:transparent;
+              border:1px solid #e6e9ec;
+            }
+            .notif-star-left {
+              background: transparent;
+              border: none;
+              padding: 0;
+              margin: 0;
+              width: auto;
+              height: auto;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              color: #bfc6cc;
+              font-size: 1.15rem; /* adjust icon size if needed */
+            }
+            .notif-star-left[aria-pressed="true"] {
+              color: #f0b400;
+            }
+            .notif-star-left:focus {
+              outline: none;
+              box-shadow: none;
+            }
+            .notif-main {
+              flex:1; min-width:0;
+            }
+            .notif-title {
+              font-weight:600;
+              color:#222;
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+              display:flex;
+              align-items:center;
+              gap:8px;
+            }
+            .notif-body {
+              color:#666;
+              font-size:0.95rem;
+              margin-top:4px;
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            }
+            .notif-meta {
+              text-align:right;
+              min-width:110px;
+              color:#9aa3ad;
+              font-size:0.9rem;
+            }
+            .notif-actions {
+              display:flex;
+              align-items:center;
+              gap:8px;
+            }
+            .notif-delete {
+              background:#ff6b6b;border:none;color:#fff;padding:8px;border-radius:8px;cursor:pointer;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+            }
+            .tab-count {
+              display:inline-block;
+              background:#e9eef8;
+              color:#2d72d9;
+              padding:3px 8px;
+              border-radius:999px;
+              font-weight:700;
+              margin-right:8px;
+              font-size:0.95rem;
+            }
+            .notif-list-tab {
+              background:transparent;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#444;
+            }
+            .notif-list-tab.active { background:#fff;border:1px solid #e3e7ed;box-shadow:0 1px 4px rgba(0,0,0,0.03);color:#2d72d9; }
+          </style>
+
+          <!-- Client-side rendering and interactions -->
+          <script>
+            (function(){
+              // Read server-provided arrays (fall back to localStorage) and normalize
+              const systemNotifs = window.systemNotifs || JSON.parse(localStorage.getItem('systemNotifs') || '[]');
+              const newUserNotifs = window.newUserNotifs || JSON.parse(localStorage.getItem('newUserNotifs') || '[]');
+              const newRequestNotifs = window.newRequestNotifs || JSON.parse(localStorage.getItem('newRequestNotifs') || '[]');
+
+              // Build unified list
+              const all = [];
+              systemNotifs.forEach(n => {
+                all.push({
+                  id: 'req_'+(n.id||Math.random()),
+                  kind: 'request',
+                  title: 'New client request',
+                  name: n.name || '',
+                  message: 'New client request received from ' + (n.name || ''),
+                  time: '', // optional
+                  readKey: 'notif_read_req_'+(n.id||''),
+                });
+              });
+              newRequestNotifs.forEach(n => {
+                all.push({
+                  id: 'nreq_'+(n.id||Math.random()),
+                  kind: 'request',
+                  title: 'New client request',
+                  name: n.name || '',
+                  message: 'New client request received from ' + (n.name || ''),
+                  time: n.created_at || '',
+                  readKey: 'notif_read_nreq_'+(n.id||''),
+                });
+              });
+              newUserNotifs.forEach(u => {
+                all.push({
+                  id: 'usr_'+(u.id||Math.random()),
+                  kind: 'user',
+                  title: 'New user registered',
+                  name: u.name || '',
+                  message: 'New user registered: ' + (u.name||'') + (u.email ? ' ('+u.email+')' : ''),
+                  time: u.created_at || '',
+                  readKey: 'notif_read_usr_'+(u.id||''),
+                });
+              });
+
+              // Sort by time if available
+              all.sort((a,b)=>{
+                if (a.time && b.time) return new Date(b.time) - new Date(a.time);
+                return 0;
+              });
+
+              // Pagination / display state
+              const PAGE_SIZE = 10;
+              let currentPage = 1;
+              let showAll = false;
+
+              function updateCounts() {
+                const allCount = all.length;
+                const archiveCount = 0;
+                const favCount = all.filter(item => localStorage.getItem('notif_fav_' + item.id) === '1').length;
+                document.getElementById('tabAllCount').textContent = allCount;
+                document.getElementById('tabArchiveCount').textContent = archiveCount;
+                document.getElementById('tabFavCount').textContent = favCount;
               }
-              ?>
-            </div>
-          </div>
-          <div id="notifNewUsersTab" style="display:none;">
-            <div id="newUsersNotifications">
-              <?php
-              // Show notification for new users
-              $result_users = $conn->query("SELECT id, first_name, last_name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
-              if ($result_users && $result_users->num_rows > 0) {
-                $userArr = [];
-                while ($row = $result_users->fetch_assoc()) {
-                  $userArr[] = [
-                    'id' => $row['id'],
-                    'name' => htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name'])),
-                    'email' => htmlspecialchars($row['email']),
-                    'created_at' => htmlspecialchars($row['created_at'])
-                  ];
+
+              function renderList(filter, query) {
+                const container = document.getElementById('notifListContainer');
+                container.innerHTML = '';
+                const q = (query||'').toLowerCase();
+
+                // apply filter + search
+                let items = all.filter(item=>{
+                  if (filter==='archive') return false;
+                  if (filter==='favorite' && localStorage.getItem('notif_fav_' + item.id) !== '1') return false;
+                  if (!q) return true;
+                  return (item.name||'').toLowerCase().includes(q) || (item.message||'').toLowerCase().includes(q);
+                });
+
+                // pagination calculation
+                const total = items.length;
+                const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+                if (currentPage > totalPages) currentPage = 1; // reset if out of range
+
+                // slice items based on page unless showAll
+                const itemsToRender = showAll ? items : items.slice((currentPage-1)*PAGE_SIZE, (currentPage-1)*PAGE_SIZE + PAGE_SIZE);
+
+                if (itemsToRender.length === 0) {
+                  const empty = document.createElement('div');
+                  empty.style.color = '#888';
+                  empty.style.textAlign = 'center';
+                  empty.style.padding = '28px';
+                  empty.textContent = 'No notifications.';
+                  container.appendChild(empty);
+                  // still show footer (page info/pagination) if total > 0
+                  if (total > 0) appendFooter(container, total, totalPages);
+                  return;
                 }
-                echo '<script>var newUserNotifs = ' . json_encode($userArr) . '; localStorage.setItem("newUserNotifs", JSON.stringify(newUserNotifs));</script>';
-                echo '<div id="newUserNotifList"></div>';
-              } else {
-                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new users found.</div>';
-              }
-              ?>
-            </div>
-          </div>
-          <div id="notifNewRequestsTab" style="display:none;">
-            <div id="newRequestsNotifications">
-              <?php
-              // Show notification for new client requests (same as All)
-              $result = $conn->query("SELECT cr.id, u.first_name, u.last_name FROM client_requests cr JOIN users u ON cr.user_id = u.id ORDER BY cr.created_at DESC LIMIT 5");
-              if ($result && $result->num_rows > 0) {
-                $notifArr = [];
-                while ($row = $result->fetch_assoc()) {
-                  $clientName = htmlspecialchars(trim($row['first_name'] . ' ' . $row['last_name']));
-                  $notifArr[] = [
-                    'id' => $row['id'],
-                    'name' => $clientName
-                  ];
-                }
-                echo '<script>var newRequestNotifs = ' . json_encode($notifArr) . '; localStorage.setItem("newRequestNotifs", JSON.stringify(newRequestNotifs));</script>';
-                echo '<div id="newRequestNotifList"></div>';
-              } else {
-                echo '<div style="color:#888;font-size:0.97rem;text-align:center;margin-top:24px;">No new client requests.</div>';
-              }
-              ?>
-            </div>
-          </div>
-        </div>
-        <!-- Unsaved changes bar -->
+
+                itemsToRender.forEach(item=>{
+                  const isRead = localStorage.getItem(item.readKey) === '1';
+                  const isFav = localStorage.getItem('notif_fav_' + item.id) === '1';
+                  const row = document.createElement('div');
+                  row.className = 'notif-list-item';
+                  row.innerHTML = `
+                    <div class="notif-left">
+                      <span class="notif-dot ${isRead ? 'read' : ''}" title="${isRead ? 'Read' : 'Unread'}"></span>
+                      <div class="notif-icon" title="Mark as read"><i class="fas fa-envelope"></i></div>
+                      <button class="notif-star-left" title="Favorite" aria-pressed="${isFav ? 'true' : 'false'}">
+                        <i class="fas fa-star"></i>
+                      </button>
+                    </div>
+                    <div class="notif-main">
+                      <div class="notif-title"><span style="font-weight:${isRead ? '400' : '700'}">${item.title}${item.name ? ' — ' + item.name : ''}</span></div>
+                      <div class="notif-body">${item.message}</div>
+                    </div>
+                    <div class="notif-meta"><div>${item.time ? (new Date(item.time)).toLocaleString() : 'Just Now'}</div></div>
+                    <div class="notif-actions"><button class="notif-delete" title="Delete"><i class="fas fa-trash"></i></button></div>
+                  `;
+
+      // star handler (unchanged)
+      const starBtn = row.querySelector('.notif-star-left');
+      starBtn.style.color = isFav ? '#f0b400' : '#bfc6cc';
+      starBtn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        const key = 'notif_fav_' + item.id;
+        const currentlyFav = localStorage.getItem(key) === '1';
+        if (currentlyFav) {
+          localStorage.removeItem(key);
+          starBtn.style.color = '#bfc6cc';
+          starBtn.setAttribute('aria-pressed','false');
+        } else {
+          localStorage.setItem(key,'1');
+          starBtn.style.color = '#f0b400';
+          starBtn.setAttribute('aria-pressed','true');
+        }
+        updateCounts();
+        if (currentFilter === 'favorite') renderList(currentFilter, document.getElementById('notifSearch').value);
+      });
+
+      // dot click: toggle highlight only (do NOT mark as read)
+      const dotBtn = row.querySelector('.notif-dot');
+      dotBtn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        // toggle visible highlight
+        row.classList.toggle('notif-selected');
+      });
+
+      // mail icon click: mark as read, remove highlight, update UI
+      const iconBtn = row.querySelector('.notif-icon');
+      iconBtn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        const key = item.readKey;
+        localStorage.setItem(key, '1');
+        // visual updates
+        dotBtn.classList.add('read');
+        row.classList.remove('notif-selected');
+        // set title weight to normal
+        const titleSpan = row.querySelector('.notif-title span');
+        if (titleSpan) titleSpan.style.fontWeight = '400';
+        // refresh counts and badge
+        updateCounts();
+        refreshBadge();
+      });
+
+      // row click should ignore clicks on dot/icon/star/delete (so dot/icon handlers work)
+      row.addEventListener('click', function(e){
+        if (e.target.closest('.notif-delete') || e.target.closest('.notif-star-left') || e.target.closest('.notif-dot') || e.target.closest('.notif-icon')) return;
+        localStorage.setItem(item.readKey, '1');
+        if (item.kind === 'request') {
+          window.location.href = 'ClientsRequest.php';
+        } else {
+          const dot = row.querySelector('.notif-dot');
+          if (dot) dot.classList.add('read');
+          const titleSpan = row.querySelector('.notif-title span');
+          if (titleSpan) titleSpan.style.fontWeight = '400';
+        }
+        refreshBadge();
+      });
+
+      // delete handler (unchanged)
+      row.querySelector('.notif-delete').addEventListener('click', function(ev){
+        ev.stopPropagation();
+        const idx = all.findIndex(a=>a.id === item.id);
+        if (idx > -1) {
+          all.splice(idx,1);
+          // adjust current page if deletion empties current page
+          const newTotal = Math.max(0, total - 1);
+          const newTotalPages = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+          if (currentPage > newTotalPages) currentPage = newTotalPages;
+          renderList(filter, query);
+          updateCounts();
+        }
+      });
+
+      container.appendChild(row);
+    });
+
+    // footer: left: Page X of Y, center: pagination controls
+    appendFooter(container, total, totalPages);
+  }
+
+  // Tab behavior
+  let currentFilter = 'all';
+  document.querySelectorAll('.notif-list-tab').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.notif-list-tab').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+      currentFilter = this.dataset.filter;
+      // reset pagination state when switching tabs
+      showAll = false;
+      currentPage = 1;
+      renderList(currentFilter, document.getElementById('notifSearch').value);
+    });
+  });
+
+  // Search behavior
+  const searchEl = document.getElementById('notifSearch');
+  searchEl.addEventListener('input', function(){
+    // reset pagination state when searching
+    showAll = false;
+    currentPage = 1;
+    renderList(currentFilter, this.value);
+  });
+
+  // Footer pagination controls
+  function appendFooter(container, total, totalPages) {
+    // remove existing footer
+    const existing = container.querySelector('#notifListFooter');
+    if (existing) existing.remove();
+
+    const footer = document.createElement('div');
+    footer.id = 'notifListFooter';
+    footer.style.display = 'flex';
+    footer.style.alignItems = 'center';
+    footer.style.justifyContent = 'space-between';
+    footer.style.width = '100%';
+    footer.style.boxSizing = 'border-box';
+    footer.style.marginTop = '8px';
+    footer.style.gap = '12px';
+    footer.style.color = '#666';
+    footer.style.fontSize = '0.95rem';
+
+    // left: Page X of Y
+    const left = document.createElement('div');
+    left.className = 'notif-footer-left';
+    left.style.flex = '0 0 auto';
+    left.style.textAlign = 'left';
+    left.style.paddingLeft = '8px';
+    left.textContent = `Page ${showAll ? 1 : currentPage} of ${totalPages}`;
+    footer.appendChild(left);
+
+    // center: pagination controls
+    const center = document.createElement('div');
+    center.className = 'notif-footer-center';
+    center.style.flex = '1 1 auto';
+    center.style.display = 'flex';
+    center.style.justifyContent = 'center';
+    center.style.alignItems = 'center';
+    footer.appendChild(center);
+
+    // right spacer to preserve layout balance
+    const right = document.createElement('div');
+    right.className = 'notif-footer-right';
+    right.style.flex = '0 0 120px';
+    footer.appendChild(right);
+
+    // helper to create page button
+    function createPageBtn(label, disabled, onClick, isActive) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.style.margin = '0 4px';
+      btn.style.padding = '6px 10px';
+      btn.style.border = '1px solid #e3e7ed';
+      btn.style.borderRadius = '6px';
+      btn.style.background = isActive ? '#2d72d9' : 'transparent';
+      btn.style.color = isActive ? '#fff' : '#444';
+      btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+      btn.disabled = !!disabled;
+      btn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        if (disabled) return;
+        onClick();
+      });
+      return btn;
+    }
+
+    // Prev
+    const prevBtn = createPageBtn('‹', showAll || currentPage <= 1, function(){
+      if (currentPage > 1) { currentPage--; renderList(currentFilter, document.getElementById('notifSearch').value); }
+    });
+    center.appendChild(prevBtn);
+
+    // page numbers (limit to a window)
+    const maxButtons = 5;
+    if (!showAll) {
+      let start = Math.max(1, currentPage - Math.floor(maxButtons/2));
+      let end = Math.min(totalPages, start + maxButtons - 1);
+      start = Math.max(1, end - maxButtons + 1);
+      for (let p = start; p <= end; p++) {
+        const btn = createPageBtn(p, false, (function(page){ return function(){ currentPage = page; renderList(currentFilter, document.getElementById('notifSearch').value); }; })(p), (p === currentPage));
+        center.appendChild(btn);
+      }
+    } else {
+      // when showing all, just show single inactive "1"
+      const btn = createPageBtn('1', true, function(){}, true);
+      center.appendChild(btn);
+    }
+
+    // Next
+    const nextBtn = createPageBtn('›', showAll || currentPage >= totalPages, function(){
+      if (currentPage < totalPages) { currentPage++; renderList(currentFilter, document.getElementById('notifSearch').value); }
+    });
+    center.appendChild(nextBtn);
+
+    container.appendChild(footer);
+  }
+
+  // Ensure renderList calls appendFooter(container, total, totalPages) (it already does in your file)
+  // Initialize
+  updateCounts();
+  renderList('all','');
+  refreshBadge();
+
+  // expose re-render functions
+  window.renderNotificationsNewUI = function(){ updateCounts(); renderList(currentFilter, searchEl.value); refreshBadge(); };
+})();
+          </script>
+          <style>
+            /* small extra styles to guarantee centered pagination and left page info */
+            #notifListFooter { width: 100%; box-sizing: border-box; }
+            #notifListFooter .notif-footer-center .dataTables_paginate { margin: 0; }
+            #notifListFooter button { min-width: 36px; }
+          </style>
+
+          <!-- Unsaved changes bar -->
         <div class="settings-unsaved-bar" id="unsavedBar" style="display: none;">
           <span>Careful — you have unsaved changes!</span>
           <span class="reset-link" id="resetLink">Reset</span>
@@ -1315,7 +1752,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
             dom: 'lrtip', // Use default DataTables layout
             language: {
               lengthMenu: 'Show _MENU_ entries',
-              zeroRecords: 'No records found',
+                           zeroRecords: 'No records found',
               emptyTable: 'No records available',
               infoEmpty: '',
               info: 'Showing _START_ to _END_ of _TOTAL_',
@@ -1373,6 +1810,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       systemNotifs.forEach(function(notif) {
         var readKey = 'notif_read_' + notif.id;
         var isRead = localStorage.getItem(readKey) === '1';
+       
         if (!isRead) unreadCount++;
         var notifDiv = document.createElement('div');
         notifDiv.style.display = 'flex';
@@ -1541,12 +1979,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         notifDiv.appendChild(span);
         notifDiv.appendChild(a);
         newRequestNotifList.appendChild(notifDiv);
-      });
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-      renderNotifications();
-      renderNewUserNotifications();
-      renderNewRequestNotifications();
            updateNotifBadge();
     });
 
@@ -1834,5 +2266,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
     margin-bottom: 75px;
   }
   </style>
-</body>
-</html>
+  <?php // ...existing code ... ?>
+
+  <!-- Add delegated tab click handler near end of file, after other scripts that define `unsaved` -->
+  <script>
+  (function(){
+    // Defensive: wait for DOM ready if needed
+    function initTabs() {
+      var tabsContainer = document.querySelector('.settings-tabs');
+      if (!tabsContainer) return;
+      var tabContents = {
+        account: document.getElementById('accountTab'),
+        archive: document.getElementById('archiveTab'),
+        notification: document.getElementById('notificationTab')
+      };
+      // Delegated click handler so inner elements (icons/text) won't break clicks
+      tabsContainer.addEventListener('click', function(e){
+        var tabEl = e.target.closest('.settings-tab');
+        if (!tabEl) return;
+        // if already active do nothing
+        if (tabEl.classList.contains('active')) return;
+        // respect unsaved flag (existing behavior)
+        if (window.unsaved) {
+          var bar = document.getElementById('unsavedBar');
+          if (bar) bar.style.display = 'flex';
+          return;
+        }
+        // switch active tab
+        document.querySelectorAll('.settings-tab').forEach(function(t){ t.classList.remove('active'); });
+        tabEl.classList.add('active');
+        // hide all tab contents and show the one matching data-tab
+        Object.keys(tabContents).forEach(function(k){
+          if (tabContents[k]) tabContents[k].style.display = 'none';
+        });
+        var key = tabEl.getAttribute('data-tab');
+        if (key && tabContents[key]) tabContents[key].style.display = '';
+      }, false);
+      // make tabs keyboard focusable for accessibility
+      document.querySelectorAll('.settings-tab').forEach(function(tab){
+        tab.setAttribute('tabindex','0');
+        tab.addEventListener('keydown', function(e){
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); }
+        });
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTabs);
+    } else {
+      initTabs();
+    }
+  })();
+  </script>
+
+  <!-- ...existing code... -->
