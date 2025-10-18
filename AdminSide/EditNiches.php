@@ -122,11 +122,11 @@ if (
 
 // Handle delete request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete']) && $_POST['delete'] === '1') {
-  $apartmentNo = $_POST['apartmentNo'] ?? '';
-  if ($apartmentNo) {
+  $deleteId = $_POST['deleteId'] ?? '';
+  if ($deleteId) {
     // Fetch the record to archive
-    $stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName FROM deceased WHERE nicheID = ? LIMIT 1");
-    $stmt->bind_param("s", $apartmentNo);
+    $stmt = $conn->prepare("SELECT firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName FROM deceased WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $deleteId);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result && $row = $result->fetch_assoc()) {
@@ -149,9 +149,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete']) && $_POST['
     }
     $stmt->close();
 
-    // Delete from deceased
-    $stmt = $conn->prepare("DELETE FROM deceased WHERE nicheID = ?");
-    $stmt->bind_param("s", $apartmentNo);
+    // Delete only the specific record by id
+    $stmt = $conn->prepare("DELETE FROM deceased WHERE id = ?");
+    $stmt->bind_param("i", $deleteId);
     $stmt->execute();
     $stmt->close();
   }
@@ -251,7 +251,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
 
   // Simple required validation
   if ($firstName === '') $errors[] = "First Name is required.";
-  if ($middleName === '') $errors[] = "Middle Name is required.";
+  // Remove middle name required validation
+  // if ($middleName === '') $errors[] = "Middle Name is required.";
   if ($lastName === '') $errors[] = "Last Name is required.";
   if ($born === '') $errors[] = "Born date is required.";
   if ($residency === '') $errors[] = "Residency is required.";
@@ -365,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         <div class="form-section-title" style="margin:0;">Deceased Information</div>
         <div style="display:flex;gap:12px;">
           <form id="deleteForm" method="post" style="display:inline;">
-            <input type="hidden" name="apartmentNo" value="<?php echo htmlspecialchars($deceased['nicheID']); ?>">
+            <input type="hidden" name="deleteId" value="<?php echo htmlspecialchars($deceased['id'] ?? ''); ?>">
             <input type="hidden" name="delete" value="1">
             <button type="button" class="btn delete-btn" id="deleteBtn">Delete</button>
           </form>
@@ -830,32 +831,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
         modal.innerHTML = `
           <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
-            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e74c3c;font-weight:600;letter-spacing:0.5px;">
-              <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
-            </h2>
-            <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">
-              Please complete the editing or click "Cancel" to leave before navigating to another section.
-            </p>
-            <button id="sidebarBlockCloseBtn" style="background:#e74c3c;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
-          </div>
-        `;
-        document.body.appendChild(modal);
-        // Add close logic
-        modal.querySelector('#sidebarBlockCloseBtn').onclick = function() {
-          modal.style.display = 'none';
-        };
-        modal.onclick = function(e) {
-          if (e.target === modal) modal.style.display = 'none';
-        };
-      }
-      modal.style.display = 'flex';
-    }
-  </script>
-</body>
-</html>
-        modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
-        modal.innerHTML = `
-          <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
             <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e67e22;font-weight:600;letter-spacing:0.5px;">
               <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
             </h2>
@@ -867,18 +842,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         `;
         document.body.appendChild(modal);
         document.getElementById('sidebarBlockCloseBtn').onclick = function() {
-          modal.style.display = 'none';
-        };
-        modal.onclick = function(e) {
-          if (e.target === modal) modal.style.display = 'none';
-        };
-      } else {
-        document.getElementById('sidebarBlockModal').style.display = 'flex';
-      }
-    }
-  </script>
-</body>
-</html>
           modal.style.display = 'none';
         };
         modal.onclick = function(e) {

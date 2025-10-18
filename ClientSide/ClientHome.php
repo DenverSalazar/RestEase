@@ -33,18 +33,114 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clienthome.css">
+    <style>
+        /* Hero responsive tweaks */
+        .main-bg-bar {
+            padding-top: 140px; /* desktop default - unchanged on large screens */
+            padding-bottom: 40px;
+            transition: padding 200ms ease;
+        }
+
+        .dashboard-header.hero-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .dashboard-header.hero-container h2 {
+            font-size: 1.6rem;
+            line-height: 1.12;
+            margin: 0 0 8px 0;
+        }
+
+        .dashboard-header.hero-container p {
+            margin: 0;
+            color: #444;
+        }
+
+        .dashboard-header.hero-container img {
+            max-width: 420px;
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Medium screens */
+        @media (max-width: 992px) {
+            .main-bg-bar { padding-top: 110px; } /* keep medium unchanged */
+            .dashboard-header.hero-container img { max-width: 320px; }
+        }
+
+        /* Small screens: stack content, center text, reduce spacing */
+        @media (max-width: 768px) {
+            /* use CSS variable --nav-height for the actual navbar height (set by JS) */
+            .main-bg-bar { padding-top: calc(70px + var(--nav-height, 20px)); padding-bottom: 24px; }
+            .dashboard-header.hero-container {
+                flex-direction: column; /* text first, image below on narrow screens */
+                align-items: center;
+                text-align: center;
+            }
+            .dashboard-header.hero-container > div { width: 100%; }
+            .dashboard-header.hero-container h2 {
+                font-size: 1.25rem;
+                line-height: 1.18;
+            }
+            .dashboard-header.hero-container p {
+                font-size: 0.98rem;
+            }
+            .dashboard-header.hero-container img {
+                max-width: 260px;
+                width: 60%;
+                margin-top: 16px; /* breathing space between text and image */
+            }
+        }
+
+        /* Very small phones */
+        @media (max-width: 420px) {
+            /* include navbar height here as well */
+            .main-bg-bar { padding-top: calc(54px + var(--nav-height, 20px)); padding-bottom: 18px; }
+            .dashboard-header.hero-container h2 { font-size: 1.05rem; }
+            .dashboard-header.hero-container img { max-width: 220px; width: 72%; }
+        }
+
+        /* Map responsive wrapper */
+        .map-section .map-responsive {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            /* preserve original desktop aspect ratio (450 / 1295 ≈ 34.7%) */
+            padding-top: 34.7%;
+            margin-bottom: 12px;
+        }
+        .map-section .map-responsive iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* Slightly taller map on small devices for usability */
+        @media (max-width: 768px) {
+            .map-section .map-responsive { padding-top: 56.25%; } /* 16:9 for mobile */
+        }
+    </style>
 </head>
 <body>
     <?php include '../Includes/navbar2.php'; ?>
 
-    <div class="main-bg-bar" style="padding-top: 180px;">
+    <div class="main-bg-bar">
         <div class="container">
             <div class="dashboard-header hero-container d-flex align-items-center justify-content-between">
                 <div>
                     <h2>Your trusted digital companion<br>for cemetery mapping and memorial services</h2>
                     <p>#1 Online Platform for Niche Management & Certificate Services<br>in Padre Garcia, Batangas</p>
                 </div>
-                <img src="../assets/oldcemetery.webp" alt="RestEase Hero" style="max-width:420px;width:100%;height:auto;border-radius:16px;">
+                <img src="../assets/explore.png" alt="RestEase Hero" style="max-width:420px;width:100%;height:auto;border-radius:16px;">
             </div>
         </div>
     </div>
@@ -119,17 +215,17 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
              Explore an interactive digital map that helps you easily locate burial plots, view grave details, and navigate the cemetery with ease and accuracy.
         </div>
         <section class="map-section">
-            
-                <!-- Embed the real interactive map, view-only, zoom in/out only, no navbar/footer -->
+            <!-- Responsive map wrapper -->
+            <div class="map-responsive">
                 <iframe
                     class="map-iframe"
-                    src="ClientMap.php?embed=1"
-                    style="width:100%;height:400px;border:0;"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d978.4400336587773!2d121.21520691399589!3d13.874290423281638!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd145514365b4f%3A0xbd29096ad6542262!2sPadre%20Garcia%20Municipal%20Cemetery!5e1!3m2!1sen!2sph!4v1760685714850!5m2!1sen!2sph"
                     allowfullscreen=""
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
-            
+            </div>
+
             <a href="ViewMap.php" style="text-decoration:none;">
                 <button class="btn-map-themed" style="background:#0077b6;">
                     <i class="fas fa-map-marked-alt"></i>
@@ -142,5 +238,24 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
     <?php include '../Includes/footer-client.php'; ?>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Measure navbar height and set CSS variable so mobile spacing accounts for the fixed navbar -->
+    <script>
+        (function() {
+            function updateNavHeightVar() {
+                var nav = document.querySelector('nav'); // matches your included navbar
+                if (!nav) return;
+                var h = nav.getBoundingClientRect().height || 0;
+                // Set --nav-height on :root so CSS calc() uses the real navbar height
+                document.documentElement.style.setProperty('--nav-height', h + 'px');
+            }
+            // Update on load and when the window resizes or orientation changes
+            document.addEventListener('DOMContentLoaded', updateNavHeightVar);
+            window.addEventListener('resize', updateNavHeightVar);
+            window.addEventListener('orientationchange', updateNavHeightVar);
+            // Also run shortly after load to handle fonts/images affecting layout
+            window.setTimeout(updateNavHeightVar, 300);
+        })();
+    </script>
 </body>
 </html>

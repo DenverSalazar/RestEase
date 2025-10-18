@@ -176,6 +176,15 @@ if ($user_id) {
         border-left: 8px solid #DC3545;
         background: #FDEDEC;
       }
+
+      /* Move back button upward and reduce left margin on small devices */
+      @media (max-width: 480px) {
+        .cert-list-back {
+          display: inline-block;
+          transform: translateY(-10px);
+          margin-left: 16px !important; /* override inline margin on small screens */
+        }
+      }
     </style>
 </head>
 <body>

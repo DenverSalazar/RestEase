@@ -143,7 +143,36 @@ if (!$apartment && !$informant && !$ledgerEntry) {
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
-
+    /* Ledger filter button boxed style + active underline (matches Certification Masterlist) */
+    #ledgerFilters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .ledger-filter-btn {
+      display:inline-block;
+      border:1px solid #e6e9ec;
+      background:#fff;
+      color:#222;
+      padding:6px 10px;
+      border-radius:8px;
+      font-weight:500;
+      cursor:pointer;
+      transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s;
+      /* reserve underline space so layout doesn't jump when active */
+      box-sizing: border-box;
+      /* border-bottom-width: 3px;
+      border-bottom-style: solid;
+      border-bottom-color: transparent; */
+    }
+    .ledger-filter-btn:hover {
+      color:#0b75a8;
+      box-shadow: 0 1px 4px rgba(11,117,168,0.06);
+    }
+    .ledger-filter-btn.active {
+      color:#0077b6;
+      border-color:#0077b6 !important; /* override any inline borders */
+      font-weight:600;
+      /* emphasize active state */
+      box-shadow: 0 4px 12px rgba(0,119,182,0.06);
+      background: #fff;
+    }
   </style>
 </head>
 <body>
@@ -243,7 +272,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;">Basic Information</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;margin-bottom:18px;">
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <label for="formName" style="font-weight:500;">Payee</label>
+            <label for="formName" style="font-weight:500;">Payee Name</label>
             <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>" autocomplete="off" list="payeeNameList">
             <datalist id="payeeNameList">
               <?php foreach ($payeeSuggestions as $suggestion): ?>
@@ -316,7 +345,15 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <div id="paymentDetailsSection" class="card ledger-table-container" style="max-width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 0 0 32px 0; box-sizing: border-box; display:none; margin-top: 18px;">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 32px 32px 0 32px; margin-bottom:24px;">
         <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
-        <!-- Removed buttons from here -->
+        <!-- Filter buttons: All / New / renewal / reopen / transfer / full payment -->
+        <div id="ledgerFilters" style="display:flex;gap:8px;align-items:center;">
+          <button class="ledger-filter-btn active" data-filter="all">all</button>
+          <button class="ledger-filter-btn" data-filter="new">New</button>
+          <button class="ledger-filter-btn" data-filter="renewal">renewal</button>
+          <button class="ledger-filter-btn" data-filter="reopen">reopen</button>
+          <button class="ledger-filter-btn" data-filter="transfer">transfer</button>
+          <button class="ledger-filter-btn" data-filter="fullpayment">full payment</button>
+        </div>
       </div>
       <form id="ledgerDeleteForm" method="post" style="margin:0;">
         <div style="overflow-x:auto; padding: 0 32px;">
@@ -324,7 +361,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             <thead>
               <tr>
                 <th>Apt No.</th>
-                <th>Payee</th>
+                <th>Payee Name</th>
                 <th>Date Paid</th>
                 <th>Amount</th>
                 <th>Description</th>
@@ -343,7 +380,17 @@ if (!$apartment && !$informant && !$ledgerEntry) {
               $paymentResult = $conn->query("SELECT * FROM ledger WHERE DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC");
               if ($paymentResult && $paymentResult->num_rows > 0) {
                 while ($row = $paymentResult->fetch_assoc()) {
-                  echo '<tr>';
+                  // normalize description into one of: new, renewal, reopen, transfer, fullpayment (server-side token)
+                  $descRaw = isset($row['Description']) ? trim($row['Description']) : '';
+                  $descNorm = strtolower(preg_replace('/[\s\-\_]+/', '', $descRaw));
+                  // Map common variants to tokens (defensive)
+                  if (in_array($descNorm, ['new'])) $token = 'new';
+                  else if (strpos($descNorm, 'renew') === 0 || $descNorm === 'renewal') $token = 'renewal';
+                  else if (strpos($descNorm, 'reopen') === 0) $token = 'reopen';
+                  else if (strpos($descNorm, 'transfer') === 0) $token = 'transfer';
+                  else if (strpos($descNorm, 'fullpayment') === 0 || strpos($descNorm, 'fullpay') === 0) $token = 'fullpayment';
+                  else $token = $descNorm; // fallback (won't match filters)
+                  echo '<tr data-type="' . htmlspecialchars($token) . '">';
                   echo '<td>' . htmlspecialchars($row['ApartmentNo'] ?? '') . '</td>';
                   echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
                   echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
@@ -353,8 +400,25 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                   echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
                   // MCNo can be null, show empty string if so
                   echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
-                  // Action button
-                  echo '<td><a href="insert.php?id=' . $row['id'] . '" class="action-btn" style="background:#0077b6;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
+                  // Action button: if ApartmentNo present, go to editniches.php with accurate data to avoid duplicates; otherwise fallback to Insert.php
+                  $apt = trim($row['ApartmentNo'] ?? '');
+                  if ($apt !== '') {
+                      // Build safe query with relevant fields so editniches.php can prefill
+                      $params = http_build_query([
+                          'nicheID'    => $row['ApartmentNo'],
+                          'ledger_id'  => $row['id'],
+                          'payee'      => $row['Payee'],
+                          'amount'     => number_format($row['Amount'], 2, '.', ''), // numeric string
+                          'DatePaid'   => $row['DatePaid'],
+                          'ORNumber'   => $row['ORNumber'],
+                          'MCNo'       => $row['MCNo'],
+                          'Description'=> $row['Description'],
+                          'Validity'   => $row['Validity']
+                      ]);
+                     echo '<td><a href="editniches.php?' . $params . '" class="action-btn" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:500;font-size:0.92rem;display:inline-block;min-width:40px;text-align:center;">Edit</a></td>';
+                   } else {
+                      echo '<td><a href="Insert.php?id=' . intval($row['id']) . '" class="action-btn" style="background:#0077b6;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
+                  }
                   echo '<td><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '"></td>';
                   echo '</tr>';
                 }
@@ -469,6 +533,71 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             paymentDetailsDataTable.search(this.value).draw();
           });
           paymentTabInitialized = true;
+          // --- Ledger filter integration using DataTables custom search ---
+          (function() {
+            let currentLedgerFilter = 'all';
+            // Register DataTables custom filter
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex, rowData, counter) {
+              if (settings.nTable.id !== 'paymentDetailsTable') return true;
+              if (currentLedgerFilter === 'all') return true;
+              // Get tr node for this row and read data-type attribute
+              const rowNode = paymentDetailsDataTable.row(dataIndex).node();
+              if (!rowNode) return true;
+              const type = (rowNode.getAttribute('data-type') || '').toLowerCase();
+              return type === currentLedgerFilter;
+            });
+
+            // Wire up filter buttons (only the requested set)
+            const filterBtns = Array.from(document.querySelectorAll('.ledger-filter-btn'));
+
+            // Helper to apply a filter token (updates active class, current filter, redraws)
+            function applyLedgerFilter(token, pushHash = false) {
+              currentLedgerFilter = token || 'all';
+              filterBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === currentLedgerFilter));
+              paymentDetailsDataTable.draw();
+              if (pushHash) {
+                try {
+                  // Update hash without adding history entry
+                  history.replaceState(null, '', '#filter=' + encodeURIComponent(currentLedgerFilter));
+                } catch (e) {
+                  location.hash = 'filter=' + encodeURIComponent(currentLedgerFilter);
+                }
+              }
+            }
+
+            // Click handler sets filter and updates hash
+            filterBtns.forEach(btn => {
+              btn.addEventListener('click', function() {
+                const f = this.getAttribute('data-filter') || 'all';
+                applyLedgerFilter(f, true);
+              });
+            });
+
+            // Initialize from URL hash if present (format: #filter=token)
+            (function initFromHash() {
+              const h = (location.hash || '').replace(/^#/, '');
+              const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
+              if (m && m[1]) {
+                const token = decodeURIComponent(m[1].toLowerCase());
+                // Only apply if one of the known tokens (defensive)
+                const known = ['all','new','renewal','reopen','transfer','fullpayment'];
+                applyLedgerFilter(known.includes(token) ? token : 'all', false);
+              } else {
+                // ensure UI matches default 'all'
+                applyLedgerFilter('all', false);
+              }
+            })();
+
+            // Listen for hashchange so external navigation updates filter
+            window.addEventListener('hashchange', function() {
+              const h = (location.hash || '').replace(/^#/, '');
+              const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
+              if (m && m[1]) {
+                const token = decodeURIComponent(m[1].toLowerCase());
+                applyLedgerFilter(token, false);
+              }
+            });
+          })();
         }
       });
     </script>

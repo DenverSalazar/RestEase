@@ -55,6 +55,20 @@ function convertExcelDate($value) {
     return '0000-00-00';
 }
 
+// Helper to parse full name into first, middle, last, suffix
+function parseFullName($fullName) {
+    $parts = preg_split('/\s+/', trim($fullName));
+    $suffixes = ['Jr', 'Sr', 'III', 'IV', 'II', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    $suffix = '';
+    if (count($parts) > 2 && in_array(str_replace('.', '', end($parts)), $suffixes)) {
+        $suffix = array_pop($parts);
+    }
+    $firstName = $parts[0] ?? '';
+    $middleName = (count($parts) > 2) ? $parts[1] : '';
+    $lastName = (count($parts) > 2) ? $parts[2] : ($parts[1] ?? '');
+    return [$firstName, $middleName, $lastName, $suffix];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
     $fileTmp = $_FILES['excel_file']['tmp_name'];
     $spreadsheet = IOFactory::load($fileTmp);
@@ -67,25 +81,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
     // Skip header row, start from row 2
     for ($i = 1; $i < count($rows); $i++) {
         $row = $rows[$i];
-        // Adjust indexes based on your Excel columns
-        $firstName = $row[0] ?? '';
-        $lastName = $row[1] ?? '';
+        // Excel columns:
+        // 0: Apt No.
+        // 1: Name of Deceased
+        // 2: Age
+        // 3: Date of Birth
+        // 4: Address of Deceased
+        // 5: Informant Name
+        // 6: Date Died
+        // 7: Date Internment
+        // 8: Validity
+
+        $nicheID = $row[0] ?? '';
+        $nameOfDeceased = $row[1] ?? '';
         $age = $row[2] ?? '';
         $born = convertExcelDate($row[3] ?? '');
         $residency = $row[4] ?? '';
-        $dateDied = convertExcelDate($row[5] ?? '');
-        $dateInternment = convertExcelDate($row[6] ?? '');
-        $nicheID = $row[7] ?? '';
-        $informantName = $row[8] ?? '';
+        $informantName = $row[5] ?? '';
+        $dateDied = convertExcelDate($row[6] ?? '');
+        $dateInternment = convertExcelDate($row[7] ?? '');
+        $validity = convertExcelDate($row[8] ?? '');
+
+        // Parse name
+        list($firstName, $middleName, $lastName, $suffix) = parseFullName($nameOfDeceased);
 
         // Basic validation (optional)
         if ($firstName && $lastName && is_numeric($age)) {
-            $stmt = $conn->prepare("INSERT INTO deceased (firstName, lastName, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO deceased (firstName, middleName, lastName, suffix, age, born, residency, dateDied, dateInternment, nicheID, informantName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if ($stmt === false) {
                 $errors[] = "Prepare failed for row $i: " . $conn->error;
                 continue;
             }
-            $stmt->bind_param("ssissssss", $firstName, $lastName, $age, $born, $residency, $dateDied, $dateInternment, $nicheID, $informantName);
+            $stmt->bind_param("ssssissssss", $firstName, $middleName, $lastName, $suffix, $age, $born, $residency, $dateDied, $dateInternment, $nicheID, $informantName);
             if ($stmt->execute()) {
                 $inserted++;
             } else {

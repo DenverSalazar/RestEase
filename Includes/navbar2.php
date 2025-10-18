@@ -96,14 +96,53 @@ if (isset($_POST['mark_all_read'])) {
 }
 ?>
 <!-- Custom Navbar -->
+<style>
+/* Mobile notification bell placement and visibility */
+.mobile-notification { display:none; align-items:center; gap:6px; color:inherit; text-decoration:none; cursor:pointer; transform: translateX(0); z-index:2100; }
+.mobile-notification i { font-size:1.05rem; }
+.mobile-notification .nbadge { position:absolute; top:-7px; right:-7px; background:#e74c3c; color:#fff; border-radius:50%; font-size:0.7rem; padding:1px 5px; font-weight:600; min-width:16px; text-align:center; line-height:1; box-shadow:0 1px 4px rgba(0,0,0,0.12); z-index:2200; }
+
+/* Ensure header layout and mobile controls alignment */
+.navbar-top { display:flex; align-items:center; justify-content:space-between; gap:8px; position:relative; }
+.mobile-controls { display:flex; align-items:center; gap:12px; z-index:2000; }
+
+/* Mobile-only profile link inside the menu */
+.mobile-only-profile { display:none; padding:0.6rem 0; color:inherit; text-decoration:none; font-weight:500; }
+.mobile-only-profile:hover { color:#4B7BEC; }
+
+/* Mobile-only logout (danger color) */
+.mobile-only-logout { display:none; padding:0.6rem 0; color:#e74c3c; text-decoration:none; font-weight:600; }
+.mobile-only-logout:hover { color:#c0392b; }
+
+/* On small screens show mobile-only profile & logout */
+@media (max-width: 768px) {
+    .mobile-notification { display:inline-flex; position:relative; transform: translateX(-6px); }
+    .navbar-links .notification-bell-desktop { display:none !important; }
+    .mobile-only-profile { display:block; }
+    .mobile-only-logout { display:block; }
+}
+</style>
+
 <nav class="custom-navbar position-relative">
     <div class="container navbar-top position-relative">
         <a href="#" class="navbar-brand">
             <img src="../assets/RE logo New.png" alt="RestEase Logo" style="height: 32px;">
         </a>
-        <button class="navbar-toggler" type="button" aria-label="Toggle navigation" onclick="toggleMobileMenu()">
-            <i class="fas fa-bars"></i>
-        </button>
+
+        <!-- Right-side mobile controls: bell immediately left of menu -->
+        <div class="mobile-controls" aria-hidden="false">
+            <a href="#" id="notificationBellMobile" class="mobile-notification" onclick="toggleNotificationDropdown(event, this)" aria-label="Notifications (mobile)">
+                <i class="fas fa-bell"></i>
+                <?php if ($new_count > 0): ?>
+                    <span class="nbadge"><?php echo $new_count; ?></span>
+                <?php endif; ?>
+            </a>
+
+            <button class="navbar-toggler" type="button" aria-label="Toggle navigation" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
         <div class="navbar-links">
             <button class="navbar-close" type="button" aria-label="Close menu" onclick="toggleMobileMenu()">
                 <i class="fas fa-times"></i>
@@ -111,12 +150,21 @@ if (isset($_POST['mark_all_read'])) {
             <a href="ClientHome.php">Home</a>
             <a href="./clientabout-us.php">About Us</a>
             <a href="./clientcontact-us.php">Contact Us</a>
-            <a href="#" id="notificationBell" onclick="toggleNotificationDropdown(event)" style="position:relative;display:inline-block;">
+
+            <!-- Mobile-only Profile & Logout links (visible only on small screens) -->
+            <?php if (!empty($user_id)): ?>
+                <a href="../ClientSide/clientprofile.php" class="mobile-only-profile">Profile</a>
+                <a href="../logout.php" class="mobile-only-logout" style="color: red;">Log Out</a>
+            <?php endif; ?>
+
+            <!-- Desktop bell (hidden on small screens via CSS class) -->
+            <a href="#" id="notificationBell" class="notification-bell-desktop" onclick="toggleNotificationDropdown(event, this)" style="position:relative;display:inline-block;">
                 <i class="fas fa-bell"></i>
                 <?php if ($new_count > 0): ?>
                     <span style="position:absolute;top:-7px;right:-7px;background:#e74c3c;color:#fff;border-radius:50%;font-size:0.7rem;padding:1px 5px;font-weight:600;min-width:16px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.12);z-index:2;"> <?php echo $new_count; ?> </span>
                 <?php endif; ?>
             </a>
+
             <a href="#" id="profileAvatar" onclick="toggleProfileDropdown(event)"><?php echo $user_avatar_html; ?></a>
             <div class="profile-dropdown" id="profileDropdown" style="display:none;position:absolute;top:44px;right:0;width:180px;background:#fff;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,0.13);z-index:1000;overflow:hidden;">
                 <div style="padding:0.75rem 1rem;border-bottom:1px solid #e5e9f2;display:flex;align-items:center;gap:0.7rem;cursor:pointer;"
@@ -183,15 +231,21 @@ function toggleMobileMenu() {
     links.classList.toggle('show');
     overlay.classList.toggle('show');
 }
-function toggleNotificationDropdown(e) {
+function toggleNotificationDropdown(e, sourceEl) {
     e.preventDefault();
     e.stopPropagation();
     var dropdown = document.getElementById('notificationDropdown');
-    var bell = document.getElementById('notificationBell');
+    // Prefer the explicitly provided source element, otherwise fallback
+    var bell = sourceEl || e.currentTarget || e.target || document.getElementById('notificationBell') || document.getElementById('notificationBellMobile');
+    if (!bell) return;
+    // Toggle visibility
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
-        var bellRect = bell.getBoundingClientRect();
+        // Position dropdown under the invoking bell (calculate relative to its offset parent)
+        var rect = bell.getBoundingClientRect();
+        // Place dropdown so its right edge aligns with bell's right edge and appears below it
         dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
+        // If dropdown is in the same container anchored to right, keep right:0 to preserve layout
         dropdown.style.right = '0px';
         setTimeout(function() {
             document.addEventListener('click', closeDropdown);
@@ -201,7 +255,7 @@ function toggleNotificationDropdown(e) {
         document.removeEventListener('click', closeDropdown);
     }
     function closeDropdown(event) {
-        if (!dropdown.contains(event.target) && event.target !== bell) {
+        if (!dropdown.contains(event.target) && event.target !== bell && !bell.contains(event.target)) {
             dropdown.style.display = 'none';
             document.removeEventListener('click', closeDropdown);
         }
@@ -235,27 +289,45 @@ function updateNotificationBadge() {
     fetch('../ClientSide/get_notification_count.php')
         .then(response => response.json())
         .then(data => {
-            var badge = document.querySelector('#notificationBell span');
-            if (badge) badge.remove();
+            // remove existing badges from both desktop and mobile bells
+            var desktopBell = document.getElementById('notificationBell');
+            var mobileBell = document.getElementById('notificationBellMobile');
+            if (desktopBell) {
+                var span = desktopBell.querySelector('span');
+                if (span) span.remove();
+            }
+            if (mobileBell) {
+                var spanm = mobileBell.querySelector('.nbadge');
+                if (spanm) spanm.remove();
+            }
             if (data.count > 0) {
-                var bell = document.getElementById('notificationBell');
-                var span = document.createElement('span');
-                span.textContent = data.count;
-                span.style.position = 'absolute';
-                span.style.top = '-7px';
-                span.style.right = '-7px';
-                span.style.background = '#e74c3c';
-                span.style.color = '#fff';
-                span.style.borderRadius = '50%';
-                span.style.fontSize = '0.7rem';
-                span.style.padding = '1px 5px';
-                span.style.fontWeight = '600';
-                span.style.minWidth = '16px';
-                span.style.textAlign = 'center';
-                span.style.lineHeight = '1';
-                span.style.boxShadow = '0 1px 4px rgba(0,0,0,0.12)';
-                span.style.zIndex = '2';
-                bell.appendChild(span);
+                // create badge for desktop
+                if (desktopBell) {
+                    var span = document.createElement('span');
+                    span.textContent = data.count;
+                    span.style.position = 'absolute';
+                    span.style.top = '-7px';
+                    span.style.right = '-7px';
+                    span.style.background = '#e74c3c';
+                    span.style.color = '#fff';
+                    span.style.borderRadius = '50%';
+                    span.style.fontSize = '0.7rem';
+                    span.style.padding = '1px 5px';
+                    span.style.fontWeight = '600';
+                    span.style.minWidth = '16px';
+                    span.style.textAlign = 'center';
+                    span.style.lineHeight = '1';
+                    span.style.boxShadow = '0 1px 4px rgba(0,0,0,0.12)';
+                    span.style.zIndex = '2';
+                    desktopBell.appendChild(span);
+                }
+                // create badge for mobile
+                if (mobileBell) {
+                    var spanm = document.createElement('span');
+                    spanm.className = 'nbadge';
+                    spanm.textContent = data.count;
+                    mobileBell.appendChild(spanm);
+                }
             }
         });
 }

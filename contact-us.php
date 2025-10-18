@@ -95,7 +95,7 @@
     <!-- Map Section -->
     <section class="map-section">
         <div class="container">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4090.1235927031694!2d121.2215291108287!3d13.883317694178464!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd1503355a800d%3A0xaf01fd3a0484847b!2sV6MF%2B8JH%2C%20Padre%20Garcia%2C%20Batangas!5e1!3m2!1sen!2sph!4v1743494319859!5m2!1sen!2sph"
+           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d978.4400336587773!2d121.21520691399589!3d13.874290423281638!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd145514365b4f%3A0xbd29096ad6542262!2sPadre%20Garcia%20Municipal%20Cemetery!5e1!3m2!1sen!2sph!4v1760685714850!5m2!1sen!2sph"
              width="600" 
              height="450" 
              style="border:0;" 
@@ -106,7 +106,7 @@
 
            <!-- another code if magka issue yang nasa taas
             <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4090.1235927031694!2d121.2215291108287!3d13.883317694178464!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd1503355a800d%3A0xaf01fd3a0484847b!2sV6MF%2B8JH%2C%20Padre%20Garcia%2C%20Batangas!5e0!3m2!1sen!2sph!4v1743494319859!5m2!1sen!2sph" 
+            src=" <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d978.4400336587773!2d121.21520691399589!3d13.874290423281638!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd145514365b4f%3A0xbd29096ad6542262!2sPadre%20Garcia%20Municipal%20Cemetery!5e1!3m2!1sen!2sph!4v1760685714850!5m2!1sen!2sph"
             width="600" 
             height="450" 
             style="border:0;" 

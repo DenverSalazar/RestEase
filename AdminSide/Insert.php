@@ -135,10 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors[] = "First Name is required.";
     $fieldErrors['firstName'] = "First Name is required.";
   }
-  if ($middleName === '') {
-    $errors[] = "Middle Name is required.";
-    $fieldErrors['middleName'] = "Middle Name is required.";
-  }
   if ($lastName === '') {
     $errors[] = "Last Name is required.";
     $fieldErrors['lastName'] = "Last Name is required.";
@@ -339,7 +335,8 @@ if ($id) {
         <div class="form-section-title" style="margin:0;">Deceased Information</div>
         <div style="display:flex;gap:12px;">
           <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
-          <a href="Records.php"><button type="button" class="btn secondary">Back</button></a>
+          <!-- Back button: prefer HTTP_REFERER, otherwise use history.back(), fallback to Records.php -->
+          <button type="button" class="btn secondary" id="backBtn" data-referrer="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>">Back</button>
         </div>
       </div>
       <!-- Excel Import Modal -->
@@ -396,6 +393,33 @@ if ($id) {
           const fileName = this.files[0] ? this.files[0].name : 'No file selected';
           document.querySelector('.file-name').textContent = fileName;
         };
+
+        // Back button behavior: go to referring page if available, otherwise history.back(), otherwise fallback to Records.php
+        (function() {
+          var backBtn = document.getElementById('backBtn');
+          if (backBtn) {
+            backBtn.addEventListener('click', function() {
+              var ref = this.getAttribute('data-referrer');
+              // If server-provided referrer exists and looks like a same-origin or valid URL, use it
+              if (ref) {
+                try {
+                  // optional: basic safety check - only navigate if it's not empty
+                  window.location.href = ref;
+                  return;
+                } catch (e) {
+                  // ignore and fallback
+                }
+              }
+              // If no referrer from server, try history
+              if (history.length > 1) {
+                history.back();
+                return;
+              }
+              // Final fallback
+              window.location.href = 'Records.php';
+            });
+          }
+        })();
       </script>
       <div class="form-container">
         <form method="post" autocomplete="off" id="insertForm">
@@ -414,9 +438,7 @@ if ($id) {
               <input type="text" id="middleName" name="middleName" placeholder="Middle Name"
                 value="<?php echo htmlspecialchars($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? $_POST['middleName'] ?? '')); ?>"
                 class="<?php echo isset($fieldErrors['middleName']) ? 'input-error' : ''; ?>">
-              <?php if (isset($fieldErrors['middleName'])): ?>
-                <div class="field-error"><?php echo $fieldErrors['middleName']; ?></div>
-              <?php endif; ?>
+              <?php /* Middle Name is now optional, so don't show error */ ?>
             </div>
             <div class="form-group">
               <label for="lastName">Last Name</label>

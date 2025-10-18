@@ -36,6 +36,15 @@
                 height: 260px !important;
             }
         }
+
+          /* Move back button upward and reduce left margin on very small devices */
+      @media (max-width: 480px) {
+        .cert-list-back {
+          display: inline-block;
+          transform: translateY(0px);
+          margin-left: 12px !important;
+        }
+      }
     </style>
 </head>
 <body>

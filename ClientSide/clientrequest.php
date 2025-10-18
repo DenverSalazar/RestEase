@@ -146,6 +146,25 @@ $stmt->close();
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clientrequest.css">
+    <style>
+        /* Hide the decorative request image on small devices and show on larger screens */
+        @media (max-width: 768px) {
+            .client-request-image { display: none !important; }
+        }
+        @media (min-width: 769px) {
+            .client-request-image { display: block; }
+        }
+
+        /* Move the back button upward on small devices only */
+        @media (max-width: 480px) {
+            .cert-list-back {
+                display: inline-block; /* ensure transform applies cleanly */
+                transform: translateY(-30px); /* move upward */
+                /* small visual tweak: slightly reduce font-size on very small screens if needed */
+                /* font-size: 1rem; */
+            }
+        }
+    </style>
 </head>
 <body>
     <?php include '../Includes/navbar2.php'; ?>
@@ -154,7 +173,7 @@ $stmt->close();
             <div class="client-request-form-card">
                 <div style="display:flex;align-items:center;gap:12px;">
                  
-                        <a href="ClientHome.php" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+                        <a href="ClientHome.php" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;text-decoration:none;cursor:pointer;transition:color 0.18s;  transform: translateY(-30px);">
     <i class="fas fa-arrow-left"></i> Back
 </a>
                  </div>

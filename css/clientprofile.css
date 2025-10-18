@@ -16,7 +16,7 @@ body {
 
 .profile-header {
     height: 90px;
-    background: linear-gradient(90deg, #94B2CC 20%, #617E96 86%, #506C84 100%);
+    background: linear-gradient(90deg, #CAF0F8 20%, #A7E6F3 86%, #90E0EF 100%);
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
     box-shadow: none;
@@ -80,7 +80,7 @@ h2 {
     margin-left: auto;
 }
 .btn-upload {
-    background: #fff;
+    background: #CAF0F8;
     color: #3a4d5c;
     border: 1px solid #e3e8ee;
     border-radius: 6px;
@@ -91,10 +91,10 @@ h2 {
     box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 .btn-upload:hover {
-    background: #e3e8ee;
+    background: #90E0EF;
 }
 .btn-delete {
-    background: #f8b6b6;
+    background: #f09595;
     color: #fff;
     border: none;
     border-radius: 6px;

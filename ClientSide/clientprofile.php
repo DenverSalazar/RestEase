@@ -219,11 +219,14 @@ $avatar_html = $has_profile_picture
             color: #222;
         }
         @media (max-width: 600px) {
-            .custom-toast {
-                right: 10px;
-                left: 10px;
-                min-width: unset;
-                max-width: unset;
+            /* make room at the top so heading/subtitle appear lower on small devices */
+            .profile-content {
+                padding-top: 48px !important; /* adjust value as needed */
+            }
+
+            /* small visual tweak to subtitle spacing */
+            .profile-content .subtitle {
+                margin-top: 6px !important;
             }
         }
         /* Confirmation Modal */
@@ -412,7 +415,6 @@ $avatar_html = $has_profile_picture
                 height: 54px;
             }
         }
-        /* --- End pay-confirm-modal styles --- */
         .profile-avatar-initials {
             width: 56px;
             height: 56px;
@@ -429,6 +431,128 @@ $avatar_html = $has_profile_picture
             margin: 0 auto 12px auto;
             box-shadow: 0 2px 8px rgba(80,108,132,0.08);
             border: 2px solid #b2c9db;
+        }
+
+        /* Ensure avatar initials are perfectly centered even if other styles interfere */
+        #profileAvatarContainer .profile-avatar-initials,
+        .profile-avatar-initials {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            line-height: 1 !important; /* prevent baseline shift */
+            padding: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Keep images centered/contained */
+        #profileAvatarContainer img.profile-avatar {
+            display: block !important;
+            margin: 0 auto !important;
+            vertical-align: middle !important;
+            object-fit: cover !important;
+            border-radius: 50% !important;
+        }
+
+        /* Responsive: center avatar, name/email and buttons on small devices (improved override) */
+        @media (max-width: 600px) {
+            .profile-avatar-section {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 12px;
+                padding: 0 12px;
+            }
+
+            /* Ensure avatar container and image/initials are centered and constrained to 56x56 */
+            #profileAvatarContainer {
+                display: block !important;
+                margin: 0 auto !important;
+                width: 56px !important;
+                height: 56px !important;
+            }
+            #profileAvatarContainer img.profile-avatar,
+            #profileAvatarContainer .profile-avatar-initials {
+                display: block !important;
+                margin: 0 auto !important;
+                width: 56px !important;
+                height: 56px !important;
+                max-width: 56px !important;
+                max-height: 56px !important;
+                object-fit: cover !important;
+                border-radius: 50% !important;
+                line-height: 1 !important;
+                padding: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            /* Center name and email */
+            .profile-avatar-section .profile-info {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .profile-avatar-section .profile-info .profile-name,
+            .profile-avatar-section .profile-info .profile-email {
+                margin: 0 !important;
+                width: auto !important;
+            }
+
+            /* Center buttons and keep them compact (no forced min-width) */
+            .profile-avatar-section .profile-buttons {
+                display: flex !important;
+                gap: 10px !important;
+                justify-content: center !important;
+                width: 100% !important;
+                margin-top: 6px !important;
+            }
+            .profile-avatar-section .profile-buttons .btn-upload,
+            .profile-avatar-section .profile-buttons .btn-delete {
+                min-width: unset !important;    /* remove forced large width */
+                width: auto !important;
+                padding: 6px 12px !important;  /* compact, consistent padding */
+                font-size: 0.95rem !important;  /* keep text readable but compact */
+                line-height: 1.2 !important;
+                box-sizing: border-box !important;
+            }
+        }
+
+        /* ensure profile-content can be used as positioning context */
+        .profile-content {
+            position: relative;
+        }
+
+        /* place back button at upper-right of profile-content */
+        .cert-list-back {
+            position: absolute;
+            top: 16px;
+            right: 38px;
+            z-index: 50;
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: transparent;
+            transition: background 0.15s, color 0.15s;
+        }
+        .cert-list-back:hover {
+            background: rgba(0,0,0,0.04);
+            text-decoration: none;
+        }
+
+        @media (max-width: 600px) {
+            .cert-list-back {
+                top: 10px;
+                right: 10px;
+                padding: 6px 8px;
+                font-size: 0.98rem;
+            }
         }
     </style>
 </head>
@@ -728,12 +852,5 @@ $avatar_html = $has_profile_picture
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-    });
-    </script>
-    <!-- Bootstrap JS (optional, for responsive navbar) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
 
 

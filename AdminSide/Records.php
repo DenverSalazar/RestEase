@@ -20,7 +20,11 @@ if (!isset($_SESSION['admin_id'])) {
   <!-- DataTables CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
-  
+    /* Highlight validity dates for upcoming expiring records (top 10) */
+    .validity-expiring {
+      color: #e74c3c;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -124,6 +128,29 @@ if (!isset($_SESSION['admin_id'])) {
             
             include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+            // --- New code: fetch top-10 upcoming validity expiries (validity = dateInternment + 5 years) ---
+            $expiringIds = [];
+            $today = date('Y-m-d');
+            $expSql = "SELECT id, DATE_ADD(dateInternment, INTERVAL 5 YEAR) AS validity
+                       FROM deceased
+                       WHERE dateInternment IS NOT NULL
+                         AND dateInternment != ''
+                         AND dateInternment != '0000-00-00'
+                         AND DATE_ADD(dateInternment, INTERVAL 5 YEAR) >= ?
+                       ORDER BY validity ASC
+                       LIMIT 10";
+            if ($stmtExp = $conn->prepare($expSql)) {
+                $stmtExp->bind_param('s', $today);
+                $stmtExp->execute();
+                $resExp = $stmtExp->get_result();
+                while ($r = $resExp->fetch_assoc()) {
+                    $expiringIds[intval($r['id'])] = true;
+                }
+                $stmtExp->close();
+            }
+            // --- End new code ---
+
             // Fetch all records (no pagination/search/filter)
             $result = $conn->query("SELECT id, nicheID, lastName, firstName, middleName, suffix, age, born, residency, informantName, dateDied, dateInternment FROM deceased");
             if ($result && $result->num_rows > 0) {
@@ -145,7 +172,7 @@ if (!isset($_SESSION['admin_id'])) {
                 $informant = htmlspecialchars($row['informantName']);
                 $dateDied = htmlspecialchars($row['dateDied']);
                 $dateInternment = htmlspecialchars($row['dateInternment']);
-                
+
                 // Calculate validity date (5 years from internment)
                 $validityDate = '';
                 if (!empty($row['dateInternment']) && $row['dateInternment'] !== '0000-00-00') {
@@ -157,7 +184,11 @@ if (!isset($_SESSION['admin_id'])) {
                     $validityDate = '';
                   }
                 }
-                
+
+                // If this record is in the top-10 upcoming expiries, wrap validity in red span
+                $isExpiring = isset($expiringIds[intval($row['id'])]);
+                $validityCell = $validityDate ? ($isExpiring ? "<span class='validity-expiring'>{$validityDate}</span>" : $validityDate) : '';
+
                 // Build query parameters for EditNiches.php, include unique id and all fields
                 $queryParams = http_build_query([
                   'id' => $row['id'],
@@ -185,7 +216,7 @@ if (!isset($_SESSION['admin_id'])) {
                   <td>{$informant}</td>
                   <td>{$dateDied}</td>
                   <td>{$dateInternment}</td>
-                  <td>{$validityDate}</td>
+                  <td>{$validityCell}</td>
                   <td><a href='EditNiches.php?{$queryParams}' class='edit-btn' title='Edit Record'><i class='fas fa-edit'></i></a></td>
                   <td class='delete-checkbox-col'><input type='checkbox' class='delete-checkbox' name='delete_ids[]' value='{$row['id']}'></td>
                 </tr>";

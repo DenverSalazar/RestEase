@@ -49,7 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   $lastName = trim($_POST['lastName'] ?? '');
   $phone = trim($_POST['phone'] ?? '');
   $role = trim($_POST['role'] ?? 'Admin');
+  $emailInput = trim($_POST['email'] ?? '');
   $profilePicPath = $adminInfo['profile_pic'];
+  $emailChangeError = '';
+
   // Handle profile picture upload
   if (isset($_FILES['profilePicInput']) && $_FILES['profilePicInput']['error'] === UPLOAD_ERR_OK) {
     $uploadDir = '../uploads/';
@@ -80,6 +83,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
     $stmt2->execute();
     $stmt2->close();
   }
+  // Secure email change validation
+  if ($emailInput && $emailInput !== $adminInfo['email']) {
+    // Validate email format
+    if (!filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
+      $emailChangeError = "Invalid email format.";
+    } else {
+      // Require current password for email change
+      $emailChangePassword = trim($_POST['emailChangePassword'] ?? '');
+      if (!$emailChangePassword) {
+        $emailChangeError = "Please enter your current password to change email.";
+      } else {
+        // Check password
+        $stmtPwd = $conn->prepare('SELECT password FROM admin_accounts WHERE id=? LIMIT 1');
+        $stmtPwd->bind_param('i', $adminId);
+        $stmtPwd->execute();
+        $stmtPwd->bind_result($hashedPwd);
+        if ($stmtPwd->fetch()) {
+          if (!password_verify($emailChangePassword, $hashedPwd)) {
+            $emailChangeError = "Incorrect password. Email not changed.";
+          }
+        } else {
+          $emailChangeError = "Account not found.";
+        }
+        $stmtPwd->close();
+      }
+    }
+    // If no error, update email
+    if (!$emailChangeError) {
+      $stmtEmail = $conn->prepare('UPDATE admin_accounts SET email=? WHERE id=?');
+      $stmtEmail->bind_param('si', $emailInput, $adminId);
+      $stmtEmail->execute();
+      $stmtEmail->close();
+      $adminInfo['email'] = $emailInput;
+    }
+  }
+
   // Update adminInfo array with new values
   $adminInfo['display_name'] = $displayName;
   $adminInfo['first_name'] = $firstName;
@@ -87,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
   $adminInfo['phone'] = $phone;
   $adminInfo['role'] = $role;
   $adminInfo['profile_pic'] = $profilePicPath;
+  // $adminInfo['email'] already updated above if changed
 }
 ?>
 
@@ -168,7 +208,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           <div class="settings-fields-row">
             <div class="settings-field-group">
               <label for="email">Email Address</label>
-              <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($adminInfo['email']); ?>" readonly>
+              <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($adminInfo['email']); ?>">
+            </div>
+            <div class="settings-field-group">
+              <label for="emailChangePassword">Current Password <span style="color:#e74c3c;">*</span></label>
+              <input type="password" id="emailChangePassword" name="emailChangePassword" autocomplete="off" placeholder="Required for email change">
+              <?php if (!empty($emailChangeError)): ?>
+                <div style="color:#e74c3c;font-size:0.97em;margin-top:4px;"><?php echo htmlspecialchars($emailChangeError); ?></div>
+              <?php endif; ?>
             </div>
             <div class="settings-field-group">
               <label for="phone">Phone Number</label>
@@ -1500,7 +1547,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       renderNotifications();
       renderNewUserNotifications();
       renderNewRequestNotifications();
-      updateNotifBadge();
+           updateNotifBadge();
     });
 
     // Restore modal logic for Archive Clients

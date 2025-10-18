@@ -24,7 +24,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
 ?>
 <aside class="sidebar">
     <div class="logo" style="display: flex; flex-direction: row; align-items: center; padding: 0.75rem 0 0.5rem 0.5rem;">
-      <img src="../assets/logo.png" alt="RestEase" style="width: 55px; height: 55px; border-radius: 50%; margin-right: 0.85rem;">
+      <img src="../assets/re logo blue.png" alt="RestEase" style="width: 55px; height: 55px; border-radius: 50%; margin-right: 0.85rem;">
       <div style="display: flex; flex-direction: column; align-items: flex-start;">
         <div style="font-size: 1.35em; font-weight: 700; color: #222; line-height: 1;">RestEase</div>
         <div style="font-size: 0.95em; color: #000000ff; font-weight: 500; margin-top: 0.15rem; letter-spacing: 1px;">MPDO</div>
@@ -43,12 +43,12 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       </a>
       
       <!-- Mapping Section -->
-      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">Mapping</div>
+      <div class="nav-section text-muted" style="padding: 0.15rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">Mapping</div>
       <!-- New Cemetery Dropdown -->
       <div class="nav-dropdown<?php if(in_array($current_page, ['Mapping.php','first_floor.php','second_floor.php','third_floor.php'])) echo ' open'; ?>" id="new-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
           
-<i class="fa-solid fa-map-location-dot"></i>
+      <i class="fa-solid fa-map-location-dot"></i>
           New Cemetery
           <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
@@ -70,7 +70,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <!-- Old Cemetery Dropdown -->
       <div class="nav-dropdown<?php if($current_page == 'OldMap.php') echo ' open'; ?>" id="old-cemetery-dropdown">
         <div class="nav-item dropdown-toggle">
-<i class="fa-solid fa-map-location-dot"></i>
+      <i class="fa-solid fa-map-location-dot"></i>
           Old Cemetery
           <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
@@ -83,7 +83,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       </div>
       
        <!-- General Section -->
-      <div class="nav-section text-muted" style="padding: 0.75rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">General</div>
+      <div class="nav-section text-muted" style="padding: 0.15rem 1rem 0.25rem; font-size: 0.95em; color: #000000ff; letter-spacing: 1px; font-weight: 600;">General</div>
      
       <a href="Clients.php" class="nav-item<?php if(in_array($current_page, $clients_pages)) echo ' active'; ?>">
         <i class="fas fa-users"></i>

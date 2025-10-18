@@ -22,6 +22,7 @@
                     <div class="d-flex justify-content-center justify-content-md-end gap-3">
                         <a href="https://www.facebook.com/PadreGarcia" class="text-white"><i class="fab fa-facebook"></i></a>
                         <a href="https://www.padregarcia.gov.ph/" class="text-white"><i class="fas fa-globe"></i></a>
+                        <a href="#" class="text-white"><i class="fas fa-envelope"></i></a>
                     </div>
                 </div>
             </div>

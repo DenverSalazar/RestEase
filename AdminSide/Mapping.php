@@ -1788,14 +1788,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 var matchLayer = null;
                 sectionLayer.eachLayer(function(layer) {
                     var nicheID = layer.feature && layer.feature.properties['nicheID'];
-                    var deceased = deceasedData[nicheID];
+                    var deceasedArr = deceasedData[nicheID];
+                    // Always treat as array
                     if (nicheID && nicheID.toLowerCase() === query) {
                         matchLayer = layer;
                         return;
                     }
-                    if (deceased && normalizeName(deceased).includes(query)) {
-                        matchLayer = layer;
-                        return;
+                    if (deceasedArr) {
+                        var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
+                        if (arr.some(function(deceased) {
+                            return normalizeName(deceased).includes(query);
+                        })) {
+                            matchLayer = layer;
+                            return;
+                        }
                     }
                 });
                 if (matchLayer) {

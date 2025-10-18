@@ -173,6 +173,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             align-items: center;
             justify-content: center;
             transition: opacity 0.2s;
+            padding: 20px; /* allow breathing space on very small devices */
+            box-sizing: border-box;
         }
         #termsModal.show {
             opacity: 1;
@@ -184,6 +186,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             position: relative;
             font-family: 'Poppins', Arial, sans-serif;
             animation: fadeInModal 0.2s;
+            max-width: 480px;      /* keep desktop look */
+            width: 100%;
+            padding: 44px 32px 36px 32px; /* desktop padding */
+            box-sizing: border-box;
+            overflow: hidden;
+            max-height: 650px;     /* desktop height */
+            display: flex;
+            flex-direction: column;
+
+            /* added small vertical breathing space so modal doesn't touch viewport edges */
+            margin: 16px 0;
         }
         @keyframes fadeInModal {
             from { opacity: 0; transform: scale(0.97);}
@@ -197,6 +210,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border: none;
             cursor: pointer;
             transition: color 0.18s;
+            top: 8px;
+            right: 18px;
         }
         .terms-modal-close:hover {
             color: #222;
@@ -225,11 +240,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .terms-modal-list li {
             margin-bottom: 8px;
         }
+        /* scrollable inner area */
+        .terms-modal-inner-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* SMALL SCREENS: keep modal from covering entire viewport */
         @media (max-width: 600px) {
+            #termsModal {
+                padding: 12px;
+            }
             .terms-modal-content {
                 max-width: 98vw !important;
-                height: 90vh !important;
-                padding: 12px 4px 12px 4px !important;
+                width: 100% !important;
+                padding: 12px 12px 14px 12px !important;
+                border-radius: 12px !important;
+                max-height: calc(100vh - 48px) !important; /* leave top/bottom space */
+                height: auto !important;
+
+                /* slightly reduce vertical margin on very small screens */
+                margin: 12px 0 !important;
+            }
+            .terms-modal-title {
+                font-size: 1.15rem;
+            }
+            .terms-modal-subtitle {
+                font-size: 0.95rem;
+            }
+            .terms-modal-close {
+                font-size: 1.4rem;
+                top: 8px;
+                right: 12px;
             }
         }
     </style>
@@ -424,9 +468,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </script>
     <!-- Terms & Conditions Modal -->
     <div id="termsModal">
-        <div class="terms-modal-content" style="max-width: 480px; width: 100%; min-width: 320px; padding: 44px 32px 36px 32px; box-sizing: border-box; height: 650px; display: flex; flex-direction: column;">
-            <button class="terms-modal-close" id="closeTermsModal" aria-label="Close" style="top:8px;right:18px;">&times;</button>
-            <div style="flex:1; overflow-y:auto; padding-right:6px;">
+        <div class="terms-modal-content">
+            <button class="terms-modal-close" id="closeTermsModal" aria-label="Close">&times;</button>
+            <div class="terms-modal-inner-scroll">
                 <div class="terms-modal-subtitle">AGREEMENT</div>
                 <div class="terms-modal-title">Terms and Conditions</div>
                 <div class="terms-modal-content-inner">
@@ -451,10 +495,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     By using this system, you also agree to respect the privacy, integrity, and purpose of the platform. For questions, please contact your local MPDO office.
                 </div>
             </div>
-        </div>
-    </div>
-</body>
-</html>
         </div>
     </div>
 </body>

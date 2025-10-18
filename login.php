@@ -91,8 +91,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Add Google Sign-In Meta Tag -->
-    <meta name="google-signin-client_id" content="211739618373-kh9966m09dm8kbifi7goe7c6jeu141mi.apps.googleusercontent.com">
+    <!-- Add Google Sign-In Meta Tag
+    <meta name="google-signin-client_id" content="211739618373-kh9966m09dm8kbifi7goe7c6jeu141mi.apps.googleusercontent.com"> -->
 </head>
 
 <body>
@@ -188,10 +188,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="divider">
                                 <span>or</span>
                             </div>
-                            <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
+                            <!-- <button type="button" class="btn btn-google w-100" onclick="handleGoogleSignIn()">
                                 <img src="assets/google-icon.png" alt="Google">
                                 Sign in with Google
-                            </button>
+                            </button> -->
                             <p class="signup-text mt-4 text-center">
                                 Don't have an account? <a href="register.php">Sign Up</a>
                             </p>

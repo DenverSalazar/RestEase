@@ -58,13 +58,19 @@ while ($row = $result->fetch_assoc()) {
     }
     /* Only adjust legend position, not width */
     body.pick-niche-mode .custom-map-legend {
-      left: 24px !important;
-      right: auto !important;
+      right: 24px !important;
+      left: auto !important;
       bottom: 18px !important;
       border-radius: 10px !important;
       max-width: 260px !important;
       min-width: 140px !important;
       width: auto !important;
+    }
+    /* Position legend at lower right in all modes */
+    .custom-map-legend {
+      right: 18px !important;
+      left: auto !important;
+      bottom: 18px !important;
     }
     body.pick-niche-mode #map {
       margin: 0 !important;
@@ -1197,14 +1203,19 @@ document.getElementById('insertButton').addEventListener('click', function() {
                         var matchLayer = null;
                         sectionLayer.eachLayer(function(layer) {
                             var nicheID = layer.feature && layer.feature.properties['nicheID'];
-                            var deceased = deceasedData[nicheID];
+                            var deceasedArr = deceasedData[nicheID];
                             if (nicheID && nicheID.toLowerCase() === query) {
                                 matchLayer = layer;
                                 return;
                             }
-                            if (deceased && normalizeName(deceased).includes(query)) {
-                                matchLayer = layer;
-                                return;
+                            if (deceasedArr) {
+                                var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
+                                if (arr.some(function(deceased) {
+                                    return normalizeName(deceased).includes(query);
+                                })) {
+                                    matchLayer = layer;
+                                    return;
+                                }
                             }
                         });
                         if (matchLayer) {

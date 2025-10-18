@@ -135,27 +135,8 @@
 
 The system provides a secure and transparent way to manage cemetery information, ensuring that data remains accurate and protected. Families can locate niches, receive automated renewal notifications, and access important updates online, while administrators benefit from organized records and faster processing. </p>
                             </div>
-                            <div class="carousel-item">
-                                <p class="explore-carousel-text" style="text-align: justify; cursor: pointer;">
-                                   RestEase is more than a traditional record management tool; it’s an innovative digital platform designed to streamline and enhance cemetery operations in Padre Garcia. Through its online interface, users can quickly view burial records, request certificates, and monitor renewal deadlines without dealing with cumbersome paperwork.
-
-System ensures secure and reliable management of cemetery data, keeping information accurate and protected. Families can search for niches, receive timely renewal alerts, stay informed of important announcements, while administrators enjoy organized records and faster processing of requests. </p>
-                            </div>
-                            <div class="carousel-item">
-                                <p class="explore-carousel-text" style="text-align: justify; cursor: pointer;">
-                                    RestEase is not just a record management system—it’s a modern web-based solution created to simplify cemetery operations in Padre Garcia. Users can easily check burial records, submit certificate requests, and track renewal schedules efficiently without manual paperwork.
-
-The platform provides safe and transparent management of cemetery information, guaranteeing accurate and protected data. Families can identify available niches, receive automated reminders for renewals, and access key updates online, while administrators benefit from structured records and faster workflow.</p>
-                            </div>
-                        </div>
-                        <!-- Custom 3-dot indicators below info text -->
-                        <div class="d-flex justify-content-center align-items-center mt-3" id="customExploreDots">
-                            <span class="explore-dot active" style="height:10px;width:10px;background:#333;border-radius:50%;display:inline-block;margin:0 6px;transition:background 0.2s;"></span>
-                            <span class="explore-dot" style="height:10px;width:10px;background:#bbb;border-radius:50%;display:inline-block;margin:0 6px;transition:background 0.2s;"></span>
-                            <span class="explore-dot" style="height:10px;width:10px;background:#bbb;border-radius:50%;display:inline-block;margin:0 6px;transition:background 0.2s;"></span>
                         </div>
                     </div>
-                    <!-- Carousel End -->
                 </div>
                 <!-- Image Content -->
                 <div class="col-lg-5 col-md-12 text-center d-flex justify-content-center align-items-center" style="height:100%;">

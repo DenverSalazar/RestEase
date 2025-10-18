@@ -68,6 +68,52 @@ $stmt->close();
         margin: 48px 0 24px 0;
         font-weight: 500;
       }
+
+      /* Move back button upward and reduce left margin on small devices */
+      @media (max-width: 480px) {
+        .cert-list-back {
+          display: inline-block;
+          transform: translateY(-10px);
+          margin: 18px 0 0 16px !important; /* override inline margin on small screens */
+        }
+      }
+
+      /* Responsive table: keep table look on large screens; stacked labeled rows on small screens */
+      .table-responsive {
+        overflow-x: auto;
+      }
+      @media (max-width: 768px) {
+        .table-responsive table thead {
+          display: none; /* hide header on small screens */
+        }
+        .table-responsive table,
+        .table-responsive tbody,
+        .table-responsive tr,
+        .table-responsive td {
+          display: block;
+          width: 100%;
+        }
+        .table-responsive tr {
+          margin-bottom: 12px;
+          border: 1px solid #e6eef5;
+          border-radius: 8px;
+          padding: 10px 12px;
+          background: #fff;
+        }
+        .table-responsive td {
+          padding: 6px 0;
+          border: none;
+          text-align: left;
+        }
+        .table-responsive td::before {
+          content: attr(data-label);
+          display: inline-block;
+          min-width: 110px;
+          font-weight: 600;
+          color: #262424ff;
+          margin-right: 8px;
+        }
+      }
     </style>
 
 </head>
@@ -107,7 +153,7 @@ $stmt->close();
                <tbody>
                    <?php foreach ($deceased_list as $d): ?>
                    <tr>
-                       <td>
+                       <td data-label="Name">
                            <?php
                                $middleInitial = '';
                                if (!empty($d['middleName'])) {
@@ -117,12 +163,12 @@ $stmt->close();
                                echo htmlspecialchars($d['firstName']) . ' ' . $middleInitial . htmlspecialchars($d['lastName']) . $suffix;
                            ?>
                        </td>
-                       <td><?php echo htmlspecialchars($d['born']); ?></td>
-                       <td><?php echo htmlspecialchars($d['dateDied']); ?></td>
-                       <td><?php echo htmlspecialchars($d['age']); ?></td>
-                       <td><?php echo htmlspecialchars($d['residency']); ?></td>
-                       <td><?php echo htmlspecialchars($d['dateInternment']); ?></td>
-                       <td><?php echo htmlspecialchars($d['nicheID']); ?></td>
+                       <td data-label="Born"><?php echo htmlspecialchars($d['born']); ?></td>
+                       <td data-label="Date Died"><?php echo htmlspecialchars($d['dateDied']); ?></td>
+                       <td data-label="Age"><?php echo htmlspecialchars($d['age']); ?></td>
+                       <td data-label="Residency"><?php echo htmlspecialchars($d['residency']); ?></td>
+                       <td data-label="Date Internment"><?php echo htmlspecialchars($d['dateInternment']); ?></td>
+                       <td data-label="Niche"><?php echo htmlspecialchars($d['nicheID']); ?></td>
                    </tr>
                    <?php endforeach; ?>
                </tbody>

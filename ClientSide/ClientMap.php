@@ -1000,8 +1000,7 @@ window.focusNiche = function(nicheID) {
 };
 </script>
 <script>
-// --- SEARCH FUNCTIONALITY ---
-// Same logic as OldMap.php, adapted for client view
+// --- SEARCH FUNCTIONALITY FOR CLIENT SIDE ---
 document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('mapSearchInput');
     var searchErrorPopup = document.getElementById('searchErrorPopup');
@@ -1015,40 +1014,54 @@ document.addEventListener('DOMContentLoaded', function() {
             function normalizeName(deceased) {
                 if (!deceased) return '';
                 var firstName = deceased.firstName || '';
+                var middleName = deceased.middleName || '';
                 var lastName = deceased.lastName || '';
-                return (firstName + ' ' + lastName).trim().toLowerCase();
+                var suffix = deceased.suffix || '';
+                var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                var fullName = firstName;
+                if (middleInitial) fullName += ' ' + middleInitial;
+                if (lastName) fullName += ' ' + lastName;
+                if (suffix) fullName += ', ' + suffix;
+                return fullName.trim().toLowerCase();
             }
 
             var found = false;
             var visibleLayers = [];
             // Only search visible layers (sections for current floor)
-            if (map.hasLayer(layer_Floor1)) visibleLayers.push(layer_Floor1);
-            if (map.hasLayer(layer_Floor1_2)) visibleLayers.push(layer_Floor1_2);
-            if (map.hasLayer(layer_Floor1_3)) visibleLayers.push(layer_Floor1_3);
-            if (map.hasLayer(layer_Floor1_4)) visibleLayers.push(layer_Floor1_4);
-            if (map.hasLayer(layer_Floor2)) visibleLayers.push(layer_Floor2);
-            if (map.hasLayer(layer_Floor2_2)) visibleLayers.push(layer_Floor2_2);
-            if (map.hasLayer(layer_Floor2_3)) visibleLayers.push(layer_Floor2_3);
-            if (map.hasLayer(layer_Floor2_4)) visibleLayers.push(layer_Floor2_4);
-            if (map.hasLayer(layer_Floor3)) visibleLayers.push(layer_Floor3);
-            if (map.hasLayer(layer_Floor3_2)) visibleLayers.push(layer_Floor3_2);
-            if (map.hasLayer(layer_Floor3_3)) visibleLayers.push(layer_Floor3_3);
-            if (map.hasLayer(layer_Floor3_4)) visibleLayers.push(layer_Floor3_4);
-            if (map.hasLayer(layer_OldMap_1)) visibleLayers.push(layer_OldMap_1);
-            if (map.hasLayer(layer_OldMap_4)) visibleLayers.push(layer_OldMap_4);
+            if (typeof map !== 'undefined') {
+                if (map.hasLayer(window.layer_Floor1)) visibleLayers.push(window.layer_Floor1);
+                if (map.hasLayer(window.layer_Floor1_2)) visibleLayers.push(window.layer_Floor1_2);
+                if (map.hasLayer(window.layer_Floor1_3)) visibleLayers.push(window.layer_Floor1_3);
+                if (map.hasLayer(window.layer_Floor1_4)) visibleLayers.push(window.layer_Floor1_4);
+                if (map.hasLayer(window.layer_Floor2)) visibleLayers.push(window.layer_Floor2);
+                if (map.hasLayer(window.layer_Floor2_2)) visibleLayers.push(window.layer_Floor2_2);
+                if (map.hasLayer(window.layer_Floor2_3)) visibleLayers.push(window.layer_Floor2_3);
+                if (map.hasLayer(window.layer_Floor2_4)) visibleLayers.push(window.layer_Floor2_4);
+                if (map.hasLayer(window.layer_Floor3)) visibleLayers.push(window.layer_Floor3);
+                if (map.hasLayer(window.layer_Floor3_2)) visibleLayers.push(window.layer_Floor3_2);
+                if (map.hasLayer(window.layer_Floor3_3)) visibleLayers.push(window.layer_Floor3_3);
+                if (map.hasLayer(window.layer_Floor3_4)) visibleLayers.push(window.layer_Floor3_4);
+                if (map.hasLayer(window.layer_OldMap_1)) visibleLayers.push(window.layer_OldMap_1);
+                if (map.hasLayer(window.layer_OldMap_4)) visibleLayers.push(window.layer_OldMap_4);
+            }
 
             visibleLayers.some(function(sectionLayer) {
                 var matchLayer = null;
                 sectionLayer.eachLayer(function(layer) {
                     var nicheID = layer.feature && layer.feature.properties['nicheID'];
-                    var deceased = deceasedData[nicheID];
+                    var deceasedArr = deceasedData[nicheID];
                     if (nicheID && nicheID.toLowerCase() === query) {
                         matchLayer = layer;
                         return;
                     }
-                    if (deceased && normalizeName(deceased).includes(query)) {
-                        matchLayer = layer;
-                        return;
+                    if (deceasedArr) {
+                        var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
+                        if (arr.some(function(deceased) {
+                            return normalizeName(deceased).includes(query);
+                        })) {
+                            matchLayer = layer;
+                            return;
+                        }
                     }
                 });
                 if (matchLayer) {
