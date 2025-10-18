@@ -1186,101 +1186,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
     renderList(currentFilter, this.value);
   });
 
-  // Footer pagination controls
-  function appendFooter(container, total, totalPages) {
-    // remove existing footer
-    const existing = container.querySelector('#notifListFooter');
-    if (existing) existing.remove();
-
-    const footer = document.createElement('div');
-    footer.id = 'notifListFooter';
-    footer.style.display = 'flex';
-    footer.style.alignItems = 'center';
-    footer.style.justifyContent = 'space-between';
-    footer.style.width = '100%';
-    footer.style.boxSizing = 'border-box';
-    footer.style.marginTop = '8px';
-    footer.style.gap = '12px';
-    footer.style.color = '#666';
-    footer.style.fontSize = '0.95rem';
-
-    // left: Page X of Y
-    const left = document.createElement('div');
-    left.className = 'notif-footer-left';
-    left.style.flex = '0 0 auto';
-    left.style.textAlign = 'left';
-    left.style.paddingLeft = '8px';
-    left.textContent = `Page ${showAll ? 1 : currentPage} of ${totalPages}`;
-    footer.appendChild(left);
-
-    // center: pagination controls
-    const center = document.createElement('div');
-    center.className = 'notif-footer-center';
-    center.style.flex = '1 1 auto';
-    center.style.display = 'flex';
-    center.style.justifyContent = 'center';
-    center.style.alignItems = 'center';
-    footer.appendChild(center);
-
-    // right spacer to preserve layout balance
-    const right = document.createElement('div');
-    right.className = 'notif-footer-right';
-    right.style.flex = '0 0 120px';
-    footer.appendChild(right);
-
-    // helper to create page button
-    function createPageBtn(label, disabled, onClick, isActive) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = label;
-      btn.style.margin = '0 4px';
-      btn.style.padding = '6px 10px';
-      btn.style.border = '1px solid #e3e7ed';
-      btn.style.borderRadius = '6px';
-      btn.style.background = isActive ? '#2d72d9' : 'transparent';
-      btn.style.color = isActive ? '#fff' : '#444';
-      btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
-      btn.disabled = !!disabled;
-      btn.addEventListener('click', function(ev){
-        ev.stopPropagation();
-        if (disabled) return;
-        onClick();
-      });
-      return btn;
-    }
-
-    // Prev
-    const prevBtn = createPageBtn('‹', showAll || currentPage <= 1, function(){
-      if (currentPage > 1) { currentPage--; renderList(currentFilter, document.getElementById('notifSearch').value); }
-    });
-    center.appendChild(prevBtn);
-
-    // page numbers (limit to a window)
-    const maxButtons = 5;
-    if (!showAll) {
-      let start = Math.max(1, currentPage - Math.floor(maxButtons/2));
-      let end = Math.min(totalPages, start + maxButtons - 1);
-      start = Math.max(1, end - maxButtons + 1);
-      for (let p = start; p <= end; p++) {
-        const btn = createPageBtn(p, false, (function(page){ return function(){ currentPage = page; renderList(currentFilter, document.getElementById('notifSearch').value); }; })(p), (p === currentPage));
-        center.appendChild(btn);
-      }
-    } else {
-      // when showing all, just show single inactive "1"
-      const btn = createPageBtn('1', true, function(){}, true);
-      center.appendChild(btn);
-    }
-
-    // Next
-    const nextBtn = createPageBtn('›', showAll || currentPage >= totalPages, function(){
-      if (currentPage < totalPages) { currentPage++; renderList(currentFilter, document.getElementById('notifSearch').value); }
-    });
-    center.appendChild(nextBtn);
-
-    container.appendChild(footer);
-  }
-
-  // Ensure renderList calls appendFooter(container, total, totalPages) (it already does in your file)
   // Initialize
   updateCounts();
   renderList('all','');
@@ -1293,8 +1198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
           <style>
             /* small extra styles to guarantee centered pagination and left page info */
             #notifListFooter { width: 100%; box-sizing: border-box; }
-            #notifListFooter .notif-footer-center .dataTables_paginate { margin: 0; }
-            #notifListFooter button { min-width: 36px; }
+            .notif-pagination button { min-width: 36px; }
           </style>
 
           <!-- Unsaved changes bar -->
