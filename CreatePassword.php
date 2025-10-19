@@ -6,19 +6,26 @@ if (!isset($_SESSION['reset_email'])) {
     die("Unauthorized access.");
 }
 
+// Add validation containers
 $error_messages = [];
-$success = '';
-$show_toast = false;
 $input_classes = [
     'password' => '',
     'confirm_password' => ''
 ];
+
+// new: error toast vars
+$error_toast_message = '';
+$show_error_toast = false;
+
+$success = '';
+$show_toast = false;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm_password'] ?? '';
     $email    = $_SESSION['reset_email'];
 
+    // Validate password rules
     if (strlen($password) < 8) {
         $error_messages['password'] = "Password must be at least 8 characters.";
         $input_classes['password'] = 'is-invalid';
@@ -27,11 +34,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $input_classes['password'] = 'is-invalid';
     }
 
+    // Confirm password match
     if ($password !== $confirm) {
         $error_messages['confirm_password'] = "Passwords do not match.";
         $input_classes['confirm_password'] = 'is-invalid';
     }
 
+    // If there are validation errors, prepare error toast (show priority: password -> confirm)
+    if (!empty($error_messages)) {
+        if (!empty($error_messages['password'])) {
+            $error_toast_message = $error_messages['password'];
+        } else {
+            $error_toast_message = reset($error_messages);
+        }
+        $show_error_toast = true;
+    }
+
+    // Only update when there are no validation errors
     if (empty($error_messages)) {
         $hashed = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE users SET password = ?, reset_code = NULL, reset_expires = NULL WHERE email = ?");
@@ -89,10 +108,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .custom-toast.success {
             border-left: 6px solid #38d39f;
         }
-        .custom-toast .toast-icon {
+        .custom-toast.success .toast-icon {
             font-size: 2rem;
             margin-right: 1rem;
             color: #38d39f;
+        }
+        .custom-toast.error {
+            border-left: 6px solid #ff6b6b;
+        }
+        .custom-toast.error .toast-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            color: #ff6b6b;
         }
         .custom-toast .toast-message {
             flex: 1;
@@ -107,16 +134,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .custom-toast .toast-close:hover {
             color: #222;
         }
-        .eye-icon-wrapper {
-        border: none !important;
-        background: transparent !important;
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-    }
-    .eye-icon-wrapper i {
-        padding-bottom: 10px;
-        vertical-align: middle;
-    }
+        .input-with-icon {
+            position: relative;
+        }
+        .input-with-icon input.form-control {
+            padding-right: 2.6rem; /* space for eye icon inside the input */
+        }
+        .input-with-icon .toggle-eye {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            cursor: pointer;
+            font-size: 1.05rem;
+            z-index: 2;
+        }
+        .input-with-icon .toggle-eye.fa-eye-slash {
+            color: #2c3e50;
+        }
+
+        /* Show placeholder in red when input is invalid (keeps layout/icon position) */
+        .form-control.is-invalid::placeholder {
+            color: #dc3545 !important;
+            opacity: 1; /* ensure visibility across browsers */
+        }
 
         @media (max-width: 600px) {
             .custom-toast {
@@ -164,41 +206,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <p class="text-muted">Password must be at least 8 characters and contain both letters and numbers.</p>
 
                     <form method="POST" action="">
-                    <!-- Password -->
-                    <div class="mb-3 position-relative">
-                        <div class="input-group">
+                        <!-- Password -->
+                        <div class="mb-3 position-relative input-with-icon">
                             <input type="password" name="password" id="password" class="form-control <?= $input_classes['password'] ?>" placeholder="New Password" required>
-                            <span class="input-group-text bg-white eye-icon-wrapper">
-                                <i class="fas fa-eye toggle-eye" id="togglePassword" style="cursor: pointer;"></i>
-                            </span>
+                            <i class="fas fa-eye toggle-eye" data-target="password" aria-hidden="true"></i>
                         </div>
-                        <?php if (!empty($error_messages['password'])): ?>
-                            <div class="invalid-feedback d-block">
-                                <?= $error_messages['password']; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
 
-                    <!-- Confirm Password -->
-                    <div class="mb-3 position-relative">
-                        <div class="input-group">
+                        <!-- Confirm Password -->
+                        <div class="mb-3 position-relative input-with-icon">
                             <input type="password" name="confirm_password" id="confirmPassword" class="form-control <?= $input_classes['confirm_password'] ?>" placeholder="Confirm Password" required>
-                            <span class="input-group-text bg-white eye-icon-wrapper">
-                                <i class="fas fa-eye toggle-eye" id="toggleConfirmPassword" style="cursor: pointer;"></i>
-                            </span>
+                            <i class="fas fa-eye toggle-eye" data-target="confirmPassword" aria-hidden="true"></i>
                         </div>
-                        <?php if (!empty($error_messages['confirm_password'])): ?>
-                            <div class="invalid-feedback d-block">
-                                <?= $error_messages['confirm_password']; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
 
-                    <button type="submit" class="btn btn-success w-100">Reset Password</button>
-                    <div class="text-center mt-3">
-                        <a href="login.php" class="btn btn-link">← Back to Login</a>
-                    </div>
-                </form>
+                        <button type="submit" class="btn btn-success w-100">Reset Password</button>
+                        <div class="text-center mt-3">
+                            <a  href="login.php" class="btn btn-link" style="color:#506C84;font-size:1.08rem;font-weight:500; text-decoration:none;cursor:pointer;transition:color 0.18s;">← Back to Login</a>
+                        </div>
+                    </form>
 
                 </div>
             </div>
@@ -207,7 +231,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 </div>
 
-<!-- Custom Toast -->
+<!-- Custom Toast (success) -->
 <?php if (!empty($show_toast)) : ?>
     <div id="customToast" class="custom-toast success">
         <div class="toast-icon"><i class="fas fa-check-circle"></i></div>
@@ -233,23 +257,43 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </script>
 <?php endif; ?>
 
+<!-- Error Toast -->
+<?php if (!empty($show_error_toast)) : ?>
+    <div id="errorToast" class="custom-toast error">
+        <div class="toast-icon"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="toast-message"><?= htmlspecialchars($error_toast_message, ENT_QUOTES) ?></div>
+        <div class="toast-close" onclick="closeErrorToast()">&times;</div>
+    </div>
+    <script>
+        function closeErrorToast() {
+            var t = document.getElementById('errorToast');
+            if (!t) return;
+            t.style.opacity = '0';
+            setTimeout(function() { if (t) t.style.display = 'none'; }, 300);
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var t = document.getElementById('errorToast');
+            if (!t) return;
+            t.style.opacity = '1';
+            setTimeout(closeErrorToast, 4000);
+        });
+    </script>
+<?php endif; ?>
+
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Toggle password visibility
-   document.getElementById('togglePassword').addEventListener('click', function () {
-    const input = document.getElementById('password');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.classList.toggle('fa-eye');
-    this.classList.toggle('fa-eye-slash');
-});
-
-document.getElementById('toggleConfirmPassword').addEventListener('click', function () {
-    const input = document.getElementById('confirmPassword');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    this.classList.toggle('fa-eye');
-    this.classList.toggle('fa-eye-slash');
-});
+    // Generic toggle for inline eye icons (works for both password fields)
+    document.querySelectorAll('.toggle-eye').forEach(function(el){
+        el.addEventListener('click', function () {
+            var targetId = this.getAttribute('data-target');
+            var input = document.getElementById(targetId);
+            if (!input) return;
+            input.type = input.type === 'password' ? 'text' : 'password';
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    });
 </script>
 
 <!-- Toast Styles -->
@@ -277,10 +321,18 @@ document.getElementById('toggleConfirmPassword').addEventListener('click', funct
     .custom-toast.success {
         border-left: 6px solid #38d39f;
     }
-    .custom-toast .toast-icon {
+    .custom-toast.success .toast-icon {
         font-size: 2rem;
         margin-right: 1rem;
         color: #38d39f;
+    }
+    .custom-toast.error {
+        border-left: 6px solid #ff6b6b;
+    }
+    .custom-toast.error .toast-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+        color: #ff6b6b;
     }
     .custom-toast .toast-message {
         flex: 1;
@@ -295,16 +347,31 @@ document.getElementById('toggleConfirmPassword').addEventListener('click', funct
     .custom-toast .toast-close:hover {
         color: #222;
     }
-    .eye-icon-wrapper {
-    border: none !important;
-    background: transparent !important;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-}
-.eye-icon-wrapper i {
-    padding-bottom: 10px;
-    vertical-align: middle;
-}
+    .input-with-icon {
+        position: relative;
+    }
+    .input-with-icon input.form-control {
+        padding-right: 2.6rem; /* space for eye icon inside the input */
+    }
+    .input-with-icon .toggle-eye {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 1.05rem;
+        z-index: 2;
+    }
+    .input-with-icon .toggle-eye.fa-eye-slash {
+        color: #2c3e50;
+    }
+
+    /* Show placeholder in red when input is invalid (keeps layout/icon position) */
+    .form-control.is-invalid::placeholder {
+        color: #dc3545 !important;
+        opacity: 1; /* ensure visibility across browsers */
+    }
 
     @media (max-width: 600px) {
         .custom-toast {
@@ -313,6 +380,11 @@ document.getElementById('toggleConfirmPassword').addEventListener('click', funct
             min-width: unset;
             max-width: unset;
             padding: 1rem;
+        }
+    }
+</style>
+</body>
+</html>
         }
     }
 </style>

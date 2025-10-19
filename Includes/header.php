@@ -34,7 +34,7 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
     <div class="profile-info">
       <!-- notification bell placed to the left of the avatar; inline styles keep layout/size unchanged -->
       <button class="notif-bell" aria-label="Notifications" title="Notifications"
-        onclick="window.location.href='/RestEase/AdminSide/Notifications.php';"
+        onclick="window.location.href='/RestEase/AdminSide/tabs/notification_tab.php';"
         style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;">
         <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
       </button>

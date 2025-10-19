@@ -54,6 +54,9 @@
                                 <input type="email" name="email" class="form-control" placeholder="Email Address" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Send Verification Code</button>
+                                                <div class="text-center mt-3">
+                       <a  href="login.php" class="btn btn-link" style="color:#506C84;font-size:1.08rem;font-weight:500; text-decoration:none;cursor:pointer;transition:color 0.18s;">← Back to Login</a>
+                    </div>
                         </form>
 
                     </div>

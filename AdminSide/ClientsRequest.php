@@ -85,7 +85,7 @@ if (!isset($_SESSION['admin_id'])) {
   <main class="main-content">
     <div class="clients-header">
       <h1>Client Requests</h1>
-      <p class="subtitle">View all Clients Information.</p>
+      <p class="subtitle">View all Clients Requests Information.</p>
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">

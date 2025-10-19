@@ -72,11 +72,23 @@
                    <div class="contact-info d-flex flex-column justify-content-center h-100" style="min-height: 400px;">
                         <h3>Address</h3>
                         <p>
-                            <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
+                            <a href="https://maps.app.goo.gl/JpSWRWs45M6FuBQe8" 
                                target="_blank" 
                                rel="noopener noreferrer" 
                                style="text-decoration: none; color: inherit;">
-                                V6MF+8JH, Banaba, Padre Garcia, Batangas
+                               281 V. Luna St., Padre Garcia, 4224 Batangas
+                            </a>
+                             <a href="https://maps.app.goo.gl/mDY9KqeRBaXTm2JR6" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               style="text-decoration: none; color: inherit;">
+                             <p>V6F8+P38, Padre Garcia, Batangas</p>
+                             </a>
+                              <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               style="text-decoration: none; color: inherit;">
+                                <p> V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
                             </a>
                         </p>
                         
@@ -95,7 +107,7 @@
     <!-- Map Section -->
     <section class="map-section">
         <div class="container">
-           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d978.4400336587773!2d121.21520691399589!3d13.874290423281638!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd145514365b4f%3A0xbd29096ad6542262!2sPadre%20Garcia%20Municipal%20Cemetery!5e1!3m2!1sen!2sph!4v1760685714850!5m2!1sen!2sph"
+          <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1956.836550080935!2d121.2130494!3d13.879448!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd15e82f6453ff%3A0x62b3c469d629b656!2sExecutive%20Building!5e1!3m2!1sen!2sph!4v1760854991699!5m2!1sen!2sph"
              width="600" 
              height="450" 
              style="border:0;" 

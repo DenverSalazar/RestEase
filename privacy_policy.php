@@ -119,7 +119,6 @@
         </div>
     </nav>
     <div class="privacy-container">
-        <button type="button" class="btn btn-link back-btn" onclick="history.back();">&larr; Back</button>
         <div class="privacy-row">
             <div class="privacy-content">
                 <div class="privacy-title">Data Privacy & Policy</div>

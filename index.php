@@ -10,6 +10,21 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
+    <!-- Desktop-only extra spacing for Associated By logos -->
+    <style>
+        @media (min-width: 992px) {
+            /* increased gap between logos on desktop only */
+            .associated-by .footer-icons {
+                gap: 4.5rem !important; /* increased from 3rem */
+            }
+            /* ensure images remain visually consistent */
+            .associated-by .footer-icons img {
+                max-height: 80px;
+                width: auto;
+                display: inline-block;
+            }
+        }
+    </style>
 </head>
 <body>
     <section class="hero">
@@ -42,9 +57,10 @@
         <div class="associated-by mt-4">
             <p class="text-center"><b>Associated By:</b></p>
             <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
-                <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 70px; width: auto;">
-                <img src="assets/Seal_of_Batangas.png" alt="Logo 2" style="height: 50px; width: auto; margin-right: 32px;">
+                <img src="assets/logo garcia.png" alt="Logo 1" style="height: 52px; width: auto;">
                 <img src="assets/RestLogo.webp" alt="Logo 3" style="height: 60px; width: auto;">
+                   <img src="assets/BSU Logo.png" alt="Logo 3" style="height: 53px; width: auto;">
+                      <img src="assets/AICS Logo.png" alt="Logo 3" style="height: 60px; width: auto;">
             </div>
         </div>
     </section>
@@ -140,7 +156,7 @@ The system provides a secure and transparent way to manage cemetery information,
                 </div>
                 <!-- Image Content -->
                 <div class="col-lg-5 col-md-12 text-center d-flex justify-content-center align-items-center" style="height:100%;">
-                    <img src="assets/explore.png" alt="Explore RestEase" class="img-fluid rounded" style="max-width: 400px;">
+                    <img src="assets/explore.png" alt="Explore RestEase" class="img-fluid rounded" style="max-width: 350px;">
                 </div>
             </div>
         </div>
@@ -177,11 +193,23 @@ The system provides a secure and transparent way to manage cemetery information,
                     <div class="contact-info d-flex flex-column justify-content-center h-100" style="min-height: 400px;">
                         <h3>Address</h3>
                         <p>
-                            <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
+                            <a href="https://maps.app.goo.gl/JpSWRWs45M6FuBQe8" 
                                target="_blank" 
                                rel="noopener noreferrer" 
                                style="text-decoration: none; color: inherit;">
-                                V6MF+8JH, Banaba, Padre Garcia, Batangas
+                               281 V. Luna St., Padre Garcia, 4224 Batangas
+                            </a>
+                             <a href="https://maps.app.goo.gl/mDY9KqeRBaXTm2JR6" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               style="text-decoration: none; color: inherit;">
+                             <p>V6F8+P38, Padre Garcia, Batangas</p>
+                             </a>
+                              <a href="https://maps.app.goo.gl/gKD6GszPE12M2GRn9" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               style="text-decoration: none; color: inherit;">
+                                <p> V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
                             </a>
                         </p>
                         

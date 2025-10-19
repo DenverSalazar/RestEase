@@ -129,7 +129,7 @@ if (isset($_POST['mark_all_read'])) {
 <nav class="custom-navbar position-relative">
     <div class="container navbar-top position-relative">
         <a href="#" class="navbar-brand">
-            <img src="../assets/RE logo New.png" alt="RestEase Logo" style="height: 32px;">
+            <img src="../assets/RE Logo New.png" alt="RestEase Logo" style="height: 32px;">
         </a>
 
         <!-- Right-side mobile controls: bell immediately left of menu -->

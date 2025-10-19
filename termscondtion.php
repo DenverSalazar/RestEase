@@ -33,6 +33,7 @@
             font-weight: 500;
             letter-spacing: 1px;
             margin-bottom: 8px;
+            margin-top: -15px;
         }
         .terms-content {
             font-size: 1.08rem;
@@ -90,9 +91,6 @@
     </nav>
 
     <div class="terms-container">
-        <!-- Back Button -->
-        <button type="button" class="btn btn-link" style="padding-left:0;margin-bottom:12px;" onclick="history.back();">
-            &larr; Back
         </button>
         <div class="terms-subtitle">AGREEMENT</div>
         <div class="terms-title">Terms and Conditions</div>

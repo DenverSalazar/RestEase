@@ -176,7 +176,7 @@ $stmt->close();
        </div>
        <?php endif; ?>
    </div>
-   <?php include '../includes/footer-client.php'; ?>
+   <?php include '../Includes/footer-client.php'; ?>
    <script>
    // Simple client-side search for deceased name
    document.addEventListener('DOMContentLoaded', function() {
