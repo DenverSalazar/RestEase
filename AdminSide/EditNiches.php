@@ -315,10 +315,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/EditNiches.css">
+  <link rel="stylesheet" href="../css/header.css">
 </head>
 <body style="min-height: 100vh; background: #fff; overflow: hidden;">
    <!-- Sidebar -->
    <?php include '../Includes/sidebar.php'; ?>
+    <?php include '../Includes/header.php'; ?>
 
   <!-- Error Popup Notification -->
   <?php if (!empty($errors)): ?>

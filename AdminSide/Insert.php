@@ -296,6 +296,7 @@ if ($id) {
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/Insert.css">
   <link rel="stylesheet" href="../css/Clients.css">
+  <link rel="stylesheet" href="../css/header.css">
   <style>
     body { font-family: 'Poppins', sans-serif; background: #f7f8fa; }
     .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px; }
@@ -321,6 +322,7 @@ if ($id) {
 <body>
   <!-- Sidebar -->
   <?php include '../Includes/sidebar.php'; ?>
+   <?php include '../Includes/header.php'; ?>
 
   <div class="main-content">
     <div class="cemetery-masterlist-container">

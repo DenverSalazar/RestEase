@@ -26,19 +26,32 @@ if ($user_id) {
     $stmt = $conn->prepare("SELECT created_at FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stmt->bind_result($created_at);
-    if ($stmt->fetch()) {
+    // changed: use get_result() and free it before preparing another statement
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $created_at = $row['created_at'];
         $account_created = date('Y-m-d', strtotime($created_at));
         $today = date('Y-m-d');
         if ($account_created === $today) {
-            $latest_notifications[] = [
-                'status' => 'welcome',
-                'type' => '',
-                'name' => '',
-                'created_at' => $created_at
-            ];
+            // check if a persisted welcome notification already exists for this user
+            $msg = 'Welcome to RestEase!';
+            $chk = $conn->prepare("SELECT id FROM notifications WHERE user_id = ? AND TRIM(message) = ? LIMIT 1");
+            $chk->bind_param("is", $user_id, $msg);
+            $chk->execute();
+            $chk->store_result();
+            if ($chk->num_rows === 0) {
+                // no persisted welcome found — add a transient welcome so the user sees it immediately
+                $latest_notifications[] = [
+                    'status' => 'welcome',
+                    'type' => '',
+                    'name' => '',
+                    'created_at' => $created_at
+                ];
+            }
+            $chk->close();
         }
     }
+    $result->free();
     $stmt->close();
     // Accepted requests
     $stmt = $conn->prepare("SELECT 'accepted' AS status, type, first_name, middle_name, last_name, created_at FROM accepted_request WHERE user_id = ? ORDER BY created_at DESC LIMIT 2");
@@ -68,14 +81,16 @@ if ($user_id) {
         ];
     }
     $stmt->close();
-    // Assessment notifications
+    // Assessment notifications (map persisted welcome -> 'welcome')
     $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 3");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
+        $trimmed = trim($row['message'] ?? '');
+        $status = ($trimmed === 'Welcome to RestEase!') ? 'welcome' : 'assessment';
         $latest_notifications[] = [
-            'status' => 'assessment',
+            'status' => $status,
             'message' => $row['message'],
             'link' => $row['link'],
             'created_at' => $row['created_at']
@@ -86,7 +101,20 @@ if ($user_id) {
     usort($latest_notifications, function($a, $b) {
         return strtotime($b['created_at']) - strtotime($a['created_at']);
     });
-    $new_count = count($latest_notifications);
+
+    // Get unread notifications count from DB (notifications.is_read = 0)
+    $new_count = 0;
+    $cntStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0");
+    $cntStmt->bind_param("i", $user_id);
+    $cntStmt->execute();
+    $cntRes = $cntStmt->get_result();
+    if ($cntRow = $cntRes->fetch_assoc()) {
+        $new_count = intval($cntRow['cnt']);
+    }
+    $cntRes->free();
+    $cntStmt->close();
+
+    // allow session override (existing behavior)
     if (isset($_SESSION['notifications_read']) && $_SESSION['notifications_read']) {
         $new_count = 0;
     }

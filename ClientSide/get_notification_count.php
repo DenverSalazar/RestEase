@@ -1,7 +1,32 @@
 <?php
 session_start();
 include_once '../Includes/db.php';
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
+
+$user_id = $_SESSION['user_id'] ?? null;
+if (!$user_id) {
+    echo json_encode(['count' => 0]);
+    exit;
+}
+
+$count = 0;
+$stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = ? AND is_read = 0");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+if ($row = $result->fetch_assoc()) {
+    $count = intval($row['cnt']);
+}
+$result->free();
+$stmt->close();
+
+// honor the existing session "mark all read" override if present
+if (isset($_SESSION['notifications_read']) && $_SESSION['notifications_read']) {
+    $count = 0;
+}
+
+echo json_encode(['count' => $count]);
+
 
 $user_id = $_SESSION['user_id'] ?? null;
 $new_count = 0;

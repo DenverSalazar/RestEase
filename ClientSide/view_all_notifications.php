@@ -5,23 +5,33 @@ include_once '../Includes/db.php';
 $user_id = $_SESSION['user_id'] ?? null;
 $notifications = [];
 if ($user_id) {
-    // Welcome notification (first day)
+    // Welcome notification (persist to DB if first day)
     $stmt = $conn->prepare("SELECT created_at FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stmt->bind_result($created_at);
-    if ($stmt->fetch()) {
+    // ...changed: use get_result() and free it so no commands out-of-sync...
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $created_at = $row['created_at'];
         $account_created = date('Y-m-d', strtotime($created_at));
         $today = date('Y-m-d');
         if ($account_created === $today) {
-            $notifications[] = [
-                'status' => 'welcome',
-                'type' => '',
-                'name' => '',
-                'created_at' => $created_at
-            ];
+            // check if a welcome notification already exists for this user
+            $msg = 'Welcome to RestEase!';
+            $chk = $conn->prepare("SELECT id FROM notifications WHERE user_id = ? AND message = ? LIMIT 1");
+            $chk->bind_param("is", $user_id, $msg);
+            $chk->execute();
+            $chk->store_result();
+            if ($chk->num_rows === 0) {
+                $ins = $conn->prepare("INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, '', 0, ?)");
+                $ins->bind_param("iss", $user_id, $msg, $created_at);
+                $ins->execute();
+                $ins->close();
+            }
+            $chk->close();
         }
     }
+    $result->free();
     $stmt->close();
 
     // Accepted requests
@@ -56,14 +66,17 @@ if ($user_id) {
     }
     $stmt->close();
 
-    // Assessment notifications
-    $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
+    // Assessment & persisted notifications (including welcome)
+    $stmt = $conn->prepare("SELECT id, message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
+        // if this is the welcome message, mark status as 'welcome' so UI uses the same styling
+        $status = (trim($row['message']) === 'Welcome to RestEase!') ? 'welcome' : 'assessment';
         $notifications[] = [
-            'status' => 'assessment',
+            'id' => $row['id'],
+            'status' => $status,
             'message' => $row['message'],
             'link' => $row['link'],
             'created_at' => $row['created_at']

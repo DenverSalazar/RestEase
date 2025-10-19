@@ -34,9 +34,13 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
     <div class="profile-info">
       <!-- notification bell placed to the left of the avatar; inline styles keep layout/size unchanged -->
       <button class="notif-bell" aria-label="Notifications" title="Notifications"
-        onclick="window.location.href='/RestEase/AdminSide/tabs/notification_tab.php';"
-        style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;">
+        onclick="window.location.href='/RestEase/AdminSide/Settings.php?tab=notification';"
+        style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;">
         <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
+        <!-- numeric unread badge (reduced size, circular, centered) -->
+        <span id="notifBellCount"
+              style="display:none;position:absolute;top:-8px;right:-8px;background:#e74c3c;color:#fff;font-size:0.6rem;font-weight:700;padding:0;line-height:14px;width:14px;height:14px;border-radius:50%;min-width:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;z-index:3;">
+        </span>
       </button>
       <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
       <div>
@@ -72,5 +76,73 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
   }
   tick();
   setInterval(tick, 1000);
+})();
+</script>
+
+<script>
+(function(){
+  // Compute unread notifications and update bell badge.
+  function getUnreadCountFromLocalStorage() {
+    // Prefer structured list in localStorage.systemNotifs
+    try {
+      var raw = localStorage.getItem('systemNotifs');
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) {
+          var c = 0;
+          arr.forEach(function(notif){
+            var readKey = 'notif_read_' + (notif.id ?? notif.ID ?? notif._id ?? '');
+            if (readKey && localStorage.getItem(readKey) !== '1') c++;
+          });
+          return c;
+        }
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+    // Fallback: count unread notif_read_* keys
+    var unread = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf('notif_read_') === 0) {
+        if (localStorage.getItem(key) !== '1') unread++;
+      }
+    }
+    return unread;
+  }
+
+  function updateBellCount() {
+    var el = document.getElementById('notifBellCount');
+    if (!el) return;
+    var count = getUnreadCountFromLocalStorage();
+    if (count > 0) {
+      el.textContent = count > 99 ? '99+' : String(count);
+      el.style.display = '';
+    } else {
+      el.textContent = '';
+      el.style.display = 'none';
+    }
+  }
+
+  // Update on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateBellCount);
+  } else {
+    updateBellCount();
+  }
+
+  // Update when other tabs change storage
+  window.addEventListener('storage', function(e){
+    if (!e.key) {
+      updateBellCount();
+      return;
+    }
+    if (e.key === 'systemNotifs' || e.key.startsWith('notif_read_')) {
+      updateBellCount();
+    }
+  });
+
+  // Optional: poll occasionally in case notifications updated by JS without storage event
+  setInterval(updateBellCount, 5000);
 })();
 </script>

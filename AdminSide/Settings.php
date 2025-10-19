@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         <div class="settings-tabs">
           <div class="settings-tab active" data-tab="account">Account</div>
           <div class="settings-tab" data-tab="archive">Archive</div>
-          <div class="settings-tab" data-tab="notification" id="notificationTabBtn" style="position:relative;">Notification <span id="notifBadge" style="display:none;position:absolute;top:-8px;right:0;background:#e74c3c;color:#fff;font-size:0.85rem;font-weight:600;padding:2px 7px;border-radius:12px;min-width:22px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.08);"></span></div>
+          <div class="settings-tab" data-tab="notification" id="notificationTabBtn" style="position:relative;">Notification</div>
         </div>
 
         <?php
@@ -733,32 +733,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         notifDiv.appendChild(a);
         notifList.appendChild(notifDiv);
       });
-      updateNotifBadge(unreadCount);
+      // badge removed — no visual indicator needed here
     }
-    function updateNotifBadge(count) {
-      var badges = document.querySelectorAll('#notifBadge');
-      if (typeof count === 'undefined') {
-        // Recalculate if not provided
-        if (typeof systemNotifs === 'undefined') return;
-        count = 0;
-        systemNotifs.forEach(function(notif) {
-          var readKey = 'notif_read_' + notif.id;
-          if (localStorage.getItem(readKey) !== '1') count++;
-        });
-      }
-      badges.forEach(function(badge) {
-        if (count > 0) {
-          badge.textContent = count;
-          badge.style.display = '';
-        } else {
-          badge.textContent = '';
-          badge.style.display = 'none';
-        }
-      });
-    }
+    // badge removed: keep a no-op function so existing calls won't error
+    function updateNotifBadge(count) { return; }
     document.addEventListener('DOMContentLoaded', function() {
       renderNotifications();
-      updateNotifBadge();
+      renderNewUserNotifications();
+      renderNewRequestNotifications();
+      // updateNotifBadge intentionally no-op
     });
 
     // Notification sub-tab switching
@@ -865,7 +848,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
       renderNotifications();
       renderNewUserNotifications();
       renderNewRequestNotifications();
-      updateNotifBadge();
+      // updateNotifBadge intentionally no-op
     });
 
     // Restore modal logic for Archive Clients
@@ -935,8 +918,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
         clearTimeout(timeout);
       };
     }
+
+    // --- Added: activate settings tab from URL on initial load ---
+    (function() {
+      function activateSettingsTab(tabName) {
+        if (!tabName) return;
+        // normalize
+        tabName = tabName.toString().toLowerCase();
+        if (!['account','archive','notification'].includes(tabName)) return;
+        const tabEl = document.querySelector('.settings-tab[data-tab="'+tabName+'"]');
+        if (!tabEl) return;
+        // remove active from all tabs and hide contents
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        const tabContentsMap = {
+          account: document.getElementById('accountTab'),
+          archive: document.getElementById('archiveTab'),
+          notification: document.getElementById('notificationTab')
+        };
+        Object.values(tabContentsMap).forEach(tc => { if (tc) tc.style.display = 'none'; });
+        // set selected
+        tabEl.classList.add('active');
+        if (tabContentsMap[tabName]) tabContentsMap[tabName].style.display = '';
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // prefer query param ?tab=..., fallback to hash #notification
+        const params = new URLSearchParams(window.location.search);
+        let tab = params.get('tab');
+        if (!tab && window.location.hash) {
+          tab = window.location.hash.replace('#','');
+        }
+        if (tab) {
+          // ensure unsaved guard not shown on initial navigation
+          try {
+            unsaved = false;
+            const unsavedBar = document.getElementById('unsavedBar');
+            if (unsavedBar) unsavedBar.style.display = 'none';
+          } catch (e) {}
+          activateSettingsTab(tab);
+        }
+      });
+    })();
   </script>
   <style>
+  /* notif badge removed */
 .clients-table {
   width: 100%;
   border-collapse: separate;

@@ -106,7 +106,6 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
       <a href="Settings.php" class="nav-item<?php if($current_page == 'Settings.php') echo ' active'; ?>" style="position:relative;">
         <i class="fas fa-cog"></i>
         Settings
-        <span id="notifBadge" style="display:none;position:absolute;top:50%;right:18px;transform:translateY(-50%);background:#e74c3c;color:#fff;font-size:0.85rem;font-weight:600;padding:2px 7px;border-radius:12px;min-width:22px;text-align:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.08);"></span>
       </a>
       <a href="./../login.php" class="nav-item">
         <i class="fas fa-sign-out-alt"></i>
@@ -129,53 +128,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Sidebar notification badge updater
-function updateSidebarNotifBadge() {
-  var badge = document.querySelector('#notifBadge');
-  if (!badge) return;
-  var notifs = [];
-  // Try to get systemNotifs from localStorage
-  if (localStorage.getItem('systemNotifs')) {
-    try {
-      notifs = JSON.parse(localStorage.getItem('systemNotifs'));
-    } catch (e) {}
-    updateBadgeCount(notifs, badge);
-  } else {
-    // Fallback: fetch from server if notifs missing
-    fetch('get_sidebar_notifications.php')
-      .then(response => response.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          localStorage.setItem('systemNotifs', JSON.stringify(data));
-          updateBadgeCount(data, badge);
-        } else {
-          updateBadgeCount([], badge);
-        }
-      })
-      .catch(() => updateBadgeCount([], badge));
-  }
-}
-function updateBadgeCount(notifs, badge) {
-  var unreadCount = 0;
-  if (notifs && notifs.length) {
-    notifs.forEach(function(notif) {
-      var readKey = 'notif_read_' + notif.id;
-      if (localStorage.getItem(readKey) !== '1') unreadCount++;
-    });
-  } else {
-    // Fallback: count unread keys
-    for (var key in localStorage) {
-      if (key.startsWith('notif_read_') && localStorage.getItem(key) !== '1') unreadCount++;
-    }
-  }
-  if (unreadCount > 0) {
-    badge.textContent = unreadCount;
-    badge.style.display = '';
-  } else {
-    badge.textContent = '';
-    badge.style.display = 'none';
-  }
-}
-document.addEventListener('DOMContentLoaded', updateSidebarNotifBadge);
-window.addEventListener('storage', updateSidebarNotifBadge);
+// notif badge removed from sidebar; no badge logic needed
 </script>
