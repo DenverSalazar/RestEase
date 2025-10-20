@@ -5,33 +5,23 @@ include_once '../Includes/db.php';
 $user_id = $_SESSION['user_id'] ?? null;
 $notifications = [];
 if ($user_id) {
-    // Welcome notification (persist to DB if first day)
+    // Welcome notification (first day)
     $stmt = $conn->prepare("SELECT created_at FROM users WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    // ...changed: use get_result() and free it so no commands out-of-sync...
-    $result = $stmt->get_result();
-    if ($row = $result->fetch_assoc()) {
-        $created_at = $row['created_at'];
+    $stmt->bind_result($created_at);
+    if ($stmt->fetch()) {
         $account_created = date('Y-m-d', strtotime($created_at));
         $today = date('Y-m-d');
         if ($account_created === $today) {
-            // check if a welcome notification already exists for this user
-            $msg = 'Welcome to RestEase!';
-            $chk = $conn->prepare("SELECT id FROM notifications WHERE user_id = ? AND message = ? LIMIT 1");
-            $chk->bind_param("is", $user_id, $msg);
-            $chk->execute();
-            $chk->store_result();
-            if ($chk->num_rows === 0) {
-                $ins = $conn->prepare("INSERT INTO notifications (user_id, message, link, is_read, created_at) VALUES (?, ?, '', 0, ?)");
-                $ins->bind_param("iss", $user_id, $msg, $created_at);
-                $ins->execute();
-                $ins->close();
-            }
-            $chk->close();
+            $notifications[] = [
+                'status' => 'welcome',
+                'type' => '',
+                'name' => '',
+                'created_at' => $created_at
+            ];
         }
     }
-    $result->free();
     $stmt->close();
 
     // Accepted requests
@@ -66,17 +56,14 @@ if ($user_id) {
     }
     $stmt->close();
 
-    // Assessment & persisted notifications (including welcome)
-    $stmt = $conn->prepare("SELECT id, message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
+    // Assessment notifications
+    $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        // if this is the welcome message, mark status as 'welcome' so UI uses the same styling
-        $status = (trim($row['message']) === 'Welcome to RestEase!') ? 'welcome' : 'assessment';
         $notifications[] = [
-            'id' => $row['id'],
-            'status' => $status,
+            'status' => 'assessment',
             'message' => $row['message'],
             'link' => $row['link'],
             'created_at' => $row['created_at']
@@ -102,7 +89,7 @@ if ($user_id) {
 <link rel="stylesheet" href="../css/navbar.css">
 <link rel="stylesheet" href="../css/footer.css">
 <style>
-:root{--accent:#2d72d9;--muted:#888;--card-border:#eef2f5;--card-bg:#f2f4f6;}
+:root{--accent:#0077B6;--muted:#888;--card-border:#eef2f5;--card-bg:#f2f4f6;}
 body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 .container-main{max-width:980px;margin:28px auto;padding:18px;}
 .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
@@ -124,34 +111,71 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 .notif-card-wrapper{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:#fbfbfb;border:1px solid #eef2f5;box-shadow:none;transition:box-shadow .12s, transform .06s;}
 .notif-card-wrapper:hover{box-shadow:0 6px 18px rgba(39,54,66,0.06);}
 .notif-left{display:flex;align-items:center;gap:12px;min-width:120px}
-.notif-dot{width:10px;height:10px;border-radius:50%;background:#b6dca6;display:inline-block;box-shadow:0 1px 2px rgba(0,0,0,0.06);}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#ffffff !important;box-shadow:none !important;border:1px solid #e6e9ec !important;}
 .notif-star-left{background:transparent;border:none;padding:0;margin:0 4px 0 0;cursor:pointer;color:#bfc6cc;font-size:1.05rem;transition:color 180ms}
 .notif-star-left[aria-pressed="true"]{color:#f0b400}
-.notif-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #f0f4f7;color:#4b7bec;font-size:16px}
+.notif-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(7,119,182,0.06);color:var(--accent);font-size:16px}
 .notif-main{flex:1;min-width:0}
 .notif-title{font-weight:700;font-size:1.05rem;margin-bottom:6px;color:#222}
 .notif-desc{color:#6f767d;font-size:0.95rem}
 .notif-time{color:var(--muted);font-size:0.92rem;white-space:nowrap;margin-left:12px}
 .notif-actions{display:flex;align-items:center;gap:8px;margin-left:12px;}
-/* right delete button styled like the screenshot */
-.notif-delete {
-  background:#ff6b6b;
-  color:#fff;
-  border: none;
-  width:40px;
-  height:40px;
-  border-radius:10px;
+.action-btn { background:transparent;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:1rem;display:inline-flex;align-items:center;justify-content:center; }
+.action-btn.read { color:var(--accent); }
+.action-btn.archive { color:#6d7780; }
+.action-btn.delete { background:#ff6b6b;color:#fff;border:none; }
+
+/* accepted items override */
+.notif-card-wrapper[data-status="accepted"] {
+  background: #ffffff !important;
+  border-left-color: #ffffff !important;
+}
+.notif-card-wrapper[data-status="accepted"] .notif-icon {
+  color: #ffffff !important;
+  background: #ffffff !important;
+  border-color: transparent !important;
+}
+.notif-card-wrapper[data-status="accepted"] .notif-title,
+.notif-card-wrapper[data-status="accepted"] .notif-desc {
+  color: #222 !important;
+}
+
+/* focus style */
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0,119,182,0.06);
+}
+
+/* pagination styles */
+#notifPagination {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:12px;
+  gap:12px;
+  padding-top:6px;
+}
+#notifPagination .pg-info { color:#666; font-size:0.95rem; }
+#notifPagination .pg-center { display:flex; gap:8px; align-items:center; justify-content:center; }
+#notifPagination .pg-btn {
+  border:1px solid #e3e7ed;
+  background:transparent;
+  color:#444;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  min-width:36px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  cursor:pointer;
-  box-shadow:none;
-  transition:background .12s, transform .06s;
 }
-.notif-delete:hover{background:#ff4b4b;transform:translateY(-1px);}
-
-/* unread card subtle background */
-.notif-card-wrapper.unread{background:#f3f5f6}
+#notifPagination .pg-btn[disabled] { opacity:0.45; cursor:not-allowed; }
+#notifPagination .pg-btn.current {
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
 
 /* responsive */
 @media (max-width:760px){
@@ -173,6 +197,8 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   <div class="header-row">
     <div class="tabs" id="notif-tabs">
       <button class="notif-tab active" data-filter="all" id="tab-all"><span class="tab-badge" id="count-all">0</span>All</button>
+      <button class="notif-tab" data-filter="requests" id="tab-req"><span class="tab-badge" id="count-req">0</span>Requests</button>
+      <button class="notif-tab" data-filter="users" id="tab-user"><span class="tab-badge" id="count-user">0</span>Users</button>
       <button class="notif-tab" data-filter="favorite" id="tab-fav"><span class="tab-badge" id="count-fav">0</span>Favorites</button>
       <button class="notif-tab" data-filter="archive" id="tab-arch"><span class="tab-badge" id="count-arch">0</span>Archive</button>
     </div>
@@ -182,24 +208,33 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
         <input id="notifSearch" class="search-input" placeholder="Search notifications..." />
         <i class="fas fa-search search-icon"></i>
       </div>
-      <div class="controls">
-        <button id="notifSelectAllBtn" class="icon-btn" title="Select all"><i class="far fa-square"></i></button>
-        <button id="main-delete-btn" class="icon-btn" title="Delete Selected"><i class="fas fa-trash-alt"></i></button>
-        <button id="delete-all-btn" class="icon-btn warn" title="Delete All" style="display:none"><i class="fas fa-trash"></i></button>
+      <div class="controls" style="position:relative;">
+        <button id="headerDeleteVisibleBtn" class="icon-btn warn" title="Delete visible" aria-label="Delete visible" style="margin-right:6px;">
+          <i class="fas fa-trash"></i>
+        </button>
+        <button id="headerMarkReadBtn" class="icon-btn" title="Mark visible as read" aria-label="Mark visible read" style="margin-right:6px;">
+          <i class="fas fa-envelope-open-text"></i>
+        </button>
+        <button id="headerArchiveBtn" class="icon-btn" title="Archive visible" aria-label="Archive visible" style="margin-right:6px;">
+          <i class="fas fa-archive"></i>
+        </button>
+        <button id="delete-all-btn" class="icon-btn warn" title="Delete All" style="display:none;margin-right:6px;"><i class="fas fa-trash"></i></button>
+        <button id="headerCalendarBtn" class="icon-btn" title="Select date" aria-label="Calendar" style="margin-left:8px;">
+          <i class="fas fa-calendar-alt"></i>
+        </button>
       </div>
     </div>
   </div>
 
   <?php if ($user_id && count($notifications) > 0): ?>
     <ul class="notif-list" id="notifications-list">
-      <?php foreach ($notifications as $notif): 
+      <?php foreach ($notifications as $notif):
         $borderColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#DC3545' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
         $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF' : (($notif['status'] === 'denied') ? '#FDEDEC' : (($notif['status'] === 'welcome') ? '#EAF1FF' : '#FFF8E1'));
         $icon = ($notif['status'] === 'accepted') ? 'fa-check-circle' : (($notif['status'] === 'denied') ? 'fa-times-circle' : (($notif['status'] === 'welcome') ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
         $iconColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#DC3545' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
       ?>
       <li class="notif-card-wrapper unread" data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>" data-status="<?php echo htmlspecialchars($notif['status']); ?>" data-created_at="<?php echo htmlspecialchars($notif['created_at']); ?>" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;">
-        <input type="checkbox" class="notif-checkbox" />
         <div class="notif-left">
           <span class="notif-dot" title="<?php echo ($notif['status'] === 'accepted'?'Unread':''); ?>"></span>
           <button class="notif-star-left" aria-pressed="false" title="Favorite"><i class="fas fa-star"></i></button>
@@ -228,20 +263,27 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 
         <div class="notif-actions">
           <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
-            <a href="notification_details.php?id=<?php echo isset($notif['id']) ? urlencode($notif['id']) : ''; ?>&type=<?php echo urlencode($notif['status']); ?>" title="View Details">
-              <i class="fas fa-arrow-right" style="font-size:1.1rem;color:#4B7BEC"></i>
+            <a href="notification_details.php?id=<?php echo isset($notif['id']) ? urlencode($notif['id']) : ''; ?>&type=<?php echo urlencode($notif['status']); ?>" title="View Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
+              Details
             </a>
           <?php elseif ($notif['status'] === 'assessment'): ?>
-            <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details">
-              <i class="fas fa-arrow-right" style="font-size:1.1rem;color:#f39c12"></i>
+            <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details" style="font-size:0.98rem;color:#f39c12;text-decoration:none;font-weight:600;">
+              Details
             </a>
           <?php endif; ?>
-          <!-- per-item delete (red pill) -->
-          <button class="notif-delete" title="Delete notification"><i class="fas fa-trash"></i></button>
+          <button class="action-btn delete notif-delete" title="Delete" aria-label="Delete"><i class="fas fa-trash"></i></button>
         </div>
       </li>
       <?php endforeach; ?>
     </ul>
+
+    <!-- pagination UI -->
+    <div id="notifPagination" style="display:none;">
+      <div class="pg-info" id="pagination-info">Page 1 of 1</div>
+      <div class="pg-center" id="pagination-controls"></div>
+      <div style="width:120px;"></div>
+    </div>
+
   <?php else: ?>
     <div style="text-align:center;padding:64px 8px;color:#888;">
       No notifications available yet.<br>Please contact the administrator or check back later.
@@ -258,9 +300,25 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 
   const tabs = $$('#notif-tabs .notif-tab');
   const searchInput = $('#notifSearch');
-  const selectAllBtn = $('#notifSelectAllBtn');
-  const mainDeleteBtn = $('#main-delete-btn');
   const deleteAllBtn = $('#delete-all-btn');
+  const headerMarkReadBtn = $('#headerMarkReadBtn');
+  const headerArchiveBtn = $('#headerArchiveBtn');
+  const headerDeleteVisibleBtn = $('#headerDeleteVisibleBtn');
+  const headerCalendarBtn = $('#headerCalendarBtn');
+
+  // pagination
+  const PAGE_SIZE_CLIENT = 5;
+  let currentPageClient = 1;
+
+  function createPageButton(label, disabled, onClick, isCurrent) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pg-btn' + (isCurrent ? ' current' : '');
+    btn.textContent = label;
+    btn.disabled = !!disabled;
+    if (!disabled) btn.addEventListener('click', onClick);
+    return btn;
+  }
 
   function updateCounts(){
     const cards = $$('.notif-card-wrapper').filter(c => !c.hasAttribute('data-deleted'));
@@ -276,12 +334,52 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     $('#count-arch').textContent = arch;
   }
 
+  function updatePagination() {
+    const pagRoot = document.getElementById('notifPagination');
+    if (!pagRoot) return;
+    const center = pagRoot.querySelector('.pg-center');
+    const info = pagRoot.querySelector('.pg-info');
+
+    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+    const total = visible.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
+    if (currentPageClient > totalPages) currentPageClient = 1;
+
+    info.textContent = `Page ${totalPages ? currentPageClient : 1} of ${totalPages}`;
+    center.innerHTML = '';
+
+    center.appendChild(createPageButton('‹', currentPageClient <= 1, () => { currentPageClient = Math.max(1, currentPageClient - 1); paginateDisplay(); }, false));
+
+    const maxButtons = 5;
+    let start = Math.max(1, currentPageClient - Math.floor(maxButtons/2));
+    let end = Math.min(totalPages, start + maxButtons - 1);
+    start = Math.max(1, end - maxButtons + 1);
+    for (let p = start; p <= end; p++) {
+      center.appendChild(createPageButton(String(p), false, (() => { const page = p; return () => { currentPageClient = page; paginateDisplay(); }; })(), p === currentPageClient));
+    }
+
+    center.appendChild(createPageButton('›', currentPageClient >= totalPages, () => { currentPageClient = Math.min(totalPages, currentPageClient + 1); paginateDisplay(); }, false));
+
+    pagRoot.style.display = total > 0 ? 'flex' : 'none';
+  }
+
+  function paginateDisplay() {
+    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+    const total = visible.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
+    if (currentPageClient > totalPages) currentPageClient = 1;
+    visible.forEach(el => el.style.display = 'none');
+    const start = (currentPageClient - 1) * PAGE_SIZE_CLIENT;
+    const end = start + PAGE_SIZE_CLIENT;
+    visible.slice(start, end).forEach(el => el.style.display = '');
+    updatePagination();
+  }
+
   function applyFilter(){
     const active = $('#notif-tabs .notif-tab.active').getAttribute('data-filter');
     const q = (searchInput.value || '').trim().toLowerCase();
     $$('.notif-card-wrapper').forEach(card=>{
       const id = card.getAttribute('data-id') || '';
-      // deleted hidden
       if (id && localStorage.getItem('notif_deleted_' + id) === '1'){ card.style.display = 'none'; return; }
 
       let show = true;
@@ -301,6 +399,8 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
       card.style.display = show ? '' : 'none';
     });
     updateCounts();
+    currentPageClient = 1;
+    paginateDisplay();
   }
 
   function initStars(){
@@ -332,132 +432,176 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 
   searchInput && searchInput.addEventListener('input', applyFilter);
 
-  // deletion mode: show checkboxes and enable delete actions
-  let deletionMode = false;
-  function setDeletionMode(on){
-    deletionMode = on;
-    $$('.notif-checkbox').forEach(cb=> cb.style.display = on ? 'inline-block' : 'none');
-    deleteAllBtn.style.display = on ? '' : 'none';
-    // reset checkboxes off when turning off
-    if (!on) $$('.notif-checkbox').forEach(cb=> cb.checked = false);
+  // delete all in archive (POST)
+  if (deleteAllBtn) {
+    deleteAllBtn.addEventListener('click', function(){
+      if (!confirm('Delete ALL notifications in Archive?')) return;
+      fetch('delete_notification.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'delete_all' })
+      }).then(r=>r.json()).then(data=>{
+        if (data && data.success){
+          $$('.notif-card-wrapper').forEach(card=>{
+            const id = card.getAttribute('data-id');
+            if (id && localStorage.getItem('notif_archived_' + id) === '1') {
+              try{ localStorage.setItem('notif_deleted_' + id, '1'); localStorage.removeItem('notif_archived_' + id); localStorage.removeItem('notif_fav_' + id); } catch(e){}
+              card.remove();
+            }
+          });
+          updateCounts();
+          applyFilter();
+        } else alert('Failed to delete all notifications.');
+      }).catch(()=> alert('Failed to delete all notifications.'));
+    });
   }
 
-  mainDeleteBtn.addEventListener('click', function(){
-    setDeletionMode(true);
-  });
-
-  // select all visible
-  selectAllBtn.addEventListener('click', function(){
-    const pressed = this.getAttribute('aria-pressed') === 'true';
-    const visibleCards = $$('.notif-card-wrapper').filter(c=> c.style.display !== 'none');
-    if (!pressed){
-      visibleCards.forEach(c=>{
-        const cb = c.querySelector('.notif-checkbox');
-        if (cb){ cb.style.display = 'inline-block'; cb.checked = true; }
-      });
-      this.querySelector('i').className = 'far fa-check-square';
-      this.setAttribute('aria-pressed','true');
-    } else {
-      visibleCards.forEach(c=>{
-        const cb = c.querySelector('.notif-checkbox');
-        if (cb) cb.checked = false;
-      });
-      this.querySelector('i').className = 'far fa-square';
-      this.setAttribute('aria-pressed','false');
-    }
-  });
-
-  // delete selected (POST) — server endpoint expected to handle action 'delete_selected'
-  document.getElementById('main-delete-btn').addEventListener('dblclick', function(){ /* noop to avoid accidental dblclick */ });
-  document.getElementById('main-delete-btn').addEventListener('contextmenu', e=>e.preventDefault());
-
-  // Attach single-click delete confirmation when in deletion mode and checkboxes are used
-  document.getElementById('main-delete-btn').addEventListener('click', function(){
-    const selected = Array.from($$('.notif-checkbox')).filter(cb => cb.checked);
-    if (selected.length === 0){
-      // If not in deletion mode, open deletion mode instead
-      setDeletionMode(true);
-      return;
-    }
-    if (!confirm('Delete selected notifications?')) return;
-    const notifications = selected.map(cb => ({
-      status: cb.closest('.notif-card-wrapper').getAttribute('data-status') || '',
-      id: cb.closest('.notif-card-wrapper').getAttribute('data-id') || '',
-      created_at: cb.closest('.notif-card-wrapper').getAttribute('data-created_at') || ''
-    }));
-    fetch('delete_notification.php', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'delete_selected', notifications })
-    }).then(r => r.json()).then(data=>{
-      if (data && data.success){
-        selected.forEach(cb => cb.closest('.notif-card-wrapper').remove());
-        setDeletionMode(false);
-        updateCounts();
-      } else alert('Failed to delete selected notifications.');
-    }).catch(()=> alert('Failed to delete selected notifications.'));
-  });
-
-  // delete all in archive (POST)
-  deleteAllBtn.addEventListener('click', function(){
-    if (!confirm('Delete ALL notifications in Archive?')) return;
-    fetch('delete_notification.php', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action: 'delete_all' })
-    }).then(r=>r.json()).then(data=>{
-      if (data && data.success){
-        // remove archived cards from DOM
-        $$('.notif-card-wrapper').forEach(card=>{
-          const id = card.getAttribute('data-id');
-          if (id && localStorage.getItem('notif_archived_' + id) === '1') {
-            try{ localStorage.setItem('notif_deleted_' + id, '1'); localStorage.removeItem('notif_archived_' + id); localStorage.removeItem('notif_fav_' + id); } catch(e){}
+  // per-card delete wiring
+  function wirePerCardActions() {
+    $$('.notif-card-wrapper').forEach(card => {
+      const id = card.getAttribute('data-id');
+      const delBtn = card.querySelector('.notif-delete');
+      if (delBtn) {
+        delBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          if (!id) return;
+          if (!confirm('Delete this notification?')) return;
+          fetch('delete_notification.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ action: 'delete_single', id: id })
+          }).then(r=>r.json()).then(data=>{
+            try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
             card.remove();
-          }
+            updateCounts();
+            applyFilter();
+          }).catch(()=>{
+            try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
+            card.remove();
+            updateCounts();
+            applyFilter();
+          });
         });
-        setDeletionMode(false);
-        updateCounts();
-        applyFilter();
-      } else alert('Failed to delete all notifications.');
-    }).catch(()=> alert('Failed to delete all notifications.'));
-  });
+      }
+    });
+  }
+
+  // header bulk actions
+  if (headerMarkReadBtn) {
+    headerMarkReadBtn.addEventListener('click', function(){
+      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+      if (visible.length === 0) return;
+      if (!confirm('Mark all visible notifications as read?')) return;
+      visible.forEach(card => {
+        const id = card.getAttribute('data-id');
+        try { if (id) localStorage.setItem('notif_read_' + id, '1'); } catch(e){}
+        const dot = card.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
+        card.classList.remove('unread');
+      });
+      updateCounts();
+      applyFilter();
+    });
+  }
+
+  if (headerArchiveBtn) {
+    headerArchiveBtn.addEventListener('click', function(){
+      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+      if (visible.length === 0) return;
+      if (!confirm('Archive all visible notifications?')) return;
+      visible.forEach(card => {
+        const id = card.getAttribute('data-id');
+        try { if (id) localStorage.setItem('notif_archived_' + id, '1'); } catch(e){}
+        card.remove();
+      });
+      updateCounts();
+      applyFilter();
+    });
+  }
+
+  if (headerDeleteVisibleBtn) {
+    headerDeleteVisibleBtn.addEventListener('click', function(){
+      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+      if (visible.length === 0) return;
+      if (!confirm('Delete all visible notifications?')) return;
+      visible.forEach(card => {
+        const id = card.getAttribute('data-id');
+        try { if (id) localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
+        if (id) {
+          fetch('delete_notification.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ action: 'delete_single', id: id })
+          }).catch(()=>{});
+        }
+        card.remove();
+      });
+      updateCounts();
+      applyFilter();
+    });
+  }
+
+  // simple header calendar panel (non-destructive)
+  (function initHeaderCalendar(){
+    if (!headerCalendarBtn) return;
+    const panel = document.createElement('div');
+    panel.id = 'headerCalendarPanel';
+    panel.style.display = 'none';
+    panel.style.position = 'absolute';
+    panel.style.right = '0';
+    panel.style.top = '44px';
+    panel.style.background = '#fff';
+    panel.style.border = '1px solid #e6ecf3';
+    panel.style.padding = '10px';
+    panel.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+    panel.style.zIndex = 1200;
+    panel.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="date" id="headerCalendarFrom" style="padding:6px;border:1px solid #e3e7ed;" />
+        <input type="date" id="headerCalendarTo" style="padding:6px;border:1px solid #e3e7ed;" />
+        <button id="headerCalendarApply" style="padding:6px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">Apply</button>
+        <button id="headerCalendarClear" style="padding:6px 8px;background:transparent;border:1px solid #e3e7ed;border-radius:6px;cursor:pointer;">Clear</button>
+      </div>
+    `;
+    const controls = document.querySelector('.header-row .controls');
+    if (controls) controls.appendChild(panel);
+
+    function togglePanel(e){
+      e && e.stopPropagation();
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+    headerCalendarBtn.addEventListener('click', togglePanel);
+    panel.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', () => { if (panel.style.display === 'block') panel.style.display = 'none'; });
+
+    const applyBtn = panel.querySelector('#headerCalendarApply');
+    const clearBtn = panel.querySelector('#headerCalendarClear');
+    applyBtn && applyBtn.addEventListener('click', function(){
+      let hf = document.getElementById('notifDateFrom');
+      let ht = document.getElementById('notifDateTo');
+      if (!hf){ hf = document.createElement('input'); hf.type='hidden'; hf.id='notifDateFrom'; document.body.appendChild(hf); }
+      if (!ht){ ht = document.createElement('input'); ht.type='hidden'; ht.id='notifDateTo'; document.body.appendChild(ht); }
+      hf.value = panel.querySelector('#headerCalendarFrom').value || '';
+      ht.value = panel.querySelector('#headerCalendarTo').value || '';
+      panel.style.display = 'none';
+      applyFilter();
+    });
+    clearBtn && clearBtn.addEventListener('click', function(){
+      const hf = document.getElementById('notifDateFrom');
+      const ht = document.getElementById('notifDateTo');
+      if (hf) hf.value = '';
+      if (ht) ht.value = '';
+      panel.querySelector('#headerCalendarFrom').value = '';
+      panel.querySelector('#headerCalendarTo').value = '';
+      panel.style.display = 'none';
+      applyFilter();
+    });
+  })();
 
   // initialize UI
   initStars();
   updateCounts();
   applyFilter();
-
-  // per-card delete button (sends POST 'delete_single' then removes card)
-  $$('.notif-delete').forEach(btn=>{
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      const card = this.closest('.notif-card-wrapper');
-      const id = card.getAttribute('data-id');
-      if (!confirm('Delete this notification?')) return;
-      // attempt server call (endpoint expected to accept action 'delete_single')
-      fetch('delete_notification.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ action: 'delete_single', id: id })
-      }).then(r=>r.json()).then(data=>{
-        // we handle success/failure gracefully; remove card on success
-        if (data && data.success) {
-          try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-          card.remove();
-          updateCounts();
-        } else {
-          // fallback: remove locally
-          try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-          card.remove();
-          updateCounts();
-        }
-      }).catch(()=>{
-        try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-        card.remove();
-        updateCounts();
-      });
-    });
-  });
+  wirePerCardActions();
 
   // Live storage sync
   window.addEventListener('storage', function(){ updateCounts(); applyFilter(); });
@@ -466,4 +610,3 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 </script>
 </body>
 </html>
-

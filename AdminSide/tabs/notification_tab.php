@@ -2,8 +2,8 @@
 // ...expects $conn ready from Settings.php...
 ?>
 <div class="settings-card" id="notificationTab" style="display:none;">
-  <div style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
-  <div style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">Notification settings and preferences will be shown here.</div>
+  <div class="notif-page-title" style="font-size: 1.13rem; font-weight: 600; color: #222;">Notification</div>
+  <div class="notif-page-subtitle" style="color: #888; font-size: 0.97rem; margin-bottom: 18px;">Notification settings and preferences will be shown here.</div>
 
   <?php
   // reuse DB queries to produce JS arrays used by the new UI
@@ -92,18 +92,14 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
-        <!-- select-all box + delete-selected + calendar popup -->
+        <!-- select-all / action icons -->
         <div style="position:relative;display:flex;align-items:center;gap:8px;">
-          <!-- icon-only controls (no border/background, icon triggers clickable area) -->
-          <button type="button" id="notifSelectAllBtn" title="Select all" aria-pressed="false" style="border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
-            <i class="far fa-square" style="color:#666;"></i>
-          </button>
-          <!-- ensure these are hidden by default (remove duplicate display:inline-flex that forced them visible) -->
-          <button type="button" id="notifDeleteSelectedBtn" title="Delete selected" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;align-items:center;justify-content:center;">
+          <!-- removed header select-all button; keep Delete selected and Mark selected as read buttons (they operate on .notif-selected rows) -->
+          <button type="button" id="notifDeleteSelectedBtn" title="Delete selected" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;display:inline-flex;align-items:center;justify-content:center;">
             <i class="fas fa-trash" style="color:inherit;"></i>
           </button>
           <!-- mark selected as read (open mail) -->
-          <button type="button" id="notifMarkReadSelectedBtn" title="Mark selected read" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;align-items:center;justify-content:center;margin-left:6px;">
+          <button type="button" id="notifMarkReadSelectedBtn" title="Mark selected read" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;display:inline-flex;align-items:center;justify-content:center;margin-left:6px;">
             <i class="fas fa-envelope-open-text" style="color:inherit;"></i>
           </button>
           <div style="position:relative;">
@@ -118,13 +114,17 @@
                 </div>
                 <div style="display:flex;gap:6px;">
                   <button id="calendarClear" title="Clear" style="padding:6px 10px;border:1px solid #e3e7ed;background:transparent;border-radius:0;cursor:pointer;">Clear</button>
-                  <button id="calendarConfirm" title="Confirm" style="padding:8px 14px;border-radius:0;background:#f6a623;border:none;color:#fff;cursor:pointer;">Confirm</button>
                 </div>
               </div>
               <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px;color:#666;font-size:12px;">
                 <div style="width:14.28%;text-align:center;">Sun</div><div style="width:14.28%;text-align:center;">Mon</div><div style="width:14.28%;text-align:center;">Tue</div><div style="width:14.28%;text-align:center;">Wed</div><div style="width:14.28%;text-align:center;">Thu</div><div style="width:14.28%;text-align:center;">Fri</div><div style="width:14.28%;text-align:center;">Sat</div>
               </div>
               <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;"></div>
+
+              <!-- moved Confirm down here so it's below the calendar grid -->
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+                <button id="calendarConfirm" title="Confirm" style="padding:8px 14px;border-radius:0;background:#0077B6;border:none;color:#fff;cursor:pointer;">Confirm</button>
+              </div>
             </div>
           </div>
         </div>
@@ -252,12 +252,117 @@
     #notifCalendarPanel { font-family:inherit; }
     #notifCalendarPanel .day-cell { height:36px; border-radius:0; border:1px solid transparent; background:#fff; cursor:pointer; display:flex;align-items:center;justify-content:center; }
     #notifCalendarPanel .day-cell.range { background:#ffe6c9; }
-    #notifCalendarPanel .day-cell.selected { background:#f6a623; color:#fff; border-color:#e08e12; }
+    #notifCalendarPanel .day-cell.selected { background:#0077B6; color:#fff; border-color:#006099; }
     #notifCalendarPanel .day-cell:hover { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
     #notifCalendarPanel .day-cell.today { box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04); }
 
-    #calendarConfirm { background:#f6a623; color:#fff; border:none; padding:8px 14px; border-radius:0; cursor:pointer; }
+    /* confirm button color changed and preserved sizing */
+    #calendarConfirm { background:#0077B6; color:#fff; border:none; padding:8px 14px; border-radius:0; cursor:pointer; }
+
     #calendarClear { background:transparent; border:1px solid #e3e7ed; padding:6px 10px; border-radius:0; cursor:pointer; }
+
+    /* append these simple corner rules to the existing <style> block */
+    /* rounded corners for main boxes */
+    .settings-card {
+      border-radius: 10px;
+      overflow: visible; /* allow popups (calendar/modal) to escape container */
+    }
+
+    .notif-list-wrapper {
+      border-radius: 10px;
+      overflow: visible; /* list items keep their own radius */
+    }
+
+    /* ensure each notification box keeps a 10px radius (already present but reinforce) */
+    .notif-list-item {
+      border-radius: 10px; /* ensure exact 10px everywhere */
+    }
+
+    /* calendar panel and controls */
+    #notifCalendarPanel {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #notifCalendarPanel .day-cell {
+      border-radius: 10px; /* round each day cell */
+    }
+
+    /* footer/pagination and action buttons */
+    #notifListFooter, .notif-actions, .notif-actions button, #calendarConfirm, #calendarClear {
+      border-radius: 10px;
+    }
+
+    /* small touch: rounded star and icon buttons */
+    .notif-star-left, .notif-delete, #notifDeleteSelectedBtn, #notifMarkReadSelectedBtn, #notifCalendarBtn {
+      border-radius: 10px;
+    }
+
+    /* UI overrides to match the provided screenshot (spacing, sizes, badges, pill items) */
+    /* page header */
+    #notificationTab .notif-page-title { font-size: 1.45rem; font-weight: 700; color: #222; margin-bottom: 6px; }
+    #notificationTab .notif-page-subtitle { color: #9aa3ad; font-size: 0.98rem; margin-bottom: 14px; }
+
+    /* search */
+    #notifSearch { width:100%; height:44px; padding:12px 16px 12px 44px; border-radius:12px; border:1px solid #e9eef5; background:#fff; box-shadow:none; font-size:0.98rem; }
+    #notificationTab i.fas.fa-search { left:14px; top:50%; color:#9aa3ad; }
+
+    /* tabs */
+    .notif-list-tab { padding:10px 12px; gap:10px; color:#444; font-weight:700; }
+    .tab-count { min-width:28px; height:28px; line-height:28px; padding:0 8px; border-radius:999px; font-weight:800; font-size:0.95rem; background:#eaf1ff; color:#2d72d9; display:inline-flex; align-items:center; justify-content:center; }
+    .notif-list-tab.active { color: #2d72d9; }
+    .notif-list-tab.active::after { left:8px; right:8px; bottom:6px; height:3px; background:#2d72d9; opacity:1; border-radius:3px; }
+
+    /* header action icons (right) */
+    .notif-list-header > div:last-child { display:flex; align-items:center; gap:12px; }
+    #notifDeleteSelectedBtn, #notifMarkReadSelectedBtn, #notifCalendarBtn { height:40px; width:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; background:transparent; color:#6d7780; }
+
+    /* list items — pill style */
+    .notif-list-item { padding:14px 18px; border-radius:12px; background:#f6f7f8; border:1px solid #eef2f5; gap:14px; align-items:center; }
+    .notif-left { min-width:92px; gap:12px; display:flex; align-items:center; }
+    .notif-icon { width:44px; height:44px; border-radius:8px; background:#fff; display:inline-flex; align-items:center; justify-content:center; border:1px solid #eef6ff; color:#0077B6; }
+    .notif-title { font-weight:700; font-size:1.02rem; color:#222; }
+    .notif-body { font-size:0.95rem; color:#6f767d; margin-top:4px; }
+    .notif-meta { min-width:140px; text-align:right; color:#9aa3ad; font-size:0.92rem; }
+    .notif-delete { width:44px; height:36px; border-radius:10px; background:#ff6b6b; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+
+    /* unread marker */
+    .notif-dot { width:11px; height:11px; border-radius:50%; background:#8fd08a; display:inline-block; margin-right:6px; }
+
+    /* footer pagination centered */
+    #notifListFooter { margin-top:12px; padding-top:8px; border-top:0; display:flex; justify-content:center; align-items:center; gap:12px; }
+
+    /* responsive tweak */
+    @media (max-width:760px){
+      .notif-meta { display:none; }
+      .notif-left { min-width:72px; }
+    }
+
+    /* hide per-item checkboxes (if present) and any generic checkboxes inside the list */
+    #notifListContainer input[type="checkbox"],
+    #notifListContainer .notif-checkbox {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      appearance: none !important;
+    }
+
+    /* hide header/select-all checkbox icon/button to remove checkbox beside delete-all */
+    #notifSelectAllBtn,
+    #notifSelectAllBtn * {
+      display: none !important;
+    }
+
+    /* also hide any square/check icons used for selection in the header */
+    .fa-square, .fa-check-square, .fa-check {
+      display: none !important;
+    }
+
+    /* ensure layout doesn't leave awkward gaps where checkbox was */
+    .notif-left { gap: 8px; align-items:center; }
+    .notif-list-header > div:last-child { gap: 8px; }
   </style>
 
   <!-- replace the whole script block with the cleaned script below -->
@@ -265,7 +370,7 @@
 (function(){
   const $ = id => document.getElementById(id);
 
-  // server-provided arrays (from PHP)
+  // server-provided arrays
   const systemNotifs = window.systemNotifs || [];
   const newUserNotifs = window.newUserNotifs || [];
   const newRequestNotifs = window.newRequestNotifs || [];
@@ -279,7 +384,9 @@
     name: n.name || '',
     message: 'New client request received from ' + (n.name || ''),
     time: n.created_at || '',
-    readKey: 'notif_read_sys_' + (n.id || '')
+    readKey: 'notif_read_sys_' + (n.id || ''),
+    srcType: 'request',
+    srcId: String(n.id || '')
   }));
   newRequestNotifs.forEach(n => all.push({
     id: 'nreq_' + (n.id || Math.random()),
@@ -288,7 +395,9 @@
     name: n.name || '',
     message: 'New client request received from ' + (n.name || ''),
     time: n.created_at || '',
-    readKey: 'notif_read_nreq_' + (n.id || '')
+    readKey: 'notif_read_nreq_' + (n.id || ''),
+    srcType: 'request',
+    srcId: String(n.id || '')
   }));
   newUserNotifs.forEach(u => all.push({
     id: 'usr_' + (u.id || Math.random()),
@@ -297,13 +406,63 @@
     name: u.name || '',
     message: 'New user registered: ' + (u.name || '') + (u.email ? ' ('+u.email+')' : ''),
     time: u.created_at || '',
-    readKey: 'notif_read_usr_' + (u.id || '')
+    readKey: 'notif_read_usr_' + (u.id || ''),
+    srcType: 'user',
+    srcId: String(u.id || '')
   }));
 
-  all.sort((a,b)=> {
-    if (a.time && b.time) return new Date(b.time) - new Date(a.time);
+  // robust date parser (handles ISO and common "YYYY-MM-DD HH:MM:SS")
+  function parseDate(s){
+    if (!s) return null;
+    if (s instanceof Date) return s;
+    if (typeof s !== 'string') return null;
+    const t = s.trim().replace(' ', 'T');
+    const d = new Date(t);
+    if (!isNaN(d.getTime())) return d;
+    const p = Date.parse(s);
+    return isNaN(p) ? null : new Date(p);
+  }
+
+  // helpers to read calendar-created inputs (they may be created on Confirm)
+  function getDateInputs(){
+    return { from: document.getElementById('notifDateFrom'), to: document.getElementById('notifDateTo') };
+  }
+  function attachDateInputs(){
+    const d = getDateInputs();
+    if (d.from) d.from.addEventListener('change', window.onDateChange);
+    if (d.to) d.to.addEventListener('change', window.onDateChange);
+  }
+
+  // sort by parsed time (newest first)
+  all.sort((a,b) => {
+    const da = parseDate(a.time), db = parseDate(b.time);
+    if (da && db) return db - da;
     return 0;
   });
+
+  // Deduplicate real items that share the same source (srcType:srcId).
+  // Keep the first occurrence (list is newest-first so the first is the newest).
+  (function dedupeBySource(){
+    const seen = new Map();
+    const kept = [];
+    for (let i = 0; i < all.length; i++){
+      const it = all[i];
+      const key = (it.srcType ? it.srcType : '') + ':' + (it.srcId ? it.srcId : '');
+      if (!key || key === ':') {
+        // fallback - keep items without a source key
+        kept.push(it);
+        continue;
+      }
+      if (!seen.has(key)) {
+        seen.set(key, true);
+        kept.push(it);
+      }
+      // else duplicate — skip
+    }
+    // replace contents of all with deduped list (preserve reference)
+    all.length = 0;
+    kept.forEach(x => all.push(x));
+  })();
 
   const PAGE_SIZE = 10;
   let currentPage = 1;
@@ -311,10 +470,64 @@
   let currentFilter = 'all';
   let selectAllGlobal = false;
 
-  const dateFromEl = $('notifDateFrom');
-  const dateToEl = $('notifDateTo');
+  // date inputs are read dynamically via getDateInputs() — attachDateInputs() will wire them when created
 
+  // safe localStorage getter to avoid uncaught exceptions (used throughout)
   const safeGet = key => { try { return localStorage.getItem(key); } catch(e) { return null; } };
+
+  // Shared: update Delete / Mark buttons based on any selected rows
+  function updateDeleteBtnState(){
+    const container = document.getElementById('notifListContainer');
+    const deleteSelBtn = document.getElementById('notifDeleteSelectedBtn');
+    const markReadBtn = document.getElementById('notifMarkReadSelectedBtn');
+    if (!container || !deleteSelBtn) return;
+    const any = container.querySelectorAll('.notif-list-item.notif-selected').length > 0;
+    deleteSelBtn.style.display = any ? 'inline-flex' : 'none';
+    if (markReadBtn) markReadBtn.style.display = any ? 'inline-flex' : 'none';
+  }
+
+  // --- Delete-all confirmation modal (created once) ---
+  (function initDeleteConfirmModal(){
+    if (document.getElementById('deleteAllConfirmModal')) return;
+    const tpl = document.createElement('div');
+    tpl.id = 'deleteAllConfirmModal';
+    tpl.style.display = 'none';
+    tpl.innerHTML = `
+      <div class="dac-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:10000;">
+        <div class="dac-panel" style="width:520px;max-width:92%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.18);font-family:inherit;">
+          <div style="background:#fde7ea;padding:26px 20px;display:flex;align-items:center;justify-content:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#f8d3d8;display:flex;align-items:center;justify-content:center;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#e04a5f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div style="padding:22px 28px 16px;text-align:center;">
+            <div id="dacMessage" style="color:#d33;font-weight:600;font-size:1.05rem;margin-bottom:14px;"></div>
+            <div id="dacSub" style="color:#666;font-size:0.985rem;margin-bottom:22px;">This action cannot be undone.</div>
+            <div style="display:flex;justify-content:center;gap:18px;">
+              <button id="dacConfirmBtn" style="background:#0077B6;color:#fff;border:none;padding:10px 28px;border-radius:24px;cursor:pointer;font-weight:600;">Confirm</button>
+              <button id="dacCancelBtn" style="background:transparent;color:#999;border:1px solid #e7e7e7;padding:10px 24px;border-radius:24px;cursor:pointer;">Go Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(tpl);
+    // simple show helper
+    window.showDeleteConfirm = function(message, sub, onConfirm){
+      const root = document.getElementById('deleteAllConfirmModal');
+      if (!root) return;
+      root.style.display = 'block';
+      const msg = root.querySelector('#dacMessage'); if (msg) msg.textContent = message || 'Are you sure?';
+      const subEl = root.querySelector('#dacSub'); if (subEl) subEl.textContent = sub || 'This action cannot be undone.';
+      const confirmBtn = root.querySelector('#dacConfirmBtn');
+      const cancelBtn = root.querySelector('#dacCancelBtn');
+      function cleanup(){ root.style.display='none'; confirmBtn.removeEventListener('click', onC); cancelBtn.removeEventListener('click', onX); }
+      function onC(e){ try { if (typeof onConfirm === 'function') onConfirm(); } finally { cleanup(); } }
+      function onX(e){ cleanup(); }
+      confirmBtn.addEventListener('click', onC);
+      cancelBtn.addEventListener('click', onX);
+    };
+  })();
 
   function updateCounts(){
     const counts = { all:0, req:0, user:0, fav:0, arch:0 };
@@ -408,28 +621,25 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const selectAllBtn = $('notifSelectAllBtn');
     const deleteSelBtn = $('notifDeleteSelectedBtn');
     const markReadSelBtn = $('notifMarkReadSelectedBtn');
 
-    // ensure header batch controls are hidden until there's a selection
-    if (deleteSelBtn) deleteSelBtn.style.display = 'none';
-    if (markReadSelBtn) markReadSelBtn.style.display = 'none';
-
     const q = (query||'').toLowerCase();
 
+    // read date inputs live (they may be created by the calendar Confirm)
     let fromDate = null, toDate = null;
     try {
-      if (dateFromEl && dateFromEl.value) fromDate = new Date(dateFromEl.value + 'T00:00:00');
-      if (dateToEl && dateToEl.value) toDate = new Date(dateToEl.value + 'T23:59:59');
+      const d = getDateInputs();
+      if (d.from && d.from.value) fromDate = parseDate(d.from.value + 'T00:00:00');
+      if (d.to && d.to.value) toDate = parseDate(d.to.value + 'T23:59:59');
     } catch(e){ fromDate = null; toDate = null; }
 
     let items = all.filter(item=>{
       try { if (localStorage.getItem('notif_deleted_' + item.id) === '1') return false; } catch(e){}
       if (fromDate || toDate) {
         if (!item.time) return false;
-        const it = new Date(item.time);
-        if (isNaN(it.getTime())) return false;
+        const it = parseDate(item.time);
+        if (!it || isNaN(it.getTime())) return false;
         if (fromDate && it < fromDate) return false;
         if (toDate && it > toDate) return false;
       }
@@ -497,7 +707,10 @@
       const bodyEl = row.querySelector('.notif-body-text');
       if (bodyEl) bodyEl.textContent = item.message || '';
       const metaEl = row.querySelector('.notif-meta-text');
-      if (metaEl) metaEl.textContent = item.time ? (new Date(item.time)).toLocaleString() : 'Just Now';
+      if (metaEl) {
+        const dt = parseDate(item.time);
+        metaEl.textContent = dt ? dt.toLocaleString() : 'Just Now';
+      }
 
       if (!isRead) row.classList.add('notif-new');
 
@@ -522,8 +735,7 @@
         ev.stopPropagation();
         selectAllGlobal = false;
         row.classList.toggle('notif-selected');
-        const deleteBtn = $('notifDeleteSelectedBtn'); if (deleteBtn) deleteBtn.style.display = container.querySelectorAll('.notif-list-item.notif-selected').length > 0 ? 'inline-flex' : 'none';
-        const markBtn = $('notifMarkReadSelectedBtn'); if (markBtn) markBtn.style.display = container.querySelectorAll('.notif-list-item.notif-selected').length > 0 ? 'inline-flex' : 'none';
+        updateDeleteBtnState();
       });
 
       const iconBtn = row.querySelector('.notif-icon');
@@ -587,8 +799,8 @@
   if (searchEl) searchEl.addEventListener('input', function(){ showAll = false; currentPage = 1; renderList(currentFilter, this.value); });
 
   window.onDateChange = function(){ showAll = false; currentPage = 1; renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : ''); };
-  if (dateFromEl) dateFromEl.addEventListener('change', window.onDateChange);
-  if (dateToEl) dateToEl.addEventListener('change', window.onDateChange);
+  // attach if calendar inputs already exist (and Calendar Confirm will call attachDateInputs)
+  attachDateInputs();
 
   // calendar (kept as before)
   (function initCalendar(){
@@ -600,6 +812,11 @@
     const confirmBtn = $('calendarConfirm');
     const clearBtn = $('calendarClear');
     if (!calendarBtn || !calendarPanel || !monthSelect || !yearSelect || !grid) return;
+
+    // Ensure the calendar popup is attached to the document body so it's not clipped
+    // by parent containers (settings-card had overflow previously). This preserves
+    // the existing element and keeps all IDs the same for the JS listeners.
+    if (calendarPanel.parentElement !== document.body) document.body.appendChild(calendarPanel);
 
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const today = new Date();
@@ -690,6 +907,8 @@
         const by = b.getFullYear(), bm = String(b.getMonth()+1).padStart(2,'0'), bd = String(b.getDate()).padStart(2,'0');
         from.value = `${ay}-${am}-${ad}`; to.value = `${by}-${bm}-${bd}`;
       }
+      // ensure change listeners on the created inputs so filtering reacts immediately
+      attachDateInputs();
       if (typeof window.onDateChange === 'function') window.onDateChange();
       calendarPanel.style.display = 'none';
     });
@@ -718,117 +937,181 @@
     renderCalendar();
   })();
 
-  // batch select (delete + mark-read) kept as implemented previously
+  // batch select (delete + mark-read)
   (function batchSelect(){
-    const selectAllBtn = $('notifSelectAllBtn');
-    const deleteSelBtn = $('notifDeleteSelectedBtn');
-    const markReadBtn = $('notifMarkReadSelectedBtn');
-    const container = $('notifListContainer');
-    if (!selectAllBtn || !deleteSelBtn || !container) return;
+     const deleteSelBtn = $('notifDeleteSelectedBtn');
+     const markReadBtn = $('notifMarkReadSelectedBtn');
+     const container = $('notifListContainer');
+     if (!deleteSelBtn || !container) return;
 
-    (function bindIconClicks(){
-      const bind = (btn) => {
-        if (!btn) return;
-        const icon = btn.querySelector('i');
-        if (!icon) return;
-        icon.addEventListener('click', (ev) => { ev.stopPropagation(); btn.click(); });
-      };
-      bind(selectAllBtn); bind(deleteSelBtn); bind(markReadBtn); bind($('notifCalendarBtn'));
-    })();
+     (function bindIconClicks(){
+       const bind = (btn) => {
+         if (!btn) return;
+         const icon = btn.querySelector('i');
+         if (!icon) return;
+         icon.addEventListener('click', (ev) => { ev.stopPropagation(); btn.click(); });
+       };
+      bind(deleteSelBtn); bind(markReadBtn); bind($('notifCalendarBtn'));
+     })();
 
-    function updateDeleteBtnState(){
-      const any = container.querySelectorAll('.notif-list-item.notif-selected').length > 0;
-      deleteSelBtn.style.display = any ? 'inline-flex' : 'none';
-      if (markReadBtn) markReadBtn.style.display = any ? 'inline-flex' : 'none';
-    }
+     if (markReadBtn) {
+       markReadBtn.addEventListener('click', function(e){
+         e.stopPropagation();
+         const selected = container.querySelectorAll('.notif-list-item.notif-selected');
+         if (selected.length > 0) {
+           // existing behavior: mark only explicitly selected rows
+           selected.forEach(r => {
+             const id = r.dataset.id;
+             if (!id) return;
+             const it = all.find(x => x.id === id);
+             const readKey = it ? it.readKey : ('notif_read_' + id);
+             try { localStorage.setItem(readKey, '1'); } catch(err){}
+             const dot = r.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
+             r.classList.remove('notif-new');
+           });
+         } else {
+           // new: no explicit selection -> mark all notifications matching current filter & date range
+           let fromDate = null, toDate = null;
+           try {
+             const d = getDateInputs();
+             if (d.from && d.from.value) fromDate = parseDate(d.from.value + 'T00:00:00');
+             if (d.to && d.to.value) toDate = parseDate(d.to.value + 'T23:59:59');
+           } catch(e){ fromDate = null; toDate = null; }
 
-    selectAllBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      const pressed = this.getAttribute('aria-pressed') === 'true';
-      const visibleRows = container.querySelectorAll('.notif-list-item');
-      if (!pressed){
-        visibleRows.forEach(r => r.classList.add('notif-selected'));
-        const icon = this.querySelector('i'); if (icon) icon.className = 'far fa-check-square';
-        this.setAttribute('aria-pressed','true');
-        selectAllGlobal = (currentFilter === 'archive');
-      } else {
-        visibleRows.forEach(r => r.classList.remove('notif-selected'));
-        const icon = this.querySelector('i'); if (icon) icon.className = 'far fa-square';
-        this.setAttribute('aria-pressed','false');
-        selectAllGlobal = false;
-      }
-      updateDeleteBtnState();
-    });
+           all.forEach(it => {
+             try {
+               // skip deleted
+               if (safeGet('notif_deleted_' + it.id) === '1') return;
+               // date filter
+               if (fromDate || toDate) {
+                 if (!it.time) return;
+                 const dt = parseDate(it.time);
+                 if (!dt) return;
+                 if (fromDate && dt < fromDate) return;
+                 if (toDate && dt > toDate) return;
+               }
+               // archived handling
+               const isArchived = safeGet('notif_archived_' + it.id) === '1';
+               if (currentFilter === 'archive') {
+                 if (!isArchived) return;
+               } else {
+                 if (isArchived) return;
+               }
+               // kind/favorite filters
+               if (currentFilter === 'requests' && it.kind !== 'request') return;
+               if (currentFilter === 'users' && it.kind !== 'user') return;
+               if (currentFilter === 'favorite' && safeGet('notif_fav_' + it.id) !== '1') return;
 
-    if (markReadBtn) {
-      markReadBtn.addEventListener('click', function(e){
-        e.stopPropagation();
-        const selected = container.querySelectorAll('.notif-list-item.notif-selected');
-        selected.forEach(r => {
-          const id = r.dataset.id;
-          if (!id) return;
-          const it = all.find(x => x.id === id);
-          const readKey = it ? it.readKey : ('notif_read_' + id);
-          try { localStorage.setItem(readKey, '1'); } catch(err){}
-          const dot = r.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
-          r.classList.remove('notif-new');
-        });
+               // mark as read
+               if (it.readKey) {
+                 try { localStorage.setItem(it.readKey, '1'); } catch(err){}
+               } else {
+                 try { localStorage.setItem('notif_read_' + it.id, '1'); } catch(err){}
+               }
+             } catch(err){}
+           });
+         }
+
         updateCounts();
         renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
       });
-    }
+     }
 
-    container.addEventListener('click', function(){
-      updateDeleteBtnState();
-      const rows = container.querySelectorAll('.notif-list-item');
-      const sel = container.querySelectorAll('.notif-list-item.notif-selected');
-      if (rows.length > 0 && sel.length === rows.length) {
-        selectAllBtn.setAttribute('aria-pressed','true');
-        const icon = selectAllBtn.querySelector('i'); if (icon) icon.className = 'far fa-check-square';
-      } else {
-        selectAllBtn.setAttribute('aria-pressed','false');
-        const icon = selectAllBtn.querySelector('i'); if (icon) icon.className = 'far fa-square';
-      }
-    });
+     container.addEventListener('click', function(){
+       updateDeleteBtnState();
+     });
 
-    deleteSelBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      if (currentFilter === 'archive' && selectAllGlobal) {
-        all.forEach(it => {
-          try {
-            if (localStorage.getItem('notif_archived_' + it.id) === '1' && localStorage.getItem('notif_deleted_' + it.id) !== '1') {
-              localStorage.setItem('notif_deleted_' + it.id, '1');
-              localStorage.removeItem('notif_archived_' + it.id);
-              localStorage.removeItem('notif_fav_' + it.id);
-              if (it.readKey) localStorage.removeItem(it.readKey);
-            }
-          } catch(err){}
-        });
-        selectAllGlobal = false;
-        const selAllIcon = selectAllBtn.querySelector('i'); if (selAllIcon) selAllIcon.className = 'far fa-square';
-        selectAllBtn.setAttribute('aria-pressed','false');
-      } else {
-        const selected = container.querySelectorAll('.notif-list-item.notif-selected');
-        selected.forEach(r => {
-          const id = r.dataset.id;
-          if (!id) return;
-          if (currentFilter === 'archive') {
-            try {
-              localStorage.setItem('notif_deleted_' + id, '1');
-              localStorage.removeItem('notif_archived_' + id);
-              localStorage.removeItem('notif_fav_' + id);
-              const it = all.find(x => x.id === id);
-              if (it && it.readKey) localStorage.removeItem(it.readKey);
-            } catch(err){}
-          } else {
-            try { localStorage.setItem('notif_archived_' + id, '1'); } catch(err){}
-          }
-        });
-      }
-      updateCounts();
-      renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
-    });
-  })();
+     deleteSelBtn.addEventListener('click', function(e){
+       e.stopPropagation();
+       // 1) archive-delete all archived items when in archive + selectAllGlobal
+       if (currentFilter === 'archive' && selectAllGlobal) {
+         // ask confirmation before deleting everything in archive
+         showDeleteConfirm('Are you sure you want to delete all archived notifications?', 'This will permanently remove all archived notifications.', function(){
+           all.forEach(it => {
+             try {
+               if (safeGet('notif_archived_' + it.id) === '1' && safeGet('notif_deleted_' + it.id) !== '1') {
+                 localStorage.setItem('notif_deleted_' + it.id, '1');
+                 localStorage.removeItem('notif_archived_' + it.id);
+                 localStorage.removeItem('notif_fav_' + it.id);
+                 if (it.readKey) localStorage.removeItem(it.readKey);
+               }
+             } catch(err){}
+           });
+           selectAllGlobal = false;
+           updateCounts();
+           renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
+         });
+       } else {
+         // 2) prefer explicit selection
+         const selected = container.querySelectorAll('.notif-list-item.notif-selected');
+         if (selected.length > 0) {
+           selected.forEach(r => {
+             const id = r.dataset.id;
+             if (!id) return;
+             if (currentFilter === 'archive') {
+               try {
+                 localStorage.setItem('notif_deleted_' + id, '1');
+                 localStorage.removeItem('notif_archived_' + id);
+                 localStorage.removeItem('notif_fav_' + id);
+                 const it = all.find(x => x.id === id);
+                 if (it && it.readKey) localStorage.removeItem(it.readKey);
+               } catch(err){}
+             } else {
+               try { localStorage.setItem('notif_archived_' + id, '1'); } catch(err){}
+             }
+           });
+           updateCounts();
+           renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
+         } else {
+           // 3) no explicit selection -> ask confirmation then act on all matching notifications
+           showDeleteConfirm('Are you sure you want to delete all matching notifications?', '', function(){
+             let fromDate = null, toDate = null;
+             try {
+               const d = getDateInputs();
+               if (d.from && d.from.value) fromDate = parseDate(d.from.value + 'T00:00:00');
+               if (d.to && d.to.value) toDate = parseDate(d.to.value + 'T23:59:59');
+             } catch(e){ fromDate = null; toDate = null; }
+ 
+            all.forEach(it => {
+              try {
+                // skip already deleted
+                if (safeGet('notif_deleted_' + it.id) === '1') return;
+                // date filter
+                if (fromDate || toDate) {
+                  if (!it.time) return;
+                  const dt = parseDate(it.time);
+                  if (!dt) return;
+                  if (fromDate && dt < fromDate) return;
+                  if (toDate && dt > toDate) return;
+                }
+                // archive filter handling
+                const isArchived = safeGet('notif_archived_' + it.id) === '1';
+                if (currentFilter === 'archive') {
+                  if (!isArchived) return;
+                  // when in archive and delete-all, permanently delete
+                  if (safeGet('notif_deleted_' + it.id) !== '1') {
+                    localStorage.setItem('notif_deleted_' + it.id, '1');
+                    localStorage.removeItem('notif_archived_' + it.id);
+                    localStorage.removeItem('notif_fav_' + it.id);
+                    if (it.readKey) localStorage.removeItem(it.readKey);
+                  }
+                } else {
+                  // for other filters, ensure item matches filter kind / favorite
+                  if (currentFilter === 'requests' && it.kind !== 'request') return;
+                  if (currentFilter === 'users' && it.kind !== 'user') return;
+                  if (currentFilter === 'favorite' && safeGet('notif_fav_' + it.id) !== '1') return;
+                  // archive (soft-delete) the item
+                  localStorage.setItem('notif_archived_' + it.id, '1');
+                }
+              } catch(err){}
+            });
+            updateCounts();
+            renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
+           });
+         }
+       }
+     });
+   })();
 
   // init
   updateCounts();
