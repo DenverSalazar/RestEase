@@ -118,6 +118,22 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
       <title>Certificate #<?php echo $certId; ?></title>
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
       <style>
+        /* Load Bernard MT font for CERTIFICATION headings */
+        @font-face {
+          font-family: 'Bernard MT Std Condensed';
+          src: url('../assets/fonts/Bernard MT Std Condensed/Bernard MT Std Condensed.otf') format('opentype');
+          font-display: swap;
+          font-weight: normal;
+          font-style: normal;
+        }
+        /* Load Rockwell Nova Bold for OFFICE OF THE MUNICIPAL MAYOR */
+        @font-face {
+          font-family: 'Rockwell Nova';
+          src: url('../assets/fonts/rockwell-nova/RockwellNova-Bold.ttf') format('truetype');
+          font-weight: 700;
+          font-style: normal;
+          font-display: swap;
+        }
         body { font-family: 'Poppins', sans-serif; margin:0; padding:20px; background:#fff; color:#000; }
         #certificatePreview { width: 210mm; margin:0 auto; padding:16mm; box-sizing:border-box; background:#fff; }
         .header { text-align:center; }
@@ -143,9 +159,10 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               Republic of the Philippines<br>
               Province of Batangas<br>
               MUNICIPALITY OF PADRE GARCIA<br>
-              <strong style="display:block;font-size:20px;margin-top:6px;">OFFICE OF THE MUNICIPAL MAYOR</strong>
+              <strong style="display:block;font-size:20px;margin-top:6px;font-family:'Rockwell Nova', 'Times New Roman', serif;font-weight:700;">OFFICE OF THE MUNICIPAL MAYOR</strong>
               <hr style="border-top:4px solid #222;margin:12px 0;">
-              <strong style="font-size:22px;letter-spacing:10px;">CERTIFICATION</strong>
+              <!-- Use Bernard font for the certificate title -->
+              <strong style="font-size:22px;letter-spacing:10px;font-family:'Bernard MT Std Condensed', 'Times New Roman', serif;">CERTIFICATION</strong>
             </div>
             <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal">
           </div>
@@ -227,6 +244,22 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/header.css">
   <style>
+    /* Load Bernard MT font for CERTIFICATION headings */
+    @font-face {
+      font-family: 'Bernard MT Std Condensed';
+      src: url('../assets/fonts/Bernard MT Std Condensed/Bernard MT Std Condensed.otf') format('opentype');
+      font-display: swap;
+      font-weight: normal;
+      font-style: normal;
+    }
+    /* Load Rockwell Nova Bold for OFFICE OF THE MUNICIPAL MAYOR */
+    @font-face {
+      font-family: 'Rockwell Nova';
+      src: url('../assets/fonts/rockwell-nova/RockwellNova-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
     :root {
       --primary-color: #1a1a1a;
       --sidebar-width: 240px;
@@ -373,6 +406,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         padding: 16mm; /* printable margin */
         background: #fff !important;
         box-shadow: none !important;
+        print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
         page-break-inside: avoid;
         overflow: hidden;
@@ -557,13 +591,14 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
                   MUNICIPALITY OF PADRE GARCIA
                 </div>
                 <div style="display:flex;align-items:center;justify-content:center;">
-                  <span style="font-family:'Times New Roman', Times, serif;font-size:2rem;font-weight:900;letter-spacing:1px;margin-bottom:0;white-space:nowrap;">
+                  <span style="font-family:'Rockwell Nova', 'Times New Roman', serif;font-size:2rem;font-weight:700;letter-spacing:1px;margin-bottom:0;white-space:nowrap;">
                     OFFICE OF THE MUNICIPAL MAYOR
                   </span>
                 </div>
                 <hr style="border:0; border-top:5px solid #222; margin:18px 0 18px 0;">
                 <div style="display:flex;align-items:center;justify-content:center;">
-                  <span style="font-family:'Times New Roman', Times, serif;font-size:2rem;font-weight:900;letter-spacing:18px;margin-top:0;margin-bottom:0;white-space:nowrap;">
+                  <!-- Use Bernard font for CERTIFICATION in the on-page preview -->
+                  <span style="font-family:'Bernard MT Std Condensed', 'Times New Roman', serif;font-size:2rem;font-weight:900;letter-spacing:18px;margin-top:0;margin-bottom:0;white-space:nowrap;">
                     CERTIFICATION
                   </span>
                 </div>
@@ -1128,7 +1163,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
   body {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    font-family: "Poppins", "Times New Roman", serif;
+    font-family: "Bernard MT Std Condensed", "Poppins", "Times New Roman", serif;
     display: flex;
     align-items: flex-start;
     justify-content: center;
