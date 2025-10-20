@@ -153,6 +153,66 @@ $pendingRequest = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt'
 $result = $conn->query("SELECT COUNT(*) AS cnt FROM users");
 $activeClients = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
 
+// --- MOVED: Prepare data for both new map and old map (compute before baselines) ---
+$newMapOccupiedArr = [];
+$resNewEarly = $conn->query("SELECT DISTINCT nicheID FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND nicheID != 'null' AND nicheID NOT LIKE 'OM%'");
+if ($resNewEarly) {
+    while ($row = $resNewEarly->fetch_assoc()) {
+        $newMapOccupiedArr[$row['nicheID']] = true;
+    }
+}
+$newMapOccupied = count($newMapOccupiedArr);
+$newMapAvailable = $totalPhysicalNiches - $newMapOccupied;
+if ($newMapAvailable < 0) $newMapAvailable = 0;
+
+// Old map: nicheID starting with 'OM'
+$oldMapOccupiedArr = [];
+$resOldEarly = $conn->query("SELECT DISTINCT nicheID FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND nicheID != 'null' AND nicheID LIKE 'OM%'");
+if ($resOldEarly) {
+    while ($row = $resOldEarly->fetch_assoc()) {
+        $oldMapOccupiedArr[$row['nicheID']] = true;
+    }
+}
+$oldMapOccupied = count($oldMapOccupiedArr);
+
+// Old map available: 2307 minus occupied
+$totalOldMapNiches = 2307;
+$oldMapAvailable = $totalOldMapNiches - $oldMapOccupied;
+if ($oldMapAvailable < 0) $oldMapAvailable = 0;
+// --- end moved block ---
+
+// --- NEW: compute simple baselines and changes for stat indicators ---
+// New map occupied 30 days ago (to derive previous available)
+$occupied30Arr = [];
+$resOcc30 = $conn->query("SELECT DISTINCT nicheID FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND nicheID != 'null' AND nicheID NOT LIKE 'OM%' AND dateInternment <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+if ($resOcc30) {
+    while ($r = $resOcc30->fetch_assoc()) {
+        $occupied30Arr[$r['nicheID']] = true;
+    }
+}
+$occupied30 = count($occupied30Arr);
+$prevNewMapAvailable = $totalPhysicalNiches - $occupied30;
+if ($prevNewMapAvailable < 0) $prevNewMapAvailable = 0;
+$newMapAvailableChange = $newMapAvailable - $prevNewMapAvailable;
+
+// Pending requests: compare last 7 days vs previous 7 days
+$resLast7 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$last7 = ($resLast7 && $r = $resLast7->fetch_assoc()) ? intval($r['cnt']) : 0;
+$resPrev7 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$prev7 = ($resPrev7 && $r = $resPrev7->fetch_assoc()) ? intval($r['cnt']) : 0;
+$pendingRequestChange = $last7 - $prev7;
+
+// Active clients change: new users in last 30 days vs previous 30-day window
+$resClientsLast30 = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+$clientsLast30 = ($resClientsLast30 && $r = $resClientsLast30->fetch_assoc()) ? intval($r['cnt']) : 0;
+$resClientsPrev30 = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+$clientsPrev30 = ($resClientsPrev30 && $r = $resClientsPrev30->fetch_assoc()) ? intval($r['cnt']) : 0;
+$activeClientsChange = $clientsLast30 - $clientsPrev30;
+
+// Occupied niches change (new map): compare current occupied vs occupied 30 days ago
+$newMapOccupiedChange = $newMapOccupied - $occupied30;
+// --- end new section ---
+
 // Get admin name
 $adminId = $_SESSION['admin_id'];
 $adminName = 'Admin';
@@ -275,6 +335,95 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
     $yearOptions[] = $y;
 }
 
+// RESTORE: Prepare chart data for both maps (values used by JS below)
+$pieDataNew = [$newMapAvailable, $newMapOccupied];
+
+// Old map metrics depend on $oldMapAvailable/$oldMapOccupied computed above
+$pieDataOld = [$oldMapAvailable, $oldMapOccupied];
+
+// Area chart: Active Clients per day (last 7 days)
+$activeClientsPerDayNew = [];
+$activeClientsPerDayOld = [];
+$daysLabels = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $daysLabels[] = date('D', strtotime($date));
+    if (date('Y', strtotime($date)) != $currentYear) {
+        $activeClientsPerDayNew[] = 0;
+        $activeClientsPerDayOld[] = 0;
+        continue;
+    }
+    $resTmp = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE DATE(created_at) = '$date'");
+    $cnt = ($resTmp && $row = $resTmp->fetch_assoc()) ? intval($row['cnt']) : 0;
+    $activeClientsPerDayNew[] = $cnt;
+    // old map uses same series (accounts are not map-specific)
+    $activeClientsPerDayOld[] = $cnt;
+}
+
+// Column chart: Requests per month (last 5 months)
+$requestsPerMonthNew = [];
+$requestsPerMonthOld = [];
+$monthsLabels = [];
+for ($i = 4; $i >= 0; $i--) {
+    $month = date('Y-m', strtotime("-$i months"));
+    $monthsLabels[] = date('M', strtotime($month));
+    $yearM = date('Y', strtotime($month));
+    if ($yearM != $currentYear) {
+        $requestsPerMonthNew[] = 0;
+        $requestsPerMonthOld[] = 0;
+        continue;
+    }
+    // New map requests (exclude OM or null)
+    $resR1 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE DATE_FORMAT(created_at, '%Y-%m') = '$month' AND (niche_id NOT LIKE 'OM%' OR niche_id IS NULL)");
+    $requestsPerMonthNew[] = ($resR1 && $row = $resR1->fetch_assoc()) ? intval($row['cnt']) : 0;
+    // Old map requests (OM%)
+    $resR2 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE DATE_FORMAT(created_at, '%Y-%m') = '$month' AND niche_id LIKE 'OM%'");
+    $requestsPerMonthOld[] = ($resR2 && $row = $resR2->fetch_assoc()) ? intval($row['cnt']) : 0;
+}
+
+// Donut chart: Request Type Distribution (filtered by year)
+$requestTypeCountsNew = ['New' => 0, 'Relocate' => 0, 'Transfer' => 0];
+$resRTN = $conn->query("SELECT type, COUNT(*) AS cnt FROM client_requests WHERE YEAR(created_at) = $currentYear AND (niche_id NOT LIKE 'OM%' OR niche_id IS NULL) GROUP BY type");
+if ($resRTN) {
+    while ($row = $resRTN->fetch_assoc()) {
+        if (isset($requestTypeCountsNew[$row['type']])) $requestTypeCountsNew[$row['type']] = intval($row['cnt']);
+    }
+}
+$requestTypeDataNew = array_values($requestTypeCountsNew);
+
+$requestTypeCountsOld = ['New' => 0, 'Relocate' => 0, 'Transfer' => 0];
+$resRTO = $conn->query("SELECT type, COUNT(*) AS cnt FROM client_requests WHERE YEAR(created_at) = $currentYear AND niche_id LIKE 'OM%' GROUP BY type");
+if ($resRTO) {
+    while ($row = $resRTO->fetch_assoc()) {
+        if (isset($requestTypeCountsOld[$row['type']])) $requestTypeCountsOld[$row['type']] = intval($row['cnt']);
+    }
+}
+$requestTypeDataOld = array_values($requestTypeCountsOld);
+$requestTypeLabels = array_keys($requestTypeCountsNew);
+
+// Bar chart: Deceased per floor (year and all years)
+$floors = ['1F', '2F', '3F'];
+$deceasedPerFloorNew = [];
+$deceasedPerFloorNewAll = [];
+foreach ($floors as $floor) {
+    $resY = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND YEAR(dateInternment) = $currentYear AND nicheID NOT LIKE 'OM%'");
+    $deceasedPerFloorNew[] = ($resY && $row = $resY->fetch_assoc()) ? intval($row['cnt']) : 0;
+    $resA = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND nicheID NOT LIKE 'OM%'");
+    $deceasedPerFloorNewAll[] = ($resA && $row = $resA->fetch_assoc()) ? intval($row['cnt']) : 0;
+}
+
+$oldMapFloors = ['OM-1F', 'OM-2F'];
+$deceasedPerFloorOld = [];
+$deceasedPerFloorOldAll = [];
+foreach ($oldMapFloors as $floor) {
+    $resYO = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND YEAR(dateInternment) = $currentYear");
+    $deceasedPerFloorOld[] = ($resYO && $row = $resYO->fetch_assoc()) ? intval($row['cnt']) : 0;
+    $resAO = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%'");
+    $deceasedPerFloorOldAll[] = ($resAO && $row = $resAO->fetch_assoc()) ? intval($row['cnt']) : 0;
+}
+$deceasedFloorLabels = $floors;
+$deceasedFloorLabelsOld = ['1F', '2F'];
+
 // --- Prepare data for both new map and old map ---
 
 // New map: exclude nicheID starting with 'OM'
@@ -304,105 +453,167 @@ $totalOldMapNiches = 2307;
 $oldMapAvailable = $totalOldMapNiches - $oldMapOccupied;
 if ($oldMapAvailable < 0) $oldMapAvailable = 0;
 
-// --- Prepare chart data for both maps ---
+// NEW: simple percentages for progress bars
+$availPctNew = $totalPhysicalNiches > 0 ? round(($newMapAvailable / $totalPhysicalNiches) * 100, 1) : 0;
+$occPctNew   = $totalPhysicalNiches > 0 ? round(($newMapOccupied / $totalPhysicalNiches) * 100, 1) : 0;
+$availPctOld = $totalOldMapNiches   > 0 ? round(($oldMapAvailable / $totalOldMapNiches) * 100, 1) : 0;
+$occPctOld   = $totalOldMapNiches   > 0 ? round(($oldMapOccupied / $totalOldMapNiches) * 100, 1) : 0;
 
-// Pie chart data
-$pieDataNew = [$newMapAvailable, $newMapOccupied];
-$pieDataOld = [$oldMapAvailable, $oldMapOccupied];
+// --- end new section ---
 
-// Area chart: Active Clients per day (last 7 days, filtered by year)
-$activeClientsPerDayNew = [];
-$activeClientsPerDayOld = [];
-$daysLabels = [];
-for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
-    $daysLabels[] = date('D', strtotime($date));
-    if (date('Y', strtotime($date)) != $currentYear) {
-        $activeClientsPerDayNew[] = 0;
-        $activeClientsPerDayOld[] = 0;
-        continue;
+// --- NEW: compute simple baselines and changes for stat indicators ---
+// New map occupied 30 days ago (to derive previous available)
+$occupied30Arr = [];
+$resOcc30 = $conn->query("SELECT DISTINCT nicheID FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND nicheID != 'null' AND nicheID NOT LIKE 'OM%' AND dateInternment <= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+if ($resOcc30) {
+    while ($r = $resOcc30->fetch_assoc()) {
+        $occupied30Arr[$r['nicheID']] = true;
     }
-    // New map: users created on this date
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE DATE(created_at) = '$date'");
-    $activeClientsPerDayNew[] = ($res && $row = $res->fetch_assoc()) ? intval($row['cnt']) : 0;
-    // Old map: users created on this date (same logic, or adjust if needed)
-    $activeClientsPerDayOld[] = $activeClientsPerDayNew[count($activeClientsPerDayNew)-1];
 }
+$occupied30 = count($occupied30Arr);
+$prevNewMapAvailable = $totalPhysicalNiches - $occupied30;
+if ($prevNewMapAvailable < 0) $prevNewMapAvailable = 0;
+$newMapAvailableChange = $newMapAvailable - $prevNewMapAvailable;
 
-// Column chart: Requests per month (last 5 months, filtered by year)
-$requestsPerMonthNew = [];
-$requestsPerMonthOld = [];
-$monthsLabels = [];
-for ($i = 4; $i >= 0; $i--) {
-    $month = date('Y-m', strtotime("-$i months"));
-    $monthsLabels[] = date('M', strtotime($month));
-    $year = date('Y', strtotime($month));
-    if ($year != $currentYear) {
-        $requestsPerMonthNew[] = 0;
-        $requestsPerMonthOld[] = 0;
-        continue;
-    }
-    // New map: requests for new map (exclude OM)
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE DATE_FORMAT(created_at, '%Y-%m') = '$month' AND (niche_id NOT LIKE 'OM%' OR niche_id IS NULL)");
-    $requestsPerMonthNew[] = ($res && $row = $res->fetch_assoc()) ? intval($row['cnt']) : 0;
-    // Old map: requests for old map (niche_id LIKE 'OM%')
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE DATE_FORMAT(created_at, '%Y-%m') = '$month' AND niche_id LIKE 'OM%'");
-    $requestsPerMonthOld[] = ($res && $row = $res->fetch_assoc()) ? intval($row['cnt']) : 0;
+// Pending requests: compare last 7 days vs previous 7 days
+$resLast7 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$last7 = ($resLast7 && $r = $resLast7->fetch_assoc()) ? intval($r['cnt']) : 0;
+$resPrev7 = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$prev7 = ($resPrev7 && $r = $resPrev7->fetch_assoc()) ? intval($r['cnt']) : 0;
+$pendingRequestChange = $last7 - $prev7;
+
+// Active clients change: new users in last 30 days vs previous 30-day window
+$resClientsLast30 = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+$clientsLast30 = ($resClientsLast30 && $r = $resClientsLast30->fetch_assoc()) ? intval($r['cnt']) : 0;
+$resClientsPrev30 = $conn->query("SELECT COUNT(*) AS cnt FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+$clientsPrev30 = ($resClientsPrev30 && $r = $resClientsPrev30->fetch_assoc()) ? intval($r['cnt']) : 0;
+$activeClientsChange = $clientsLast30 - $clientsPrev30;
+
+// Occupied niches change (new map): compare current occupied vs occupied 30 days ago
+$newMapOccupiedChange = $newMapOccupied - $occupied30;
+// --- end new section ---
+
+// Get admin name
+$adminId = $_SESSION['admin_id'];
+$adminName = 'Admin';
+$adminProfilePic = '../assets/Default Image.jpg';
+// Fetch display_name and profile_pic from admin_profiles
+$stmt = $conn->prepare('SELECT display_name, profile_pic FROM admin_profiles WHERE admin_id = ? LIMIT 1');
+$stmt->bind_param('i', $adminId);
+$stmt->execute();
+$stmt->bind_result($displayName, $profilePic);
+if ($stmt->fetch()) {
+    $adminName = $displayName ? $displayName : $adminName;
+    $adminProfilePic = $profilePic ? $profilePic : $adminProfilePic;
 }
+$stmt->close();
 
-// Donut chart: Request Type Distribution (filtered by year)
-$requestTypeCountsNew = ['New' => 0, 'Relocate' => 0, 'Transfer' => 0];
-$res = $conn->query("SELECT type, COUNT(*) AS cnt FROM client_requests WHERE YEAR(created_at) = $currentYear AND (niche_id NOT LIKE 'OM%' OR niche_id IS NULL) GROUP BY type");
-if ($res) {
+// Get records whose validity is closest to today (future dates only)
+$expiringRecords = [];
+$today = date('Y-m-d');
+$sql = "SELECT id, nicheID, lastName, firstName, middleName, suffix, dateInternment, informantName FROM deceased WHERE dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00'";
+$res = $conn->query($sql);
+if ($res && $res->num_rows > 0) {
     while ($row = $res->fetch_assoc()) {
-        if (isset($requestTypeCountsNew[$row['type']])) {
-            $requestTypeCountsNew[$row['type']] = intval($row['cnt']);
-        }
+        $internmentDate = $row['dateInternment'];
+        try {
+            $validityDate = (new DateTime($internmentDate))->modify('+5 years')->format('Y-m-d');
+            if ($validityDate >= $today) {
+                $name = $row['lastName'] . ', ' . $row['firstName'];
+                if (!empty($row['middleName'])) $name .= ' ' . strtoupper(substr(trim($row['middleName']), 0, 1)) . '.';
+                if (!empty($row['suffix'])) $name .= ' ' . $row['suffix'];
+
+                // Try to find a registered user who matches the informant name (best-effort)
+                $clientEmail = null;
+                $clientId = null;
+                if (!empty($row['informantName'])) {
+                    $informantTrim = trim($row['informantName']);
+                    // Attempt exact match to "First Last" or "Last, First" patterns
+                    // Try "First Last"
+                    $stmtUser = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(first_name, ' ', last_name) = ? LIMIT 1");
+                    if ($stmtUser) {
+                        $stmtUser->bind_param('s', $informantTrim);
+                        $stmtUser->execute();
+                        $resU = $stmtUser->get_result();
+                        if ($ru = $resU->fetch_assoc()) {
+                            $clientId = intval($ru['id']);
+                            $clientEmail = $ru['email'];
+                        }
+                        $stmtUser->close();
+                    }
+                    // If not found, try "Last, First" pattern (stored informant sometimes formatted that way)
+                    if (!$clientId && strpos($informantTrim, ',') !== false) {
+                        $stmtUser2 = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(last_name, ', ', first_name) = ? LIMIT 1");
+                        if ($stmtUser2) {
+                            $stmtUser2->bind_param('s', $informantTrim);
+                            $stmtUser2->execute();
+                            $resU2 = $stmtUser2->get_result();
+                            if ($ru2 = $resU2->fetch_assoc()) {
+                                $clientId = intval($ru2['id']);
+                                $clientEmail = $ru2['email'];
+                            }
+                            $stmtUser2->close();
+                        }
+                    }
+                }
+
+                $expiringRecords[] = [
+                    'nicheID' => $row['nicheID'],
+                    'name' => $name,
+                    'validity' => $validityDate,
+                    'client_id' => $clientId,
+                    'client_email' => $clientEmail
+                ];
+            }
+        } catch (Exception $e) {}
     }
-}
-$requestTypeDataNew = array_values($requestTypeCountsNew);
+    // Sort by closest validity date
+    usort($expiringRecords, function($a, $b) {
+        return strcmp($a['validity'], $b['validity']);
+    });
+    // Limit to top 10 closest
+    $expiringRecords = array_slice($expiringRecords, 0, 10);
 
-$requestTypeCountsOld = ['New' => 0, 'Relocate' => 0, 'Transfer' => 0];
-$res = $conn->query("SELECT type, COUNT(*) AS cnt FROM client_requests WHERE YEAR(created_at) = $currentYear AND niche_id LIKE 'OM%' GROUP BY type");
-if ($res) {
-    while ($row = $res->fetch_assoc()) {
-        if (isset($requestTypeCountsOld[$row['type']])) {
-            $requestTypeCountsOld[$row['type']] = intval($row['cnt']);
+    // --- NEW: ensure expiry_notifications table exists and load notified statuses (persist one-time notifications) ---
+    $conn->query("CREATE TABLE IF NOT EXISTS expiry_notifications (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nicheID VARCHAR(255),
+      name VARCHAR(255),
+      validity DATE,
+      contact_type VARCHAR(50),
+      contact_value VARCHAR(255),
+      admin_id INT,
+      message TEXT,
+      status VARCHAR(50),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $notifiedMap = []; // key = "niche|validity" => status ('sent','queued','failed',...)
+    if (!empty($expiringRecords)) {
+        $stmtLookup = $conn->prepare("SELECT status FROM expiry_notifications WHERE nicheID = ? AND validity = ? ORDER BY created_at DESC LIMIT 1");
+        foreach ($expiringRecords as $rec) {
+            $keyN = $rec['nicheID'];
+            $keyV = $rec['validity'];
+            if ($stmtLookup) {
+                $stmtLookup->bind_param('ss', $keyN, $keyV);
+                $stmtLookup->execute();
+                $resN = $stmtLookup->get_result();
+                if ($rowN = $resN->fetch_assoc()) {
+                    $notifiedMap[$keyN . '|' . $keyV] = $rowN['status'];
+                }
+            }
         }
+        if ($stmtLookup) $stmtLookup->close();
     }
-}
-$requestTypeDataOld = array_values($requestTypeCountsOld);
-$requestTypeLabels = array_keys($requestTypeCountsNew);
-
-// --- Bar chart: Deceased per floor (filtered by year and all years) ---
-$floors = ['1F', '2F', '3F'];
-$deceasedPerFloorNew = [];
-$deceasedPerFloorNewAll = [];
-$deceasedPerFloorOld = [];
-$deceasedPerFloorOldAll = [];
-
-// New map: exclude OM for all floors
-foreach ($floors as $floor) {
-    // Year filtered
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND YEAR(dateInternment) = $currentYear AND nicheID NOT LIKE 'OM%'");
-    $deceasedPerFloorNew[] = ($res && $row = $res->fetch_assoc()) ? intval($row['cnt']) : 0;
-    // All years
-    $resAll = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND nicheID NOT LIKE 'OM%'");
-    $deceasedPerFloorNewAll[] = ($resAll && $row = $resAll->fetch_assoc()) ? intval($row['cnt']) : 0;
+    // --- end new code ---
 }
 
-// Old map: only OM-1F and OM-2F
-$oldMapFloors = ['OM-1F', 'OM-2F'];
-foreach ($oldMapFloors as $floor) {
-    // Year filtered
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%' AND YEAR(dateInternment) = $currentYear");
-    $deceasedPerFloorOld[] = ($res && $row = $res->fetch_assoc()) ? intval($row['cnt']) : 0;
-    // All years
-    $resAll = $conn->query("SELECT COUNT(*) AS cnt FROM deceased WHERE nicheID LIKE '{$floor}-%'");
-    $deceasedPerFloorOldAll[] = ($resAll && $row = $resAll->fetch_assoc()) ? intval($row['cnt']) : 0;
+// Year filter logic
+$currentYear = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
+$yearOptions = [];
+for ($y = 1900; $y <= intval(date('Y')); $y++) {
+    $yearOptions[] = $y;
 }
-$deceasedFloorLabels = $floors;
-$deceasedFloorLabelsOld = ['1F', '2F'];
 ?>
 
 <!DOCTYPE html>
@@ -573,6 +784,60 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       font-weight:700;
     }
 
+    /* Stat indicator small arrow + color */
+    .stat-indicator { display:flex; align-items:center; gap:8px; font-size:0.9rem; margin-top:6px; }
+    .stat-indicator .icon { font-size:0.95rem; }
+    .stat-indicator .up { color:#10b981; }      /* green for up */
+    .stat-indicator .down { color:#ef4444; }    /* red for down */
+    .stat-indicator .neutral { color:#6b7280; } /* gray for no change */
+    .stat-indicator .change-value { font-weight:700; }
+    /* ensure small arrow aligns nicely inside stat card */
+    .stat-card .stat-meta { margin-top:6px; }
+
+    /* Thin progress bars for KPI cards */
+    .kpi-progress { margin-top: 8px; }
+    .kpi-progress .progress {
+      width: 100%;
+      height: 8px;
+      background: #eef2f7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .kpi-progress .progress-bar {
+      height: 100%;
+      transition: width 300ms ease;
+      background: linear-gradient(90deg, #60A5FA, #2563eb);
+    }
+    .kpi-progress .progress-bar.warn { background: linear-gradient(90deg, #FCA5A5, #EF4444); }
+    .kpi-progress .progress-label {
+      margin-top: 6px;
+      font-size: 0.86rem;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    /* Skeleton loaders for charts */
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      background: #f3f4f6;
+    }
+    .skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0));
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer { 100% { transform: translateX(100%);} }
+
+    /* Subtle hover on notify */
+    .notify-btn:hover { filter: brightness(1.05); }
+
+    /* Small utilities */
+    .row { display:flex; align-items:center; gap:10px; }
+
     @media (max-width:520px){
       .notify-modal { width: 100%; padding: 12px; border-radius: 8px; }
       .notify-modal .modal-header { gap:8px; }
@@ -593,6 +858,10 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
           <div class="datetime">
             <span class="date" id="current-date"></span>
             <span class="time" id="current-time"></span>
+            <!-- NEW: quick Refresh -->
+            <button title="Refresh" onclick="location.reload()" style="margin-left:10px;border:1px solid #e5e7eb;background:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;color:#374151;">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -725,29 +994,100 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
           <div id="nicheCardFront">
             <div class="stat-title">Available Niches (new map)</div>
             <div class="stat-value"><?php echo $newMapAvailable; ?> Available Niches</div>
+            <!-- NEW: capacity bar (Available %) -->
+            <div class="kpi-progress">
+              <div class="progress"><div class="progress-bar" style="width: <?php echo $availPctNew; ?>%;"></div></div>
+              <div class="progress-label"><?php echo $availPctNew; ?>% available</div>
+            </div>
+            <div class="stat-meta">
+              <?php
+                // compute display for change
+                if ($newMapAvailableChange > 0) {
+                  $cls = 'up'; $sym = '▲'; $disp = '+' . $newMapAvailableChange;
+                } elseif ($newMapAvailableChange < 0) {
+                  $cls = 'down'; $sym = '▼'; $disp = (string)$newMapAvailableChange;
+                } else {
+                  $cls = 'neutral'; $sym = '•'; $disp = '0';
+                }
+              ?>
+              <div class="stat-indicator"><span class="icon <?php echo $cls; ?>"><?php echo $sym; ?></span><span class="change-value <?php echo $cls; ?>"><?php echo htmlspecialchars($disp); ?></span><span style="color:#6b7280;">vs 30d</span></div>
+            </div>
           </div>
           <div id="nicheCardBack" style="display:none;">
             <div class="stat-title">Available Niches (old map)</div>
             <div class="stat-value"><?php echo $oldMapAvailable; ?> Available Niches</div>
+            <!-- NEW: capacity bar (Available % old map) -->
+            <div class="kpi-progress">
+              <div class="progress"><div class="progress-bar" style="width: <?php echo $availPctOld; ?>%;"></div></div>
+              <div class="progress-label"><?php echo $availPctOld; ?>% available</div>
+            </div>
+            <!-- For old map we reuse simple comparison vs previous occupied (use same occupied30 as approximation) -->
+            <?php
+              $oldPrev = $totalOldMapNiches - $occupied30; if ($oldPrev < 0) $oldPrev = 0;
+              $oldChange = $oldMapAvailable - $oldPrev;
+              if ($oldChange > 0) { $cls2='up'; $sym2='▲'; $disp2='+' . $oldChange; }
+              elseif ($oldChange < 0) { $cls2='down'; $sym2='▼'; $disp2=(string)$oldChange; }
+              else { $cls2='neutral'; $sym2='•'; $disp2='0'; }
+            ?>
+            <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $cls2; ?>"><?php echo $sym2; ?></span><span class="change-value <?php echo $cls2; ?>"><?php echo htmlspecialchars($disp2); ?></span><span style="color:#6b7280;">vs 30d</span></div></div>
           </div>
         </div>
+
         <div class="stat-card" style="position: relative;">
           <div id="occupiedCardFront">
             <div class="stat-title">Occupied Niches (new map)</div>
             <div class="stat-value"><?php echo $newMapOccupied; ?> Niches Occupied</div>
+            <!-- NEW: capacity bar (Occupied %) -->
+            <div class="kpi-progress">
+              <div class="progress"><div class="progress-bar warn" style="width: <?php echo $occPctNew; ?>%;"></div></div>
+              <div class="progress-label"><?php echo $occPctNew; ?>% occupied</div>
+            </div>
+            <?php
+              if ($newMapOccupiedChange > 0) { $ccls='up'; $csym='▲'; $cdisp='+' . $newMapOccupiedChange; }
+              elseif ($newMapOccupiedChange < 0) { $ccls='down'; $csym='▼'; $cdisp=(string)$newMapOccupiedChange; }
+              else { $ccls='neutral'; $csym='•'; $cdisp='0'; }
+            ?>
+            <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $ccls; ?>"><?php echo $csym; ?></span><span class="change-value <?php echo $ccls; ?>"><?php echo htmlspecialchars($cdisp); ?></span><span style="color:#6b7280;">vs 30d</span></div></div>
           </div>
           <div id="occupiedCardBack" style="display:none;">
             <div class="stat-title">Occupied Niches (old map)</div>
             <div class="stat-value"><?php echo $oldMapOccupied; ?> Niches Occupied</div>
+            <!-- NEW: capacity bar (Occupied % old map) -->
+            <div class="kpi-progress">
+              <div class="progress"><div class="progress-bar warn" style="width: <?php echo $occPctOld; ?>%;"></div></div>
+              <div class="progress-label"><?php echo $occPctOld; ?>% occupied</div>
+            </div>
+            <?php
+              $oldOccPrev = $occupied30; // approximation
+              $oldOccChange = $oldMapOccupied - $oldOccPrev;
+              if ($oldOccChange > 0) { $oc='up'; $os='▲'; $od='+' . $oldOccChange; }
+              elseif ($oldOccChange < 0) { $oc='down'; $os='▼'; $od=(string)$oldOccChange; }
+              else { $oc='neutral'; $os='•'; $od='0'; }
+            ?>
+            <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $oc; ?>"><?php echo $os; ?></span><span class="change-value <?php echo $oc; ?>"><?php echo htmlspecialchars($od); ?></span><span style="color:#6b7280;">vs 30d</span></div></div>
           </div>
         </div>
+
         <div class="stat-card">
           <div class="stat-title">Pending Request</div>
           <div class="stat-value"><?php echo $pendingRequest; ?> Pending Request</div>
+          <?php
+            if ($pendingRequestChange > 0) { $pcls='up'; $psym='▲'; $pdisp='+' . $pendingRequestChange; }
+            elseif ($pendingRequestChange < 0) { $pcls='down'; $psym='▼'; $pdisp=(string)$pendingRequestChange; }
+            else { $pcls='neutral'; $psym='•'; $pdisp='0'; }
+          ?>
+          <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $pcls; ?>"><?php echo $psym; ?></span><span class="change-value <?php echo $pcls; ?>"><?php echo htmlspecialchars($pdisp); ?></span><span style="color:#6b7280;">vs prev 7d</span></div></div>
         </div>
+
         <div class="stat-card">
           <div class="stat-title">Total Clients Registered</div>
           <div class="stat-value"><?php echo $activeClients; ?> Total Clients</div>
+          <?php
+            if ($activeClientsChange > 0) { $acls='up'; $asym='▲'; $adisp='+' . $activeClientsChange; }
+            elseif ($activeClientsChange < 0) { $acls='down'; $asym='▼'; $adisp=(string)$activeClientsChange; }
+            else { $acls='neutral'; $asym='•'; $adisp='0'; }
+          ?>
+          <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $acls; ?>"><?php echo $asym; ?></span><span class="change-value <?php echo $acls; ?>"><?php echo htmlspecialchars($adisp); ?></span><span style="color:#6b7280;">vs prev 30d</span></div></div>
         </div>
       </div>
     </section>
@@ -770,21 +1110,29 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
     </script>
     <section class="dashboard-grid">
       <div class="dashboard-card dashboard-card-large">
-        <div id="chart"></div>
+        <!-- add skeleton shimmer until charts render -->
+        <div id="chart" class="skeleton"></div>
       </div>
       <div class="dashboard-card dashboard-card-small">
         <div style="padding: 18px 14px 18px 18px; width: 100%; height: 100%; display: flex; flex-direction: column;">
-          <!-- Move title and content upward, add more space below -->
-          <h3 style="font-size: 1.13rem; margin-bottom: 10px; color: #374151; font-weight: 700; letter-spacing: 0.5px; padding-left: 55px; margin-top: 2px;">Upcoming Validity Expiry</h3>
+          <h3 style="font-size: 1.13rem; margin-bottom: 10px; color: #374151; font-weight: 700; letter-spacing: 0.5px; padding-left: 95px; margin-top: 2px;">Upcoming Validity Expiry</h3>
+          <!-- NEW: quick filter + export -->
+          <div class="row" style="padding: 0 55px 8px 55px;">
+            <input id="expSearch" type="text" placeholder="Search name or Apt..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;">
+            <button id="expExport" class="btn-secondary" style="white-space:nowrap;">Export CSV</button>
+          </div>
           <div style="flex: 1; overflow-y: auto; max-height: 320px; margin-top: 0;">
             <?php if (count($expiringRecords) > 0): ?>
               <ul style="list-style: none; padding: 0; margin: 0;">
                 <?php foreach ($expiringRecords as $rec): ?>
-                  <li style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+                  <li data-exp-item="1"
+                      data-name="<?php echo htmlspecialchars($rec['name']); ?>"
+                      data-apt="<?php echo htmlspecialchars($rec['nicheID']); ?>"
+                      data-validity="<?php echo htmlspecialchars($rec['validity']); ?>"
+                      style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
                     <div style="margin-top: 2px;">
                       <i class="fa-solid fa-calendar-exclamation" style="color: #eab308; font-size: 1.25rem;"></i>
                     </div>
-                    <!-- modified: make content a flex row with space-between so button sits at the right -->
                     <div style="background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); padding: 10px 14px; min-width: 0; flex: 1; display: flex; align-items: center; justify-content: space-between;">
                       <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; color: #1e293b; font-size: 1rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -793,15 +1141,11 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
                         <div style="font-size: 0.93rem; color: #2563eb; font-weight: 500; margin-bottom: 2px;">Apt: <?php echo htmlspecialchars($rec['nicheID']); ?></div>
                         <div style="font-size: 0.93rem; color: #eab308; font-weight: 500;">Validity: <?php echo htmlspecialchars($rec['validity']); ?></div>
                       </div>
-
-                      <!-- right-aligned column for button + status -->
                       <div style="margin-left: 16px; display:flex; flex-direction:column; align-items:flex-end; justify-content:center;">
                         <?php
-                        // Determine if this expiring item was already notified
-                        $key = $rec['nicheID'] . '|' . $rec['validity'];
-                        $alreadyStatus = isset($notifiedMap[$key]) ? $notifiedMap[$key] : null;
+                          $key = $rec['nicheID'] . '|' . $rec['validity'];
+                          $alreadyStatus = isset($notifiedMap[$key]) ? $notifiedMap[$key] : null;
                         ?>
-                        <!-- Update button markup to reflect persisted status -->
                         <button
                           class="notify-btn"
                           data-niche="<?php echo htmlspecialchars($rec['nicheID']); ?>"
@@ -840,16 +1184,16 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
             <option value="all" selected>All Years</option>
           </select>
         </div>
-        <div id="floorBarChart" style="width: 100%; height: 100%;"></div>
+        <div id="floorBarChart" class="skeleton" style="width: 100%; height: 100%;"></div>
       </div>
       <div class="dashboard-card" style="height: 180px; padding: 0; align-items: stretch; justify-content: stretch;">
-        <div id="pieChart" style="width: 100%; height: 100%;"></div>
+        <div id="pieChart" class="skeleton" style="width: 100%; height: 100%;"></div>
       </div>
     </section>
     <!-- New chart for request type distribution and deceased per floor -->
     <section class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
       <div class="dashboard-card" style="height: 180px; padding: 0; align-items: stretch; justify-content: stretch;">
-        <div id="donutChart" style="width: 100%; height: 100%;"></div>
+        <div id="donutChart" class="skeleton" style="width: 100%; height: 100%;"></div>
       </div>
       <div class="dashboard-card" style="height: 180px; padding: 0; align-items: stretch; justify-content: stretch; position:relative;">
         <!-- Place request per month filter inside the request per month card -->
@@ -860,7 +1204,7 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
 
           </select>
         </div>
-        <div id="columnChart" style="width: 100%; height: 100%;"></div>
+        <div id="columnChart" class="skeleton" style="width: 100%; height: 100%;"></div>
       </div>
     </section>
   </main>
@@ -910,11 +1254,12 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
 
     let requestsPerMonthFilter = 'year';
 
-    // Chart rendering function
+    // Chart rendering with skeleton clearing
     function renderCharts(isOldMap) {
       // SPLINE CHART
       var options = {
         chart: { type: 'area', height: 350, toolbar: { show: false } },
+       
         series: [{
           name: 'Active Clients',
           data: isOldMap ? activeClientsDataOld : activeClientsDataNew
@@ -941,7 +1286,6 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       };
       document.querySelector("#chart").innerHTML = '';
       var chart = new ApexCharts(document.querySelector("#chart"), options);
-      chart.render();
 
       // COLUMN CHART
       let requestsData;
@@ -970,7 +1314,6 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       };
       document.querySelector("#columnChart").innerHTML = '';
       var columnChart = new ApexCharts(document.querySelector("#columnChart"), columnOptions);
-      columnChart.render();
 
       // PIE CHART
       var pieOptions = {
@@ -987,7 +1330,6 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       };
       document.querySelector("#pieChart").innerHTML = '';
       var pieChart = new ApexCharts(document.querySelector("#pieChart"), pieOptions);
-      pieChart.render();
 
       // DONUT CHART
       var donutOptions = {
@@ -1004,7 +1346,6 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       };
       document.querySelector("#donutChart").innerHTML = '';
       var donutChart = new ApexCharts(document.querySelector("#donutChart"), donutOptions);
-      donutChart.render();
 
       // BAR CHART (Deceased per Floor)
       let deceasedData, deceasedLabels;
@@ -1035,7 +1376,20 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
       };
       document.querySelector("#floorBarChart").innerHTML = '';
       var floorBarChart = new ApexCharts(document.querySelector("#floorBarChart"), floorBarOptions);
-      floorBarChart.render();
+
+      // Render and then clear skeletons
+      Promise.all([
+        chart.render(),
+        columnChart.render(),
+        pieChart.render(),
+        donutChart.render(),
+        floorBarChart.render()
+      ]).then(function(){
+        ['#chart','#columnChart','#pieChart','#donutChart','#floorBarChart'].forEach(function(sel){
+          var el = document.querySelector(sel);
+          if (el) el.classList.remove('skeleton');
+        });
+      });
     }
 
     // Initial chart render (new map)
@@ -1072,6 +1426,7 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
     document.addEventListener('DOMContentLoaded', function() {
       const overlay = document.getElementById('notifyModalOverlay');
       if (!overlay) return;
+     
       const recordInfo = document.getElementById('notifyRecordInfo');
       const contactTypeEl = document.getElementById('contactType');
       const contactValueEl = document.getElementById('contactValue');
@@ -1145,7 +1500,7 @@ $deceasedFloorLabelsOld = ['1F', '2F'];
           body: params
         })
         .then(r => r.json())
-        .then(data => {
+        .then ( data => {
           if (data && data.success) {
             if (currentPayload.btnElement) {
               currentPayload.btnElement.textContent = 'Notified';

@@ -98,11 +98,12 @@
           <button type="button" id="notifSelectAllBtn" title="Select all" aria-pressed="false" style="border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">
             <i class="far fa-square" style="color:#666;"></i>
           </button>
-          <button type="button" id="notifDeleteSelectedBtn" title="Delete selected" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;display:inline-flex;align-items:center;justify-content:center;">
+          <!-- ensure these are hidden by default (remove duplicate display:inline-flex that forced them visible) -->
+          <button type="button" id="notifDeleteSelectedBtn" title="Delete selected" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;align-items:center;justify-content:center;">
             <i class="fas fa-trash" style="color:inherit;"></i>
           </button>
           <!-- mark selected as read (open mail) -->
-          <button type="button" id="notifMarkReadSelectedBtn" title="Mark selected read" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;display:inline-flex;align-items:center;justify-content:center;margin-left:6px;">
+          <button type="button" id="notifMarkReadSelectedBtn" title="Mark selected read" style="display:none;border:none;border-radius:0;background:transparent;padding:6px;cursor:pointer;color:#666;align-items:center;justify-content:center;margin-left:6px;">
             <i class="fas fa-envelope-open-text" style="color:inherit;"></i>
           </button>
           <div style="position:relative;">
@@ -410,6 +411,10 @@
     const selectAllBtn = $('notifSelectAllBtn');
     const deleteSelBtn = $('notifDeleteSelectedBtn');
     const markReadSelBtn = $('notifMarkReadSelectedBtn');
+
+    // ensure header batch controls are hidden until there's a selection
+    if (deleteSelBtn) deleteSelBtn.style.display = 'none';
+    if (markReadSelBtn) markReadSelBtn.style.display = 'none';
 
     const q = (query||'').toLowerCase();
 
