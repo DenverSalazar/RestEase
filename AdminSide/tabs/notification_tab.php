@@ -241,6 +241,10 @@
     /* ensure the icon inherits the color */
     #notifSelectAllBtn i, #notifDeleteSelectedBtn i, #notifMarkReadSelectedBtn i, #notifCalendarBtn i { color: inherit; }
 
+    /* override: make the top "Delete selected" icon red to match the UI */
+    #notifDeleteSelectedBtn { color: #ff6b6b !important; }
+    #notifDeleteSelectedBtn i { color: inherit !important; }
+
     /* remove any corner/rounding on calendar panel and its descendants */
     #notifCalendarPanel,
     #notifCalendarPanel * {

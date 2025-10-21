@@ -197,8 +197,6 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   <div class="header-row">
     <div class="tabs" id="notif-tabs">
       <button class="notif-tab active" data-filter="all" id="tab-all"><span class="tab-badge" id="count-all">0</span>All</button>
-      <button class="notif-tab" data-filter="requests" id="tab-req"><span class="tab-badge" id="count-req">0</span>Requests</button>
-      <button class="notif-tab" data-filter="users" id="tab-user"><span class="tab-badge" id="count-user">0</span>Users</button>
       <button class="notif-tab" data-filter="favorite" id="tab-fav"><span class="tab-badge" id="count-fav">0</span>Favorites</button>
       <button class="notif-tab" data-filter="archive" id="tab-arch"><span class="tab-badge" id="count-arch">0</span>Archive</button>
     </div>
@@ -214,9 +212,6 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
         </button>
         <button id="headerMarkReadBtn" class="icon-btn" title="Mark visible as read" aria-label="Mark visible read" style="margin-right:6px;">
           <i class="fas fa-envelope-open-text"></i>
-        </button>
-        <button id="headerArchiveBtn" class="icon-btn" title="Archive visible" aria-label="Archive visible" style="margin-right:6px;">
-          <i class="fas fa-archive"></i>
         </button>
         <button id="delete-all-btn" class="icon-btn warn" title="Delete All" style="display:none;margin-right:6px;"><i class="fas fa-trash"></i></button>
         <button id="headerCalendarBtn" class="icon-btn" title="Select date" aria-label="Calendar" style="margin-left:8px;">
@@ -302,7 +297,6 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   const searchInput = $('#notifSearch');
   const deleteAllBtn = $('#delete-all-btn');
   const headerMarkReadBtn = $('#headerMarkReadBtn');
-  const headerArchiveBtn = $('#headerArchiveBtn');
   const headerDeleteVisibleBtn = $('#headerDeleteVisibleBtn');
   const headerCalendarBtn = $('#headerCalendarBtn');
 
@@ -503,21 +497,6 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     });
   }
 
-  if (headerArchiveBtn) {
-    headerArchiveBtn.addEventListener('click', function(){
-      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-      if (visible.length === 0) return;
-      if (!confirm('Archive all visible notifications?')) return;
-      visible.forEach(card => {
-        const id = card.getAttribute('data-id');
-        try { if (id) localStorage.setItem('notif_archived_' + id, '1'); } catch(e){}
-        card.remove();
-      });
-      updateCounts();
-      applyFilter();
-    });
-  }
-
   if (headerDeleteVisibleBtn) {
     headerDeleteVisibleBtn.addEventListener('click', function(){
       const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
@@ -526,13 +505,6 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
       visible.forEach(card => {
         const id = card.getAttribute('data-id');
         try { if (id) localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-        if (id) {
-          fetch('delete_notification.php', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ action: 'delete_single', id: id })
-          }).catch(()=>{});
-        }
         card.remove();
       });
       updateCounts();
@@ -540,72 +512,16 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     });
   }
 
-  // simple header calendar panel (non-destructive)
-  (function initHeaderCalendar(){
-    if (!headerCalendarBtn) return;
-    const panel = document.createElement('div');
-    panel.id = 'headerCalendarPanel';
-    panel.style.display = 'none';
-    panel.style.position = 'absolute';
-    panel.style.right = '0';
-    panel.style.top = '44px';
-    panel.style.background = '#fff';
-    panel.style.border = '1px solid #e6ecf3';
-    panel.style.padding = '10px';
-    panel.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
-    panel.style.zIndex = 1200;
-    panel.innerHTML = `
-      <div style="display:flex;gap:8px;align-items:center;">
-        <input type="date" id="headerCalendarFrom" style="padding:6px;border:1px solid #e3e7ed;" />
-        <input type="date" id="headerCalendarTo" style="padding:6px;border:1px solid #e3e7ed;" />
-        <button id="headerCalendarApply" style="padding:6px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">Apply</button>
-        <button id="headerCalendarClear" style="padding:6px 8px;background:transparent;border:1px solid #e3e7ed;border-radius:6px;cursor:pointer;">Clear</button>
-      </div>
-    `;
-    const controls = document.querySelector('.header-row .controls');
-    if (controls) controls.appendChild(panel);
-
-    function togglePanel(e){
-      e && e.stopPropagation();
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    }
-    headerCalendarBtn.addEventListener('click', togglePanel);
-    panel.addEventListener('click', e => e.stopPropagation());
-    document.addEventListener('click', () => { if (panel.style.display === 'block') panel.style.display = 'none'; });
-
-    const applyBtn = panel.querySelector('#headerCalendarApply');
-    const clearBtn = panel.querySelector('#headerCalendarClear');
-    applyBtn && applyBtn.addEventListener('click', function(){
-      let hf = document.getElementById('notifDateFrom');
-      let ht = document.getElementById('notifDateTo');
-      if (!hf){ hf = document.createElement('input'); hf.type='hidden'; hf.id='notifDateFrom'; document.body.appendChild(hf); }
-      if (!ht){ ht = document.createElement('input'); ht.type='hidden'; ht.id='notifDateTo'; document.body.appendChild(ht); }
-      hf.value = panel.querySelector('#headerCalendarFrom').value || '';
-      ht.value = panel.querySelector('#headerCalendarTo').value || '';
-      panel.style.display = 'none';
-      applyFilter();
-    });
-    clearBtn && clearBtn.addEventListener('click', function(){
-      const hf = document.getElementById('notifDateFrom');
-      const ht = document.getElementById('notifDateTo');
-      if (hf) hf.value = '';
-      if (ht) ht.value = '';
-      panel.querySelector('#headerCalendarFrom').value = '';
-      panel.querySelector('#headerCalendarTo').value = '';
-      panel.style.display = 'none';
-      applyFilter();
-    });
-  })();
-
-  // initialize UI
-  initStars();
+  // initial counts update
   updateCounts();
-  applyFilter();
-  wirePerCardActions();
+  // initial pagination setup
+  setTimeout(()=>{
+    updatePagination();
+    paginateDisplay();
+  }, 50);
 
-  // Live storage sync
-  window.addEventListener('storage', function(){ updateCounts(); applyFilter(); });
-
+  // stars init
+  initStars();
 })();
 </script>
 </body>

@@ -27,7 +27,12 @@
     </style>
 </head>
 <body>
-    <section class="hero">
+    <section class="hero scroll-animate fade-up">
+        <div class="section-bg-objects">
+            <div class="section-bg-object circle automove1" style="width:140px;height:140px;top:10%;left:8%;"></div>
+            <div class="section-bg-object square automove2" style="width:110px;height:110px;top:60%;left:70%;"></div>
+            <div class="section-bg-object triangle automove3" style="top:40%;left:30%;width:0;height:0;"></div>
+        </div>
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">
@@ -64,9 +69,14 @@
             </div>
         </div>
     </section>
-    <section class="who-we-are">
+    <section class="who-we-are scroll-animate fade-up">
+        <div class="section-bg-objects">
+            <div class="section-bg-object circle automove2" style="width:110px;height:110px;top:20%;left:80%;"></div>
+            <div class="section-bg-object square automove3" style="width:80px;height:80px;top:70%;left:15%;"></div>
+            <div class="section-bg-object triangle automove1" style="top:55%;left:60%;width:0;height:0;"></div>
+        </div>
         <div class="container">
-            <div class="row align-items-center">
+            <div class="row align-items-center scroll-animate-stagger fade-up">
                 <!-- Text Content -->
                 <div class="col-md-6">
                     <h2 class="section-title">Who we are</h2>
@@ -82,12 +92,12 @@
             </div>
 
             <!-- Our Services Section (Connected to Who We Are) -->
-            <div class="text-center mt-5 pt-5">
+            <div class="text-center mt-5 pt-5 scroll-animate fade-down">
                 <h2 class="section-title">Our Services</h2>
                 <p class="section-description">
                     RestEase offers a modern, efficient, and transparent approach to cemetery management through digital innovation.
                 </p>
-                <div class="row mt-4 d-flex align-items-stretch">
+                <div class="row mt-4 d-flex align-items-stretch scroll-animate-stagger scale-in">
                     <!-- Card 1 -->
                     <div class="col-md-4 d-flex">
                         <div class="service-card flex-grow-1 text-center">
@@ -136,7 +146,12 @@
     </section>
 
     <!-- Explore RestEase Section (NEW) -->
-    <section id="explore-restease" class="explore-restease-section py-5" style="min-height: 70vh; display: flex; align-items: center;">
+    <section id="explore-restease" class="explore-restease-section py-5 scroll-animate fade-up" style="min-height: 70vh; display: flex; align-items: center;">
+        <div class="section-bg-objects">
+            <div class="section-bg-object circle automove3" style="width:90px;height:90px;top:15%;left:75%;"></div>
+            <div class="section-bg-object square automove1" style="width:65px;height:65px;top:80%;left:25%;"></div>
+            <div class="section-bg-object triangle automove2" style="top:60%;left:50%;width:0;height:0;"></div>
+        </div>
         <div class="container">
             <div class="row align-items-center">
                 <!-- Text Content -->
@@ -163,7 +178,12 @@ The system provides a secure and transparent way to manage cemetery information,
     </section>
 
     <!-- Contact Form Section -->
-    <section class="contact-section">
+    <section class="contact-section scroll-animate fade-down">
+        <div class="section-bg-objects">
+            <div class="section-bg-object circle automove1" style="width:120px;height:120px;top:30%;left:10%;"></div>
+            <div class="section-bg-object square automove2" style="width:85px;height:85px;top:75%;left:80%;"></div>
+            <div class="section-bg-object triangle automove3" style="top:65%;left:40%;width:0;height:0;"></div>
+        </div>
         <div class="container">
             <div class="row">
                 <div class="col-lg-7">
@@ -224,7 +244,12 @@ The system provides a secure and transparent way to manage cemetery information,
             </div>
         </div>
     </section>
-    <section class="testimony py-5">
+    <section class="testimony py-5 scroll-animate scale-in">
+        <div class="section-bg-objects">
+            <div class="section-bg-object circle automove2" style="width:110px;height:110px;top:25%;left:60%;"></div>
+            <div class="section-bg-object square automove3" style="width:65px;height:65px;top:85%;left:20%;"></div>
+            <div class="section-bg-object triangle automove1" style="top:70%;left:70%;width:0;height:0;"></div>
+        </div>
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -272,6 +297,37 @@ The system provides a secure and transparent way to manage cemetery information,
             });
         });
     }
+
+    // Multi-effect Scroll Animation Script
+    let lastScrollY = window.scrollY;
+    function animateOnScroll() {
+        var elements = document.querySelectorAll('.scroll-animate, .scroll-animate-stagger');
+        var windowHeight = window.innerHeight;
+        let currentScrollY = window.scrollY;
+        let direction = currentScrollY > lastScrollY ? 'down' : 'up';
+        elements.forEach(function(el) {
+            var rect = el.getBoundingClientRect();
+            if (rect.top < windowHeight - 60) {
+                el.classList.add('visible');
+                // Multi-effect: toggle effect class based on scroll direction
+                if (el.classList.contains('fade-up') || el.classList.contains('fade-down') || el.classList.contains('scale-in')) {
+                    el.classList.remove('fade-up', 'fade-down', 'scale-in');
+                    if (direction === 'down') {
+                        el.classList.add('fade-up');
+                    } else {
+                        el.classList.add('fade-down');
+                    }
+                }
+            } else {
+                el.classList.remove('visible');
+            }
+        });
+        lastScrollY = currentScrollY;
+    }
+    document.addEventListener('scroll', animateOnScroll);
+    document.addEventListener('DOMContentLoaded', animateOnScroll);
+    window.addEventListener('resize', animateOnScroll);
+    setTimeout(animateOnScroll, 100);
     </script>
 </body>
 </html>
