@@ -63,7 +63,44 @@ while ($row = $result->fetch_assoc()) {
       margin-bottom: 0 !important;
       position: relative;
       top: 0;
-      z-index: 2;
+      z-index: 14000; /* ensure search bar and its dropdown sit above map elements */
+    }
+    /* Autocomplete suggestions (anchor to search input) */
+    .search-input-wrapper { position: relative; display: block; width: 100%; box-sizing: border-box; }
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+      z-index: 14001; /* higher than map/labels so dropdown is on top */
+      overflow: auto;
+      max-height: 300px;
+      padding: 6px;
+      box-sizing: border-box;
+      display: none;
+    }
+    .search-suggestion-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #111827;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .search-suggestion-item.active,
+    .search-suggestion-item:hover { background: #f3f4f6; }
+    .search-suggestion-name { flex:1; text-align:left; font-weight:600; }
+    .search-suggestion-meta { color:#6b7280; font-size:0.95rem; }
+    @media (max-width:720px) {
+      .search-input-wrapper { padding-left: 12px; padding-right: 12px; }
+      .search-suggestions { left: 0; right: 0; width: 100%; }
     }
     /* Only adjust legend position, not width */
     body.pick-niche-mode .custom-map-legend {
@@ -264,7 +301,7 @@ while ($row = $result->fetch_assoc()) {
       margin-bottom: 0 !important;
       position: relative;
       top: 0;
-      z-index: 2;
+      z-index: 14000; /* ensure search bar and its dropdown sit above map elements */
       box-shadow: none !important;
       border-radius: 0 !important;
     }
@@ -426,7 +463,6 @@ while ($row = $result->fetch_assoc()) {
       padding: 0;
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
   <script>
     // Pass PHP deceased data to JS
     var deceasedData = <?php echo json_encode($deceasedData); ?>;
@@ -517,6 +553,8 @@ while ($row = $result->fetch_assoc()) {
         <div class="search-input-wrapper">
             <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
             <span class="search-input-icon"><i class="fas fa-search"></i></span>
+            <!-- Suggestions dropdown for first-floor deceased only -->
+            <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"></div>
         </div>
         <div id="searchErrorMsg" style="display:none; color:#fb9a99; font-size:14px; margin-top:6px; font-family:'Inter','Poppins',sans-serif;">
             No Niche ID or Name on the database, please check your entry and try again
@@ -1731,6 +1769,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 resetLabels([layer_OldMap_1, layer_OldMap_4]);
             }
             // Set 'Show All Sections' button as active
+           
             const sectionBtns = document.querySelectorAll('.section-btn');
             sectionBtns.forEach(b => b.classList.remove('active'));
             const showAllBtn = document.querySelector('.show-all-btn');
@@ -1748,6 +1787,135 @@ document.addEventListener('DOMContentLoaded', function() {
     var searchErrorPopup = document.getElementById('searchErrorPopup');
     var searchErrorOverlay = document.getElementById('searchErrorOverlay');
     var searchErrorCloseBtn = document.getElementById('searchErrorCloseBtn');
+
+   // --- Autocomplete (FIRST FLOOR only) ---
+   var suggestionsBox = document.getElementById('searchSuggestions');
+   var searchIndex = []; // entries: { nicheID, name, nameLower, display }
+
+   function buildFirstFloorIndex() {
+       searchIndex = [];
+       var firstFloorLayers = [window.layer_Floor1, window.layer_Floor1_2, window.layer_Floor1_3, window.layer_Floor1_4];
+       firstFloorLayers.forEach(function(layer) {
+           if (!layer) return;
+           layer.eachLayer(function(fl) {
+               var niche = fl.feature && fl.feature.properties && fl.feature.properties['nicheID'];
+               if (!niche) return;
+               var deceasedArr = deceasedData[niche];
+               if (!deceasedArr) return;
+               var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
+               arr.forEach(function(d) {
+                   var firstName = d.firstName || '';
+                   var middleName = d.middleName || '';
+                   var lastName = d.lastName || '';
+                   var suffix = d.suffix || '';
+                   var midInit = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                   var fullName = firstName;
+                   if (midInit) fullName += ' ' + midInit;
+                   if (lastName) fullName += ' ' + lastName;
+                   if (suffix) fullName += ', ' + suffix;
+                   fullName = fullName.trim();
+                   var display = fullName ? (fullName + ' — ' + niche) : niche;
+                   searchIndex.push({ nicheID: niche, name: fullName, nameLower: fullName.toLowerCase(), display: display });
+               });
+           });
+       });
+   }
+   // Build index initially (layers are created earlier); also safe to call again if needed
+   buildFirstFloorIndex();
+
+   var activeIndex = -1;
+   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+   function renderSuggestions(results) {
+       suggestionsBox.innerHTML = '';
+       if (!results || results.length === 0) { suggestionsBox.style.display = 'none'; activeIndex = -1; return; }
+       results.forEach(function(r, i) {
+           var div = document.createElement('div');
+           div.className = 'search-suggestion-item' + (i === activeIndex ? ' active' : '');
+           div.setAttribute('role','option');
+           div.setAttribute('data-niche', r.nicheID);
+           div.innerHTML = '<div class="search-suggestion-name">'+escapeHtml(r.display)+'</div><div class="search-suggestion-meta">'+(r.name ? 'Name' : 'Niche')+'</div>';
+           div.addEventListener('click', function(){ chooseSuggestion(r); });
+           suggestionsBox.appendChild(div);
+       });
+       suggestionsBox.style.display = 'block';
+   }
+   function findMatches(q) {
+       if (!q) return [];
+       q = q.toLowerCase();
+       var out = [];
+       for (var i=0;i<searchIndex.length;i++){
+           var it = searchIndex[i];
+           if (it.nameLower && it.nameLower.indexOf(q) !== -1) out.push(it);
+           else if (it.nicheID && String(it.nicheID).toLowerCase().indexOf(q) !== -1) out.push(it);
+           if (out.length >= 8) break;
+       }
+       return out;
+   }
+   function clearSuggestions(){ suggestionsBox.style.display='none'; suggestionsBox.innerHTML=''; activeIndex=-1; }
+   function chooseSuggestion(item){
+       clearSuggestions();
+       searchInput.value = item.name || item.nicheID;
+       // Reuse existing map-focus logic: find niche in all floors and open popup
+       // Quick helper (similar to other pages)
+       (function goTo(nicheID){
+           var sectionList = [
+               { layer: window.layer_Floor1, floor:1 }, { layer: window.layer_Floor1_2, floor:1 },
+               { layer: window.layer_Floor1_3, floor:1 }, { layer: window.layer_Floor1_4, floor:1 }
+           ];
+           var found = null, foundSection = null;
+           sectionList.forEach(function(s){ if (s.layer) s.layer.eachLayer(function(l){ try{ if (l.feature && l.feature.properties && String(l.feature.properties['nicheID'])===String(nicheID)){ found = l; } }catch(e){} }); });
+           if (found) {
+               // show first-floor sections and open
+               // ensure first-floor layers visible
+               [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4].forEach(function(l){ if (!map.hasLayer(l)) map.addLayer(l); });
+               var center = found.getBounds ? found.getBounds().getCenter() : (found.getLatLng ? found.getLatLng() : null);
+               if (center) map.setView(center, Math.max(map.getZoom(), map.getMaxZoom()-1), { animate:true });
+               highlightFeature({ target: found });
+               setTimeout(function(){ found.fire('click'); }, 220);
+           } else {
+               // fallback to general behavior: keep existing validation popup when Enter is used
+               alert('Niche not found on first floor: ' + nicheID);
+           }
+       })(item.nicheID);
+   }
+   // input handler to show suggestions
+   searchInput.addEventListener('input', function(){
+       var q = searchInput.value.trim();
+       if (!q) { clearSuggestions(); return; }
+       var res = findMatches(q);
+       renderSuggestions(res);
+   });
+
+   // keyboard nav for suggestions: intercept arrow keys / enter / escape before default Enter-search logic
+   searchInput.addEventListener('keydown', function(e){
+       var items = suggestionsBox.querySelectorAll('.search-suggestion-item');
+       if (e.key === 'ArrowDown') {
+           if (items.length === 0) return;
+           e.preventDefault();
+           activeIndex = (activeIndex + 1) % items.length;
+           items.forEach(function(it, idx){ it.classList.toggle('active', idx === activeIndex); });
+           if (items[activeIndex]) items[activeIndex].scrollIntoView({ block:'nearest' });
+       } else if (e.key === 'ArrowUp') {
+           if (items.length === 0) return;
+           e.preventDefault();
+           activeIndex = (activeIndex - 1 + items.length) % items.length;
+           items.forEach(function(it, idx){ it.classList.toggle('active', idx === activeIndex); });
+           if (items[activeIndex]) items[activeIndex].scrollIntoView({ block:'nearest' });
+       } else if (e.key === 'Enter') {
+           if (items.length > 0 && activeIndex >= 0) {
+               e.preventDefault();
+               var niche = items[activeIndex].getAttribute('data-niche');
+               chooseSuggestion({ nicheID: niche });
+               return;
+           }
+           // else allow the existing Enter search logic to run (below)
+       } else if (e.key === 'Escape') {
+           clearSuggestions();
+       }
+   });
+   document.addEventListener('click', function(ev){ if (!ev.target.closest('#searchSuggestions') && ev.target !== searchInput) clearSuggestions(); });
+   // --- end autocomplete ---
+
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             var query = searchInput.value.trim().toLowerCase();

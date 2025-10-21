@@ -69,6 +69,29 @@ $stmt->close();
         font-weight: 500;
       }
 
+        .page-back {
+            color:#506C84;
+            font-size:1.08rem;
+            font-weight:500;
+            text-decoration:none;
+            cursor:pointer;
+            transition:color .18s;
+            display:inline-block;
+            padding:10px 12px;
+            border-radius:8px;
+            margin-top:18px;
+            /* removed fixed desktop offset to allow responsive positioning */
+            /* margin-left:215px; */
+        }
+        .page-back i { margin-right:2px; }
+        /* Large screens: align Back with the left edge of the centered .viewmap-container */
+        @media (min-width:901px) {
+            /* Align to container left: (viewport - containerWidth)/2 + containerPadding */
+            .page-back {
+                margin-left: calc((100% - 1300px) / 2 + 12px);
+            }
+        }
+
       /* Move back button upward and reduce left margin on small devices */
       @media (max-width: 480px) {
         .cert-list-back {
@@ -120,9 +143,10 @@ $stmt->close();
 <body>
    <?php include '../Includes/navbar2.php'; ?>
    <div style="width:100%;display:flex;justify-content:flex-start;">
-     <a href="javascript:history.back()" class="cert-list-back" style="color:#506C84;font-size:1.08rem;font-weight:500;margin:18px 0 0 120px;text-decoration:none;cursor:pointer;transition:color 0.18s;">
-       <i class="fas fa-arrow-left"></i> Back
-     </a>
+        <a href="javascript:history.back()" class="page-back" aria-label="Go back">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+        </a>
+    </div>
    </div>
    <div class="main-content container my-4 text-muted">
        <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 12px;">

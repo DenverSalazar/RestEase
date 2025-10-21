@@ -247,7 +247,7 @@ while ($row = $result->fetch_assoc()) {
       margin-bottom: 0 !important;
       position: relative;
       top: 0;
-      z-index: 2;
+      z-index: 14000; /* ensure search bar and dropdown sit above map elements */
       box-shadow: none !important;
       border-radius: 0 !important;
     }
@@ -413,6 +413,28 @@ while ($row = $result->fetch_assoc()) {
       margin-bottom: 0;
       padding: 0;
     }
+    /* Autocomplete suggestions (OldMap) */
+    .search-input-wrapper { position: relative; display: block; width: 100%; box-sizing: border-box; }
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+      z-index: 14001;
+      overflow: auto;
+      max-height: 300px;
+      padding: 6px;
+      box-sizing: border-box;
+      display: none;
+    }
+    .search-suggestion-item { padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; gap:12px; align-items:center; font-weight:600; color:#111; }
+    .search-suggestion-item.active, .search-suggestion-item:hover { background:#f3f4f6; }
+    .search-suggestion-name { flex:1; text-align:left; }
+    .search-suggestion-meta { color:#6b7280; font-size:.95rem; }
   </style>
   <script>
     // Pass PHP deceased data to JS
@@ -504,6 +526,7 @@ while ($row = $result->fetch_assoc()) {
         <div class="search-input-wrapper">
             <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
             <span class="search-input-icon"><i class="fas fa-search"></i></span>
+            <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions"></div>
         </div>
         <!-- Removed filter select dropdown -->
      </div>
@@ -1214,6 +1237,48 @@ document.addEventListener('DOMContentLoaded', function() {
     var searchErrorPopup = document.getElementById('searchErrorPopup');
     var searchErrorOverlay = document.getElementById('searchErrorOverlay');
     var searchErrorCloseBtn = document.getElementById('searchErrorCloseBtn');
+   // --- Autocomplete for OldMap (oldmap layers only) ---
+   var suggestionsBox = document.getElementById('searchSuggestions');
+   var searchIndex = [];
+   function buildOldMapIndex() {
+       searchIndex = [];
+       var layers = [window.layer_Floor1, window.layer_Floor1_4];
+       layers.forEach(function(layer) {
+           if (!layer) return;
+           layer.eachLayer(function(fl) {
+               var niche = fl.feature && fl.feature.properties && fl.feature.properties['nicheID'];
+               if (!niche) return;
+               var deceasedArr = deceasedData[niche];
+               if (!deceasedArr) return;
+               var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
+               arr.forEach(function(d) {
+                   var firstName = d.firstName || '';
+                   var middleName = d.middleName || '';
+                   var lastName = d.lastName || '';
+                   var suffix = d.suffix || '';
+                   var midInit = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+                   var fullName = firstName;
+                   if (midInit) fullName += ' ' + midInit;
+                   if (lastName) fullName += ' ' + lastName;
+                   if (suffix) fullName += ', ' + suffix;
+                   fullName = fullName.trim();
+                   var display = fullName ? (fullName + ' — ' + niche) : niche;
+                   searchIndex.push({ nicheID: niche, name: fullName, nameLower: fullName.toLowerCase(), display: display });
+               });
+           });
+       });
+   }
+   buildOldMapIndex();
+
+   var activeIndex = -1;
+   function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
+   function renderSuggestions(results){ suggestionsBox.innerHTML=''; if (!results || results.length===0){ suggestionsBox.style.display='none'; activeIndex=-1; return; } results.forEach(function(r,i){ var div=document.createElement('div'); div.className='search-suggestion-item'+(i===activeIndex?' active':''); div.setAttribute('data-niche', r.nicheID); div.innerHTML = '<div class="search-suggestion-name">'+escapeHtml(r.display)+'</div><div class="search-suggestion-meta">'+(r.name?'Name':'Niche')+'</div>'; div.addEventListener('click', function(){ chooseSuggestion(r); }); suggestionsBox.appendChild(div); }); suggestionsBox.style.display='block'; }
+   function findMatches(q){ if(!q) return []; q=q.toLowerCase(); var out=[]; for(var i=0;i<searchIndex.length;i++){ var it=searchIndex[i]; if(it.nameLower && it.nameLower.indexOf(q)!==-1) out.push(it); else if(it.nicheID && String(it.nicheID).toLowerCase().indexOf(q)!==-1) out.push(it); if(out.length>=8) break; } return out; }
+   function clearSuggestions(){ suggestionsBox.style.display='none'; suggestionsBox.innerHTML=''; activeIndex=-1; }
+   function chooseSuggestion(item){ clearSuggestions(); searchInput.value = item.name || item.nicheID; var targets = [window.layer_Floor1, window.layer_Floor1_4]; var found=null; targets.forEach(function(l){ if (l) l.eachLayer(function(a){ if(!found && a.feature && a.feature.properties && String(a.feature.properties['nicheID'])===String(item.nicheID)) found=a; }); }); if (found){ [layer_Floor1, layer_Floor1_4].forEach(function(l){ if(l && !map.hasLayer(l)) map.addLayer(l); }); var center = found.getBounds ? found.getBounds().getCenter() : (found.getLatLng ? found.getLatLng() : null); if (center) map.setView(center, Math.max(map.getZoom(), map.getMaxZoom()-1), { animate:true }); highlightFeature({ target: found }); setTimeout(function(){ found.fire('click'); }, 220); } }
+   searchInput.addEventListener('input', function(){ var q = searchInput.value.trim(); if(!q){ clearSuggestions(); return; } renderSuggestions(findMatches(q)); });
+   searchInput.addEventListener('keydown', function(e){ var items = suggestionsBox.querySelectorAll('.search-suggestion-item'); if (e.key === 'ArrowDown'){ if(!items.length) return; e.preventDefault(); activeIndex=(activeIndex+1)%items.length; items.forEach(function(it,idx){ it.classList.toggle('active', idx===activeIndex); }); if(items[activeIndex]) items[activeIndex].scrollIntoView({block:'nearest'}); } else if (e.key==='ArrowUp'){ if(!items.length) return; e.preventDefault(); activeIndex=(activeIndex-1+items.length)%items.length; items.forEach(function(it,idx){ it.classList.toggle('active', idx===activeIndex); }); if(items[activeIndex]) items[activeIndex].scrollIntoView({block:'nearest'}); } else if (e.key==='Enter'){ if(items.length>0 && activeIndex>=0){ e.preventDefault(); var niche = items[activeIndex].getAttribute('data-niche'); chooseSuggestion({ nicheID: niche }); return; } /* else allow existing Enter handler below */ } else if (e.key==='Escape'){ clearSuggestions(); } });
+   document.addEventListener('click', function(ev){ if (!ev.target.closest('#searchSuggestions') && ev.target !== searchInput) clearSuggestions(); });
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             var query = searchInput.value.trim().toLowerCase();

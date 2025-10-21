@@ -440,9 +440,12 @@ $stmt->close();
     });
     document.getElementById('dob').addEventListener('change', calculateAge);
     document.getElementById('dod').addEventListener('change', calculateAge);
+    // Replace admin map popup with client-facing map so users are not required to log in as admin
     document.getElementById('pickNicheBtn').onclick = function() {
-        window.open('../AdminSide/Mapping.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
+        // Open the client map (same folder) in a popup for niche selection
+        window.open('ClientMap.php?pickNiche=1', 'PickNiche', 'width=900,height=700');
     };
+    
     window.addEventListener('message', function(event) {
         if (event.data && event.data.nicheID) {
             document.getElementById('niche_picker').value = event.data.nicheID;

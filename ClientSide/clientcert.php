@@ -175,16 +175,17 @@ if ($user) {
         .cert-preview-wrapper { transform: none; transform-origin: top center; transition: transform .12s ease; }
       }
       .cert-list-container {
-        margin-top: 32px;
-        margin-bottom: 32px;
+        margin-top: 24px;
+        margin-bottom: 12px;
         width: 100%;
         max-width: 1300px;
-        overflow-x: auto; /* Add horizontal scroll for responsiveness */
+        overflow-x: auto;
+        padding: 0 12px;
       }
       .cert-list-title {
-        font-size: 2rem;
+        font-size: 1.6rem;
         font-weight: 600;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
         color: #333;
         text-align: center;
       }
@@ -206,87 +207,102 @@ if ($user) {
         list-style: none;
         padding: 0;
         margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
+
+      /* Compact card style: white interior, thin colored border similar to track.php */
       .cert-list-item {
-        background: #f4fbff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-        margin-bottom: 18px;
-        padding: 18px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        transition: box-shadow 0.18s;
-        border: 1px solid #e0e7ef;
+        gap: 10px;
+        padding: 8px 12px; /* compact vertical padding */
+        border-radius: 8px;
+        border: 2px solid #e9eef3;
+        background: #fff;
+        transition: transform .10s ease, box-shadow .10s ease;
       }
       .cert-list-item:hover {
-        box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 10px rgba(32,45,60,0.05);
       }
+
       .cert-list-info {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        flex: 1 1 auto;
+        min-width: 0;
       }
       .cert-list-name {
-        font-size: 1.08rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: #506C84;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
+        letter-spacing: 0.1px;
+        line-height: 1;
       }
       .cert-list-details {
-        font-size: 0.98rem;
-        color: #222;
-        margin-bottom: 2px;
+        font-size: 0.86rem;
+        color: #3a4954;
+        margin-bottom: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      /* ensure MC No appears below Apartment No */
-      .cert-list-details .mc-no {
-        display: block;
-        margin-top: 6px;
-        color: #222;
-        font-weight: 600;
+      .cert-list-date {
+        font-size: 0.82rem;
+        color: #6f7d87;
+        margin-top: 2px;
       }
 
-      .cert-list-date {
-        font-size: 0.95rem;
-        color: #888;
-      }
       .cert-list-actions {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         align-items: center;
+        margin-left: 10px;
+        flex: 0 0 auto;
       }
       .cert-list-btn {
-        background: #1976d2;
+        background: #0b76b3;
         color: #fff;
         border: none;
-        padding: 8px 24px;
-        font-size: 1rem;
-        border-radius: 8px;
-        font-weight: 500;
+        padding: 6px 10px; /* smaller button */
+        font-size: 0.85rem;
+        border-radius: 6px;
+        font-weight: 600;
         cursor: pointer;
-        transition: background 0.18s;
-        display: flex;
+        transition: background .10s ease, transform .06s ease;
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        box-shadow: 0 1px 6px rgba(11,118,179,0.10);
+        line-height: 1;
       }
+      .cert-list-btn i { font-size: 0.85rem; }
       .cert-list-btn:hover {
-        background: #115293;
+        background: #095f8f;
+        transform: translateY(-1px);
       }
+
+      /* Responsive: keep compact look on small screens (buttons stack) */
       @media (max-width: 700px) {
         .cert-list-container {
           padding: 0 2vw;
-          overflow-x: auto; /* Ensure scroll on small screens */
         }
         .cert-list-item {
           flex-direction: column;
           align-items: flex-start;
-          padding: 14px 8px;
+          padding: 10px;
         }
         .cert-list-actions {
-          margin-top: 10px;
+          margin-top: 8px;
           width: 100%;
-          justify-content: center; /* center buttons only on small devices */
+          justify-content: center;
         }
+        .cert-list-details { white-space: normal; font-size: 0.85rem; }
       }
 
       /* Move back button upward and reduce left margin on very small devices */

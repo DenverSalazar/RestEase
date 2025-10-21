@@ -60,132 +60,258 @@ if ($user_id) {
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clienttrack.css">
     <style>
-      body {
-        font-family: 'Poppins', sans-serif;
-        background: #fafbfc;
-        color: #222;
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      .main-content {
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        min-height: 60vh;
-      }
-      .footer {
-        flex-shrink: 0;
-      }
-      .no-records-msg {
-        color: #888;
-        font-size: 1.15rem;
-        text-align: center;
-        margin: 48px 0 24px 0;
-        font-weight: 500;
-      }
-      .cert-list-container {
-        width: 100%;
-        max-width: 1300px;
-        margin: 0 auto;
-        padding: 0 15px;
-      }
-      .cert-list-title {
-        font-size: 2rem;
-        font-weight: 600;
-        margin: 30px 0 15px 0;
-        text-align: center;
-        color: #333;
-      }
-      .cert-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-      .cert-list-item {
-        /* Match clientcert.php style */
-        background: #f4fbff;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-        margin-bottom: 18px;
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: box-shadow 0.18s;
-        border: 1px solid #e0e7ef;
-      }
-      .cert-list-item:hover {
-        box-shadow: 0 4px 16px rgba(44,62,80,0.12);
-      }
-      .cert-list-info {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-      .cert-list-name {
-        font-size: 1.08rem;
-        font-weight: 600;
-        color: #506C84;
-        margin-bottom: 2px;
-      }
-      .cert-list-details {
-        font-size: 0.98rem;
-        color: #222;
-        margin-bottom: 2px;
-      }
-      .cert-list-date {
-        font-size: 0.95rem;
-        color: #888;
-      }
-      .cert-list-actions {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      .cert-list-btn {
-        background: #1976d2;
-        color: #fff;
-        border: none;
-        padding: 8px 24px;
-        font-size: 1rem;
-        border-radius: 8px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.18s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .cert-list-btn:hover {
-        background: #115293;
-      }
-      /* Color border for status */
-      .cert-list-item.pending {
-        border-left: 8px solid #FFC107;
-        background: #FFF8E1;
-      }
-      .cert-list-item.approved {
-        border-left: 8px solid #198754;
-        background: #E9F7EF;
-      }
-      .cert-list-item.denied {
-        border-left: 8px solid #DC3545;
-        background: #FDEDEC;
-      }
+  /* Reset / base */
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #fafbfc;
+    color: #222;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-content {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 60vh;
+    padding-bottom: 28px; /* added gap so footer does not sit flush to content */
+  }
+  .footer {
+    flex-shrink: 0;
+  }
 
-      /* Move back button upward and reduce left margin on small devices */
-      @media (max-width: 480px) {
-        .cert-list-back {
-          display: inline-block;
-          transform: translateY(-10px);
-          margin-left: 16px !important; /* override inline margin on small screens */
-        }
-      }
-    </style>
+  /* Container / title */
+  .cert-list-container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 12px;
+    margin-bottom: 12px; /* small extra spacing before footer */
+  }
+  .cert-list-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 18px 0 8px 0; /* tighter */
+    text-align: center;
+    color: #333;
+  }
+  .no-records-msg {
+    color: #888;
+    font-size: 1rem;
+    text-align: center;
+    margin: 28px 0 12px 0;
+    font-weight: 500;
+  }
+
+  /* List */
+  .cert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* tighter gap */
+  }
+
+  /* Compact card style: white interior, thin colored border */
+  .cert-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px; /* compact vertical padding */
+    border-radius: 8px;
+    border: 2px solid #e9eef3;
+    background: #fff;
+    transition: transform .10s ease, box-shadow .10s ease;
+  }
+  .cert-list-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 10px rgba(32,45,60,0.05);
+  }
+
+  /* Info column */
+  .cert-list-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .cert-list-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #506C84;
+    margin-bottom: 1px;
+    letter-spacing: 0.1px;
+    line-height: 1;
+  }
+  .cert-list-details {
+    font-size: 0.86rem;
+    color: #3a4954;
+    margin-bottom: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cert-list-date {
+    font-size: 0.82rem;
+    color: #6f7d87;
+    margin-top: 2px;
+  }
+
+  /* Actions column (smaller button) */
+  .cert-list-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: 10px;
+    flex: 0 0 auto;
+  }
+  .cert-list-btn {
+    background: #0b76b3;
+    color: #fff;
+    border: none;
+    padding: 6px 10px; /* smaller button */
+    font-size: 0.85rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .10s ease, transform .06s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 6px rgba(11,118,179,0.10);
+    line-height: 1;
+  }
+  .cert-list-btn i { font-size: 0.85rem; }
+  .cert-list-btn:hover {
+    background: #095f8f;
+    transform: translateY(-1px);
+  }
+
+  /* Status-specific borders only (interior remains white) and matching text color */
+  .cert-list-item.pending { border-color: #FFC107; background: #fff; }
+  .cert-list-item.pending .cert-list-name,
+  .cert-list-item.pending .cert-list-details { color: #CC9900; } /* slightly darker for legibility */
+
+  .cert-list-item.approved { border-color: #28A745; background: #fff; }
+  .cert-list-item.approved .cert-list-name,
+  .cert-list-item.approved .cert-list-details { color: #1f7f35; }
+
+  .cert-list-item.denied { border-color: #DC3545; background: #fff; }
+  .cert-list-item.denied .cert-list-name,
+  .cert-list-item.denied .cert-list-details { color: #b02a2f; }
+
+  /* Responsive: compact + align button on same line as Request Type for small screens */
+  @media (max-width: 480px) {
+    .cert-list-item {
+      /* use grid so we can keep actions in right column while content stacks in left */
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px 8px;
+      align-items: center; /* center items vertically */
+      padding: 8px 10px;
+    }
+
+    .cert-list-info {
+      /* keep content stacked in the left column */
+      order: 0;
+      min-width: 0;
+    }
+
+    /* Make the first .cert-list-details (Request Type) use a single row so it lines up with the button */
+    .cert-list-info .cert-list-details:first-of-type {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      white-space: nowrap; /* keep it on one line */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 6px; /* breathing room from the button column */
+      font-size: 0.88rem;
+      flex: 1;    /* take available horizontal space */
+      min-width: 0; /* allow truncation */
+    }
+
+    /* Place the actions in the right grid column and center vertically */
+    .cert-list-actions {
+      align-self: center; /* vertically center relative to the Request Type row */
+      margin: 0;
+      padding: 0;
+      justify-self: end; /* align to right column */
+    }
+
+    /* keep other details smaller and wrapped below */
+    .cert-list-details { white-space: normal; font-size: 0.84rem; }
+    .cert-list-name { font-size: 0.95rem; }
+  }
+
+  /* Slightly larger small tablets */
+  @media (max-width: 768px) and (min-width: 481px) {
+    .cert-list-item {
+      padding: 8px 10px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+    }
+    .cert-list-actions {
+      align-self: flex-end;
+      margin-left: 0;
+    }
+  }
+
+  /* Small tweak for back button on very small devices */
+  @media (max-width: 480px) {
+    .cert-list-back {
+      display: inline-block;
+      transform: translateY(-6px);
+      margin-left: 10px !important;
+    }
+  }
+
+  /* Modal close button: fixed, circular, centered vertically on header area */
+  .request-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.98);
+    color: #666;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transition: background .12s ease, transform .08s ease, color .12s ease;
+    z-index: 40;
+  }
+  .request-modal-close:hover {
+    background: #fff;
+    color: #222;
+    transform: translateY(-1px);
+  }
+
+  /* Slightly adjust on very small screens so button remains inside rounded corners */
+  @media (max-width: 480px) {
+    .request-modal-close {
+      top: 8px;
+      right: 8px;
+      width: 34px;
+      height: 34px;
+      font-size: 17px;
+    }
+  }
+</style>
 </head>
 <body>
    <?php include '../Includes/navbar2.php'; ?>
@@ -230,7 +356,7 @@ if ($user_id) {
                        elseif ($req['_status'] === 'Approved') echo 'Accepted Date:';
                        else echo 'Denied Date:';
                      ?>
-                   </strong> <?php echo htmlspecialchars($req['created_at']); ?>
+                   </strong> <?php echo htmlspecialchars(date('Y-m-d', strtotime($req['created_at']))); ?>
                  </div>
                </div>
                <div class="cert-list-actions">
@@ -244,7 +370,7 @@ if ($user_id) {
          <!-- Request Details Modal -->
          <div id="requestDetailsModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
            <div id="requestDetailsContent" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;max-width:500px;width:95vw;position:relative;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;">
-             <button onclick="closeRequestDetails()" style="position:absolute;top:18px;right:18px;background:none;border:none;font-size:2rem;color:#888;cursor:pointer;">&times;</button>
+             <button class="request-modal-close" onclick="closeRequestDetails()" aria-label="Close">&times;</button>
              <div id="requestDetailsBody"></div>
            </div>
          </div>

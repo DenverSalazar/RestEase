@@ -97,7 +97,58 @@ while ($row = $result->fetch_assoc()) {
     font-weight: 500;
     z-index: 9999;
 }
-    </style>
+    /* Search suggestions - ensure input keeps original full width on large screens,
+       and the dropdown matches the input width exactly */
+    .search-input-wrapper {
+      position: relative;
+      display: block;
+      width: 100%;
+      max-width: none; /* don't constrain on large screens */
+      box-sizing: border-box;
+    }
+    /* Ensure the input fills the wrapper (if your existing .search-input sets width, this is safe) */
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.12);
+      z-index: 13000;
+      overflow: auto;
+      max-height: 320px;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    .search-suggestion-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #111827;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .search-suggestion-item:hover,
+    .search-suggestion-item.active {
+      background: #f3f4f6;
+    }
+    .search-suggestion-name { flex:1; text-align:left; font-weight:600; }
+    .search-suggestion-meta { color:#6b7280; font-size:0.95rem; }
+    @media (max-width:720px) {
+      /* keep some side padding on small screens so input isn't edge-to-edge */
+      .search-input-wrapper { padding-left: 12px; padding-right: 12px; }
+      .search-suggestions { left: 0; right: 0; width: 100%; }
+    }
+  </style>
   <script>
     // Pass PHP deceased data to JS
     var deceasedData = <?php echo json_encode($deceasedData); ?>;
@@ -191,6 +242,8 @@ while ($row = $result->fetch_assoc()) {
                 <div class="search-input-wrapper">
                     <input class="search-input" id="mapSearchInput" type="text" placeholder="Tap to search">
                     <span class="search-input-icon"><i class="fas fa-search"></i></span>
+                    <!-- Search suggestions dropdown (moved inside wrapper so it aligns with the input) -->
+                    <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Search suggestions" style="display:none;"></div>
                 </div>
             </div>
             <div id="map">
@@ -257,14 +310,16 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <!-- Admin popup-buttons removed for client view-only -->
     </div>
-    <!-- Search Error Popup -->
-    <div class="popup-overlay" id="searchErrorOverlay" style="display:none;"></div>
-    <div class="custom-popup" id="searchErrorPopup" style="display:none; max-width:340px;">
-        <div id="searchErrorContent" style="padding:24px 18px; font-size:16px; color:#fb9a99; text-align:center;">
+    <!-- Search Error Popup (replaced for better layout / responsiveness) -->
+    <div class="popup-overlay" id="searchErrorOverlay" aria-hidden="true"></div>
+
+    <div class="custom-popup" id="searchErrorPopup" role="dialog" aria-modal="true" aria-labelledby="searchErrorTitle" aria-describedby="searchErrorContent">
+        <div id="searchErrorContent">
+            <div id="searchErrorTitle" style="display:none;">No Match Found</div>
             No Niche ID or Name on the database, please check your entry and try again
         </div>
-        <div style="text-align:center; margin-bottom:12px;">
-            <button class="popup-button cancel-button" id="searchErrorCloseBtn" style="margin-top:10px;">Close</button>
+        <div style="width:100%;text-align:center;">
+            <button class="popup-button cancel-button search-error-btn" id="searchErrorCloseBtn" aria-label="Close search error">Close</button>
         </div>
     </div>
 
@@ -1006,6 +1061,195 @@ document.addEventListener('DOMContentLoaded', function() {
     var searchErrorPopup = document.getElementById('searchErrorPopup');
     var searchErrorOverlay = document.getElementById('searchErrorOverlay');
     var searchErrorCloseBtn = document.getElementById('searchErrorCloseBtn');
+
+   // --- Autocomplete / Suggestions ---
+   var suggestionsBox = document.getElementById('searchSuggestions');
+   var searchIndex = []; // { nicheID, name, nameLower, display }
+   function buildSearchIndex() {
+       searchIndex = [];
+       for (var nicheID in deceasedData) {
+           var arr = deceasedData[nicheID];
+           if (!arr) {
+               searchIndex.push({ nicheID: nicheID, name: '', nameLower: '', display: nicheID });
+               continue;
+           }
+           var list = Array.isArray(arr) ? arr : [arr];
+           list.forEach(function(d) {
+               var firstName = d.firstName || '';
+               var middleName = d.middleName || '';
+               var lastName = d.lastName || '';
+               var suffix = d.suffix || '';
+               var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
+               var fullName = firstName;
+               if (middleInitial) fullName += ' ' + middleInitial;
+               if (lastName) fullName += ' ' + lastName;
+               if (suffix) fullName += ', ' + suffix;
+               fullName = fullName.trim();
+               var display = fullName ? (fullName + ' — ' + nicheID) : nicheID;
+               searchIndex.push({ nicheID: nicheID, name: fullName, nameLower: fullName.toLowerCase(), display: display });
+           });
+       }
+   }
+   buildSearchIndex();
+
+   var activeIndex = -1;
+   function renderSuggestions(results) {
+       suggestionsBox.innerHTML = '';
+       if (!results || results.length === 0) {
+           suggestionsBox.style.display = 'none';
+           return;
+       }
+       results.forEach(function(r, i) {
+           var div = document.createElement('div');
+           div.className = 'search-suggestion-item' + (i === activeIndex ? ' active' : '');
+           div.setAttribute('role','option');
+           div.setAttribute('data-niche', r.nicheID);
+           div.innerHTML = '<div class="search-suggestion-name">' + escapeHtml(r.display) + '</div>' +
+                           '<div class="search-suggestion-meta">' + (r.name ? 'Name' : 'Niche') + '</div>';
+           div.addEventListener('click', function() {
+               chooseSuggestion(r);
+           });
+           suggestionsBox.appendChild(div);
+       });
+       suggestionsBox.style.display = 'block';
+   }
+
+   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+   function findMatches(q) {
+       if (!q) return [];
+       q = q.toLowerCase();
+       var out = [];
+       for (var i = 0; i < searchIndex.length; i++) {
+           var it = searchIndex[i];
+           if (it.nameLower && it.nameLower.indexOf(q) !== -1) {
+               out.push(it);
+           } else if (it.nicheID && String(it.nicheID).toLowerCase().indexOf(q) !== -1) {
+               out.push(it);
+           }
+           if (out.length >= 8) break;
+       }
+       return out;
+   }
+
+   function chooseSuggestion(item) {
+       clearSuggestions();
+       searchInput.value = item.name || item.nicheID;
+       goToNiche(item.nicheID);
+   }
+
+   function clearSuggestions() {
+       suggestionsBox.style.display = 'none';
+       suggestionsBox.innerHTML = '';
+       activeIndex = -1;
+   }
+
+   searchInput.addEventListener('input', function(e) {
+       var q = searchInput.value.trim();
+       if (!q) { clearSuggestions(); return; }
+       var results = findMatches(q);
+       renderSuggestions(results);
+   });
+
+   searchInput.addEventListener('keydown', function(e) {
+       var items = suggestionsBox.querySelectorAll('.search-suggestion-item');
+       if (e.key === 'ArrowDown') {
+           e.preventDefault();
+           if (items.length === 0) return;
+           activeIndex = (activeIndex + 1) % items.length;
+           updateActive(items);
+       } else if (e.key === 'ArrowUp') {
+           e.preventDefault();
+           if (items.length === 0) return;
+           activeIndex = (activeIndex - 1 + items.length) % items.length;
+           updateActive(items);
+       } else if (e.key === 'Enter') {
+           if (items.length > 0 && activeIndex >= 0) {
+               e.preventDefault();
+               var niche = items[activeIndex].getAttribute('data-niche');
+               chooseSuggestion({ nicheID: niche, name: '' });
+               return;
+           }
+           // allow existing Enter search behavior to continue if no suggestion selected
+       } else if (e.key === 'Escape') {
+           clearSuggestions();
+       }
+   });
+
+   function updateActive(items) {
+       items.forEach(function(it, idx) { it.classList.toggle('active', idx === activeIndex); });
+       if (items[activeIndex]) {
+           // ensure visible scroll
+           var el = items[activeIndex];
+           el.scrollIntoView({ block: 'nearest' });
+       }
+   }
+
+   document.addEventListener('click', function(ev) {
+       if (!ev.target.closest('#searchSuggestions') && ev.target !== searchInput) {
+           clearSuggestions();
+       }
+   });
+
+   // --- Navigate map to niche (search across all floors/sections) ---
+   function goToNiche(nicheID) {
+       // Define mapping of layers to floor/section (only include layer vars that exist)
+       var sectionList = [
+           { layer: window.layer_Floor1, floor:1, section:1 },
+           { layer: window.layer_Floor1_2, floor:1, section:2 },
+           { layer: window.layer_Floor1_3, floor:1, section:3 },
+           { layer: window.layer_Floor1_4, floor:1, section:4 },
+           { layer: window.layer_Floor2, floor:2, section:1 },
+           { layer: window.layer_Floor2_2, floor:2, section:2 },
+           { layer: window.layer_Floor2_3, floor:2, section:3 },
+           { layer: window.layer_Floor2_4, floor:2, section:4 },
+           { layer: window.layer_Floor3, floor:3, section:1 },
+           { layer: window.layer_Floor3_2, floor:3, section:2 },
+           { layer: window.layer_Floor3_3, floor:3, section:3 },
+           { layer: window.layer_Floor3_4, floor:3, section:4 },
+           { layer: window.layer_OldMap_1, floor:4, section:1 },
+           { layer: window.layer_OldMap_4, floor:4, section:4 }
+       ];
+       var found = null;
+       var foundFloor = null;
+       var foundSection = null;
+       for (var i = 0; i < sectionList.length; i++) {
+           var s = sectionList[i];
+           if (!s.layer) continue;
+           s.layer.eachLayer(function(layer) {
+               try {
+                   if (layer.feature && layer.feature.properties && String(layer.feature.properties['nicheID']) === String(nicheID)) {
+                       found = layer;
+                       foundFloor = s.floor;
+                       foundSection = s.section;
+                   }
+               } catch (err) {}
+           });
+           if (found) break;
+       }
+       if (!found) {
+           // fallback to visible-layer search (shouldn't usually happen)
+           alert('Niche not found: ' + nicheID);
+           return;
+       }
+       // Ensure correct floor & section visible, then center and open
+       showFloor(foundFloor);
+       // small delay to let layers be added
+       setTimeout(function() {
+           // show only the section
+           showSection(String(foundSection));
+           // center and open
+           var center;
+           if (found.getBounds) center = found.getBounds().getCenter();
+           else if (found.getLatLng) center = found.getLatLng();
+           if (center) map.setView(center, Math.max(map.getZoom(), map.getMaxZoom() - 1), { animate: true });
+           // highlight then open
+           highlightFeature({ target: found });
+           setTimeout(function() { found.fire('click'); }, 250);
+       }, 250);
+   }
+   // --- End autocomplete ---
+
     searchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             var query = searchInput.value.trim().toLowerCase();
@@ -1086,29 +1330,53 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!found) {
+                // Highlight the input and explicitly show the error overlay + popup
                 searchInput.style.borderColor = '#fb9a99';
                 if (searchErrorPopup && searchErrorOverlay) {
+                    // Ensure the overlay & popup are visible even if CSS classes are missing
+                    searchErrorOverlay.style.display = 'block';
+                    searchErrorPopup.style.display = 'flex';
+                    searchErrorPopup.style.alignItems = 'center';
+                    searchErrorPopup.style.justifyContent = 'center';
                     searchErrorPopup.classList.add('active');
                     searchErrorOverlay.classList.add('active');
+                } else {
+                    // Fallback alert if popup elements are not present
+                    alert('No matching Niche ID or Name found. Please check your entry and try again.');
                 }
-            } else {
-                if (searchErrorPopup && searchErrorOverlay) {
-                    searchErrorPopup.classList.remove('active');
-                    searchErrorOverlay.classList.remove('active');
-                }
-            }
+             } else {
+                 if (searchErrorPopup && searchErrorOverlay) {
+                     searchErrorPopup.classList.remove('active');
+                     searchErrorOverlay.classList.remove('active');
+                 }
+             }
         }
     });
-    if (searchErrorCloseBtn && searchErrorOverlay && searchErrorPopup) {
+
+    // Close handler helper (placed inside DOMContentLoaded so elements exist)
+    function closeSearchError() {
+        if (searchErrorPopup) {
+            searchErrorPopup.classList.remove('active');
+            searchErrorPopup.style.display = 'none';
+        }
+        if (searchErrorOverlay) {
+            searchErrorOverlay.classList.remove('active');
+            searchErrorOverlay.style.display = 'none';
+        }
+        if (searchInput) {
+            searchInput.style.borderColor = '';
+            searchInput.focus();
+        }
+    }
+
+    if (searchErrorCloseBtn) {
         searchErrorCloseBtn.addEventListener('click', function() {
-            searchErrorPopup.classList.remove('active');
-            searchErrorOverlay.classList.remove('active');
-            searchInput.style.borderColor = '';
+            closeSearchError();
         });
+    }
+    if (searchErrorOverlay) {
         searchErrorOverlay.addEventListener('click', function() {
-            searchErrorPopup.classList.remove('active');
-            searchErrorOverlay.classList.remove('active');
-            searchInput.style.borderColor = '';
+            closeSearchError();
         });
     }
 });
@@ -1169,9 +1437,61 @@ document.addEventListener('DOMContentLoaded', function() {
       color: #888;
       font-family: 'Poppins', serif;
       margin-bottom: 0;
-    }
-    /* ...existing code... */
-   </style>
+}
+    #searchErrorOverlay {
+      display: none; /* toggled by JS */
+        position: fixed;
+        inset: 0;
+
+        background: rgba(17,24,39,0.45);
+
+        z-index: 12050;
+        align-items: center;
+        justify-content: center;
+      }
+      #searchErrorPopup {
+        display: none; /* toggled by JS */
+        z-index: 12060;
+        max-width: 420px;
+        width: calc(100% - 40px);
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 12px 40px rgba(2,6,23,0.16);
+        padding: 22px;
+        box-sizing: border-box;
+        margin: 0 16px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #searchErrorContent {
+        color: #fb7185; /* soft red */
+        text-align: center;
+        font-weight: 600;
+        line-height: 1.35;
+        font-size: 1rem;
+        margin-bottom: 18px;
+        white-space: normal;
+      }
+      .search-error-btn {
+        background: #ef4444; /* red */
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(239,68,68,0.12);
+      }
+      .search-error-btn:active { transform: translateY(1px); }
+
+      /* make button full width on small screens for easier tapping */
+      @media (max-width:420px) {
+        #searchErrorPopup { padding:16px; max-width: 92%; }
+        .search-error-btn { width:100%; padding:12px; font-size:1rem; border-radius:10px; }
+        #searchErrorContent { font-size:0.98rem; }
+      }
+    </style>
 </body>
 </html>
 

@@ -246,13 +246,12 @@ if ($res && $res->num_rows > 0) {
                 // Try to find a registered user who matches the informant name (best-effort)
                 $clientEmail = null;
                 $clientId = null;
-                if (!empty($row['informantName'])) {
-                    $informantTrim = trim($row['informantName']);
-                    // Attempt exact match to "First Last" or "Last, First" patterns
-                    // Try "First Last"
+                $informantRaw = trim($row['informantName'] ?? '');
+
+                if (!empty($informantRaw)) {
                     $stmtUser = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(first_name, ' ', last_name) = ? LIMIT 1");
                     if ($stmtUser) {
-                        $stmtUser->bind_param('s', $informantTrim);
+                        $stmtUser->bind_param('s', $informantRaw);
                         $stmtUser->execute();
                         $resU = $stmtUser->get_result();
                         if ($ru = $resU->fetch_assoc()) {
@@ -261,11 +260,10 @@ if ($res && $res->num_rows > 0) {
                         }
                         $stmtUser->close();
                     }
-                    // If not found, try "Last, First" pattern (stored informant sometimes formatted that way)
-                    if (!$clientId && strpos($informantTrim, ',') !== false) {
+                    if (!$clientId && strpos($informantRaw, ',') !== false) {
                         $stmtUser2 = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(last_name, ', ', first_name) = ? LIMIT 1");
                         if ($stmtUser2) {
-                            $stmtUser2->bind_param('s', $informantTrim);
+                            $stmtUser2->bind_param('s', $informantRaw);
                             $stmtUser2->execute();
                             $resU2 = $stmtUser2->get_result();
                             if ($ru2 = $resU2->fetch_assoc()) {
@@ -277,12 +275,14 @@ if ($res && $res->num_rows > 0) {
                     }
                 }
 
+                // Include informant name in the record for accurate display in the notify popup
                 $expiringRecords[] = [
                     'nicheID' => $row['nicheID'],
                     'name' => $name,
                     'validity' => $validityDate,
                     'client_id' => $clientId,
-                    'client_email' => $clientEmail
+                    'client_email' => $clientEmail,
+                    'informant' => $informantRaw
                 ];
             }
         } catch (Exception $e) {}
@@ -526,13 +526,12 @@ if ($res && $res->num_rows > 0) {
                 // Try to find a registered user who matches the informant name (best-effort)
                 $clientEmail = null;
                 $clientId = null;
-                if (!empty($row['informantName'])) {
-                    $informantTrim = trim($row['informantName']);
-                    // Attempt exact match to "First Last" or "Last, First" patterns
-                    // Try "First Last"
+                $informantRaw = trim($row['informantName'] ?? '');
+
+                if (!empty($informantRaw)) {
                     $stmtUser = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(first_name, ' ', last_name) = ? LIMIT 1");
                     if ($stmtUser) {
-                        $stmtUser->bind_param('s', $informantTrim);
+                        $stmtUser->bind_param('s', $informantRaw);
                         $stmtUser->execute();
                         $resU = $stmtUser->get_result();
                         if ($ru = $resU->fetch_assoc()) {
@@ -541,11 +540,10 @@ if ($res && $res->num_rows > 0) {
                         }
                         $stmtUser->close();
                     }
-                    // If not found, try "Last, First" pattern (stored informant sometimes formatted that way)
-                    if (!$clientId && strpos($informantTrim, ',') !== false) {
+                    if (!$clientId && strpos($informantRaw, ',') !== false) {
                         $stmtUser2 = $conn->prepare("SELECT id, email FROM users WHERE CONCAT(last_name, ', ', first_name) = ? LIMIT 1");
                         if ($stmtUser2) {
-                            $stmtUser2->bind_param('s', $informantTrim);
+                            $stmtUser2->bind_param('s', $informantRaw);
                             $stmtUser2->execute();
                             $resU2 = $stmtUser2->get_result();
                             if ($ru2 = $resU2->fetch_assoc()) {
@@ -557,12 +555,14 @@ if ($res && $res->num_rows > 0) {
                     }
                 }
 
+                // Include informant name in the record for accurate display in the notify popup
                 $expiringRecords[] = [
                     'nicheID' => $row['nicheID'],
                     'name' => $name,
                     'validity' => $validityDate,
                     'client_id' => $clientId,
-                    'client_email' => $clientEmail
+                    'client_email' => $clientEmail,
+                    'informant' => $informantRaw
                 ];
             }
         } catch (Exception $e) {}
@@ -751,10 +751,25 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       border-color: rgba(99,102,241,0.6);
       box-shadow: 0 6px 14px rgba(99,102,241,0.06);
     }
-    #contactValue[readonly] {
+    #contactType[readonly] { /* keep parity with contactValue readonly look if needed */
       background: #f8fafc;
       cursor: default;
       color: #0f172a;
+    }
+
+    /* Move the dropdown caret slightly inside for the Contact Type select.
+       Uses a small inline SVG as the caret and positions it a few pixels left. */
+    #contactType {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'><path d='M5 7l5 5 5-5' stroke='%23475369' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>");
+      background-repeat: no-repeat;
+      /* move the caret a bit left from the very edge */
+      background-position: right 14px center;
+      /* ensure select text doesn't overlap the caret */
+      padding-right: 40px;
+      cursor: pointer;
     }
 
     #notifyModalError { color:#ef4444; margin-top:6px; display:none; font-size:0.92rem; }
@@ -841,6 +856,54 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
     @media (max-width:520px){
       .notify-modal { width: 100%; padding: 12px; border-radius: 8px; }
       .notify-modal .modal-header { gap:8px; }
+    }
+
+    /* Layout variables for the expiring-records list */
+    :root {
+      --exp-item-height: 86px;     /* approximate per-record height (adjust if you tweak item padding) */
+      --exp-item-gap: 16px;        /* gap between items */
+      --exp-list-rows: 3;          /* how many rows to reserve by default (image #1 shows 3 items) */
+      --exp-list-padding-vertical: 12px;
+    }
+
+    /* Ensure container keeps a stable area even when filtering - reserve space for 3 rows */
+    #expListContainer {
+      min-height: calc((var(--exp-item-height) + var(--exp-item-gap)) * var(--exp-list-rows) + (var(--exp-list-padding-vertical) * 2));
+      padding: var(--exp-list-padding-vertical) 55px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    /* Keep UL clean in case inline styles differ elsewhere */
+    #expListContainer > ul { list-style: none; margin: 0; padding: 0; }
+
+    /* Make each record a consistent box so spacing/width don't jump */
+    #expListContainer > ul > li[data-exp-item] {
+      min-height: var(--exp-item-height);
+      box-sizing: border-box;
+      margin-bottom: var(--exp-item-gap);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    /* Keep hidden class but let the container min-height preserve overall layout */
+    .exp-hidden { display: none !important; }
+
+    /* No-results message sits inside container and uses same vertical padding */
+    #expNoResults { padding: var(--exp-list-padding-vertical) 0; color: #888; }
+
+    /* Consistent small width for the floor dropdown (prevent jump when content changes) */
+    #expFloorFilter {
+      min-width: 64px;
+      width: 64px;
+      max-width: 120px;
+      margin-left: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -1109,7 +1172,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       });
     </script>
     <section class="dashboard-grid">
-      <div class="dashboard-card dashboard-card-large">
+      <div class="dashboard-card dashboard-card-medium">
         <!-- add skeleton shimmer until charts render -->
         <div id="chart" class="skeleton"></div>
       </div>
@@ -1117,11 +1180,19 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         <div style="padding: 18px 14px 18px 18px; width: 100%; height: 100%; display: flex; flex-direction: column;">
           <h3 style="font-size: 1.13rem; margin-bottom: 10px; color: #374151; font-weight: 700; letter-spacing: 0.5px; padding-left: 95px; margin-top: 2px;">Upcoming Validity Expiry</h3>
           <!-- NEW: quick filter + export -->
-          <div class="row" style="padding: 0 55px 8px 55px;">
-            <input id="expSearch" type="text" placeholder="Search name or Apt..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;">
-            <button id="expExport" class="btn-secondary" style="white-space:nowrap;">Export CSV</button>
-          </div>
-          <div style="flex: 1; overflow-y: auto; max-height: 320px; margin-top: 0;">
+          <div class="row" style="padding: 0 55px 8px 55px; align-items: center;">
+            <input id="expSearch" type="text" placeholder="Search name or Apt..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px; box-sizing: border-box;">
+            <!-- width controlled by CSS (#expFloorFilter) to keep it stable -->
+            <select id="expFloorFilter">
+               <option value="all">All</option>
+               <option value="1F">1F — 1st Floor</option>
+               <option value="2F">2F — 2nd Floor</option>
+               <option value="3F">3F — 3rd Floor</option>
+               <option value="OM">OM — Old Map</option>
+             </select>
+           </div>
+          <!-- keep a stable container so layout/padding doesn't collapse after filtering -->
+          <div id="expListContainer" style="flex: 1; max-height: 320px; margin-top: 0; box-sizing: border-box;">
             <?php if (count($expiringRecords) > 0): ?>
               <ul style="list-style: none; padding: 0; margin: 0;">
                 <?php foreach ($expiringRecords as $rec): ?>
@@ -1129,7 +1200,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
                       data-name="<?php echo htmlspecialchars($rec['name']); ?>"
                       data-apt="<?php echo htmlspecialchars($rec['nicheID']); ?>"
                       data-validity="<?php echo htmlspecialchars($rec['validity']); ?>"
-                      style="margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px;">
+                      >
                     <div style="margin-top: 2px;">
                       <i class="fa-solid fa-calendar-exclamation" style="color: #eab308; font-size: 1.25rem;"></i>
                     </div>
@@ -1153,6 +1224,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
                           data-validity="<?php echo htmlspecialchars($rec['validity']); ?>"
                           data-client-email="<?php echo htmlspecialchars($rec['client_email']); ?>"
                           data-client-id="<?php echo htmlspecialchars($rec['client_id']); ?>"
+                          data-informant="<?php echo htmlspecialchars($rec['informant']); ?>"
                           <?php if ($alreadyStatus): ?> disabled <?php endif; ?>>
                           <?php echo $alreadyStatus ? 'Notified' : 'Notify'; ?>
                         </button>
@@ -1165,7 +1237,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
                 <?php endforeach; ?>
               </ul>
             <?php else: ?>
-              <div style="color: #888; font-size: 0.97rem; text-align: center; margin-top: 40px;">No records expiring soon.</div>
+              <div id="expEmptyPlaceholder" style="color: #888; font-size: 0.97rem; text-align: center; margin-top: 12px;">No records expiring soon.</div>
             <?php endif; ?>
           </div>
         </div>
@@ -1310,6 +1382,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
             : (requestsPerMonthFilter === 'all' ? 'Requests Per Month (All Years)' : 'Requests Per Month (Year)'),
           align: 'center',
           style: { fontSize: '16px', fontWeight: 'bold', color: '#374151' }
+
         }
       };
       document.querySelector("#columnChart").innerHTML = '';
@@ -1455,10 +1528,35 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
           validity: btn.getAttribute('data-validity') || '',
           client_email: clientEmail,
           client_id: clientId,
+          informant: btn.getAttribute('data-informant') || '',
           btnElement: btn
         };
 
-        recordInfo.textContent = `${currentPayload.name} — Apt: ${currentPayload.niche} — Validity: ${currentPayload.validity}`;
+        // Display detailed record info in the modal including Informant name (only in popup)
+        // escape helper to avoid injecting HTML
+        function escapeHtml(str) {
+          if (!str && str !== 0) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        const escName = escapeHtml(currentPayload.name);
+        const escApt = escapeHtml(currentPayload.niche);
+        const escValidity = escapeHtml(currentPayload.validity);
+        const escInformant = escapeHtml(currentPayload.informant);
+
+        // Render as multiple lines for better readability
+        recordInfo.innerHTML = `
+          <div style="font-weight:700; margin-bottom:6px;">${escName}</div>
+          <div style="color:#2563eb; margin-bottom:4px;">Apt: ${escApt}</div>
+          <div style="color:#eab308; margin-bottom:4px;">Validity: ${escValidity}</div>
+          ${escInformant ? `<div style="color:#6b7280; font-size:0.95rem;">Informant: ${escInformant}</div>` : ''}
+        `;
+
         if (currentPayload.client_id && currentPayload.client_email) {
           contactTypeEl.value = 'internal';
           contactValueEl.value = currentPayload.client_email;
@@ -1544,8 +1642,8 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
     <div class="notify-modal" role="dialog" aria-modal="true" aria-labelledby="notifyModalTitle">
       <div class="modal-header">
         <div>
-          <h3 id="notifyModalTitle">Send Expiry Notice</h3>
-          <div style="font-size:0.86rem;color:#64748b;margin-top:2px;">notify via email, SMS, or in-app</div>
+          <h3 id="notifyModalTitle">Send Expiry Notice!</h3>
+          <div style="font-size:0.86rem;color:#64748b;margin-top:2px;">Notify via email, SMS, or in-app</div>
         </div>
         <button class="notify-close" title="Close" onclick="document.getElementById('notifyCancelBtn').click()">✕</button>
       </div>
@@ -1571,7 +1669,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
 
       <div id="notifyModalError" role="alert" aria-live="assertive" style="display:none;"></div>
 
-      <div style="font-size:0.9rem;color:#6b7280;margin-top:6px;">Note: Email will be attempted via PHP mail(). SMS is recorded/queued (no gateway configured).</div>
+      <div style="font-size:0.9rem;color:#6b7280;margin-top:6px;">Note: Email and SMS will be sent through the configured messaging gateway. Ensure contact details are valid.</div>
 
       <div class="notify-actions">
         <button id="notifyCancelBtn" class="btn-secondary">Cancel</button>
@@ -1579,5 +1677,137 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       </div>
     </div>
   </div>
+
+  <script>
+(function(){
+  const expInput = document.getElementById('expSearch');
+  const floorSelect = document.getElementById('expFloorFilter');
+  const listItemsSelector = 'li[data-exp-item]';
+  const firstLi = document.querySelector(listItemsSelector);
+  // stable list container (keeps padding/box model consistent)
+  const listContainer = document.getElementById('expListContainer');
+  const ul = firstLi ? firstLi.closest('ul') : null;
+  let noResultsEl = null;
+
+  function ensureNoResultsEl(parent){
+    if (!noResultsEl){
+      noResultsEl = document.createElement('div');
+      noResultsEl.id = 'expNoResults';
+      noResultsEl.style.color = '#888';
+      noResultsEl.style.fontSize = '0.97rem';
+      noResultsEl.style.textAlign = 'center';
+      // smaller top margin to match list spacing and ensure it is placed INSIDE the scrolling area
+      noResultsEl.style.margin = '12px 0';
+      noResultsEl.textContent = 'No matching records.';
+      if (listContainer) listContainer.appendChild(noResultsEl);
+      else if (parent) parent.parentNode.appendChild(noResultsEl);
+      else document.body.appendChild(noResultsEl);
+    }
+  }
+
+  // q = text query, floor = 'all'|'1F'|'2F'|'3F'|'OM'
+  function filterExpiringRecords(q, floor){
+    const query = String(q || '').trim().toLowerCase();
+    const floorFilter = (floor || 'all').toUpperCase();
+
+    const items = Array.from(document.querySelectorAll(listItemsSelector));
+    if (!items.length){
+      ensureNoResultsEl(ul);
+      if (noResultsEl) noResultsEl.style.display = '';
+      return;
+    }
+    let anyVisible = false;
+    items.forEach(function(li){
+      const name = (li.getAttribute('data-name') || '').toLowerCase();
+      const apt = (li.getAttribute('data-apt') || '').toLowerCase();
+      const validity = (li.getAttribute('data-validity') || '').toLowerCase();
+      const matchesText = !query || name.indexOf(query) !== -1 || apt.indexOf(query) !== -1 || validity.indexOf(query) !== -1;
+      let matchesFloor = true;
+      if (floorFilter && floorFilter !== 'ALL') {
+        if (floorFilter === 'OM') {
+          matchesFloor = apt.indexOf('om') === 0 || apt.indexOf('om-') === 0;
+        } else {
+          // match floor prefix like "1f-" or "1f" at start
+          matchesFloor = apt.indexOf(floorFilter.toLowerCase() + '-') === 0 || apt.indexOf(floorFilter.toLowerCase()) === 0;
+        }
+      }
+      const matches = matchesText && matchesFloor;
+      // use class toggle to avoid interfering with other inline styles
+      if (matches) {
+        li.classList.remove('exp-hidden');
+        li.style.display = '';
+      } else {
+        li.classList.add('exp-hidden');
+        li.style.display = 'none';
+      }
+      if (matches) anyVisible = true;
+    });
+    if (!anyVisible){
+      ensureNoResultsEl(ul);
+      if (noResultsEl) noResultsEl.style.display = '';
+    } else if (noResultsEl){
+      noResultsEl.style.display = 'none';
+    }
+  }
+
+  if (expInput){
+    expInput.addEventListener('input', function(){ filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all'); });
+    expInput.addEventListener('keydown', function(e){
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all');
+      }
+      // Ctrl/Cmd+E export shortcut
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e'){
+        e.preventDefault();
+        exportVisibleExpiringRecords();
+      }
+    });
+  }
+
+  // Filter when the floor dropdown changes (no separate button needed)
+  if (floorSelect) {
+    floorSelect.addEventListener('change', function() {
+      filterExpiringRecords(expInput ? expInput.value : '', floorSelect.value);
+    });
+  }
+
+  // Export visible items to CSV (used by shortcut Ctrl/Cmd+E)
+  function exportVisibleExpiringRecords(){
+    const visible = Array.from(document.querySelectorAll(listItemsSelector)).filter(li => li.style.display !== 'none');
+    if (!visible.length){
+      alert('No records to export.');
+      return;
+    }
+    const rows = [['Name','Apt','Validity','Informant','Status']];
+    visible.forEach(li => {
+      const name = li.getAttribute('data-name') || '';
+      const apt = li.getAttribute('data-apt') || '';
+      const validity = li.getAttribute('data-validity') || '';
+      const notifyBtn = li.querySelector('.notify-btn');
+      const informant = notifyBtn ? (notifyBtn.getAttribute('data-informant') || '') : '';
+      const statusEl = li.querySelector('.notify-status');
+      const status = statusEl ? statusEl.textContent.trim() : '';
+      rows.push([name, apt, validity, informant, status]);
+    });
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'expiring_records_' + (new Date()).toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // If there is an older "expExport" button (from prior versions), wire it up too.
+  const expExportBtn = document.getElementById('expExport');
+  if (expExportBtn){
+    expExportBtn.addEventListener('click', function(e){ e.preventDefault(); exportVisibleExpiringRecords(); });
+  }
+})();
+  </script>
   </body>
   </html>

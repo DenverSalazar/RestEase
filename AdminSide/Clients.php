@@ -32,9 +32,123 @@ if (!isset($_SESSION['admin_id'])) {
     </div>
     <div class="clients-tabs-bar">
       <div class="clients-tabs">
-        <span class="clients-tab-title active">Manage Clients Account</span>
+        <!-- Manage Clients on the left, Walk-in tab placed to the right -->
+        <span id="tab-manage-clients" class="clients-tab-title active" onclick="showClientsTab('manage')">Manage Clients Account</span>
+        <span id="tab-walkin" class="clients-tab-title" onclick="showClientsTab('walkin')">Manage Walk-in Clients</span>
       </div>
     </div>
+
+    <!-- New: Manage Walk-in Clients Section (initially hidden) -->
+    <div id="manage-walkins-section" style="display:none;">
+      <div class="clients-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search Walk-in Clients" id="walkin-search-input">
+        </div>
+        <div class="actions-right">
+          <div class="date-filter-container">
+            <!-- Insert button to the left of the calendar (walk-in date) -->
+            <button type="button" id="walkin-insert-btn" class="insert-btn"><i class="fas fa-plus"></i> Insert</button>
+            <input type="date" id="walkin-date-filter" class="date-input">
+            <button type="button" id="clear-walkin-date-filter" class="clear-date-btn" style="display:none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div class="dataTables_length">
+          <label>Show <select name="walkin-table_length"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label>
+        </div>
+      </div>
+
+      <div class="clients-table-container">
+        <table class="clients-table" id="walkin-table">
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Email</th>
+              <th>Contact</th>
+              <th>Walk-in Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          <?php
+          // Replace placeholder with actual walk-in clients retrieval and rendering
+          include_once '../Includes/db.php';
+          $sql_walkin = "SELECT id, first_name, last_name, email, contact_no, walkin_date FROM walkin_clients ORDER BY walkin_date DESC";
+          $result_walkin = $conn->query($sql_walkin);
+          if ($result_walkin && $result_walkin->num_rows > 0) {
+              while ($row = $result_walkin->fetch_assoc()) {
+                  $firstName = htmlspecialchars($row['first_name'] ?? '');
+                  $lastName = htmlspecialchars($row['last_name'] ?? '');
+                  $name = trim($firstName . ' ' . $lastName);
+                  $email = htmlspecialchars($row['email'] ?? '');
+                  $contact = htmlspecialchars($row['contact_no'] ?? '');
+                  $walkinDate = htmlspecialchars($row['walkin_date'] ? date('Y-m-d', strtotime($row['walkin_date'])) : 'N/A');
+
+                  // No profile pictures stored in walkin_clients by design — render initials avatar
+                  $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                  $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                  $colorClass = "avatar-color-$colorIndex";
+                  $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;width:38px;height:38px;border-radius:50%;align-items:center;justify-content:center;font-weight:600;">' . $initials . '</div>';
+
+                  // Simple status for walk-in records
+                  $statusHtml = '<span style="background:#f0f4f8;color:#223;background-clip:padding-box;padding:4px 12px;border-radius:6px;font-size:0.95em;color:#123456;">Walk-in</span>';
+
+                  echo "<tr data-registration-date='$walkinDate'>
+                    <td style='white-space: nowrap;'>
+                        $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:8px; display:inline-block;\">$name</span>
+                    </td>
+                    <td>$email</td>
+                    <td>$contact</td>
+                    <td>$walkinDate</td>
+                    <td>$statusHtml</td>
+                </tr>";
+              }
+          }
+          ?>
+          </tbody>
+        </table>
+      </div>
+      <div class="dataTables_wrapper"></div>
+
+      <!-- Walk-in Insert Modal moved into the Walk-in section so it appears with this tab only -->
+      <div id="walkinInsertModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+          <button type="button" class="modal-close close-modal" aria-label="Close">&times;</button>
+          <header class="modal-card-header">
+            <h3 class="modal-title">Insert Walk-in Clients</h3>
+            <p class="modal-sub">Add a new walk-in client record</p>
+          </header>
+          <div class="modal-card-body">
+            <form id="walkinInsertForm" class="walkin-form">
+              <div class="form-row">
+                <input type="text" name="first_name" placeholder="First name" required class="form-input">
+              </div>
+              <div class="form-row">
+                <input type="text" name="last_name" placeholder="Last name" required class="form-input">
+              </div>
+              <div class="form-row">
+                <input type="email" name="email" placeholder="Email (optional)" class="form-input">
+              </div>
+              <div class="form-row">
+                <input type="text" name="contact_no" placeholder="Contact (optional)" class="form-input">
+              </div>
+            </form>
+          </div>
+          <footer class="modal-card-footer">
+            <button id="walkinInsertSubmit" class="btn btn-primary">Insert</button>
+            <button id="walkinInsertCancel" class="btn btn-secondary">Cancel</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wrap existing Manage Clients Account section so it can be toggled by tabs -->
+    <div id="manage-clients-section">
     <div class="clients-actions">
       <div class="search-container">
         <i class="fas fa-search"></i>
@@ -176,45 +290,76 @@ if (!isset($_SESSION['admin_id'])) {
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize DataTables
+    // Initialize DataTables for Manage Clients (existing)
     const dataTable = $('#clients-table').DataTable({
         "paging": true,
         "searching": true,
         "ordering": true,
         "info": true,
-        "dom": 'rtip', // Show table, info and pagination
+        "dom": 'rtip',
         "columnDefs": [
             { "orderable": false, "targets": [5] }
         ],
         "drawCallback": function() {
-            // Move pagination outside table container while preserving functionality
             const tableWrapper = $('#clients-table').closest('.clients-table-container');
             const externalWrapper = tableWrapper.next('.dataTables_wrapper');
-            
-            // Move info and pagination to external wrapper
             const info = $('#clients-table_info').detach();
             const paginate = $('#clients-table_paginate').detach();
-            
             externalWrapper.empty().append(info).append(paginate);
         }
     });
+
+    // New: Initialize DataTable for Walk-in Clients
+    let walkinTable = null;
+    try {
+      walkinTable = $('#walkin-table').DataTable({
+          "paging": true,
+          "searching": true,
+          "ordering": true,
+          "info": true,
+          "dom": 'rtip',
+          "columnDefs": [
+              // Actions column removed: last column index is now 4 (0..4), make status column orderable and only prevent ordering on last column if needed
+              { "orderable": false, "targets": [4] }
+          ],
+          "drawCallback": function() {
+              const tableWrapper = $('#walkin-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              const info = $('#walkin-table_info').detach();
+              const paginate = $('#walkin-table_paginate').detach();
+              externalWrapper.empty().append(info).append(paginate);
+          }
+      });
+    } catch (e) {
+      // If table is not present or initialization fails, log and continue.
+      console.error('Walk-in table init error:', e);
+    }
 
     // Connect existing search bar to DataTables
     document.getElementById('search-input').addEventListener('keyup', function() {
         dataTable.search(this.value).draw();
     });
 
-    // New date filter functionality
+    // Connect walk-in search bar to walkin DataTable
+    const walkinSearch = document.getElementById('walkin-search-input');
+    if (walkinSearch) {
+      walkinSearch.addEventListener('keyup', function() {
+        try {
+          if (walkinTable) walkinTable.search(this.value).draw();
+        } catch (e) {
+          console.error('Walkin search error:', e);
+        }
+      });
+    }
+
+    // New date filter functionality for clients (existing)
     const dateInput = document.getElementById('registration-date-filter');
     const clearDateBtn = document.getElementById('clear-date-filter');
 
     dateInput.addEventListener('change', function() {
         const selectedDate = this.value;
         if (selectedDate) {
-            // Show clear button
             clearDateBtn.style.display = 'block';
-            
-            // Filter table by registration date
             dataTable.column(3).search(selectedDate, false, false).draw();
         } else {
             clearDateBtn.style.display = 'none';
@@ -228,10 +373,37 @@ document.addEventListener('DOMContentLoaded', function() {
         dataTable.column(3).search('').draw();
     });
 
-    // Connect entries dropdown to DataTables
+    // Date filter for walk-ins
+    const walkinDate = document.getElementById('walkin-date-filter');
+    const clearWalkinDateBtn = document.getElementById('clear-walkin-date-filter');
+    if (walkinDate && clearWalkinDateBtn) {
+      walkinDate.addEventListener('change', function() {
+        const selectedDate = this.value;
+        if (selectedDate) {
+          clearWalkinDateBtn.style.display = 'block';
+          try { if (walkinTable) walkinTable.column(3).search(selectedDate, false, false).draw(); } catch(e){console.error(e);}
+        } else {
+          clearWalkinDateBtn.style.display = 'none';
+          try { if (walkinTable) walkinTable.column(3).search('').draw(); } catch(e){console.error(e);}
+        }
+      });
+      clearWalkinDateBtn.addEventListener('click', function() {
+        walkinDate.value = '';
+        this.style.display = 'none';
+        try { if (walkinTable) walkinTable.column(3).search('').draw(); } catch(e){console.error(e);}
+      });
+    }
+
+    // Connect entries dropdowns
     document.querySelector('select[name="clients-table_length"]').addEventListener('change', function() {
         dataTable.page.len(parseInt(this.value)).draw();
     });
+    const walkinLen = document.querySelector('select[name="walkin-table_length"]');
+    if (walkinLen) {
+      walkinLen.addEventListener('change', function() {
+        try { if (walkinTable) walkinTable.page.len(parseInt(this.value)).draw(); } catch(e){console.error(e);}
+      });
+    }
 
     // Close all open menus if clicking outside
     document.addEventListener('click', function(e) {
@@ -412,61 +584,209 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+
+    // Tab switching helper
+    window.showClientsTab = function(tab) {
+      const walkinSection = document.getElementById('manage-walkins-section');
+      const manageSection = document.getElementById('manage-clients-section');
+      const tabWalkin = document.getElementById('tab-walkin');
+      const tabManage = document.getElementById('tab-manage-clients');
+
+      if (tab === 'walkin') {
+        if (walkinSection) walkinSection.style.display = '';
+        if (manageSection) manageSection.style.display = 'none';
+        tabWalkin.classList.add('active');
+        tabManage.classList.remove('active');
+        // redraw walkin table if needed
+        try { if (walkinTable) walkinTable.columns.adjust().draw(); } catch (e) {}
+      } else {
+        if (walkinSection) walkinSection.style.display = 'none';
+        if (manageSection) manageSection.style.display = '';
+        tabManage.classList.add('active');
+        tabWalkin.classList.remove('active');
+        try { if (dataTable) dataTable.columns.adjust().draw(); } catch (e) {}
+      }
+    };
+
+    // ensure the default visible tab remains the existing Manage Clients Account
+    // (no call needed as the HTML default has manage-clients active)
+    
+    // Insert button modal handlers (walk-in tab only)
+    const walkinInsertBtn = document.getElementById('walkin-insert-btn');
+    const walkinInsertModal = document.getElementById('walkinInsertModal');
+    const walkinInsertCancel = document.getElementById('walkinInsertCancel');
+    const walkinInsertSubmit = document.getElementById('walkinInsertSubmit');
+    const walkinInsertForm = document.getElementById('walkinInsertForm');
+    const walkinModalClose = walkinInsertModal ? walkinInsertModal.querySelector('.close-modal') : null;
+
+    function openWalkinModal() {
+      if (!walkinInsertModal) return;
+      walkinInsertModal.style.display = 'flex';
+      // small focus for accessibility
+      const first = walkinInsertForm.querySelector('input[name="first_name"]');
+      if (first) try { first.focus(); } catch(e){ }
+    }
+    function closeWalkinModal() {
+      if (!walkinInsertModal) return;
+      walkinInsertModal.style.display = 'none';
+      walkinInsertForm.reset();
+    }
+
+    if (walkinInsertBtn) {
+      walkinInsertBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        openWalkinModal();
+      });
+    }
+    if (walkinInsertCancel) {
+      walkinInsertCancel.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeWalkinModal();
+      });
+    }
+    if (walkinModalClose) {
+      walkinModalClose.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeWalkinModal();
+      });
+    }
+
+    // Submit handler - minimal placeholder, posts to insert_walkin.php
+    if (walkinInsertSubmit) {
+      walkinInsertSubmit.addEventListener('click', function(e) {
+        e.preventDefault();
+        const formData = new FormData(walkinInsertForm);
+
+        // Append selected walk-in date (from the calendar left of insert button)
+        const walkinDateInput = document.getElementById('walkin-date-filter');
+        if (walkinDateInput && walkinDateInput.value) {
+          formData.append('walkin_date', walkinDateInput.value);
+        } else {
+          // optional: append empty to make sure server sees the field
+          formData.append('walkin_date', '');
+        }
+
+        walkinInsertSubmit.disabled = true;
+        walkinInsertSubmit.textContent = 'Inserting...';
+        fetch('insert_walkin.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          walkinInsertSubmit.disabled = false;
+          walkinInsertSubmit.textContent = 'Insert';
+          if (data && data.success) {
+            closeWalkinModal();
+            // refresh the table or page to reflect new walk-in
+            if (walkinTable) {
+              location.reload();
+            }
+          } else {
+            alert(data.message || 'Failed to insert walk-in');
+          }
+        })
+        .catch(err => {
+          walkinInsertSubmit.disabled = false;
+          walkinInsertSubmit.textContent = 'Insert';
+          console.error('Insert walkin error', err);
+          alert('Network error while inserting walk-in');
+        });
+      });
+    }
 });
 </script>
 <style>
 .modal-overlay {
-    position: fixed;
-    z-index: 9999;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background: rgba(44,62,80,0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 28, 33, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
 }
-.modal-content {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(60,60,60,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
-    padding: 32px 32px 24px 32px;
-    min-width: 340px;
-    max-width: 95vw;
-    text-align: center;
-    position: relative;
+.modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 420px;
+  max-width: calc(100% - 40px);
+  box-shadow: 0 12px 40px rgba(16,185,129,0.12);
+  overflow: hidden;
+  position: relative;
+  transform: translateY(0);
+  transition: transform .18s ease;
 }
-.modal-header h2 {
-    margin: 0;
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
 }
-.modal-footer {
-    margin-top: 10px;
+.modal-card-header {
+  padding: 20px 24px 8px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: center;
+}.modal-title {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+  font-weight: 700;
 }
-.modal-delete-btn {
-    background: #e74c3c;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 28px;
-    font-size: 1.08rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.18s;
+.modal-sub {
+  margin: 6px 0 0 0;
+  color: #6b7280;
+  font-size: 13px;
 }
-.modal-delete-btn:hover {
-    background: #c0392b;
+.modal-card-body {
+  padding: 18px 24px 12px 24px;
 }
-.modal-cancel-btn {
-    background: #f4f6fa;
-    color: #444;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 28px;
-    font-size: 1.08rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.18s;
+.walkin-form .form-row { margin-bottom: 10px; }
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  color: #111827;
+  box-sizing: border-box;
 }
-.modal-cancel-btn:hover {
-    background: #e0e0e0;
+.form-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96,165,250,0.08);
+}
+.modal-card-footer {
+  padding: 12px 24px 18px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+.btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-primary {
+  background: #10b981;
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.12);
+}
+.btn-primary:active { transform: translateY(1px); }
+.btn-secondary {
+  background: #f3f4f6;
+  color: #111827;
 }
 .clients-tab-title {
     background: none;
@@ -505,5 +825,25 @@ document.addEventListener('DOMContentLoaded', function() {
     cursor: pointer;
 }
 
+/* Insert button style (walk-in tab) */
+.insert-btn {
+  background: #506C84;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.insert-btn i { font-size: 0.95rem; }
+
+/* Reuse modal styles already defined, but ensure walkin modal overlay appears above page */
+#walkinInsertModal .modal-content {
+  min-width: 320px;
+}
 </style>
 </html>
