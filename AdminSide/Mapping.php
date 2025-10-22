@@ -1366,46 +1366,91 @@ while ($row = $result->fetch_assoc()) {
         map.createPane('pane_OldMap');
         map.getPane('pane_OldMap').style.zIndex = 405;
         map.getPane('pane_OldMap').style['mix-blend-mode'] = 'normal';
-        var layer_OldMap_1 = new L.geoJson(json_oldmap_floor1, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_oldmap_floor1',
-            layerName: 'layer_OldMap_1',
-            pane: 'pane_OldMap',
-            onEachFeature: pop_Floor1, // reuse popup logic
-            style: style_OldMap_0,
-        });
-        var layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_oldmap_floor1_4',
-            layerName: 'layer_OldMap_4',
-            pane: 'pane_OldMap',
-            onEachFeature: pop_Floor1,
-            style: style_OldMap_0,
-        });
-        bounds_group.addLayer(layer_OldMap_1);
-        bounds_group.addLayer(layer_OldMap_4);
 
+        // --- Robust OldMap JSON handling (fixes case-sensitive hosting issues) ---
+        (function() {
+            function getJsonGlobal(name) {
+                // Try a few common casing variants to be tolerant to case mismatches in included scripts
+                var variants = [
+                    name,
+                    name.replace('oldmap','oldMap'),
+                    name.replace('oldmap','OldMap'),
+                    name.replace(/([A-Z])/g, '_$1').toLowerCase()
+                ];
+                for (var i = 0; i < variants.length; i++) {
+                    var v = variants[i];
+                    try {
+                        if (typeof window[v] !== 'undefined') return window[v];
+                    } catch (e) {}
+                }
+                // final try: enumerate window keys for a case-insensitive match
+                var lname = name.toLowerCase();
+                for (var key in window) {
+                    try {
+                        if (key.toLowerCase() === lname) return window[key];
+                    } catch (e) {}
+                }
+                return undefined;
+            }
+
+            var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
+            var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
+
+            if (json_oldmap_floor1_data) {
+                window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, {
+                    attribution: '',
+                    interactive: true,
+                    dataVar: 'json_oldmap_floor1',
+                    layerName: 'layer_OldMap_1',
+                    pane: 'pane_OldMap',
+                    onEachFeature: pop_Floor1, // reuse popup logic
+                    style: style_OldMap_0,
+                });
+            } else {
+                window.layer_OldMap_1 = null;
+            }
+
+            if (json_oldmap_floor1_4_data) {
+                window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, {
+                    attribution: '',
+                    interactive: true,
+                    dataVar: 'json_oldmap_floor1_4',
+                    layerName: 'layer_OldMap_4',
+                    pane: 'pane_OldMap',
+                    onEachFeature: pop_Floor1,
+                    style: style_OldMap_0,
+                });
+            } else {
+                window.layer_OldMap_4 = null;
+            }
+
+            if (window.layer_OldMap_1) bounds_group.addLayer(window.layer_OldMap_1);
+            if (window.layer_OldMap_4) bounds_group.addLayer(window.layer_OldMap_4);
+        })();
+ 
         // Only add Section 1 by default
         map.addLayer(layer_Floor1);
         map.addLayer(layer_Floor1_2);
         map.addLayer(layer_Floor1_3);
         map.addLayer(layer_Floor1_4);
-        addSectionLabels(layer_Floor1);
-        addSectionLabels(layer_Floor1_2);
-        addSectionLabels(layer_Floor1_3);
-        addSectionLabels(layer_Floor1_4);
-        resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
-
-        // --- Section Toggle Button Logic ---
-        var currentFloor = 1; // 1 for first, 2 for second
-        function showSection(section) {
-            // Remove all section layers for both floors
+         addSectionLabels(layer_Floor1);
+         addSectionLabels(layer_Floor1_2);
+         addSectionLabels(layer_Floor1_3);
+         addSectionLabels(layer_Floor1_4);
+         resetLabels([layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4]);
+ 
+         // --- Section Toggle Button Logic ---
+         var currentFloor = 1; // 1 for first, 2 for second
+         function showSection(section) {
+             // Remove all section layers for both floors
             [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4, layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4, layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4, layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
-            if (currentFloor === 1) {
+            var removeList = [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4, layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4, layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4];
+            if (window.layer_OldMap_1) removeList.push(window.layer_OldMap_1);
+            if (window.layer_OldMap_4) removeList.push(window.layer_OldMap_4);
+            removeList.forEach(function(l) { if (l && map.hasLayer(l)) map.removeLayer(l); });
+             if (currentFloor === 1) {
                 if (section === 'all') {
                     map.addLayer(layer_Floor1);
                     map.addLayer(layer_Floor1_2);
@@ -1597,12 +1642,13 @@ map.on("zoomend", function(){
     if (map.hasLayer(layer_Floor3_2)) visibleLayers.push(layer_Floor3_2);
     if (map.hasLayer(layer_Floor3_3)) visibleLayers.push(layer_Floor3_3);
     if (map.hasLayer(layer_Floor3_4)) visibleLayers.push(layer_Floor3_4);
-    if (map.hasLayer(layer_OldMap_1)) visibleLayers.push(layer_OldMap_1);
-    if (map.hasLayer(layer_OldMap_4)) visibleLayers.push(layer_OldMap_4);
+    if (window.layer_OldMap_1 && map.hasLayer(window.layer_OldMap_1)) visibleLayers.push(window.layer_OldMap_1);
+    if (window.layer_OldMap_4 && map.hasLayer(window.layer_OldMap_4)) visibleLayers.push(window.layer_OldMap_4);
     resetLabels(visibleLayers);
-});
-
-
+ });
+ 
+// ...existing code...
+ 
 // Add event listeners for popup buttons
 document.getElementById('cancelButton').addEventListener('click', function() {
     document.getElementById('popupOverlay').classList.remove('active');
@@ -1762,11 +1808,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             else if (floor === "4") {
                 currentFloor = 4;
-                map.addLayer(layer_OldMap_1);
-                map.addLayer(layer_OldMap_4);
-                addSectionLabels(layer_OldMap_1);
-                addSectionLabels(layer_OldMap_4);
-                resetLabels([layer_OldMap_1, layer_OldMap_4]);
+                if (window.layer_OldMap_1) { map.addLayer(window.layer_OldMap_1); addSectionLabels(window.layer_OldMap_1); }
+                if (window.layer_OldMap_4) { map.addLayer(window.layer_OldMap_4); addSectionLabels(window.layer_OldMap_4); }
+                var visibleOld = [];
+                if (window.layer_OldMap_1) visibleOld.push(window.layer_OldMap_1);
+                if (window.layer_OldMap_4) visibleOld.push(window.layer_OldMap_4);
+                if (visibleOld.length) resetLabels(visibleOld);
             }
             // Set 'Show All Sections' button as active
            
@@ -1949,8 +1996,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (map.hasLayer(layer_Floor3_2)) visibleLayers.push(layer_Floor3_2);
             if (map.hasLayer(layer_Floor3_3)) visibleLayers.push(layer_Floor3_3);
             if (map.hasLayer(layer_Floor3_4)) visibleLayers.push(layer_Floor3_4);
-            if (map.hasLayer(layer_OldMap_1)) visibleLayers.push(layer_OldMap_1);
-            if (map.hasLayer(layer_OldMap_4)) visibleLayers.push(layer_OldMap_4);
+            if (window.layer_OldMap_1 && map.hasLayer(window.layer_OldMap_1)) visibleLayers.push(window.layer_OldMap_1);
+            if (window.layer_OldMap_4 && map.hasLayer(window.layer_OldMap_4)) visibleLayers.push(window.layer_OldMap_4);
 
             visibleLayers.some(function(sectionLayer) {
                 var matchLayer = null;

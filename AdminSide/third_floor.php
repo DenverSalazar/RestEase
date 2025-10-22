@@ -1169,7 +1169,7 @@ document.getElementById('insertButton').addEventListener('click', function() {
     var params = new URLSearchParams({
         nicheID: nicheID
     });
-    window.location.href = 'insert.php?' + params.toString();
+    window.location.href = 'Insert.php?' + params.toString();
 });
 
         // Close popup when clicking outside

@@ -417,7 +417,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                           'Description'=> $row['Description'],
                           'Validity'   => $row['Validity']
                       ]);
-                     echo '<td><a href="editniches.php?' . $params . '" class="action-btn" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:500;font-size:0.92rem;display:inline-block;min-width:40px;text-align:center;">Edit</a></td>';
+                     echo '<td><a href="EditNiches.php?' . $params . '" class="action-btn" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:500;font-size:0.92rem;display:inline-block;min-width:40px;text-align:center;">Edit</a></td>';
                    } else {
                       echo '<td><a href="Insert.php?id=' . intval($row['id']) . '" class="action-btn" style="background:#0077b6;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
                   }

@@ -62,7 +62,7 @@
         <div class="associated-by mt-4">
             <p class="text-center"><b>Associated By:</b></p>
             <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
-                <img src="assets/logo garcia.png" alt="Logo 1" style="height: 52px; width: auto;">
+                <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 52px; width: auto;">
                 <img src="assets/RestLogo.webp" alt="Logo 3" style="height: 60px; width: auto;">
                    <img src="assets/BSU Logo.png" alt="Logo 3" style="height: 53px; width: auto;">
                       <img src="assets/AICS Logo.png" alt="Logo 3" style="height: 60px; width: auto;">

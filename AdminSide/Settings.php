@@ -173,9 +173,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['save_profile']) || i
 
         <?php
         // include tab partials (keeps original behavior/variables intact)
-        include __DIR__ . '/tabs/account_tab.php';
-        include __DIR__ . '/tabs/archive_tab.php';
-        include __DIR__ . '/tabs/notification_tab.php';
+        include './tabs/account_tab.php';
+        include './tabs/archive_tab.php';
+        include './tabs/notification_tab.php';
         ?>
 
         <!-- Unsaved changes bar -->

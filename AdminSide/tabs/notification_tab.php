@@ -307,7 +307,7 @@
     #notificationTab .notif-page-subtitle { color: #9aa3ad; font-size: 0.98rem; margin-bottom: 14px; }
 
     /* search */
-    #notifSearch { width:100%; height:44px; padding:12px 16px 12px 44px; border-radius:12px; border:1px solid #e9eef5; background:#fff; box-shadow:none; font-size:0.98rem; }
+    #notifSearch { width:100%; height:22px; padding:6px 12px 6px 44px; border-radius:12px; border:1px solid #e9eef5; background:#fff; box-shadow:none; font-size:0.98rem; }
     #notificationTab i.fas.fa-search { left:14px; top:50%; color:#9aa3ad; }
 
     /* tabs */
@@ -494,40 +494,69 @@
     const tpl = document.createElement('div');
     tpl.id = 'deleteAllConfirmModal';
     tpl.style.display = 'none';
+
+    // Use the exact Records.php modal markup/styles so size matches (width:520px, padding, radii, etc.)
     tpl.innerHTML = `
-      <div class="dac-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:10000;">
-        <div class="dac-panel" style="width:520px;max-width:92%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.18);font-family:inherit;">
-          <div style="background:#fde7ea;padding:26px 20px;display:flex;align-items:center;justify-content:center;">
-            <div style="width:64px;height:64px;border-radius:50%;background:#f8d3d8;display:flex;align-items:center;justify-content:center;">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#e04a5f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
+      <div id="deleteModal" class="modal-overlay" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(0,0,0,0.35); z-index:10000;">
+        <div class="modal-content" style="background:#fff; border-radius:10px; width:520px; max-width:94%; padding:22px 26px; box-shadow:0 18px 48px rgba(0,0,0,0.16);">
+          <div class="modal-card-header" style="padding-top:2px;padding-bottom:8px;">
+             <div style="display:flex;align-items:center;justify-content:center; padding-bottom:10px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#fdecec;display:flex;align-items:center;justify-content:center;">  
+            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i> </div>
           </div>
-          <div style="padding:22px 28px 16px;text-align:center;">
-            <div id="dacMessage" style="color:#d33;font-weight:600;font-size:1.05rem;margin-bottom:14px;"></div>
-            <div id="dacSub" style="color:#666;font-size:0.985rem;margin-bottom:22px;">This action cannot be undone.</div>
-            <div style="display:flex;justify-content:center;gap:18px;">
-              <button id="dacConfirmBtn" style="background:#0077B6;color:#fff;border:none;padding:10px 28px;border-radius:24px;cursor:pointer;font-weight:600;">Confirm</button>
-              <button id="dacCancelBtn" style="background:transparent;color:#999;border:1px solid #e7e7e7;padding:10px 24px;border-radius:24px;cursor:pointer;">Go Back</button>
-            </div>
+            <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
+          </div>
+          <div class="modal-body" style="margin:18px 0 2px 0; text-align:center;">
+            <p id="deleteModalText" style="color:#444;font-size:1.07rem;margin:0;">
+              Are you sure you want to archive this record?<br>
+              This action will move the record to the archive section.
+            </p>
+          </div>
+          <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+            <button id="modalDeleteBtn" class="modal-delete-btn" style="background:#ff6b6b;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:700;">Archive</button>
+            <button id="modalCancelBtn" class="modal-cancel-btn" style="background:#fff;color:#6d7780;border:1px solid #e7e7e7;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:700;">Cancel</button>
           </div>
         </div>
       </div>
     `;
     document.body.appendChild(tpl);
+
     // simple show helper
     window.showDeleteConfirm = function(message, sub, onConfirm){
-      const root = document.getElementById('deleteAllConfirmModal');
-      if (!root) return;
-      root.style.display = 'block';
-      const msg = root.querySelector('#dacMessage'); if (msg) msg.textContent = message || 'Are you sure?';
-      const subEl = root.querySelector('#dacSub'); if (subEl) subEl.textContent = sub || 'This action cannot be undone.';
-      const confirmBtn = root.querySelector('#dacConfirmBtn');
-      const cancelBtn = root.querySelector('#dacCancelBtn');
-      function cleanup(){ root.style.display='none'; confirmBtn.removeEventListener('click', onC); cancelBtn.removeEventListener('click', onX); }
-      function onC(e){ try { if (typeof onConfirm === 'function') onConfirm(); } finally { cleanup(); } }
-      function onX(e){ cleanup(); }
-      confirmBtn.addEventListener('click', onC);
-      cancelBtn.addEventListener('click', onX);
+      const wrapper = document.getElementById('deleteAllConfirmModal');
+      const modal = document.getElementById('deleteModal');
+      if (!wrapper || !modal) return;
+      wrapper.style.display = 'block';
+      modal.style.display = 'flex';
+      const msgEl = modal.querySelector('#deleteModalText');
+      if (msgEl) msgEl.innerHTML = message ? (message + (sub ? '<br><small style="color:#666;">' + sub + '</small>' : '')) : (sub || 'This action cannot be undone.');
+      const confirmBtn = modal.querySelector('#modalDeleteBtn');
+      const cancelBtn = modal.querySelector('#modalCancelBtn');
+
+      // cleanup helpers
+      function cleanupHandlers() {
+        if (confirmBtn) confirmBtn.removeEventListener('click', onConfirmHandler);
+        if (cancelBtn) cancelBtn.removeEventListener('click', onCancelHandler);
+        modal.removeEventListener('click', onOverlayClick);
+        wrapper.style.display = 'none';
+        modal.style.display = 'none';
+      }
+      function onConfirmHandler(e){
+        e.preventDefault();
+        try { if (typeof onConfirm === 'function') onConfirm(); } finally { cleanupHandlers(); }
+      }
+      function onCancelHandler(e){
+        e.preventDefault();
+        cleanupHandlers();
+      }
+      function onOverlayClick(e){
+        if (e.target === modal) { cleanupHandlers(); }
+      }
+
+      if (confirmBtn) confirmBtn.addEventListener('click', onConfirmHandler);
+      if (cancelBtn) cancelBtn.addEventListener('click', onCancelHandler);
+      // allow clicking outside to close
+      modal.addEventListener('click', onOverlayClick);
     };
   })();
 
@@ -1066,7 +1095,7 @@
            renderList(currentFilter, $('notifSearch') ? $('notifSearch').value : '');
          } else {
            // 3) no explicit selection -> ask confirmation then act on all matching notifications
-           showDeleteConfirm('Are you sure you want to delete all matching notifications?', '', function(){
+           showDeleteConfirm('Are you sure you want to delete all notifications?', '', function(){
              let fromDate = null, toDate = null;
              try {
                const d = getDateInputs();

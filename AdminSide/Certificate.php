@@ -154,7 +154,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
       <div id="certificatePreview">
         <div class="header">
           <div class="logos">
-            <img src="../assets/logo garcia.png" alt="Padre Garcia Icon">
+            <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon">
             <div class="title">
               Republic of the Philippines<br>
               Province of Batangas<br>
@@ -583,7 +583,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           <div id="certificatePreview" class="card" style="max-width:850px; width:850px; background:#f9f9f9;">
             <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0;">
               <!-- Left Logo -->
-              <img src="../assets/logo garcia.png" alt="Padre Garcia Icon" style="height:80px;width:auto;margin-right:32px;align-self:center;">
+              <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon" style="height:80px;width:auto;margin-right:32px;align-self:center;">
               <div style="flex:1;text-align:center;">
                 <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
                   Republic of the Philippines<br>

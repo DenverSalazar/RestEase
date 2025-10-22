@@ -260,20 +260,22 @@ if (!isset($_SESSION['admin_id'])) {
     </div>
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay" style="display:none;">
-      <div class="modal-content">
-        <div class="modal-header">
-          <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
-          <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Archive</h2>
+      <div class="modal-card modal-large" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-card-header" style="padding-top:22px;">
+          <div style="display:flex;align-items:center;justify-content:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#fdecec;display:flex;align-items:center;justify-content:center;">  
+            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i> </div>
+          </div>
+          <h2 id="deleteModalTitle" style="color:#e04a5f;margin:12px 0 6px;font-size:1.25rem;text-align:center;">Confirm Archive</h2>
         </div>
-        <div class="modal-body" style="margin:18px 0 24px 0;">
-          <p style="color:#444;font-size:1.07rem;margin:0;">
-            Are you sure you want to archive this client?<br>
-            This action will move the client to the archive section.
+        <div class="modal-card-body" style="text-align:center;padding-bottom:18px;">
+          <p id="deleteModalText" style="color:#444;font-size:1.03rem;margin:0 0 6px;">
+            Are you sure you want to archive this Client?<br>This action will move the Archvive Client to the archive section.
           </p>
         </div>
-        <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
-          <button id="modalDeleteBtn" class="modal-delete-btn">Archive</button>
-          <button id="modalCancelBtn" class="modal-cancel-btn">Cancel</button>
+        <div class="modal-card-footer" style="display:flex;justify-content:center;gap:14px;padding-top:6px;">
+          <button id="modalDeleteBtn" class="modal-delete-btn" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;cursor:pointer;">Archive</button>
+          <button id="modalCancelBtn" class="modal-cancel-btn" style="background:#9aa3ad;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:700;">Cancel</button>
         </div>
       </div>
     </div>
@@ -290,6 +292,29 @@ if (!isset($_SESSION['admin_id'])) {
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure both modals (archive confirmation and walk-in insert) are attached to document.body
+    // and have overlay click-to-close handlers. Moving them avoids visual clipping when toggling tabs.
+    (function normalizeModals() {
+        try {
+            const mods = [
+                { id: 'deleteModal', z: '12020' },
+                { id: 'walkinInsertModal', z: '12010' } // walkin below delete by default
+            ];
+            mods.forEach(m => {
+                const modal = document.getElementById(m.id);
+                if (!modal) return;
+                if (modal.parentElement !== document.body) document.body.appendChild(modal);
+                modal.style.zIndex = modal.style.zIndex || m.z;
+                if (!modal.style.display || modal.style.display === '') modal.style.display = 'none';
+                // clicking the overlay (outside inner content) closes the modal
+                modal.addEventListener('click', function (ev) {
+                    if (ev.target === modal) modal.style.display = 'none';
+                });
+            });
+        } catch (err) {
+            console.error('normalizeModals error', err);
+        }
+    })();
     // Initialize DataTables for Manage Clients (existing)
     const dataTable = $('#clients-table').DataTable({
         "paging": true,
@@ -842,8 +867,15 @@ document.addEventListener('DOMContentLoaded', function() {
 .insert-btn i { font-size: 0.95rem; }
 
 /* Reuse modal styles already defined, but ensure walkin modal overlay appears above page */
-#walkinInsertModal .modal-content {
+#walkinInsertModal .modal-card {
   min-width: 320px;
 }
+
+/* make delete modal larger and style action buttons to match screenshot */
+.modal-card.modal-large { width: 520px; max-width: calc(100% - 40px); box-shadow: 0 20px 60px rgba(0,0,0,0.18); border-radius:12px; }
+.modal-delete-btn { background:#e04a5f; color:#fff; border:none; padding:10px 22px; border-radius:8px; font-weight:700; cursor:pointer; }
+.modal-cancel-btn { background:#9aa3ad; color:#fff; border:none; padding:10px 22px; border-radius:8px; font-weight:700; cursor:pointer; }
+.modal-card-header h2 { margin:0; }
+.modal-card .modal-card-body p { margin:0; }
 </style>
 </html>

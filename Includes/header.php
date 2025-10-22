@@ -1,10 +1,63 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
+
+// Use __DIR__ so includes work regardless of the current working directory
 include_once __DIR__ . '/db.php';
 
 // Provide defaults but allow including page to override by setting $adminName / $adminProfilePic before include
 if (!isset($adminName) || !$adminName) $adminName = 'Admin';
 if (!isset($adminProfilePic) || !$adminProfilePic) $adminProfilePic = '../assets/Default Image.jpg';
+
+// Compute web base for the project using filesystem paths so URLs don't duplicate segments.
+// This finds the project root (one level above Includes) and converts it to a URL path
+$projectRootFs = realpath(__DIR__ . '/..') ?: '';
+$docRootFs = realpath($_SERVER['DOCUMENT_ROOT']) ?: '';
+$appBase = '';
+if ($projectRootFs && $docRootFs && strpos($projectRootFs, $docRootFs) === 0) {
+    // slice off document root and normalize to forward slashes, ensure leading slash (unless root)
+    $appBase = str_replace('\\', '/', substr($projectRootFs, strlen($docRootFs)));
+    $appBase = $appBase === '' ? '' : ('/' . ltrim($appBase, '/'));
+} else {
+    // fallback: no document-root relation detected — use dirname of SCRIPT_NAME's top-level folder
+    $parts = explode('/', trim($_SERVER['SCRIPT_NAME'] ?? '', '/'));
+    $appBase = isset($parts[0]) && $parts[0] !== '' ? '/' . $parts[0] : '';
+}
+
+// Settings URL to use in onclick/navigation (uses project web base)
+$settingsUrl = $appBase . '/AdminSide/Settings.php?tab=notification';
+
+// Resolve profile picture to a usable web URL:
+// - If $adminProfilePic is an absolute URL or root-relative path, keep it.
+// - If it can be resolved to a real filesystem path under document root, convert to web path.
+// - Otherwise, prepend $appRoot to the (normalized) relative path.
+function resolveProfilePicUrl($path, $appRoot) {
+    if (!$path) return $appRoot . '/assets/Default Image.jpg';
+    $p = trim($path);
+    // If already an absolute url or root-relative path
+    if (preg_match('#^(https?:)?//#i', $p) || strpos($p, '/') === 0) {
+        return $p;
+    }
+    // Try to resolve filesystem absolute path
+    $docRootReal = realpath($_SERVER['DOCUMENT_ROOT']) ?: '';
+    $candidates = [
+        $p,
+        __DIR__ . '/' . $p,
+        __DIR__ . '/../' . $p,
+        realpath($p)
+    ];
+    foreach ($candidates as $cand) {
+        if (!$cand) continue;
+        $real = realpath($cand) ?: $cand;
+        if ($docRootReal && strpos($real, $docRootReal) === 0) {
+            $web = str_replace($docRootReal, '', $real);
+            $web = str_replace('\\', '/', $web);
+            return ($web[0] === '/') ? $web : '/' . $web;
+        }
+    }
+    // Fallback: prepend app root
+    $normalized = str_replace('\\', '/', $p);
+    return $appRoot . '/' . ltrim($normalized, '/');
+}
 
 // If an admin is logged in, try to fetch profile info (best-effort)
 if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn)) {
@@ -21,6 +74,9 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
         $stmt->close();
     }
 }
+
+// Normalize profile pic URL for output (pass $appBase)
+$adminProfilePic = resolveProfilePicUrl($adminProfilePic, $appBase);
 ?>
 <header class="header">
   <div class="header-left">
@@ -32,9 +88,9 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
   </div>
   <div class="user-profile">
     <div class="profile-info">
-      <!-- notification bell placed to the left of the avatar; inline styles keep layout/size unchanged -->
+      <!-- notification bell placed to the left of the avatar; use generated settings URL -->
       <button class="notif-bell" aria-label="Notifications" title="Notifications"
-        onclick="window.location.href='/RestEase/AdminSide/Settings.php?tab=notification';"
+        onclick="window.location.href='<?php echo htmlspecialchars($settingsUrl, ENT_QUOTES); ?>';"
         style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;">
         <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
         <!-- numeric unread badge (reduced size, circular, centered) -->
@@ -42,7 +98,7 @@ if (isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']) && isset($conn
               style="display:none;position:absolute;top:-8px;right:-8px;background:#e74c3c;color:#fff;font-size:0.6rem;font-weight:700;padding:0;line-height:14px;width:14px;height:14px;border-radius:50%;min-width:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;z-index:3;">
         </span>
       </button>
-      <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
+      <img src="<?php echo htmlspecialchars($adminProfilePic, ENT_QUOTES); ?>" alt="Profile" class="profile-avatar">
       <div>
         <div class="profile-name"><?php echo htmlspecialchars($adminName); ?></div>
         <div class="profile-role">Admin</div>

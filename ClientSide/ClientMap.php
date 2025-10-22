@@ -746,17 +746,57 @@ while ($row = $result->fetch_assoc()) {
         var layer_Floor3_3 = new L.geoJson(json_Floor3_3, { attribution: '', interactive: true, dataVar: 'json_Floor3_3', layerName: 'layer_Floor3_3', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
         var layer_Floor3_4 = new L.geoJson(json_Floor3_4, { attribution: '', interactive: true, dataVar: 'json_Floor3_4', layerName: 'layer_Floor3_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
 
-        var layer_OldMap_1 = new L.geoJson(json_oldmap_floor1, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1', layerName: 'layer_OldMap_1', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
-        var layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1_4', layerName: 'layer_OldMap_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+        // --- Robust OldMap JSON handling (fixes case-sensitive hosting issues) ---
+        (function() {
+            function getJsonGlobal(name) {
+                // Try a few common casing variants to be tolerant to case mismatches in included scripts
+                var variants = [
+                    name,
+                    name.replace('oldmap','oldMap'),
+                    name.replace('oldmap','OldMap'),
+                    name.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()
+                ];
+                for (var i = 0; i < variants.length; i++) {
+                    var v = variants[i];
+                    try {
+                        if (typeof window[v] !== 'undefined') return window[v];
+                    } catch (e) {}
+                }
+                // final try: enumerate window keys for a case-insensitive match
+                var lname = name.toLowerCase();
+                for (var key in window) {
+                    if (key.toLowerCase() === lname) return window[key];
+                }
+                return undefined;
+            }
+
+            var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
+            var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
+
+            if (json_oldmap_floor1_data) {
+                window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1', layerName: 'layer_OldMap_1', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+            } else {
+                window.layer_OldMap_1 = null;
+            }
+            if (json_oldmap_floor1_4_data) {
+                window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1_4', layerName: 'layer_OldMap_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
+            } else {
+                window.layer_OldMap_4 = null;
+            }
+        })();
 
         // --- Floor Control Logic ---
         var currentFloor = 1; // 1: First, 2: Second, 3: Third, 4: Old
         function showFloor(floor) {
-            // Remove all section layers for all floors
+            // Remove all section layers for all floors (only include existing layers)
+            var allLayers = [];
             [layer_Floor1, layer_Floor1_2, layer_Floor1_3, layer_Floor1_4,
              layer_Floor2, layer_Floor2_2, layer_Floor2_3, layer_Floor2_4,
-             layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4,
-             layer_OldMap_1, layer_OldMap_4].forEach(function(l) {
+             layer_Floor3, layer_Floor3_2, layer_Floor3_3, layer_Floor3_4].forEach(function(l){ if (l) allLayers.push(l); });
+            if (window.layer_OldMap_1) allLayers.push(window.layer_OldMap_1);
+            if (window.layer_OldMap_4) allLayers.push(window.layer_OldMap_4);
+
+            allLayers.forEach(function(l) {
                 if (map.hasLayer(l)) map.removeLayer(l);
             });
 
@@ -766,10 +806,15 @@ while ($row = $result->fetch_assoc()) {
                 if (map.hasLayer(layer_border_1)) {
                     map.removeLayer(layer_border_1);
                 }
-                // Set larger max bounds for Old Cemetery
-                var oldMapBounds = layer_OldMap_1.getBounds().extend(layer_OldMap_4.getBounds());
-                var oldMapPaddedBounds = expandBounds(oldMapBounds, 2.0); // 100% larger for more panning
-                map.setMaxBounds(oldMapPaddedBounds);
+                // Set larger max bounds for Old Cemetery if OldMap layers exist
+                if (window.layer_OldMap_1 && window.layer_OldMap_4) {
+                    var oldMapBounds = window.layer_OldMap_1.getBounds().extend(window.layer_OldMap_4.getBounds());
+                    var oldMapPaddedBounds = expandBounds(oldMapBounds, 2.0); // 100% larger for more panning
+                    map.setMaxBounds(oldMapPaddedBounds);
+                } else {
+                    // fallback: keep default padded bounds if OldMap data missing
+                    map.setMaxBounds(paddedBounds);
+                }
             } else {
                 // Add border for other floors
                 if (!map.hasLayer(layer_border_1)) {
@@ -778,6 +823,7 @@ while ($row = $result->fetch_assoc()) {
                 // Reset to default padded bounds for other floors
                 map.setMaxBounds(paddedBounds);
             }
+
             // Show section buttons for selected floor
             var sectionButtons = document.getElementById('sectionButtons');
             sectionButtons.innerHTML = '';
@@ -839,8 +885,8 @@ while ($row = $result->fetch_assoc()) {
                         Show All Sections
                     </button>
                 `;
-                map.addLayer(layer_OldMap_1);
-                map.addLayer(layer_OldMap_4);
+                if (window.layer_OldMap_1) map.addLayer(window.layer_OldMap_1);
+                if (window.layer_OldMap_4) map.addLayer(window.layer_OldMap_4);
             }
             // Re-bind section button events
             bindSectionButtonEvents();
@@ -1194,164 +1240,60 @@ document.addEventListener('DOMContentLoaded', function() {
    // --- Navigate map to niche (search across all floors/sections) ---
    function goToNiche(nicheID) {
        // Define mapping of layers to floor/section (only include layer vars that exist)
-       var sectionList = [
-           { layer: window.layer_Floor1, floor:1, section:1 },
-           { layer: window.layer_Floor1_2, floor:1, section:2 },
-           { layer: window.layer_Floor1_3, floor:1, section:3 },
-           { layer: window.layer_Floor1_4, floor:1, section:4 },
-           { layer: window.layer_Floor2, floor:2, section:1 },
-           { layer: window.layer_Floor2_2, floor:2, section:2 },
-           { layer: window.layer_Floor2_3, floor:2, section:3 },
-           { layer: window.layer_Floor2_4, floor:2, section:4 },
-           { layer: window.layer_Floor3, floor:3, section:1 },
-           { layer: window.layer_Floor3_2, floor:3, section:2 },
-           { layer: window.layer_Floor3_3, floor:3, section:3 },
-           { layer: window.layer_Floor3_4, floor:3, section:4 },
-           { layer: window.layer_OldMap_1, floor:4, section:1 },
-           { layer: window.layer_OldMap_4, floor:4, section:4 }
-       ];
-       var found = null;
-       var foundFloor = null;
-       var foundSection = null;
-       for (var i = 0; i < sectionList.length; i++) {
-           var s = sectionList[i];
-           if (!s.layer) continue;
-           s.layer.eachLayer(function(layer) {
-               try {
-                   if (layer.feature && layer.feature.properties && String(layer.feature.properties['nicheID']) === String(nicheID)) {
-                       found = layer;
-                       foundFloor = s.floor;
-                       foundSection = s.section;
-                   }
-               } catch (err) {}
-           });
-           if (found) break;
+       var sectionList = [];
+       if (window.layer_Floor1) sectionList.push({ layer: window.layer_Floor1, floor:1, section:1 });
+       if (window.layer_Floor1_2) sectionList.push({ layer: window.layer_Floor1_2, floor:1, section:2 });
+       if (window.layer_Floor1_3) sectionList.push({ layer: window.layer_Floor1_3, floor:1, section:3 });
+       if (window.layer_Floor1_4) sectionList.push({ layer: window.layer_Floor1_4, floor:1, section:4 });
+       if (window.layer_Floor2) sectionList.push({ layer: window.layer_Floor2, floor:2, section:1 });
+       if (window.layer_Floor2_2) sectionList.push({ layer: window.layer_Floor2_2, floor:2, section:2 });
+       if (window.layer_Floor2_3) sectionList.push({ layer: window.layer_Floor2_3, floor:2, section:3 });
+       if (window.layer_Floor2_4) sectionList.push({ layer: window.layer_Floor2_4, floor:2, section:4 });
+       if (window.layer_Floor3) sectionList.push({ layer: window.layer_Floor3, floor:3, section:1 });
+       if (window.layer_Floor3_2) sectionList.push({ layer: window.layer_Floor3_2, floor:3, section:2 });
+       if (window.layer_Floor3_3) sectionList.push({ layer: window.layer_Floor3_3, floor:3, section:3 });
+       if (window.layer_Floor3_4) sectionList.push({ layer: window.layer_Floor3_4, floor:3, section:4 });
+       if (window.layer_OldMap_1) sectionList.push({ layer: window.layer_OldMap_1, floor:4, section:1 });
+       if (window.layer_OldMap_4) sectionList.push({ layer: window.layer_OldMap_4, floor:4, section:4 });
+
+           var found = null;
+           var foundFloor = null;
+           var foundSection = null;
+           for (var i = 0; i < sectionList.length; i++) {
+               var s = sectionList[i];
+               if (!s.layer) continue;
+               s.layer.eachLayer(function(layer) {
+                   try {
+                       if (layer.feature && layer.feature.properties && String(layer.feature.properties['nicheID']) === String(nicheID)) {
+                           found = layer;
+                           foundFloor = s.floor;
+                           foundSection = s.section;
+                       }
+                   } catch (err) {}
+               });
+               if (found) break;
+           }
+           if (!found) {
+               // fallback to visible-layer search (shouldn't usually happen)
+               alert('Niche not found: ' + nicheID);
+               return;
+           }
+           // Ensure correct floor & section visible, then center and open
+           showFloor(foundFloor);
+           // small delay to let layers be added
+           setTimeout(function() {
+               // show only the section
+               showSection(String(foundSection));
+               // center and open
+               var center;
+               if (found.getBounds) center = found.getBounds().getCenter();
+               else if (found.getLatLng) center = found.getLatLng();
+               if (center) map.setView(center, Math.max(map.getZoom(), map.getMaxZoom() - 1), { animate: true });
+               // highlight then open
+               highlightFeature({ target: found });
+               setTimeout(function() { found.fire('click'); }, 250);
+           }, 250);
        }
-       if (!found) {
-           // fallback to visible-layer search (shouldn't usually happen)
-           alert('Niche not found: ' + nicheID);
-           return;
-       }
-       // Ensure correct floor & section visible, then center and open
-       showFloor(foundFloor);
-       // small delay to let layers be added
-       setTimeout(function() {
-           // show only the section
-           showSection(String(foundSection));
-           // center and open
-           var center;
-           if (found.getBounds) center = found.getBounds().getCenter();
-           else if (found.getLatLng) center = found.getLatLng();
-           if (center) map.setView(center, Math.max(map.getZoom(), map.getMaxZoom() - 1), { animate: true });
-           // highlight then open
-           highlightFeature({ target: found });
-           setTimeout(function() { found.fire('click'); }, 250);
-       }, 250);
-   }
-   // --- End autocomplete ---
-
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            var query = searchInput.value.trim().toLowerCase();
-            if (!query) return;
-
-            function normalizeName(deceased) {
-                if (!deceased) return '';
-                var firstName = deceased.firstName || '';
-                var middleName = deceased.middleName || '';
-                var lastName = deceased.lastName || '';
-                var suffix = deceased.suffix || '';
-                var middleInitial = middleName ? (middleName.trim().charAt(0).toUpperCase() + '.') : '';
-                var fullName = firstName;
-                if (middleInitial) fullName += ' ' + middleInitial;
-                if (lastName) fullName += ' ' + lastName;
-                if (suffix) fullName += ', ' + suffix;
-                return fullName.trim().toLowerCase();
-            }
-
-            var found = false;
-            var visibleLayers = [];
-            // Only search visible layers (sections for current floor)
-            if (typeof map !== 'undefined') {
-                if (map.hasLayer(window.layer_Floor1)) visibleLayers.push(window.layer_Floor1);
-                if (map.hasLayer(window.layer_Floor1_2)) visibleLayers.push(window.layer_Floor1_2);
-                if (map.hasLayer(window.layer_Floor1_3)) visibleLayers.push(window.layer_Floor1_3);
-                if (map.hasLayer(window.layer_Floor1_4)) visibleLayers.push(window.layer_Floor1_4);
-                if (map.hasLayer(window.layer_Floor2)) visibleLayers.push(window.layer_Floor2);
-                if (map.hasLayer(window.layer_Floor2_2)) visibleLayers.push(window.layer_Floor2_2);
-                if (map.hasLayer(window.layer_Floor2_3)) visibleLayers.push(window.layer_Floor2_3);
-                if (map.hasLayer(window.layer_Floor2_4)) visibleLayers.push(window.layer_Floor2_4);
-                if (map.hasLayer(window.layer_Floor3)) visibleLayers.push(window.layer_Floor3);
-                if (map.hasLayer(window.layer_Floor3_2)) visibleLayers.push(window.layer_Floor3_2);
-                if (map.hasLayer(window.layer_Floor3_3)) visibleLayers.push(window.layer_Floor3_3);
-                if (map.hasLayer(window.layer_Floor3_4)) visibleLayers.push(window.layer_Floor3_4);
-                if (map.hasLayer(window.layer_OldMap_1)) visibleLayers.push(window.layer_OldMap_1);
-                if (map.hasLayer(window.layer_OldMap_4)) visibleLayers.push(window.layer_OldMap_4);
-            }
-
-            visibleLayers.some(function(sectionLayer) {
-                var matchLayer = null;
-                sectionLayer.eachLayer(function(layer) {
-                    var nicheID = layer.feature && layer.feature.properties['nicheID'];
-                    var deceasedArr = deceasedData[nicheID];
-                    if (nicheID && nicheID.toLowerCase() === query) {
-                        matchLayer = layer;
-                        return;
-                    }
-                    if (deceasedArr) {
-                        var arr = Array.isArray(deceasedArr) ? deceasedArr : [deceasedArr];
-                        if (arr.some(function(deceased) {
-                            return normalizeName(deceased).includes(query);
-                        })) {
-                            matchLayer = layer;
-                            return;
-                        }
-                    }
-                });
-                if (matchLayer) {
-                    found = true;
-                    // Zoom in to the center of the niche at max zoom
-                    var center;
-                    if (matchLayer.getBounds) {
-                        center = matchLayer.getBounds().getCenter();
-                    } else if (matchLayer.getLatLng) {
-                        center = matchLayer.getLatLng();
-                    }
-                    if (center) {
-                        map.setView(center, map.getMaxZoom(), { animate: true });
-                    }
-                    highlightFeature({ target: matchLayer });
-                    setTimeout(function() {
-                        matchLayer.fire('click');
-                    }, 300);
-                    return true;
-                }
-                return false;
-            });
-
-            if (!found) {
-                // Highlight the input and explicitly show the error overlay + popup
-                searchInput.style.borderColor = '#fb9a99';
-                if (searchErrorPopup && searchErrorOverlay) {
-                    // Ensure the overlay & popup are visible even if CSS classes are missing
-                    searchErrorOverlay.style.display = 'block';
-                    searchErrorPopup.style.display = 'flex';
-                    searchErrorPopup.style.alignItems = 'center';
-                    searchErrorPopup.style.justifyContent = 'center';
-                    searchErrorPopup.classList.add('active');
-                    searchErrorOverlay.classList.add('active');
-                } else {
-                    // Fallback alert if popup elements are not present
-                    alert('No matching Niche ID or Name found. Please check your entry and try again.');
-                }
-             } else {
-                 if (searchErrorPopup && searchErrorOverlay) {
-                     searchErrorPopup.classList.remove('active');
-                     searchErrorOverlay.classList.remove('active');
-                 }
-             }
-        }
-    });
 
     // Close handler helper (placed inside DOMContentLoaded so elements exist)
     function closeSearchError() {
@@ -1494,4 +1436,3 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 </body>
 </html>
-

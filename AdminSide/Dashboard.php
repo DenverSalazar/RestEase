@@ -8,6 +8,20 @@ if (!isset($_SESSION['admin_id'])) {
 
 include_once '../Includes/db.php';
 
+// --- Add: compute project web base and settings URL (same logic as Includes/header.php) ---
+$projectRootFs = realpath(__DIR__ . '/..') ?: '';
+$docRootFs = realpath($_SERVER['DOCUMENT_ROOT']) ?: '';
+$appBase = '';
+if ($projectRootFs && $docRootFs && strpos($projectRootFs, $docRootFs) === 0) {
+    $appBase = str_replace('\\', '/', substr($projectRootFs, strlen($docRootFs)));
+    $appBase = $appBase === '' ? '' : ('/' . ltrim($appBase, '/'));
+} else {
+    $parts = explode('/', trim($_SERVER['SCRIPT_NAME'] ?? '', '/'));
+    $appBase = isset($parts[0]) && $parts[0] !== '' ? '/' . $parts[0] : '';
+}
+$settingsUrl = $appBase . '/AdminSide/Settings.php?tab=notification';
+// --- end added block ---
+
 // --- REPLACED: handle AJAX notify requests (now requires contact_value) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notify_niche'])) {
     $niche = trim($_POST['notify_niche']);
@@ -932,7 +946,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         <div class="profile-info">
             <!-- notification bell placed to the left of the avatar; inline styles keep layout/size unchanged -->
       <button class="notif-bell" aria-label="Notifications" title="Notifications"
-         onclick="window.location.href='/RestEase/AdminSide/Settings.php?tab=notification';"
+         onclick="window.location.href='<?php echo htmlspecialchars($settingsUrl, ENT_QUOTES); ?>';"
         style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;">
         <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
         <!-- numeric unread badge (small, circular) -->

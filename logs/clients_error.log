@@ -1,0 +1,10 @@
+[21-Oct-2025 19:20:58 Europe/Berlin] PHP Warning:  Undefined variable $conn in C:\xampp\htdocs\RestEase\AdminSide\Clients.php on line 114
+[21-Oct-2025 19:20:58 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in C:\xampp\htdocs\RestEase\AdminSide\Clients.php:114
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\RestEase\AdminSide\Clients.php on line 114
+[21-Oct-2025 19:20:58 Europe/Berlin] PHP Warning:  Undefined variable $conn in C:\xampp\htdocs\RestEase\AdminSide\Clients.php on line 114
+[21-Oct-2025 19:20:58 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in C:\xampp\htdocs\RestEase\AdminSide\Clients.php:114
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\RestEase\AdminSide\Clients.php on line 114
