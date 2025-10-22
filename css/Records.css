@@ -220,3 +220,16 @@
       color: #0056b3;
       background-color: #f8f9fa;
     }
+    /* Emphasize Name of Deceased (col 2) and Informant Name (col 6) */
+    .cemetery-masterlist-table td:nth-child(2),
+    .cemetery-masterlist-table td:nth-child(6) {
+      font-weight: 700;
+      color: #111827;
+    }
+
+    /* Stronger rule to override other styles if necessary */
+    table.cemetery-masterlist-table tbody tr td:nth-child(2),
+    table.cemetery-masterlist-table tbody tr td:nth-child(6) {
+      font-weight: 700 !important;
+      color: #111827 !important;
+    }

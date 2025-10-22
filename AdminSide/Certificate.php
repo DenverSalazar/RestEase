@@ -244,6 +244,171 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="../css/header.css">
   <style>
+
+    
+/* --- Begin: Import modal and related styles (copied from Ledger.css) --- */
+.import-modal-content {
+  background: #fff;
+  padding: 32px;
+  border-radius: 16px;
+  min-width: 420px;
+  max-width: 90vw;
+  position: relative;
+  box-shadow: 0 12px 48px rgba(44,62,80,0.15);
+  animation: modalSlideIn 0.3s ease-out;
+}
+@keyframes modalSlideIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+.modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.modal-header h3 {
+  margin: 8px 0;
+  font-size: 1.5rem;
+  color: #2d3a4a;
+  font-weight: 600;
+}
+.modal-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+.file-upload-area {
+  border: 2px dashed #d3dbe2;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background: #f8fafc;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+  position: relative;
+}
+.file-upload-area:hover {
+  border-color: #0077b6;
+  background: #caf0f8;
+}
+.file-upload-area i {
+  font-size: 2.5rem;
+  color: #bfc9d1;
+  margin-bottom: 12px;
+  display: block;
+}
+.file-upload-area input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+}
+.file-upload-label {
+  cursor: pointer;
+  display: block;
+}
+.upload-text {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #2d3a4a;
+  margin-bottom: 4px;
+}
+.file-name {
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+}
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #f0f4f8;
+  border-radius: 8px;
+}
+.file-info i {
+  color: #3498db;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.btn-cancel {
+  background: #e4e9ee;
+  color: #2d3a4a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-cancel:hover {
+  background: #d3dbe2;
+}
+.btn-upload {
+  background: #0077b6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-upload:hover {
+  background: #0a5882;
+}
+/* small helpers used by modal buttons in Ledger.css */
+.btn-export,
+.btn-insert,
+button.btn-export,
+button.btn-insert {
+  background: #0077b6 !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.btn-export:hover,
+.btn-insert:hover,
+button.btn-export:hover,
+button.btn-insert:hover {
+  background: #005f8a !important;
+}
+/* --- End: Import modal and related styles --- */
     /* Load Bernard MT font for CERTIFICATION headings */
     @font-face {
       font-family: 'Bernard MT Std Condensed';
@@ -743,31 +908,52 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
     <div id="masterlistTab" class="card" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
         <h2 style="margin:0;font-size:1.25rem;font-weight:600;">Certification Masterlist</h2>
-        <div id="certFilters">
-          <button class="cert-filter-btn active" data-filter="all">all</button>
-          <button class="cert-filter-btn" data-filter="DNew">New</button>
-          <button class="cert-filter-btn" data-filter="DReEnter">ReEnter</button>
-          <button class="cert-filter-btn" data-filter="DRenew">ReNew</button>
-          <button class="cert-filter-btn" data-filter="DReOpen">ReOpen</button>
-          <button class="cert-filter-btn" data-filter="DTransfer">Transfer</button>
+        <div id="certFilters" style="position:relative;">
+          <!-- Replaced multiple inline buttons with a single toggle + dropdown like Payment Details -->
+          <button id="certFilterToggle" class="cert-filter-btn active" type="button" aria-expanded="false" data-filter="all" style="display:flex;align-items:center;gap:8px;">
+            <span id="certFilterLabel">all</span>
+            <i class="fas fa-caret-down" style="font-size:0.95rem;"></i>
+          </button>
+          <div id="certFilterDropdown" class="cert-filter-dropdown" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border-radius:8px; box-shadow:0 6px 20px rgba(11,117,168,0.08); padding:8px; z-index:1200; min-width:160px;">
+            <button class="cert-filter-item cert-filter-btn" data-filter="all" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">All</button>
+            <button class="cert-filter-item cert-filter-btn" data-filter="DNew" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">New</button>
+            <button class="cert-filter-item cert-filter-btn" data-filter="DReEnter" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">ReEnter</button>
+            <button class="cert-filter-item cert-filter-btn" data-filter="DRenew" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">ReNew</button>
+            <button class="cert-filter-item cert-filter-btn" data-filter="DReOpen" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">ReOpen</button>
+            <button class="cert-filter-item cert-filter-btn" data-filter="DTransfer" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">Transfer</button>
+          </div>
         </div>
       </div>
       <!-- Custom Search Bar (like clientsrequest.php, magnifying glass inside, no clear button) -->
-      <div style="margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+      <div style="margin-bottom:18px;display:flex;align-items:center;gap:8px;justify-content:space-between;">
         <div style="display:flex;align-items:center;background:#fff;border-radius:10px;border:1.5px solid #d0d7e2;padding:0 16px;height:40px;box-shadow:0 1px 4px rgba(60,72,88,0.03);min-width:320px;max-width:420px;">
           <i class="fas fa-search" style="color:#b0b0b0;margin-right:8px;font-size:1.1rem;"></i>
           <input type="text" id="certCustomSearch" placeholder="Search Certification Masterlist..." style="border:none;background:transparent;outline:none;font-size:1.05rem;width:100%;color:#222;font-weight:400;padding:0;margin:0;">
         </div>
+
+        <!-- Button set placed to the right of the search bar -->
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button id="certImportBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-file-import"></i> Import
+          </button>
+          <button id="certExportBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-file-excel"></i> Export
+          </button>
+          <button id="certDeleteBtn" type="button" style="background:#e74c3c;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
       </div>
       <div style="overflow-x:auto;">
+        <form id="certDeleteForm" method="post" style="margin:0;">
         <table class="certificate-masterlist-table" id="certificate-masterlist-table" style="min-width:1100px;">
           <thead>
             <tr>
               <th data-col="AptNo">Apt. No</th>
               <th data-col="NameOfDeceased">Name of Deceased</th>
+              <th data-col="AddressOfDeceased">Address of Deceased</th>
               <th data-col="InformantName">Informant Name</th>
               <th data-col="InformantAddress">Informant Address</th>
-              <th data-col="AddressOfDeceased">Address of Deceased</th>
               <th data-col="DateDied">Date Died</th>
               <th data-col="DateInternment">Date Internment</th>
               <th data-col="DNew">DNew</th>
@@ -781,7 +967,10 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               <th data-col="ORNumber">ORNumber</th>
               <th data-col="Validity">Validity</th>
               <th data-col="MCNo">MCNo.</th>
-             <th data-col="Action">Action</th>
+              <th data-col="Action">Action</th>
+              <th style="width:48px;padding-right:8px;display:none;" id="certDeleteTh">
+                <input type="checkbox" id="certSelectAllCheckbox" style="display:inline-block;vertical-align:middle;">
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -900,36 +1089,211 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               }
               $actionAttr = implode(' ', array_map(function($a){return "data-action-$a='1'";}, $actions));
               echo "<tr $actionAttr>";
-              echo '<td data-col="AptNo">' . htmlspecialchars($row['AptNo']) . '</td>';
-              echo '<td data-col="NameOfDeceased">' . htmlspecialchars($row['NameOfDeceased']) . '</td>';
-              echo '<td data-col="InformantName">' . htmlspecialchars($row['InformantName']) . '</td>';
-              echo '<td data-col="InformantAddress">' . htmlspecialchars($row['InformantAddress']) . '</td>';
-              echo '<td data-col="AddressOfDeceased">' . htmlspecialchars($row['AddressOfDeceased']) . '</td>';
-              echo '<td data-col="DateDied">' . htmlspecialchars($row['DateDied']) . '</td>';
-              echo '<td data-col="DateInternment">' . ($row['DateInternment'] && $row['DateInternment'] != '0000-00-00' ? htmlspecialchars($row['DateInternment']) : '<span style="color:#e74c3c;">No data</span>') . '</td>';
-              echo '<td data-col="DNew">' . htmlspecialchars($row['DNew']) . '</td>';
-              echo '<td data-col="DRenew">' . htmlspecialchars($row['DRenew']) . '</td>';
-              echo '<td data-col="DTransfer">' . htmlspecialchars($row['DTransfer']) . '</td>';
-              echo '<td data-col="DReOpen">' . htmlspecialchars($row['DReOpen']) . '</td>';
-              echo '<td data-col="DReEnter">' . htmlspecialchars($row['DReEnter']) . '</td>';
-              echo '<td data-col="DatePaid">' . htmlspecialchars($row['DatePaid']) . '</td>';
-              echo '<td data-col="Payee">' . htmlspecialchars($row['Payee']) . '</td>';
-              echo '<td data-col="Amount">' . ($row['Amount'] !== null ? '₱' . number_format($row['Amount'], 2) : '') . '</td>';
-              echo '<td data-col="ORNumber">' . htmlspecialchars($row['ORNumber']) . '</td>';
-              echo '<td data-col="Validity">' . htmlspecialchars($row['Validity']) . '</td>';
-              echo '<td data-col="MCNo">' . htmlspecialchars($row['MCNo']) . '</td>';
-         echo '<td data-col="Action"><a href="Certificate.php?view_cert=' . urlencode($row['id']) . '" target="_blank" class="btn" style="padding:6px 10px;font-size:0.82rem;text-decoration:none;">View Cert</a></td>';
+              // Checkbox cell (hidden by default, toggled by JS)
+        echo '<td data-col="AptNo">' . htmlspecialchars($row['AptNo']) . '</td>';
+        // Name of Deceased (bold)
+        echo '<td data-col="NameOfDeceased"><strong>' . htmlspecialchars($row['NameOfDeceased']) . '</strong></td>';
+        // Address of Deceased immediately after Name
+        echo '<td data-col="AddressOfDeceased">' . htmlspecialchars($row['AddressOfDeceased']) . '</td>';
+        // Informant Name (bold) then Informant Address
+        echo '<td data-col="InformantName"><strong>' . htmlspecialchars($row['InformantName']) . '</strong></td>';
+        echo '<td data-col="InformantAddress">' . htmlspecialchars($row['InformantAddress']) . '</td>';
+        echo '<td data-col="DateDied">' . htmlspecialchars($row['DateDied']) . '</td>';
+        echo '<td data-col="DateInternment">' . ($row['DateInternment'] && $row['DateInternment'] != '0000-00-00' ? htmlspecialchars($row['DateInternment']) : '<span style="color:#e74c3c;">No data</span>') . '</td>';
+        echo '<td data-col="DNew">' . htmlspecialchars($row['DNew']) . '</td>';
+        echo '<td data-col="DRenew">' . htmlspecialchars($row['DRenew']) . '</td>';
+        echo '<td data-col="DTransfer">' . htmlspecialchars($row['DTransfer']) . '</td>';
+        echo '<td data-col="DReOpen">' . htmlspecialchars($row['DReOpen']) . '</td>';
+        echo '<td data-col="DReEnter">' . htmlspecialchars($row['DReEnter']) . '</td>';
+        echo '<td data-col="DatePaid">' . htmlspecialchars($row['DatePaid']) . '</td>';
+        echo '<td data-col="Payee">' . htmlspecialchars($row['Payee']) . '</td>';
+        echo '<td data-col="Amount">' . ($row['Amount'] !== null ? '₱' . number_format($row['Amount'], 2) : '') . '</td>';
+        echo '<td data-col="ORNumber">' . htmlspecialchars($row['ORNumber']) . '</td>';
+        echo '<td data-col="Validity">' . htmlspecialchars($row['Validity']) . '</td>';
+        echo '<td data-col="MCNo">' . htmlspecialchars($row['MCNo']) . '</td>';
+        echo '<td data-col="Action"><a href="Certificate.php?view_cert=' . urlencode($row['id']) . '" target="_blank" class="btn" style="padding:6px 10px;font-size:0.82rem;text-decoration:none;">View Cert</a></td>';
+  echo '<td class="cert-delete-cell" style="padding-right:10px;display:none;"><input type="checkbox" class="cert-delete-checkbox" name="delete_ids[]" value="' . htmlspecialchars($row['id']) . '" style="vertical-align:middle;display:none;"></td>';
               echo '</tr>';
             }
             ?>
           </tbody>
-        </table>
+  </table>
+  </form>
+      <!-- Delete Confirmation Modal -->
+      <div id="certDeleteModal" class="modal-overlay" style="display:none;position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
+          <div class="modal-header">
+            <i class="fas fa-exclamation-triangle" style="color:#e74c3c;font-size:2rem;margin-bottom:8px;"></i>
+            <h2 style="color:#e74c3c;margin:0;font-size:1.3rem;">Confirm Delete</h2>
+          </div>
+          <div class="modal-body" style="margin:18px 0 24px 0;">
+            <p id="certDeleteModalText" style="color:#444;font-size:1.07rem;margin:0;">
+              Are you sure you want to delete the selected certificate(s)?<br>
+              This action cannot be undone.
+            </p>
+          </div>
+          <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
+            <button id="certModalDeleteBtn" class="modal-delete-btn" style="background:#e74c3c;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Delete</button>
+            <button id="certModalCancelBtn" class="modal-cancel-btn" style="background:#95a5a6;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <!-- Success Notification -->
+      <div id="certSuccessNotification" style="display:none;position:fixed;top:32px;right:32px;z-index:10000;background:#2ecc71;color:#fff;padding:18px 32px;border-radius:8px;box-shadow:0 4px 16px rgba(46,204,113,0.15);font-size:1.1rem;font-weight:500;align-items:center;gap:16px;min-width:220px;">
+        <span><i class="fas fa-check-circle" style="margin-right:8px;"></i><span id="certNotificationText">Certificate(s) deleted.</span></span>
+        <button id="certCloseNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
+      </div>
+    <script>
+    // Certification Masterlist Delete Logic (adapted from Ledger.php)
+    (function() {
+      const certDeleteBtn = document.getElementById('certDeleteBtn');
+      const certTable = document.getElementById('certificate-masterlist-table');
+      const certDeleteCheckboxes = () => certTable.querySelectorAll('.cert-delete-checkbox');
+      const certSelectAllCheckbox = document.getElementById('certSelectAllCheckbox');
+      const certDeleteTh = document.getElementById('certDeleteTh');
+      const certDeleteModal = document.getElementById('certDeleteModal');
+      const certModalDeleteBtn = document.getElementById('certModalDeleteBtn');
+      const certModalCancelBtn = document.getElementById('certModalCancelBtn');
+      const certDeleteForm = document.getElementById('certDeleteForm');
+      const certSuccessNotification = document.getElementById('certSuccessNotification');
+      const certNotificationText = document.getElementById('certNotificationText');
+      const certCloseNotificationBtn = document.getElementById('certCloseNotificationBtn');
+      let certDeleteMode = false;
+
+      function setCertDeleteMode(on) {
+        certDeleteMode = on;
+        const cells = certTable.querySelectorAll('.cert-delete-cell');
+        if (on) {
+          certDeleteCheckboxes().forEach(cb => {
+            cb.style.display = 'inline-block';
+          });
+          cells.forEach(td => td.style.display = '');
+          if (certSelectAllCheckbox) certSelectAllCheckbox.style.display = 'inline-block';
+          if (certDeleteTh) certDeleteTh.style.display = '';
+        } else {
+          certDeleteCheckboxes().forEach(cb => {
+            cb.checked = false;
+            cb.style.display = 'none';
+          });
+          cells.forEach(td => td.style.display = 'none');
+          if (certSelectAllCheckbox) { certSelectAllCheckbox.checked = false; certSelectAllCheckbox.style.display = 'none'; }
+          if (certDeleteTh) certDeleteTh.style.display = 'none';
+        }
+      }
+      setCertDeleteMode(false);
+
+      // Select All logic
+      function updateSelectionState() {
+        const checkboxes = Array.from(certDeleteCheckboxes());
+        const checked = checkboxes.filter(cb => cb.checked);
+        if (certSelectAllCheckbox) certSelectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
+      }
+      if (certSelectAllCheckbox) {
+        certSelectAllCheckbox.addEventListener('change', function() {
+          const checkboxes = Array.from(certDeleteCheckboxes());
+          checkboxes.forEach(cb => cb.checked = certSelectAllCheckbox.checked);
+          updateSelectionState();
+        });
+      }
+      certTable.addEventListener('change', function(e) {
+        if (e.target.classList.contains('cert-delete-checkbox')) {
+          updateSelectionState();
+        }
+      });
+
+      certDeleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!certDeleteMode) {
+          setCertDeleteMode(true);
+          certDeleteBtn.style.background = '#c0392b';
+        } else {
+          const checked = certTable.querySelectorAll('.cert-delete-checkbox:checked');
+          if (checked.length === 0) {
+            setCertDeleteMode(false);
+            certDeleteBtn.style.background = '#e74c3c';
+            return;
+          }
+          // Update modal text
+          const modalText = document.getElementById('certDeleteModalText');
+          if (modalText) {
+            modalText.innerHTML = `Are you sure you want to delete ${checked.length > 1 ? 'these certificates' : 'this certificate'}?<br>This action cannot be undone.`;
+          }
+          certDeleteModal.style.display = 'flex';
+        }
+      });
+
+      certModalCancelBtn.addEventListener('click', function() {
+        certDeleteModal.style.display = 'none';
+      });
+
+      certModalDeleteBtn.addEventListener('click', function() {
+        const checked = certTable.querySelectorAll('.cert-delete-checkbox:checked');
+        if (checked.length === 0) return;
+        certModalDeleteBtn.disabled = true;
+        certModalDeleteBtn.textContent = 'Deleting...';
+        certModalCancelBtn.disabled = true;
+        // Collect IDs
+        const deleteIds = Array.from(checked).map(cb => cb.value);
+        const formData = new FormData();
+        deleteIds.forEach(id => {
+          formData.append('delete_ids[]', id);
+        });
+        fetch('Certificate.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.text();
+        })
+        .then(data => {
+          // Remove rows from table
+          checked.forEach(cb => {
+            const row = cb.closest('tr');
+            if (row) row.remove();
+          });
+          certNotificationText.textContent = `${deleteIds.length} certificate${deleteIds.length > 1 ? 's' : ''} deleted.`;
+          certSuccessNotification.style.display = 'flex';
+          setTimeout(() => {
+            certSuccessNotification.style.display = 'none';
+          }, 3000);
+          certDeleteModal.style.display = 'none';
+          setCertDeleteMode(false);
+          certDeleteBtn.style.background = '#e74c3c';
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting. Please try again.');
+        })
+        .finally(() => {
+          certModalDeleteBtn.disabled = false;
+          certModalDeleteBtn.textContent = 'Delete';
+          certModalCancelBtn.disabled = false;
+        });
+      });
+
+      certCloseNotificationBtn.addEventListener('click', function() {
+        certSuccessNotification.style.display = 'none';
+      });
+      certDeleteModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+      window.addEventListener('DOMContentLoaded', function() {
+        setCertDeleteMode(false);
+        certDeleteBtn.style.background = '#e74c3c';
+      });
+    })();
+    </script>
       </div>
     </div>
     <!-- DataTables JS for Certification Masterlist -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <!-- Add SheetJS for client-side Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script>
       function showTab(tabId) {
         document.getElementById('certTab').style.display = tabId === 'certTab' ? '' : 'none';
@@ -976,11 +1340,11 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         const filterButtons = document.querySelectorAll('.cert-filter-btn');
         const table = document.getElementById('certificate-masterlist-table');
         const allCols = [
-          "AptNo", "NameOfDeceased", "InformantName", "InformantAddress", "AddressOfDeceased", "DateDied", "DateInternment",
+          "AptNo", "NameOfDeceased", "AddressOfDeceased", "InformantName", "InformantAddress", "DateDied", "DateInternment",
           "DNew", "DRenew", "DTransfer", "DReOpen", "DReEnter", "DatePaid", "Payee", "Amount", "ORNumber", "Validity", "MCNo"
         ];
-        // include new Action column in the column list so custom showColumns can toggle it
-        allCols.push("Action");
+         // include new Action column in the column list so custom showColumns can toggle it
+         allCols.push("Action");
 
         let certMasterlistDT = $('#certificate-masterlist-table').DataTable({
           paging: true,
@@ -1038,7 +1402,8 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               showColumns(allCols);
               filterRowsByAction(null);
             } else {
-              showColumns(['AptNo', 'NameOfDeceased', filter]);
+              // include AddressOfDeceased next to NameOfDeceased in filtered view
+              showColumns(['AptNo', 'NameOfDeceased', 'AddressOfDeceased', filter]);
               filterRowsByAction(filter);
             }
           });
@@ -1046,6 +1411,111 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
 
         // Set default to All
         document.querySelector('.cert-filter-btn[data-filter="all"]').click();
+        // Replace old inline buttons handling with dropdown-driven filter
+        (function() {
+          const toggle = document.getElementById('certFilterToggle');
+          const label = document.getElementById('certFilterLabel');
+          const dropdown = document.getElementById('certFilterDropdown');
+          const items = Array.from(document.querySelectorAll('#certFilterDropdown .cert-filter-item'));
+
+          function applyCertFilter(token) {
+            // Update active state inside dropdown
+            items.forEach(it => it.classList.toggle('active', it.getAttribute('data-filter') === token));
+            // Update toggle label
+            const matching = items.find(i => i.getAttribute('data-filter') === token);
+            label.textContent = matching ? matching.textContent : (token === 'all' ? 'all' : token);
+            // Apply the same show/hide column logic used earlier
+            if (token === 'all') {
+              showColumns(allCols);
+              filterRowsByAction(null);
+            } else {
+              // include AddressOfDeceased next to NameOfDeceased in filtered view
+              showColumns(['AptNo', 'NameOfDeceased', 'AddressOfDeceased', token]);
+              filterRowsByAction(token);
+            }
+            // close dropdown
+            if (dropdown) { dropdown.style.display = 'none'; toggle.setAttribute('aria-expanded', 'false'); }
+          }
+
+          // Toggle dropdown visibility
+          if (toggle) {
+            toggle.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const open = dropdown.style.display === 'block';
+              dropdown.style.display = open ? 'none' : 'block';
+              this.setAttribute('aria-expanded', open ? 'false' : 'true');
+            });
+          }
+
+          // Close on outside click
+          document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target) && e.target !== toggle) {
+              dropdown.style.display = 'none';
+              if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            }
+          });
+
+          // Wire dropdown items
+          items.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              const f = this.getAttribute('data-filter') || 'all';
+              applyCertFilter(f);
+            });
+          });
+
+          // Initialize to 'all'
+          applyCertFilter('all');
+        })();
+
+        // === Export button handler (uses SheetJS) ===
+        // Exports currently visible/filtered columns and rows as .xlsx
+        const exportBtn = document.getElementById('certExportBtn');
+        if (exportBtn) {
+          exportBtn.addEventListener('click', function() {
+            try {
+              // Build headers from visible <th> elements
+              const headerThs = Array.from(table.querySelectorAll('thead th')).filter(th => {
+                // include columns that are currently displayed (not hidden by showColumns)
+                return th.style.display !== 'none';
+              });
+              const headers = headerThs.map(th => th.textContent.trim());
+
+              // Get rows from DataTables (only rows that match current search/paging state)
+              const rowsNodes = certMasterlistDT.rows({ search: 'applied' }).nodes().toArray();
+
+              const data = [];
+              data.push(headers);
+
+              rowsNodes.forEach(tr => {
+                // Collect visible td cells in the same order as headers
+                const tds = Array.from(tr.querySelectorAll('td')).filter(td => td.style.display !== 'none');
+                const row = tds.map(td => {
+                  // remove extra whitespace and convert HTML to text
+                  let txt = td.innerText || td.textContent || '';
+                  return txt.trim();
+                });
+                data.push(row);
+              });
+
+              // Convert AoA to worksheet and create workbook
+              const ws = XLSX.utils.aoa_to_sheet(data);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, 'Certification');
+
+              // Generate filename with date
+              const now = new Date();
+              const filename = 'certification_masterlist_' + now.toISOString().slice(0,10) + '.xlsx';
+
+              // Trigger download
+              XLSX.writeFile(wb, filename);
+            } catch (err) {
+              console.error('Export error:', err);
+              alert('Export failed. Check console for details.');
+            }
+          });
+        }
+        // === end export handler ===
+
       })();
       // Autofill fields when deceased is selected
       document.getElementById('deceasedField').addEventListener('change', function() {
@@ -1252,6 +1722,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         inner.innerHTML = clone.innerHTML;
 
         // Remove footer img from inner and capture it
+       
         let footerNodeHtml = '';
         const parserTemp = document.createElement('div');
         parserTemp.innerHTML = inner.innerHTML;
@@ -1441,5 +1912,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
   <?php
   exit;
 }
+?>
+
+<!-- Handle certificate deletion via AJAX (server-side) -->
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_array($_POST['delete_ids'])) {
+  include_once '../Includes/db.php';
+  if ($conn->connect_error) { http_response_code(500); echo 'DB error'; exit; }
+  $deleteIds = array_map('intval', $_POST['delete_ids']);
+  if (count($deleteIds) > 0) {
+    // build placeholders safely
+    $placeholders = implode(',', array_fill(0, count($deleteIds), '?'));
+    $types = str_repeat('i', count($deleteIds));
+    $stmt = $conn->prepare("DELETE FROM certification WHERE id IN ($placeholders)");
+    $stmt->bind_param($types, ...$deleteIds);
+    $stmt->execute();
+    $stmt->close();
+  }
+  $conn->close();
+  // return simple OK for AJAX
+  http_response_code(200);
+  echo 'OK';
   exit;
+}
+?>
+<!-- Insert: Certification Import Modal (design copied from Ledger import modal) -->
+<!-- place this block somewhere inside the page body (e.g. just before </main>) -->
+<div id="certExcelModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,0.25); z-index:1100; align-items:center; justify-content:center;">
+  <div class="import-modal-content">
+    <button type="button" id="closeCertModal" class="modal-close-btn">&times;</button>
+    <div class="modal-header">
+      <i class="fas fa-file-excel" style="color:#27ae60; font-size:2.5rem; margin-bottom:12px;"></i>
+      <h3>Import Certification Masterlist</h3>
+      <p>Upload CSV/XLS/XLSX to import multiple </p>
+      <p>certification records into the masterlist </p>
+    </div>
+    <form action="ImportCertExcel.php" method="post" enctype="multipart/form-data" class="import-form">
+      <div class="file-upload-area">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <input type="file" name="excel_file" accept=".xls,.xlsx,.csv" required id="certFileInput">
+        <label for="certFileInput" class="file-upload-label">
+          <span class="upload-text">Choose File</span>
+          <span class="file-name">No file selected</span>
+        </label>
+      </div>
+      <div class="file-info">
+        <i class="fas fa-info-circle"></i>
+        Supported formats: CSV, XLS, XLSX files
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="cancelCertBtn" class="btn-cancel">Cancel</button>
+        <button type="submit" class="btn-upload">
+          <i class="fas fa-upload"></i>
+          Upload File
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Certification Import modal logic (mirrors Ledger modal behavior)
+  (function(){
+    // existing Import button in the Certification masterlist uses id="certImportBtn"
+    var importBtn = document.getElementById('certImportBtn');
+    var modal = document.getElementById('certExcelModal');
+    var closeBtn = document.getElementById('closeCertModal');
+    var cancelBtn = document.getElementById('cancelCertBtn');
+    var fileInput = document.getElementById('certFileInput');
+
+    if (importBtn) importBtn.addEventListener('click', function() { if (modal) modal.style.display = 'flex'; });
+    if (closeBtn) closeBtn.addEventListener('click', function() { if (modal) modal.style.display = 'none'; });
+    if (cancelBtn) cancelBtn.addEventListener('click', function() { if (modal) modal.style.display = 'none'; });
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) modal.style.display = 'none'; });
+
+    if (fileInput) fileInput.addEventListener('change', function(){
+      var fileName = this.files && this.files[0] ? this.files[0].name : 'No file selected';
+      var el = document.querySelector('#certExcelModal .file-name');
+      if (el) el.textContent = fileName;
+    });
+  })();
+</script>
+
 

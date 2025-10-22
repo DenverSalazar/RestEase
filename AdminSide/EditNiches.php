@@ -392,7 +392,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         <div class="form-row">
           <div class="form-group">
             <label for="suffix">Suffix</label>
-            <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III" value="<?php echo htmlspecialchars($deceased['suffix'] ?? ''); ?>">
+            <div style="position:relative;">
+              <input type="text" id="suffixDisplay" placeholder="e.g. Jr, Sr, III" readonly value="<?php echo htmlspecialchars($deceased['suffix'] ?? ''); ?>" style="padding-right:36px;">
+              <input type="hidden" id="suffix" name="suffix" value="<?php echo htmlspecialchars($deceased['suffix'] ?? ''); ?>">
+              <button type="button" id="suffix-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:2;">
+                <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
+              </button>
+              <ul id="suffix-dropdown-list" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-radius:6px;max-height:220px;overflow-y:auto;z-index:10;margin:2px 0 0 0;padding:0;list-style:none;">
+                <li data-value="">None</li>
+                <li data-value="Jr.">Jr.</li>
+                <li data-value="Sr.">Sr.</li>
+                <li data-value="II">II</li>
+                <li data-value="III">III</li>
+                <li data-value="IV">IV</li>
+                <li data-value="V">V</li>
+                <li data-value="VI">VI</li>
+                <li data-value="VII">VII</li>
+              </ul>
+            </div>
           </div>
           <div class="form-group" style="position:relative;">
             <label for="residency">Residency</label>
@@ -853,6 +870,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
         document.getElementById('sidebarBlockModal').style.display = 'flex';
       }
     }
+    // Suffix dropdown logic
+    (function() {
+      var btn = document.getElementById('suffix-dropdown-btn');
+      var list = document.getElementById('suffix-dropdown-list');
+      var input = document.getElementById('suffixDisplay');
+      var hiddenInput = document.getElementById('suffix');
+      
+      function showSuffixDropdown() {
+        list.style.display = 'block';
+      }
+      
+      function hideSuffixDropdown() {
+        list.style.display = 'none';
+      }
+
+      if (btn && list && input && hiddenInput) {
+        btn.onclick = function(e) {
+          e.preventDefault();
+          if (list.style.display === 'block') {
+            hideSuffixDropdown();
+          } else {
+            showSuffixDropdown();
+          }
+        };
+
+        input.onclick = function(e) {
+          e.preventDefault();
+          if (list.style.display === 'block') {
+            hideSuffixDropdown();
+          } else {
+            showSuffixDropdown();
+          }
+        };
+
+        list.querySelectorAll('li').forEach(function(item) {
+          item.onclick = function() {
+            input.value = this.textContent;
+            hiddenInput.value = this.getAttribute('data-value');
+            hideSuffixDropdown();
+          };
+        });
+
+        document.addEventListener('mousedown', function(e) {
+          if (!list.contains(e.target) && e.target !== btn && e.target !== input) {
+            hideSuffixDropdown();
+          }
+        });
+
+        input.addEventListener('focus', function() {
+          input.style.borderColor = '#3498db';
+          input.style.boxShadow = '0 0 0 2px rgba(52,152,219,0.10)';
+          input.style.background = '#fff';
+        });
+
+        input.addEventListener('blur', function() {
+          if (list.style.display !== 'block') {
+            input.style.borderColor = '#e3e7ed';
+            input.style.boxShadow = 'none';
+            input.style.background = '#f8fafc';
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>
