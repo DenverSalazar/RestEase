@@ -1,5 +1,13 @@
 <?php
-// ...this partial uses $conn where appropriate; Settings.php already included db.php earlier...
+// Ensure this partial is self-contained: include DB and expose $conn similar to account_tab.php
+if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_error) {
+	// Use a relative path to Includes/db.php; adjust if your project layout differs
+	include_once __DIR__ . '/../Includes/db.php';
+	// If Includes/db.php does not set $conn (defensive), create one
+	if (!isset($conn) || !($conn instanceof mysqli)) {
+		$conn = new mysqli('localhost', 'root', '', 'cemeterydb');
+	}
+}
 ?>
 <div class="settings-card" id="archiveTab" style="display:none;">
   <!-- Archive Sub-tabs -->
@@ -33,44 +41,43 @@
           </thead>
           <tbody>
             <?php
-            $conn = new mysqli("localhost", "root", "", "cemeterydb");
-            if ($conn->connect_error) {
+            if (!isset($conn) || $conn->connect_error) {
               echo "<tr><td colspan='5'>Database connection failed.</td></tr>";
             } else {
               $result = $conn->query("SELECT * FROM archive_clients ORDER BY archived_at DESC");
-              if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                  $firstName = htmlspecialchars($row['first_name'] ?? '');
-                  $lastName = htmlspecialchars($row['last_name'] ?? '');
-                  $name = $firstName . ' ' . $lastName;
-                  $email = htmlspecialchars($row['email'] ?? '');
-                  $contact = htmlspecialchars($row['contact_no'] ?? '');
-                  $profilePicture = htmlspecialchars($row['profile_pic'] ?? '');
-                  $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
-                  if ($hasProfilePicture) {
-                    $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
-                  } else {
-                    $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                    $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                    $colorClass = "avatar-color-$colorIndex";
-                    $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
-                  }
-                  $statusHtml = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span>';
-                  echo "<tr>
-                    <td style='white-space: nowrap;'>
-                      $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
-                    </td>
-                    <td>$email</td>
-                    <td>$contact</td>
-                    <td>$statusHtml</td>
-                    <td>
-                      <button class=\"restore-btn\" style=\"background:#2d72d9;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:1rem;font-weight:500;cursor:pointer;\"><i class=\"fas fa-undo\"></i> Restore</button>
-                    </td>
-                  </tr>";
-                }
-              } else {
-                echo "<tr><td colspan='5'>No archived clients found.</td></tr>";
-              }
+               if ($result && $result->num_rows > 0) {
+                 while ($row = $result->fetch_assoc()) {
+                   $firstName = htmlspecialchars($row['first_name'] ?? '');
+                   $lastName = htmlspecialchars($row['last_name'] ?? '');
+                   $name = $firstName . ' ' . $lastName;
+                   $email = htmlspecialchars($row['email'] ?? '');
+                   $contact = htmlspecialchars($row['contact_no'] ?? '');
+                   $profilePicture = htmlspecialchars($row['profile_pic'] ?? '');
+                   $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                   if ($hasProfilePicture) {
+                     $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                   } else {
+                     $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                     $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                     $colorClass = "avatar-color-$colorIndex";
+                     $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                   }
+                   $statusHtml = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Archived</span>';
+                   echo "<tr>
+                     <td style='white-space: nowrap;'>
+                       $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:4px; display:inline-block;\">$name</span>
+                     </td>
+                     <td>$email</td>
+                     <td>$contact</td>
+                     <td>$statusHtml</td>
+                     <td>
+                       <button class=\"restore-btn\" style=\"background:#2d72d9;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:1rem;font-weight:500;cursor:pointer;\"><i class=\"fas fa-undo\"></i> Restore</button>
+                     </td>
+                   </tr>";
+                 }
+               } else {
+                 echo "<tr><td colspan='5'>No archived clients found.</td></tr>";
+               }
             }
             ?>
           </tbody>
@@ -131,8 +138,7 @@
           </thead>
           <tbody>
             <?php
-            include_once '../Includes/db.php';
-            if ($conn->connect_error) {
+            if (!isset($conn) || $conn->connect_error) {
               echo '<tr><td colspan="9">Database connection failed.</td></tr>';
             } else {
               $result = $conn->query("SELECT * FROM archive_deceased ORDER BY id DESC");
@@ -237,43 +243,42 @@
           </thead>
           <tbody id="archiveRequestTableBody">
             <?php
-            $conn = new mysqli("localhost", "root", "", "cemeterydb");
-            if ($conn->connect_error) {
+            if (!isset($conn) || $conn->connect_error) {
               echo '<tr><td colspan="6">Database connection failed.</td></tr>';
             } else {
               $sql = "SELECT dr.*, u.email, u.first_name AS user_first_name, u.last_name AS user_last_name, u.profile_picture FROM denied_request dr JOIN users u ON dr.user_id = u.id ORDER BY dr.created_at DESC";
               $result = $conn->query($sql);
-              if ($result && $result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                  $firstName = htmlspecialchars($row['user_first_name']);
-                  $lastName = htmlspecialchars($row['user_last_name']);
-                  $name = $firstName . ' ' . $lastName;
-                  $email = htmlspecialchars($row['email']);
-                  $type = htmlspecialchars($row['type']);
-                  $requestDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
-                  $status = '<span class="status-badge status-denied">Denied</span>';
-                  $profilePicture = htmlspecialchars($row['profile_picture']);
-                  $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
-                  if ($hasProfilePicture) {
-                    $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
-                  } else {
-                    $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
-                    $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
-                    $colorClass = "avatar-color-$colorIndex";
-                    $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
-                  }
-                  echo '<tr style="background:#fff;">';
-                  echo '<td style="padding:8px 8px;display:flex;align-items:center;gap:10px;">' . $avatarHtml . '<span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;font-weight:500;">' . $name . '</span></td>';
-                  echo '<td>' . $email . '</td>';
-                  echo '<td>' . $type . '</td>';
-                  echo '<td>' . $requestDate . '</td>';
-                  echo '<td>' . $status . '</td>';
-                  echo '<td><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
-                  echo '</tr>';
-                }
-              } else {
-                echo '<tr><td colspan="6">No denied requests found.</td></tr>';
-              }
+               if ($result && $result->num_rows > 0) {
+                 while ($row = $result->fetch_assoc()) {
+                   $firstName = htmlspecialchars($row['user_first_name']);
+                   $lastName = htmlspecialchars($row['user_last_name']);
+                   $name = $firstName . ' ' . $lastName;
+                   $email = htmlspecialchars($row['email']);
+                   $type = htmlspecialchars($row['type']);
+                   $requestDate = htmlspecialchars($row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : 'N/A');
+                   $status = '<span class="status-badge status-denied">Denied</span>';
+                   $profilePicture = htmlspecialchars($row['profile_picture']);
+                   $hasProfilePicture = $profilePicture && file_exists('../uploads/' . $profilePicture);
+                   if ($hasProfilePicture) {
+                     $avatarHtml = '<img src="../uploads/' . $profilePicture . '" alt="Profile" class="avatar-img" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">';
+                   } else {
+                     $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+                     $colorIndex = (abs(crc32($firstName . $lastName)) % 10) + 1;
+                     $colorClass = "avatar-color-$colorIndex";
+                     $avatarHtml = '<div class="avatar-img avatar-google ' . $colorClass . '" style="display:inline-flex;">' . $initials . '</div>';
+                   }
+                   echo '<tr style="background:#fff;">';
+                   echo '<td style="padding:8px 8px;display:flex;align-items:center;gap:10px;">' . $avatarHtml . '<span class="client-name" style="vertical-align:middle; margin-left:4px; display:inline-block;font-weight:500;">' . $name . '</span></td>';
+                   echo '<td>' . $email . '</td>';
+                   echo '<td>' . $type . '</td>';
+                   echo '<td>' . $requestDate . '</td>';
+                   echo '<td>' . $status . '</td>';
+                   echo '<td><button class="view-btn" onclick="openDeniedPopup(' . $row['id'] . ')">View</button></td>';
+                   echo '</tr>';
+                 }
+               } else {
+                 echo '<tr><td colspan="6">No denied requests found.</td></tr>';
+               }
               // $conn->close();
             }
             ?>
@@ -509,5 +514,209 @@
         }
       }
     });
+  </script>
+
+  <script>
+(function(){
+  // Archive sub-tab switching (local to this partial)
+  const subTabs = document.querySelectorAll('.archive-subtab');
+  const contents = {
+    clients: document.getElementById('archiveClientsTab'),
+    records: document.getElementById('archiveRecordsTab'),
+    requests: document.getElementById('archiveRequestsTab')
+  };
+  function activateArchiveTab(name) {
+    subTabs.forEach(t => {
+      if (t.dataset.archivetab === name) {
+        t.classList.add('active');
+        t.style.color = '#2d72d9';
+        t.style.borderBottom = '2px solid #2d72d9';
+      } else {
+        t.classList.remove('active');
+        t.style.color = '';
+        t.style.borderBottom = '';
+      }
+    });
+    Object.keys(contents).forEach(k => {
+      if (!contents[k]) return;
+      contents[k].style.display = (k === name) ? '' : 'none';
+    });
+    // trigger DataTable init for visible tab
+    initArchiveDataTables(name);
+  }
+
+  subTabs.forEach(t => {
+    t.addEventListener('click', function(){
+      activateArchiveTab(this.dataset.archivetab);
+    });
+  });
+
+  // DataTables init helpers (defensive)
+  let clientsTableInstance = null;
+  let recordsTableInstance = null;
+  let requestsTableInstance = null;
+
+  function safeInitDataTable(selector, opts) {
+    try {
+      if (!$.fn.DataTable) return null;
+      const $table = $(selector);
+      if ($table.length === 0) return null;
+      // ensure table has thead and at least one data row (not the "no rows" placeholder)
+      const hasThead = $table.find('thead tr th').length > 0;
+      const hasRows = $table.find('tbody tr').length > 0 && !$table.find('tbody tr td').first().text().toLowerCase().includes('no');
+      if (!hasThead || !hasRows) return null;
+      if ($.fn.DataTable.isDataTable(selector)) {
+        $table.DataTable().destroy();
+      }
+      return $table.DataTable($.extend({
+        paging: true,
+        searching: true,
+        ordering: true,
+        info: true,
+        autoWidth: false,
+        dom: 'lrtip'
+      }, opts || {}));
+    } catch (e) {
+      console.warn('DataTables init suppressed:', e);
+      return null;
+    }
+  }
+
+  function initArchiveDataTables(activeTab) {
+    // clients
+    if (activeTab === 'clients') {
+      if (clientsTableInstance) { try { clientsTableInstance.destroy(); } catch(e){} clientsTableInstance = null; }
+      clientsTableInstance = safeInitDataTable('#archive-clients-table', {
+        dom: 'lftip',
+        language: {
+          lengthMenu: 'Show _MENU_ entries',
+          zeroRecords: 'No clients found',
+          emptyTable: 'No clients available',
+          info: 'Showing _START_ to _END_ of _TOTAL_'
+        }
+      });
+      // wire search input to table search
+      if (clientsTableInstance) {
+        $('#archiveClientsSearchInput').off('keyup').on('keyup', function(){ clientsTableInstance.search(this.value).draw(); });
+      }
+    } else {
+      if (clientsTableInstance && $.fn.DataTable.isDataTable('#archive-clients-table')) { try { $('#archive-clients-table').DataTable().destroy(); } catch(e){} clientsTableInstance = null; }
+    }
+
+    // records
+    if (activeTab === 'records') {
+      if (recordsTableInstance) { try { recordsTableInstance.destroy(); } catch(e){} recordsTableInstance = null; }
+      recordsTableInstance = safeInitDataTable('#archiveRecordsTable', {});
+      if (recordsTableInstance) {
+        $('#archiveRecordsSearchInput').off('keyup').on('keyup', function(){ recordsTableInstance.search(this.value).draw(); });
+      } else {
+        // fallback: simple filter when DataTables not initialized
+        $('#archiveRecordsSearchInput').off('keyup').on('keyup', function(){
+          const filter = this.value.toLowerCase();
+          $('#archiveRecordsTable tbody tr').each(function(){
+            let found = false;
+            $(this).find('td').each(function(){ if ($(this).text().toLowerCase().indexOf(filter) > -1) { found = true; return false; } });
+            $(this).toggle(found);
+          });
+        });
+      }
+    } else {
+      if (recordsTableInstance && $.fn.DataTable.isDataTable('#archiveRecordsTable')) { try { $('#archiveRecordsTable').DataTable().destroy(); } catch(e){} recordsTableInstance = null; }
+    }
+
+    // requests
+    if (activeTab === 'requests') {
+      if (requestsTableInstance) { try { requestsTableInstance.destroy(); } catch(e){} requestsTableInstance = null; }
+      requestsTableInstance = safeInitDataTable('#archiveRequestsTable', {});
+      if (requestsTableInstance) {
+        $('#archiveRequestSearchInput').off('keyup').on('keyup', function(){ requestsTableInstance.search(this.value).draw(); });
+      }
+    } else {
+      if (requestsTableInstance && $.fn.DataTable.isDataTable('#archiveRequestsTable')) { try { $('#archiveRequestsTable').DataTable().destroy(); } catch(e){} requestsTableInstance = null; }
+    }
+  }
+
+  // Activate default tab on load (clients)
+  activateArchiveTab('clients');
+
+  // Restore modal logic for Archive Clients (hook restore buttons delegated)
+  let restoreTargetRow = null;
+  let restoreTargetEmail = null;
+
+  // Delegate restore button clicks for dynamic table rows
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.restore-btn');
+    if (!btn) return;
+    e.preventDefault();
+    const row = btn.closest('tr');
+    if (!row) return;
+    const emailCell = row.querySelector('td:nth-child(2)');
+    const email = emailCell ? emailCell.textContent.trim() : '';
+    restoreTargetRow = row;
+    restoreTargetEmail = email;
+    const modal = document.getElementById('restoreModal');
+    if (modal) modal.style.display = 'flex';
+  });
+
+  const modalCancel = document.getElementById('modalCancelRestoreBtn');
+  if (modalCancel) modalCancel.addEventListener('click', function(){
+    const modal = document.getElementById('restoreModal');
+    if (modal) modal.style.display = 'none';
+    restoreTargetRow = null; restoreTargetEmail = null;
+  });
+
+  const modalRestoreBtn = document.getElementById('modalRestoreBtn');
+  if (modalRestoreBtn) {
+    modalRestoreBtn.addEventListener('click', function(){
+      if (!restoreTargetEmail || !restoreTargetRow) return;
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Restoring...';
+      modalCancel.disabled = true;
+      // post to server to restore
+      $.post('restore_client.php', { email: restoreTargetEmail }, function(response){
+        try {
+          if (response && response.success) {
+            // remove row from table or DataTable
+            try {
+              if ($.fn.DataTable.isDataTable('#archive-clients-table')) {
+                const tbl = $('#archive-clients-table').DataTable();
+                tbl.row($(restoreTargetRow)).remove().draw();
+              } else {
+                restoreTargetRow.parentNode.removeChild(restoreTargetRow);
+              }
+            } catch(e){}
+            // show success notification
+            const notif = document.getElementById('restoreSuccessNotification');
+            if (notif) {
+              notif.querySelector('span').innerHTML = '<i class="fas fa-check-circle" style="margin-right:8px;"></i>Client successfully restored';
+              notif.style.display = 'flex';
+              setTimeout(()=>{ notif.style.display='none'; }, 3000);
+            }
+            const modal = document.getElementById('restoreModal');
+            if (modal) modal.style.display = 'none';
+          } else {
+            alert('Failed to restore client.');
+          }
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Restore';
+          if (modalCancel) modalCancel.disabled = false;
+          restoreTargetRow = null; restoreTargetEmail = null;
+        }
+      }, 'json').fail(function(){ alert('An error occurred. Please try again.'); btn.disabled=false; btn.textContent='Restore'; if (modalCancel) modalCancel.disabled=false; restoreTargetRow=null; restoreTargetEmail=null; });
+    });
+  }
+
+  // Close notification UI when clicking outside restore modal
+  document.addEventListener('click', function(e){
+    const modal = document.getElementById('restoreModal');
+    if (!modal) return;
+    if (modal.style.display === 'flex' && e.target === modal) {
+      modal.style.display = 'none';
+      restoreTargetRow = null; restoreTargetEmail = null;
+    }
+  });
+})();
   </script>
 </div>

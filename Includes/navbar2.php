@@ -209,7 +209,8 @@ if (isset($_POST['mark_all_read'])) {
                     <span style="font-size:1rem;">Log Out</span>
                 </div>
             </div>
-            <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
+        </div>
+        <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
                 <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e9f2;font-weight:600;display:flex;justify-content:space-between;align-items:center;background:#f7faff;">
                     <span style="font-size:1.05rem;letter-spacing:0.5px;">Notifications</span>
                 </div>
@@ -250,7 +251,6 @@ if (isset($_POST['mark_all_read'])) {
                     <a href="../ClientSide/view_all_notifications.php" style="color:#4B7BEC;font-weight:500;text-decoration:none;font-size:0.98rem;">View all</a>
                 </div>
             </div>
-        </div>
     </div>
     <div class="navbar-overlay" onclick="toggleMobileMenu()"></div>
 </nav>
@@ -266,18 +266,22 @@ function toggleNotificationDropdown(e, sourceEl) {
     e.preventDefault();
     e.stopPropagation();
     var dropdown = document.getElementById('notificationDropdown');
-    // Prefer the explicitly provided source element, otherwise fallback
     var bell = sourceEl || e.currentTarget || e.target || document.getElementById('notificationBell') || document.getElementById('notificationBellMobile');
     if (!bell) return;
-    // Toggle visibility
+
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
-        // Position dropdown under the invoking bell (calculate relative to its offset parent)
-        var rect = bell.getBoundingClientRect();
-        // Place dropdown so its right edge aligns with bell's right edge and appears below it
-        dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
-        // If dropdown is in the same container anchored to right, keep right:0 to preserve layout
-        dropdown.style.right = '0px';
+
+        // ✅ Adjust dropdown position for mobile
+        if (window.innerWidth <= 768) {
+            dropdown.style.right = '10px';
+            dropdown.style.left = 'auto';
+            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8) + 'px';
+        } else {
+            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
+            dropdown.style.right = '0px';
+        }
+
         setTimeout(function() {
             document.addEventListener('click', closeDropdown);
         }, 0);
@@ -285,6 +289,7 @@ function toggleNotificationDropdown(e, sourceEl) {
         dropdown.style.display = 'none';
         document.removeEventListener('click', closeDropdown);
     }
+
     function closeDropdown(event) {
         if (!dropdown.contains(event.target) && event.target !== bell && !bell.contains(event.target)) {
             dropdown.style.display = 'none';
@@ -292,6 +297,7 @@ function toggleNotificationDropdown(e, sourceEl) {
         }
     }
 }
+
 function toggleProfileDropdown(e) {
     e.preventDefault();
     e.stopPropagation();

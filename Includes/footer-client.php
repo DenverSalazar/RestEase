@@ -47,7 +47,7 @@
                 <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
             </div>
             <div class="col-12 col-md-6 text-center text-md-end">
-                <p class="mb-0">Designed By: Biringan IT Corps.</p>
+                <p class="mb-0">Designed By: RestEase Team.</p>
             </div>
         </div>
     </div>
