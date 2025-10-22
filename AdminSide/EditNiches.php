@@ -360,12 +360,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div class="cemetery-masterlist-title">Edit Data</div>
       </div>
-      <div class="cemetery-masterlist-desc">Edit the masterlist data</div>
+      <div class="cemetery-masterlist-desc" style="color:#6c7a89;font-size:1.08rem;margin-top:2px;">Edit the masterlist data</div>
     </div>
     
     <div class="card">
-            <div class="top-actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-bottom:60px;padding-right:0;">
-        <div class="form-section-title" style="margin:0;">Deceased Information</div>
+           <div class="top-actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-bottom:38px;padding-right:0;">
+        <div class="form-section-title" style="margin-top: 9px;">Deceased Information</div>
         <div style="display:flex;gap:12px;">
           <form id="deleteForm" method="post" style="display:inline;">
             <input type="hidden" name="deleteId" value="<?php echo htmlspecialchars($deceased['id'] ?? ''); ?>">
@@ -480,7 +480,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete'])) {
           </div>
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn save-btn">Save</button>
+          <button type="submit" class="btn upload">Save</button>
           <a href="<?php echo (!empty($from) && $from === 'records') ? 'Records.php' : 'Mapping.php'; ?>" class="btn secondary" style="margin-left:12px;">Cancel</a>
         </div>
       </form>

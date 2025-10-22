@@ -398,6 +398,16 @@ if ($id) {
       align-items: center;
       gap: 8px;
     }
+      .niche-picker-group input[readonly] {
+      flex: 1 1 0;
+      min-width: 0;
+      background: #f8fafc;
+      border: 1.5px solid #e3e7ed;
+      color: #2d3a4a;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      /* Remove fixed width if any */
+    }
     .pick-niche-btn {
       background: #3498db;
       color: #fff;
@@ -407,9 +417,6 @@ if ($id) {
       font-size: 1.1em;
       cursor: pointer;
       transition: background 0.2s;
-    }
-    .pick-niche-btn:hover {
-      background: #2980b9;
     }
     @media (max-width: 900px) {
       .form-row { gap: 12px; }
@@ -429,7 +436,7 @@ if ($id) {
   <div class="main-content">
     <div class="cemetery-masterlist-container">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div class="cemetery-masterlist-title" style="font-size:1.5rem;font-weight:700;color:#2d3a4a;">Insert Data</div>
+        <div class="cemetery-masterlist-title">Insert Data</div>
       </div>
       <div class="cemetery-masterlist-desc" style="color:#6c7a89;font-size:1.08rem;margin-top:2px;">Fill up the masterlist data</div>
     </div>

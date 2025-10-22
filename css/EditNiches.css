@@ -8,7 +8,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Poppins', sans-serif;
   background-color: #fff;
 }
 
@@ -131,15 +131,49 @@ display: flex;
 align-items: center;
 gap: 8px;
 }
-.btn.upload {
-background: #bfc9d1;
-color: #fff;
+ .btn.upload {
+      background:#0077b6;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 10px 28px;
+      font-size: 1.08rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn.secondary {
+background: #caf0f8 !important;
+color: #222 !important;
+border: none !important;
+text-decoration: none;
 }
 .btn.secondary {
-background: #e4e9ee;
-color: #2d3a4a;
-border: 1.5px solid #d3dbe2;
-text-decoration: none; /* Remove underline */
+ background: #f7f8fa;
+      color: #34495e;
+      border: 1px solid #e1e4ea;
+      border-radius: 7px;
+      padding: 10px 22px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+     .btn.secondary:hover {
+      background: #e1e4ea;
+      border-color: #bfc9d2;
+    }
+    .btn.secondary:hover, .btn.secondary:focus {
+background: #b2e4f4 !important;
+color: #222 !important;
 }
 .top-actions a {
 text-decoration: none; /* Remove underline from anchor */
@@ -192,27 +226,30 @@ width: 100%;
 box-sizing: border-box;
 }
 .form-group label {
-font-size: 1.01rem;
-font-weight: 500;
-margin-bottom: 7px;
-color: #3a4656;
-letter-spacing: 0.1px;
-}
-.form-group input {
-width: 100%;
-box-sizing: border-box;
-padding: 10px 13px;
-border: 1.5px solid #e3e7ed;
-border-radius: 7px;
-font-size: 1.02rem;
-background: #f8fafc;
-outline: none;
-transition: border 0.2s;
-}
-.form-group input:focus {
-border: 1.5px solid #a3b6c7;
-background: #fff;
-}
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #34495e;
+      margin-bottom: 7px;
+      letter-spacing: 0.2px;
+    }
+ .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group .form-control {
+      padding: 10px 13px;
+      border: 1.5px solid #e3e7ed;
+      border-radius: 7px;
+      font-size: 1.02rem;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+ .form-group input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.10);
+      background: #fff;
+    }
+
 .form-actions {
 display: flex;
 justify-content: flex-end;
@@ -547,11 +584,10 @@ letter-spacing: 0.5px;
         background: #b52a2a;
       }
     /* Add this style block inside <head> or in your Insert.css */
-    .niche-picker-group {
+     .niche-picker-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      width: 100%;
     }
     .niche-picker-group input[readonly] {
       flex: 1 1 0;
@@ -563,25 +599,15 @@ letter-spacing: 0.5px;
       letter-spacing: 0.5px;
       /* Remove fixed width if any */
     }
-    .pick-niche-btn {
-      background: #f5f7fa;
-      color: #2d3a4a;
-      border: 1.5px solid #d3dbe2;
-      border-radius: 7px;
-      padding: 8px 14px;
-      min-width: 44px;
-      height: 42px;
-      font-size: 1.1rem;
-      transition: background 0.18s, color 0.18s, border 0.18s;
-      box-shadow: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pick-niche-btn:hover, .pick-niche-btn:focus {
-      background: #e4e9ee;
-      color: #1976d2;
-      border-color: #bfc9d1;
+   .pick-niche-btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: background 0.2s;
     }
     .error-alert {
       background: #fff0f0;
@@ -676,14 +702,23 @@ letter-spacing: 0.5px;
       background: #b52a2a;
     }
     .btn.upload {
-      background: #27ae60 !important;
-      color: #fff !important;
-      border: none !important;
-      transition: background 0.18s;
+      background: #0077b6;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 10px 28px;
+      font-size: 1.08rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .btn.upload:hover, .btn.upload:focus {
-      background: #219150 !important;
-      color: #fff !important;
+    .btn.upload:hover {
+      background: #05476b;
+      box-shadow: 0 4px 16px rgba(44,62,80,0.12);
     }
     .main-content {
       margin-left: 260px;
