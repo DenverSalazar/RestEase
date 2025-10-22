@@ -174,6 +174,32 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       box-shadow: 0 4px 12px rgba(0,119,182,0.06);
       background: #fff;
     }
+    /* Dropdown styles for filter */
+    .ledger-filter-dropdown {
+      display:none;
+      position:absolute;
+      right:0;
+      top:calc(100% + 8px);
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 6px 20px rgba(11,117,168,0.08);
+      padding:8px;
+      z-index:1200;
+      min-width:160px;
+    }
+    .ledger-filter-item {
+      width:100%;
+      text-align:left;
+      padding:8px 10px;
+      border-radius:6px;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      transition: background 0.12s ease;
+    }
+    .ledger-filter-item:hover {
+      background:#f1f9ff;
+    }
   </style>
 </head>
 <body>
@@ -188,24 +214,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       <div>
         <h1 style="font-size:2rem;font-weight:700;margin-bottom:0;">Ledger</h1>
         <p style="font-size:1.04rem;color:#6b7280;">Fill up the ledger information</p>
-      </div>
-    </div>
-    <!-- Search Bar + Buttons Row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-      <div class="search-container" style="flex:1;max-width:420px;">
-        <i class="fas fa-search"></i>
-        <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
-        <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <i class="fas fa-file-import"></i> Import Data
-        </button>
-        <button id="exportExcelBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <i class="fas fa-file-excel"></i> Export Data
-        </button>
-        <button id="ledgerDeleteBtn" type="button" style="background:#e74c3c;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <i class="fas fa-trash"></i> Delete
-        </button>
       </div>
     </div>
     <!-- Import Excel Modal for Ledger -->
@@ -241,23 +249,24 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       </div>
     </div>
     <script>
-      // Import Excel Modal logic for Ledger
-      document.getElementById('importExcelBtn').onclick = function() {
-        document.getElementById('ledgerExcelModal').style.display = 'flex';
-      };
-      document.getElementById('closeLedgerModal').onclick = function() {
-        document.getElementById('ledgerExcelModal').style.display = 'none';
-      };
-      document.getElementById('cancelLedgerBtn').onclick = function() {
-        document.getElementById('ledgerExcelModal').style.display = 'none';
-      };
-      document.getElementById('ledgerExcelModal').onclick = function(e) {
-        if (e.target === this) this.style.display = 'none';
-      };
-      document.getElementById('ledgerFileInput').onchange = function() {
-        const fileName = this.files[0] ? this.files[0].name : 'No file selected';
-        document.querySelector('#ledgerExcelModal .file-name').textContent = fileName;
-      };
+      // Import Excel Modal logic for Ledger - run after DOMContentLoaded so moved buttons are available
+      document.addEventListener('DOMContentLoaded', function() {
+        var importBtn = document.getElementById('importExcelBtn');
+        var closeBtn = document.getElementById('closeLedgerModal');
+        var cancelBtn = document.getElementById('cancelLedgerBtn');
+        var modal = document.getElementById('ledgerExcelModal');
+        var fileInput = document.getElementById('ledgerFileInput');
+
+        if (importBtn) importBtn.onclick = function() { if (modal) modal.style.display = 'flex'; };
+        if (closeBtn) closeBtn.onclick = function() { if (modal) modal.style.display = 'none'; };
+        if (cancelBtn) cancelBtn.onclick = function() { if (modal) modal.style.display = 'none'; };
+        if (modal) modal.onclick = function(e) { if (e.target === this) this.style.display = 'none'; };
+        if (fileInput) fileInput.onchange = function() {
+          var fileName = this.files[0] ? this.files[0].name : 'No file selected';
+          var el = document.querySelector('#ledgerExcelModal .file-name');
+          if (el) el.textContent = fileName;
+        };
+      });
     </script>
     <!-- Tabs -->
     <div style="border-bottom:1px solid #e0e0e0;margin-bottom:8px;">
@@ -348,32 +357,72 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 32px 32px 0 32px; margin-bottom:24px;">
         <span style="font-size:1.25rem;font-weight:600;letter-spacing:0.5px;">Payment Details</span>
         <!-- Filter buttons: All / New / renewal / reopen / transfer / full payment -->
-        <div id="ledgerFilters" style="display:flex;gap:8px;align-items:center;">
-          <button class="ledger-filter-btn active" data-filter="all">all</button>
-          <button class="ledger-filter-btn" data-filter="new">New</button>
-          <button class="ledger-filter-btn" data-filter="renewal">renewal</button>
-          <button class="ledger-filter-btn" data-filter="reopen">reopen</button>
-          <button class="ledger-filter-btn" data-filter="transfer">transfer</button>
-          <button class="ledger-filter-btn" data-filter="fullpayment">full payment</button>
+        <div id="ledgerFilters" style="display:flex;gap:8px;align-items:center; position:relative;">
+            <!-- Single toggle button that shows a dropdown for filter choices -->
+            <button id="ledgerFilterToggle" class="ledger-filter-btn active" type="button" aria-expanded="false" aria-haspopup="true" data-filter="all" style="display:flex;align-items:center;gap:8px;">
+              <span id="ledgerFilterLabel">All</span>
+              <i class="fas fa-caret-down" style="font-size:0.95rem;"></i>
+            </button>
+            <div id="ledgerFilterDropdown" class="ledger-filter-dropdown" style="display:none; position:absolute; right:0; top:calc(100% + 8px); background:#fff; border-radius:8px; box-shadow:0 6px 20px rgba(11,117,168,0.08); padding:8px; z-index:1200; min-width:160px;">
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="all" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">All</button>
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="new" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">New</button>
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="renewal" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">Renewal</button>
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="reopen" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">Reopen</button>
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="transfer" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">Transfer</button>
+              <button class="ledger-filter-item ledger-filter-btn" data-filter="fullpayment" type="button" style="width:100%;text-align:left;padding:8px 10px;border-radius:6px;border:none;background:transparent;">Full Payment</button>
+            </div>
+          </div>
+      </div>
+      <!-- Search Bar + Buttons Row (moved here from top) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding: 0 32px 18px 32px;">
+        <div class="search-container" style="flex:1;max-width:420px;">
+          <i class="fas fa-search"></i>
+          <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
+          <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-file-import"></i> Import Data
+          </button>
+          <button id="exportExcelBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-file-excel"></i> Export Data
+          </button>
+          <button id="ledgerDeleteBtn" type="button" style="background:#e74c3c;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-trash"></i> Delete
+          </button>
         </div>
       </div>
       <form id="ledgerDeleteForm" method="post" style="margin:0;">
-        <div style="overflow-x:auto; padding: 0 32px;">
-          <table class="ledger-table" id="paymentDetailsTable" style="min-width:1100px;">
+        <div style="overflow-x:auto; padding: 0 32px; position:relative;">
+          <table class="ledger-table" id="paymentDetailsTable" style="min-width:1100px;border-collapse:collapse;">
             <thead>
               <tr>
-                <th>Apt No.</th>
-                <th>Payee Name</th>
-                <th>Date Paid</th>
+                <th style="min-width:100px;">Apt No.</th>
+                <th style="min-width:100px;">Payee</th>
+                <th style="min-width:100px;">Date Paid</th>
                 <th>Amount</th>
-                <th>Description</th>
-                <th>Validity</th>
-                <th>OR Number</th>
-                <th>MC No.</th>
+                <th style="min-width:100px;">Description</th>
+                <th style="min-width:100px;">OR Number</th>
+                <th style="min-width:100px;">Validity</th>
+                <th style="min-width:100px;">MC No.</th>
                 <th>Action</th>
-                <th id="ledgerDeleteTh" style="display:none;">
-                  <input type="checkbox" id="ledgerSelectAllCheckbox" style="display:none;">
+                <!-- checkbox column for selection on the right -->
+                <th id="ledgerDeleteTh" style="width:48px;padding-right:8px;display:none;">
+                  <input type="checkbox" id="ledgerSelectAllCheckbox" style="display:inline-block;vertical-align:middle;">
                 </th>
+                <style>
+                  /* Match filter buttons to status badge colors */
+                  .ledger-filter-btn.badge-green { color: #059669; border-color: #d1fae5; background: #fff; }
+                  .ledger-filter-btn.badge-blue { color: #075985; border-color: #e6f0ff; }
+                  .ledger-filter-btn.badge-yellow { color: #b45309; border-color: #fff7ed; }
+                  .ledger-filter-btn.badge-purple { color: #6b21a8; border-color: #f3e8ff; }
+                  .ledger-filter-btn.badge-default { color: #374151; border-color: #f3f4f6; }
+                  /* Active (filled) state */
+                  .ledger-filter-btn.active.badge-green { background:#059669;color:#fff;border-color:#059669; box-shadow:0 6px 20px rgba(5,150,105,0.06); }
+                  .ledger-filter-btn.active.badge-blue { background:#075985;color:#fff;border-color:#075985; box-shadow:0 6px 20px rgba(7,89,133,0.06); }
+                  .ledger-filter-btn.active.badge-yellow { background:#b45309;color:#fff;border-color:#b45309; box-shadow:0 6px 20px rgba(180,83,9,0.06); }
+                  .ledger-filter-btn.active.badge-purple { background:#6b21a8;color:#fff;border-color:#6b21a8; box-shadow:0 6px 20px rgba(107,33,168,0.06); }
+                  .ledger-filter-btn.active.badge-default { background:#374151;color:#fff;border-color:#374151; box-shadow:0 6px 20px rgba(55,65,81,0.06); }
+                </style>
               </tr>
             </thead>
             <tbody>
@@ -392,37 +441,59 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                   else if (strpos($descNorm, 'transfer') === 0) $token = 'transfer';
                   else if (strpos($descNorm, 'fullpayment') === 0 || strpos($descNorm, 'fullpay') === 0) $token = 'fullpayment';
                   else $token = $descNorm; // fallback (won't match filters)
-                  echo '<tr data-type="' . htmlspecialchars($token) . '">';
-                  echo '<td>' . htmlspecialchars($row['ApartmentNo'] ?? '') . '</td>';
-                  echo '<td>' . htmlspecialchars($row['Payee']) . '</td>';
-                  echo '<td>' . htmlspecialchars($row['DatePaid']) . '</td>';
-                  echo '<td>₱' . number_format($row['Amount'], 2) . '</td>';
-                  echo '<td>' . htmlspecialchars($row['Description']) . '</td>';
-                  echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
-                  echo '<td>' . htmlspecialchars($row['ORNumber']) . '</td>';
-                  // MCNo can be null, show empty string if so
-                  echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
-                  // Action button: if ApartmentNo present, go to editniches.php with accurate data to avoid duplicates; otherwise fallback to Insert.php
-                  $apt = trim($row['ApartmentNo'] ?? '');
-                  if ($apt !== '') {
-                      // Build safe query with relevant fields so editniches.php can prefill
-                      $params = http_build_query([
-                          'nicheID'    => $row['ApartmentNo'],
-                          'ledger_id'  => $row['id'],
-                          'payee'      => $row['Payee'],
-                          'amount'     => number_format($row['Amount'], 2, '.', ''), // numeric string
-                          'DatePaid'   => $row['DatePaid'],
-                          'ORNumber'   => $row['ORNumber'],
-                          'MCNo'       => $row['MCNo'],
-                          'Description'=> $row['Description'],
-                          'Validity'   => $row['Validity']
-                      ]);
-                     echo '<td><a href="EditNiches.php?' . $params . '" class="action-btn" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:500;font-size:0.92rem;display:inline-block;min-width:40px;text-align:center;">Edit</a></td>';
-                   } else {
-                      echo '<td><a href="Insert.php?id=' . intval($row['id']) . '" class="action-btn" style="background:#0077b6;color:#fff;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:400;font-size:0.92rem;display:inline-block;">Insert</a></td>';
-                  }
-                  echo '<td><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '"></td>';
-                  echo '</tr>';
+                  // Build small avatar (first letter) and status badge per description token
+                  $payee = htmlspecialchars($row['Payee']);
+                  $orderNo = htmlspecialchars($row['ORNumber']);
+                  $datePaid = htmlspecialchars($row['DatePaid']);
+                  $amountFmt = '₱' . number_format($row['Amount'], 2);
+                  // Status badge color mapping
+                  $badgeText = htmlspecialchars($row['Description']);
+                  $badgeClass = 'badge-default';
+                  if ($token === 'new' || $token === 'fullpayment') $badgeClass = 'badge-green';
+                  else if ($token === 'renewal') $badgeClass = 'badge-blue';
+                  else if ($token === 'reopen') $badgeClass = 'badge-yellow';
+                  else if ($token === 'transfer') $badgeClass = 'badge-purple';
+
+    echo '<tr data-type="' . htmlspecialchars($token) . '">';
+    // Apartment No. (moved to first column)
+    echo '<td style="color:#000000;">' . htmlspecialchars($row['ApartmentNo'] ?? '') . '</td>';
+    // Customer (name)
+    echo '<td style="display:flex;flex-direction:column;">';
+    echo '<span style="font-weight:600;">' . $payee . '</span>';
+    echo '</td>';
+    // Date Paid
+    echo '<td>' . $datePaid . '</td>';
+    // Amount
+    echo '<td style="font-weight:600;">' . $amountFmt . '</td>';
+    // Description (status badge)
+    echo '<td><span class="status-badge ' . $badgeClass . '">' . $badgeText . '</span></td>';
+    // OR Number (moved between Description and Validity)
+    echo '<td style="color:#000000;">' . ($orderNo !== '' ? '#' . $orderNo : '&mdash;') . '</td>';
+    // Validity
+    echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
+    // MC No.
+    echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
+          // Action column (edit / insert / more)
+          $apt = trim($row['ApartmentNo'] ?? '');
+          if ($apt !== '') {
+            $params = http_build_query([
+              'nicheID'    => $row['ApartmentNo'],
+              'ledger_id'  => $row['id'],
+              'payee'      => $row['Payee'],
+              'amount'     => number_format($row['Amount'], 2, '.', ''),
+              'DatePaid'   => $row['DatePaid'],
+              'ORNumber'   => $row['ORNumber'],
+              'MCNo'       => $row['MCNo'],
+              'Description'=> $row['Description'],
+              'Validity'   => $row['Validity']
+            ]);
+            echo '<td><a href="EditNiches.php?' . $params . '" class="action-btn" style="background:none;border:none;color:#0b75a8;text-decoration:none;font-weight:600;">Edit</a> &nbsp; <a href="#" class="more-btn" data-id="' . $row['id'] . '" style="color:#9ca3af;"></a></td>';
+          } else {
+            echo '<td><a href="Insert.php?id=' . intval($row['id']) . '" class="action-btn" style="background:none;border:none;color:#0b75a8;text-decoration:none;font-weight:600;">Insert</a> &nbsp; <a href="#" class="more-btn" data-id="' . $row['id'] . '" style="color:#9ca3af;"></a></td>';
+          }
+          // Checkbox cell on the right
+          echo '<td style="padding-right:10px;"><input type="checkbox" class="ledger-delete-checkbox" name="delete_ids[]" value="' . $row['id'] . '" style="vertical-align:middle;"></td>';
+          echo '</tr>';
                 }
               }
               ?>
@@ -430,6 +501,20 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           </table>
         </div>
       </form>
+      <style>
+        /* Avatar and badge styles for Payment Details */
+        .avatar { font-family: 'Poppins',sans-serif; }
+        .status-badge { display:inline-block;padding:6px 10px;border-radius:999px;font-weight:600;font-size:0.87rem; }
+        .badge-green { background: #d1fae5; color:#059669; }
+        .badge-blue { background: #e6f0ff; color:#075985; }
+        .badge-yellow { background: #fff7ed; color:#b45309; }
+        .badge-purple { background: #f3e8ff; color:#6b21a8; }
+        .badge-default { background:#f3f4f6;color:#374151; }
+        /* Table row hover */
+        #paymentDetailsTable tbody tr:hover { background:#fbfdff; }
+        /* Selection checkbox larger and visible */
+        .ledger-delete-checkbox { width:18px; height:18px; }
+      </style>
       <!-- Delete Confirmation Modal (proper popup modal, overlays the page) -->
       <div id="ledgerDeleteModal" class="modal-overlay" style="display:none;position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
         <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
@@ -523,6 +608,26 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         paymentDetailsSection.style.display = '';
         // Initialize DataTables only once, after table is visible
         if (!paymentTabInitialized) {
+              // Apply initial badge classes to dropdown items and the toggle to match status colors
+              (function() {
+                const mapping = {
+                  'all': 'badge-default',
+                  'new': 'badge-green',
+                  'renewal': 'badge-blue',
+                  'reopen': 'badge-yellow',
+                  'transfer': 'badge-purple',
+                  'fullpayment': 'badge-green'
+                };
+                const items = document.querySelectorAll('.ledger-filter-item');
+                items.forEach(it => {
+                  const t = (it.getAttribute('data-filter') || 'all').toLowerCase();
+                  const cls = mapping[t] || 'badge-default';
+                  it.classList.add(cls);
+                });
+                // Also set the toggle button class to the currently selected token (default: all)
+                const toggle = document.getElementById('ledgerFilterToggle');
+                if (toggle) toggle.classList.add(mapping['all']);
+              })();
           paymentDetailsDataTable = $('#paymentDetailsTable').DataTable({
             paging: true,
             searching: true,
@@ -538,70 +643,104 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           // --- Ledger filter integration using DataTables custom search ---
           (function() {
             let currentLedgerFilter = 'all';
-            // Register DataTables custom filter
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex, rowData, counter) {
-              if (settings.nTable.id !== 'paymentDetailsTable') return true;
-              if (currentLedgerFilter === 'all') return true;
-              // Get tr node for this row and read data-type attribute
-              const rowNode = paymentDetailsDataTable.row(dataIndex).node();
-              if (!rowNode) return true;
-              const type = (rowNode.getAttribute('data-type') || '').toLowerCase();
-              return type === currentLedgerFilter;
-            });
-
-            // Wire up filter buttons (only the requested set)
-            const filterBtns = Array.from(document.querySelectorAll('.ledger-filter-btn'));
-
-            // Helper to apply a filter token (updates active class, current filter, redraws)
-            function applyLedgerFilter(token, pushHash = false) {
-              currentLedgerFilter = token || 'all';
-              filterBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === currentLedgerFilter));
-              paymentDetailsDataTable.draw();
-              if (pushHash) {
-                try {
-                  // Update hash without adding history entry
-                  history.replaceState(null, '', '#filter=' + encodeURIComponent(currentLedgerFilter));
-                } catch (e) {
-                  location.hash = 'filter=' + encodeURIComponent(currentLedgerFilter);
+                // Register DataTables custom filter
+                 $.fn.dataTable.ext.search.push(function(settings, data, dataIndex, rowData, counter) {
+                   if (settings.nTable.id !== 'paymentDetailsTable') return true;
+                   if (currentLedgerFilter === 'all') return true;
+                   // Get tr node for this row and read data-type attribute
+                   const rowNode = paymentDetailsDataTable.row(dataIndex).node();
+                   if (!rowNode) return true;
+                   const type = (rowNode.getAttribute('data-type') || '').toLowerCase();
+                   return type === currentLedgerFilter;
+                 });
+ 
+                // Wire up dropdown filter items
+                const filterItems = Array.from(document.querySelectorAll('.ledger-filter-item'));
+                const filterToggle = document.getElementById('ledgerFilterToggle');
+                const filterLabel = document.getElementById('ledgerFilterLabel');
+                const filterDropdown = document.getElementById('ledgerFilterDropdown');
+ 
+                // Toggle dropdown visibility
+                if (filterToggle) {
+                  filterToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const open = filterDropdown.style.display === 'block';
+                    filterDropdown.style.display = open ? 'none' : 'block';
+                    this.setAttribute('aria-expanded', open ? 'false' : 'true');
+                  });
                 }
-              }
-            }
-
-            // Click handler sets filter and updates hash
-            filterBtns.forEach(btn => {
-              btn.addEventListener('click', function() {
-                const f = this.getAttribute('data-filter') || 'all';
-                applyLedgerFilter(f, true);
-              });
-            });
-
-            // Initialize from URL hash if present (format: #filter=token)
-            (function initFromHash() {
-              const h = (location.hash || '').replace(/^#/, '');
-              const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
-              if (m && m[1]) {
-                const token = decodeURIComponent(m[1].toLowerCase());
-                // Only apply if one of the known tokens (defensive)
-                const known = ['all','new','renewal','reopen','transfer','fullpayment'];
-                applyLedgerFilter(known.includes(token) ? token : 'all', false);
-              } else {
-                // ensure UI matches default 'all'
-                applyLedgerFilter('all', false);
-              }
-            })();
-
-            // Listen for hashchange so external navigation updates filter
-            window.addEventListener('hashchange', function() {
-              const h = (location.hash || '').replace(/^#/, '');
-              const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
-              if (m && m[1]) {
-                const token = decodeURIComponent(m[1].toLowerCase());
-                applyLedgerFilter(token, false);
-              }
-            });
-          })();
-        }
-      });
+ 
+                // Close dropdown on outside click
+                document.addEventListener('click', function(e) {
+                  if (!filterDropdown) return;
+                  if (!filterDropdown.contains(e.target) && e.target !== filterToggle) {
+                    filterDropdown.style.display = 'none';
+                    if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+                  }
+                });
+ 
+                 // Helper to apply a filter token (updates active class, current filter, redraws)
+                 function applyLedgerFilter(token, pushHash = false) {
+                   currentLedgerFilter = token || 'all';
+                  // update active state on dropdown items
+                  filterItems.forEach(b => b.classList.toggle('active', b.getAttribute('data-filter') === currentLedgerFilter));
+                  // update toggle label and badge class
+                  if (filterLabel) filterLabel.textContent = currentLedgerFilter === 'all' ? 'All' : filterItems.find(i => i.getAttribute('data-filter') === currentLedgerFilter).textContent;
+                  // remove existing badge- classes from toggle then add the new one
+                  if (filterToggle) {
+                    filterToggle.classList.remove('badge-default','badge-green','badge-blue','badge-yellow','badge-purple');
+                    const map = { 'all':'badge-default','new':'badge-green','renewal':'badge-blue','reopen':'badge-yellow','transfer':'badge-purple','fullpayment':'badge-green' };
+                    filterToggle.classList.add(map[currentLedgerFilter] || 'badge-default');
+                  }
+                   paymentDetailsDataTable.draw();
+                   if (pushHash) {
+                     try {
+                       // Update hash without adding history entry
+                       history.replaceState(null, '', '#filter=' + encodeURIComponent(currentLedgerFilter));
+                     } catch (e) {
+                       location.hash = 'filter=' + encodeURIComponent(currentLedgerFilter);
+                     }
+                   }
+                 }
+ 
+                 // Click handler sets filter and updates hash
+                filterItems.forEach(btn => {
+                  btn.addEventListener('click', function(e) {
+                    const f = this.getAttribute('data-filter') || 'all';
+                    // close dropdown and apply
+                    if (filterDropdown) filterDropdown.style.display = 'none';
+                    if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+                    applyLedgerFilter(f, true);
+                  });
+                });
+ 
+                 // Initialize from URL hash if present (format: #filter=token)
+                 (function initFromHash() {
+                   const h = (location.hash || '').replace(/^#/, '');
+                   const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
+                   if (m && m[1]) {
+                     const token = decodeURIComponent(m[1].toLowerCase());
+                     // Only apply if one of the known tokens (defensive)
+                     const known = ['all','new','renewal','reopen','transfer','fullpayment'];
+                    applyLedgerFilter(known.includes(token) ? token : 'all', false);
+                   } else {
+                     // ensure UI matches default 'all'
+                     applyLedgerFilter('all', false);
+                   }
+                 })();
+ 
+                 // Listen for hashchange so external navigation updates filter
+                 window.addEventListener('hashchange', function() {
+                   const h = (location.hash || '').replace(/^#/, '');
+                   const m = h.match(/(?:^|&)filter=([^&]+)/) || h.match(/^filter=([^&]+)/);
+                   if (m && m[1]) {
+                     const token = decodeURIComponent(m[1].toLowerCase());
+                     applyLedgerFilter(token, false);
+                   }
+                 });
+               })();
+             }
+           });
     </script>
     <!-- Add SheetJS for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -611,21 +750,25 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         var table = document.getElementById('paymentDetailsTable');
         // Clone table to avoid DataTables hidden columns
         var clone = table.cloneNode(true);
-        // Remove checkboxes column (now index 8)
+        // Remove any column that contains a checkbox input (checkbox cells)
         Array.from(clone.querySelectorAll('tr')).forEach(function(row) {
-          if (row.cells.length > 8) row.deleteCell(8);
+          for (var i = row.cells.length - 1; i >= 0; i--) {
+            if (row.cells[i].querySelector && row.cells[i].querySelector('input[type="checkbox"]')) {
+              row.deleteCell(i);
+            }
+          }
         });
-        // Remove time from Date Paid and Validity columns
+        // Remove time from Date Paid and Validity columns by determining their column indexes
+        var headerCells = Array.from(clone.querySelectorAll('thead th'));
+        var dateIdx = -1, validIdx = -1;
+        headerCells.forEach(function(h, idx) {
+          var txt = (h.textContent || '').trim().toLowerCase();
+          if (txt === 'date paid') dateIdx = idx;
+          if (txt === 'validity') validIdx = idx;
+        });
         Array.from(clone.querySelectorAll('tbody tr')).forEach(function(row) {
-          // Date Paid is column 2, Validity is column 5 (0-based)
-          var datePaidCell = row.cells[2];
-          var validityCell = row.cells[5];
-          if (datePaidCell) {
-            datePaidCell.textContent = datePaidCell.textContent.split(' ')[0];
-          }
-          if (validityCell) {
-            validityCell.textContent = validityCell.textContent.split(' ')[0];
-          }
+          if (dateIdx >= 0 && row.cells[dateIdx]) row.cells[dateIdx].textContent = (row.cells[dateIdx].textContent || '').split(' ')[0];
+          if (validIdx >= 0 && row.cells[validIdx]) row.cells[validIdx].textContent = (row.cells[validIdx].textContent || '').split(' ')[0];
         });
         var wb = XLSX.utils.table_to_book(clone, {sheet:"Payment Details"});
         XLSX.writeFile(wb, 'PaymentDetails.xlsx');
@@ -634,8 +777,9 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       // Ledger delete logic (copied/adapted from Records.php)
       const ledgerDeleteBtn = document.getElementById('ledgerDeleteBtn');
       const ledgerTable = document.getElementById('paymentDetailsTable');
-      const ledgerDeleteCheckboxes = ledgerTable.querySelectorAll('.ledger-delete-checkbox');
-      const ledgerSelectAllCheckbox = document.getElementById('ledgerSelectAllCheckbox');
+  // Query selectors will be live/updated as rows change
+  const ledgerDeleteCheckboxes = () => ledgerTable.querySelectorAll('.ledger-delete-checkbox');
+  const ledgerSelectAllCheckbox = document.getElementById('ledgerSelectAllCheckbox');
       const ledgerDeleteModal = document.getElementById('ledgerDeleteModal');
       const ledgerModalDeleteBtn = document.getElementById('ledgerModalDeleteBtn');
       const ledgerModalCancelBtn = document.getElementById('ledgerModalCancelBtn');
@@ -646,11 +790,11 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       function setLedgerDeleteMode(on) {
         ledgerDeleteMode = on;
         if (on) {
-          ledgerTable.querySelectorAll('.ledger-delete-checkbox').forEach(cb => cb.style.display = '');
+          ledgerDeleteCheckboxes().forEach(cb => cb.style.display = '');
           if (ledgerSelectAllCheckbox) ledgerSelectAllCheckbox.style.display = '';
           if (ledgerDeleteTh) ledgerDeleteTh.style.display = '';
         } else {
-          ledgerTable.querySelectorAll('.ledger-delete-checkbox').forEach(cb => { cb.checked = false; cb.style.display = 'none'; });
+          ledgerDeleteCheckboxes().forEach(cb => { cb.checked = false; cb.style.display = 'none'; });
           if (ledgerSelectAllCheckbox) { ledgerSelectAllCheckbox.checked = false; ledgerSelectAllCheckbox.style.display = 'none'; }
           if (ledgerDeleteTh) ledgerDeleteTh.style.display = 'none';
         }
@@ -658,19 +802,27 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       setLedgerDeleteMode(false);
 
       // Select All logic
+      function updateSelectionState() {
+        const checkboxes = Array.from(ledgerDeleteCheckboxes());
+        const checked = checkboxes.filter(cb => cb.checked);
+        // update select-all (no toolbar UI)
+        if (ledgerSelectAllCheckbox) ledgerSelectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
+      }
+
       if (ledgerSelectAllCheckbox) {
         ledgerSelectAllCheckbox.addEventListener('change', function() {
-          const checkboxes = ledgerTable.querySelectorAll('.ledger-delete-checkbox');
+          const checkboxes = Array.from(ledgerDeleteCheckboxes());
           checkboxes.forEach(cb => cb.checked = ledgerSelectAllCheckbox.checked);
-        });
-        ledgerTable.addEventListener('change', function(e) {
-          if (e.target.classList.contains('ledger-delete-checkbox')) {
-            const checkboxes = ledgerTable.querySelectorAll('.ledger-delete-checkbox');
-            const checked = ledgerTable.querySelectorAll('.ledger-delete-checkbox:checked');
-            ledgerSelectAllCheckbox.checked = (checkboxes.length > 0 && checked.length === checkboxes.length);
-          }
+          updateSelectionState();
         });
       }
+
+      // Delegate change events to table for dynamic rows
+      ledgerTable.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ledger-delete-checkbox')) {
+          updateSelectionState();
+        }
+      });
 
       // Delete button click handler
       ledgerDeleteBtn.addEventListener('click', function(e) {

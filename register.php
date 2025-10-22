@@ -38,6 +38,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $input['confirm_password'] = $_POST['confirm_password'];
     $input['terms'] = isset($_POST['terms']);
 
+    // Enforce maximum lengths
+    if (mb_strlen($input['first_name']) > 30) {
+        $register_error = "First name must be 30 characters or fewer.";
+        $field_errors['first_name'] = true;
+    }
+    if (mb_strlen($input['last_name']) > 30) {
+        $register_error = "Last name must be 30 characters or fewer.";
+        $field_errors['last_name'] = true;
+    }
+    if (mb_strlen($input['email']) > 50) {
+        $register_error = "Email must be 50 characters or fewer.";
+        $field_errors['email'] = true;
+    }
+
     // Basic validation
     if (!$input['first_name'] || !$input['last_name'] || !$input['email'] || !$input['contact_no'] || !$input['password'] || !$input['confirm_password']) {
         $register_error = "All fields are required.";
@@ -338,18 +352,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <form method="POST" action="">
                             <div class="row ">
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
+                                    <input type="text" maxlength="25" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
                                         placeholder="First name" name="first_name" required
                                         value="<?php echo htmlspecialchars($input['first_name']); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
+                                    <input type="text" maxlength="25" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
                                         placeholder="Last name" name="last_name" required
                                         value="<?php echo htmlspecialchars($input['last_name']); ?>">
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <input type="email" class="form-control <?php if($field_errors['email']) echo 'is-invalid'; ?>"
+                                <input type="email" maxlength="50" class="form-control <?php if($field_errors['email']) echo 'is-invalid'; ?>"
                                     placeholder="Email" name="email" required
                                     value="<?php echo htmlspecialchars($input['email']); ?>">
                             </div>

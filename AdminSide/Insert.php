@@ -299,12 +299,36 @@ if ($id) {
   <link rel="stylesheet" href="../css/header.css">
   <style>
     body { font-family: 'Poppins', sans-serif; background: #f7f8fa; }
-    .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(44,62,80,0.08); padding: 32px; }
-    h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 18px; }
-    .details-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    .details-table th, .details-table td { padding: 8px 10px; font-size: 0.95rem; border-bottom: 1px solid #eee; text-align: left; }
-    .details-table th { background: #f7f8fa; font-weight: 500; }
-    .details-table tr:last-child td { border-bottom: none; }
+    /* Improved form design, keep container size unchanged */
+    .form-group label {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #34495e;
+      margin-bottom: 7px;
+      letter-spacing: 0.2px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group .form-control {
+      padding: 10px 13px;
+      border: 1.5px solid #e3e7ed;
+      border-radius: 7px;
+      font-size: 1.02rem;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 2px rgba(52,152,219,0.10);
+      background: #fff;
+    }
+    .input-error {
+      border-color: #e74c3c !important;
+      box-shadow: 0 0 0 2px rgba(231,76,60,0.12);
+      background: #fff;
+    }
     .field-error {
       color: #e74c3c;
       font-size: 0.92em;
@@ -313,9 +337,87 @@ if ($id) {
       font-weight: 500;
       letter-spacing: 0.1px;
     }
-    .input-error {
-      border-color: #e74c3c !important;
-      box-shadow: 0 0 0 2px rgba(231,76,60,0.12);
+    .form-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+      min-width: 180px;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .btn.upload {
+      background: linear-gradient(90deg,#3498db 0%,#27ae60 100%);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 10px 28px;
+      font-size: 1.08rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      transition: background 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn.upload:hover {
+      background: linear-gradient(90deg,#2980b9 0%,#219150 100%);
+      box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+    }
+    .btn.secondary {
+      background: #f7f8fa;
+      color: #34495e;
+      border: 1px solid #e1e4ea;
+      border-radius: 7px;
+      padding: 10px 22px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn.secondary:hover {
+      background: #e1e4ea;
+      border-color: #bfc9d2;
+    }
+    .niche-picker-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pick-niche-btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .pick-niche-btn:hover {
+      background: #2980b9;
+    }
+    @media (max-width: 900px) {
+      .form-row { gap: 12px; }
+    }
+    @media (max-width: 600px) {
+      .form-row { flex-direction: column; gap: 0; }
+      .form-group { min-width: 0; }
+      .form-actions { flex-direction: column; gap: 8px; }
     }
   </style>
 </head>
@@ -327,18 +429,16 @@ if ($id) {
   <div class="main-content">
     <div class="cemetery-masterlist-container">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div class="cemetery-masterlist-title">Insert Data</div>
+        <div class="cemetery-masterlist-title" style="font-size:1.5rem;font-weight:700;color:#2d3a4a;">Insert Data</div>
       </div>
-      <div class="cemetery-masterlist-desc">Fill up the masterlist data</div>
+      <div class="cemetery-masterlist-desc" style="color:#6c7a89;font-size:1.08rem;margin-top:2px;">Fill up the masterlist data</div>
     </div>
-    
     <div class="card">
-      <div class="top-actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-bottom:60px;padding-right:0;">
+      <div class="top-actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-bottom:38px;padding-right:0;">
         <div class="form-section-title" style="margin:0;">Deceased Information</div>
         <div style="display:flex;gap:12px;">
-          <button type="button" class="btn upload" id="importDataBtn">Import Data</button>
-          <!-- Back button: prefer HTTP_REFERER, otherwise use history.back(), fallback to Records.php -->
-          <button type="button" class="btn secondary" id="backBtn" data-referrer="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>">Back</button>
+          <button type="button" class="btn upload" id="importDataBtn"><i class="fas fa-file-import" style="margin-right:7px;"></i>Import Data</button>
+          <button type="button" class="btn secondary" id="backBtn" data-referrer="<?php echo htmlspecialchars($_SERVER['HTTP_REFERER'] ?? ''); ?>"><i class="fas fa-arrow-left" style="margin-right:7px;"></i>Back</button>
         </div>
       </div>
       <!-- Excel Import Modal -->
@@ -453,10 +553,29 @@ if ($id) {
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group">
-              <label for="suffix">Suffix</label>
-              <input type="text" id="suffix" name="suffix" placeholder="e.g. Jr, Sr, III"
-                value="<?php echo htmlspecialchars($deceased['suffix'] ?? ($parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? '')); ?>">
+            <div class="form-group" style="position:relative;">
+              <label for="suffixDisplay">Suffix</label>
+              <div style="position:relative;">
+                <input type="text" id="suffixDisplay" readonly placeholder="Select Suffix" style="padding-right:36px; background:#f8fafc; cursor:pointer; z-index:2; position:relative;" value="<?php echo htmlspecialchars($deceased['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
+                <input type="hidden" id="suffix" name="suffix" value="<?php echo htmlspecialchars($deceased['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
+                <button type="button" id="suffix-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:3;">
+                  <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
+                </button>
+                <ul id="suffix-dropdown-list" style="display:none;position:absolute;top:100%;left:0;width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-radius:6px;max-height:220px;overflow-y:auto;z-index:10;margin:2px 0 0 0;padding:0;list-style:none;">
+                  <li data-value="">(None)</li>
+                  <li data-value="Sr.">Sr.</li>
+                  <li data-value="Jr.">Jr.</li>
+                  <li data-value="II">II</li>
+                  <li data-value="III">III</li>
+                  <li data-value="IV">IV</li>
+                  <li data-value="V">V</li>
+                  <li data-value="VI">VI</li>
+                  <li data-value="VII">VII</li>
+                  <li data-value="VIII">VIII</li>
+                  <li data-value="IX">IX</li>
+                  <li data-value="X">X</li>
+                </ul>
+              </div>
             </div>
             <div class="form-group" style="position:relative;">
               <label for="residency">Residency</label>
@@ -560,7 +679,7 @@ if ($id) {
             </div>
           </div>
           <div class="form-actions">
-            <button type="submit" class="btn upload">Insert</button>
+            <button type="submit" class="btn upload"><i class="fas fa-plus" style="margin-right:7px;"></i>Insert</button>
           </div>
         </form>
       </div>
@@ -765,6 +884,51 @@ if ($id) {
         if (aptField) aptField.value = nicheID;
     }
 });
+  </script>
+  <script>
+(function() {
+  var btn = document.getElementById('suffix-dropdown-btn');
+  var list = document.getElementById('suffix-dropdown-list');
+  var input = document.getElementById('suffixDisplay');
+  var hiddenInput = document.getElementById('suffix');
+  function showSuffixDropdown() {
+    list.style.display = 'block';
+  }
+  function hideSuffixDropdown() {
+    list.style.display = 'none';
+  }
+  if (btn && list && input && hiddenInput) {
+    btn.onclick = function(e) {
+      e.preventDefault();
+      if (list.style.display === 'block') {
+        hideSuffixDropdown();
+      } else {
+        showSuffixDropdown();
+      }
+    };
+    input.onclick = function(e) {
+      e.preventDefault();
+      if (list.style.display === 'block') {
+        hideSuffixDropdown();
+      } else {
+        showSuffixDropdown();
+      }
+    };
+    list.querySelectorAll('li').forEach(function(item) {
+      item.onclick = function() {
+        input.value = this.getAttribute('data-value');
+        hiddenInput.value = this.getAttribute('data-value');
+        hideSuffixDropdown();
+      };
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!list.contains(e.target) && e.target !== btn && e.target !== input) {
+        hideSuffixDropdown();
+      }
+    });
+    input.addEventListener('focus', function() { hideSuffixDropdown(); });
+  }
+})();
   </script>
 
 </body>
