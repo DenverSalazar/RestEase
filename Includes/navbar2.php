@@ -176,6 +176,19 @@ if (!function_exists('re_short_relative_time')) {
 
     /* Hide profile avatar on small devices - avatar not needed in mobile view */
     #profileAvatar { display: none !important; }
+
+    /* ===== Responsive notification dropdown: keep centered with equal side margins ===== */
+    /* Use a responsive width (leave ~17px margin on each side), cap at 360px */
+    .notification-dropdown {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 34px) !important; /* ~17px margin both sides */
+        max-width: 360px !important;
+        border-radius: 12px;
+    }
+    /* Slightly reduce list height on small screens to avoid overflow beyond viewport */
+    .notification-dropdown .nd-list { max-height: 60vh; }
 }
 
 /* === Redesigned notification dropdown (card-like, similar to the image) === */
@@ -264,7 +277,8 @@ if (!function_exists('re_short_relative_time')) {
                     <span style="font-size:1rem;">Log Out</span>
                 </div>
             </div>
-            <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
+        </div>
+ <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
                 <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e9f2;font-weight:600;display:flex;justify-content:space-between;align-items:center;background:#f7faff;">
                     <span style="font-size:1.05rem;letter-spacing:0.5px;">Notifications</span>
                 </div>
@@ -324,7 +338,6 @@ if (!function_exists('re_short_relative_time')) {
                     <a href="../ClientSide/view_all_notifications.php" style="color:#4B7BEC;font-weight:500;text-decoration:none;font-size:0.98rem;">View all</a>
                 </div>
             </div>
-        </div>
     </div>
     <div class="navbar-overlay" onclick="toggleMobileMenu()"></div>
 </nav>
@@ -346,16 +359,23 @@ function toggleNotificationDropdown(e, sourceEl) {
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
 
-        // ✅ Adjust dropdown position for mobile
+        // Adjust dropdown position for mobile vs desktop
         if (window.innerWidth <= 768) {
-            // FIX: append 'px' outside the parentheses
-            dropdown.style.right = '10px';
-            dropdown.style.left = 'auto';
-            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8 + 'px');
+            // Use CSS centering (left:50% + translateX) so both sides have same margin
+            dropdown.style.left = '50%';
+            dropdown.style.right = 'auto';
+            dropdown.style.transform = 'translateX(-50%)';
+            // responsive width is handled by CSS @media rule; ensure top is placed beneath the bell
+            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8) + 'px';
+            // clear desktop-specific inline right if previously set
+            dropdown.style.removeProperty('right');
         } else {
-            // FIX: append 'px' outside the parentheses
-            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8 + 'px');
+            // Desktop: keep original right-aligned behavior and clear transform
+            dropdown.style.transform = '';
+            dropdown.style.left = '';
+            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
             dropdown.style.right = '0px';
+            dropdown.style.width = ''; // return to default width
         }
 
         setTimeout(function() {
