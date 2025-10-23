@@ -168,9 +168,13 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   margin-top:12px;
   gap:12px;
   padding-top:6px;
+  position: relative; /* added: allow absolute centering of middle group */
 }
 #notifPagination .pg-info { color:#666; font-size:0.95rem; }
-#notifPagination .pg-center { display:flex; gap:8px; align-items:center; justify-content:center; }
+#notifPagination .pg-center {
+  display:flex; gap:8px; align-items:center; justify-content:center;
+  position: absolute; left: 50%; transform: translateX(-50%); /* centered */
+}
 #notifPagination .pg-btn {
   border:1px solid #e3e7ed;
   background:transparent;
@@ -299,7 +303,7 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: transparent; /* was rgba(0,0,0,0.5); remove black bg */
   z-index: 999;
 }
 
@@ -496,7 +500,7 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   const headerCalendarBtn = $('#headerCalendarBtn');
 
   // pagination
-  const PAGE_SIZE_CLIENT = 5;
+  const PAGE_SIZE_CLIENT = 10; // was 5; show 10 notifications per page
   let currentPageClient = 1;
 
   function createPageButton(label, disabled, onClick, isCurrent) {
@@ -523,72 +527,102 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     $('#count-arch').textContent = arch;
   }
 
+  // ---- Filtering helpers (source-of-truth for pagination) ----
+  let dateFilter = null; // selected date filter (Date or null)
+
+  function getActiveTabKey(){
+    const activeBtn = $('#notif-tabs .notif-tab.active');
+    return activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+  }
+
+  function cardMatches(card){
+    // ignore already deleted via localStorage
+    const id = card.getAttribute('data-id') || '';
+    if (id && localStorage.getItem('notif_deleted_' + id) === '1') return false;
+
+    // tab filter
+    const tab = getActiveTabKey();
+    if (tab === 'favorite' && !(id && localStorage.getItem('notif_fav_' + id) === '1')) return false;
+    if (tab === 'archive' && !(id && localStorage.getItem('notif_archived_' + id) === '1')) return false;
+
+    // search filter
+    const q = (searchInput.value || '').trim().toLowerCase();
+    if (q) {
+      const title = (card.querySelector('.notif-title')||{textContent:''}).textContent.toLowerCase();
+      const desc  = (card.querySelector('.notif-desc') ||{textContent:''}).textContent.toLowerCase();
+      if (!title.includes(q) && !desc.includes(q)) return false;
+    }
+
+    // date filter (compare date-only)
+    if (dateFilter instanceof Date) {
+      const cardDate = new Date(card.getAttribute('data-created_at'));
+      if (cardDate.toDateString() !== dateFilter.toDateString()) return false;
+    }
+    return true;
+  }
+
+  function getFilteredCards(){
+    return $$('.notif-card-wrapper').filter(cardMatches);
+  }
+
+  // ---- Pagination based on filtered cards ----
   function updatePagination() {
     const pagRoot = document.getElementById('notifPagination');
     if (!pagRoot) return;
-    const center = pagRoot.querySelector('.pg-center');
-    const info = pagRoot.querySelector('.pg-info');
 
-    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-    const total = visible.length;
+    const allFiltered = getFilteredCards();
+    const total = allFiltered.length;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
     if (currentPageClient > totalPages) currentPageClient = 1;
 
-    info.textContent = `Page ${totalPages ? currentPageClient : 1} of ${totalPages}`;
+    const center = pagRoot.querySelector('.pg-center');
+    const info   = pagRoot.querySelector('.pg-info');
+    info.textContent = `Page ${total ? currentPageClient : 1} of ${totalPages}`;
     center.innerHTML = '';
 
-    center.appendChild(createPageButton('‹', currentPageClient <= 1, () => { currentPageClient = Math.max(1, currentPageClient - 1); paginateDisplay(); }, false));
+    center.appendChild(createPageButton('‹', currentPageClient <= 1, () => {
+      currentPageClient = Math.max(1, currentPageClient - 1);
+      paginateDisplay();
+    }, false));
 
     const maxButtons = 5;
     let start = Math.max(1, currentPageClient - Math.floor(maxButtons/2));
-    let end = Math.min(totalPages, start + maxButtons - 1);
-    start = Math.max(1, end - maxButtons + 1);
+    let end   = Math.min(totalPages, start + maxButtons - 1);
+    start     = Math.max(1, end - maxButtons + 1);
+
     for (let p = start; p <= end; p++) {
-      center.appendChild(createPageButton(String(p), false, (() => { const page = p; return () => { currentPageClient = page; paginateDisplay(); }; })(), p === currentPageClient));
+      center.appendChild(createPageButton(String(p), false, (() => {
+        const page = p;
+        return () => { currentPageClient = page; paginateDisplay(); };
+      })(), p === currentPageClient));
     }
 
-    center.appendChild(createPageButton('›', currentPageClient >= totalPages, () => { currentPageClient = Math.min(totalPages, currentPageClient + 1); paginateDisplay(); }, false));
+    center.appendChild(createPageButton('›', currentPageClient >= totalPages, () => {
+      currentPageClient = Math.min(totalPages, currentPageClient + 1);
+      paginateDisplay();
+    }, false));
 
     pagRoot.style.display = total > 0 ? 'flex' : 'none';
   }
 
   function paginateDisplay() {
-    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-    const total = visible.length;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
+    // hide all first
+    $$('.notif-card-wrapper').forEach(el => el.style.display = 'none');
+
+    const cards = getFilteredCards();
+    const totalPages = Math.max(1, Math.ceil(cards.length / PAGE_SIZE_CLIENT));
     if (currentPageClient > totalPages) currentPageClient = 1;
-    visible.forEach(el => el.style.display = 'none');
+
     const start = (currentPageClient - 1) * PAGE_SIZE_CLIENT;
-    const end = start + PAGE_SIZE_CLIENT;
-    visible.slice(start, end).forEach(el => el.style.display = '');
+    const end   = start + PAGE_SIZE_CLIENT;
+    cards.slice(start, end).forEach(el => el.style.display = '');
+
     updatePagination();
   }
 
   function applyFilter(){
-    const active = $('#notif-tabs .notif-tab.active').getAttribute('data-filter');
-    const q = (searchInput.value || '').trim().toLowerCase();
-    $$('.notif-card-wrapper').forEach(card=>{
-      const id = card.getAttribute('data-id') || '';
-      if (id && localStorage.getItem('notif_deleted_' + id) === '1'){ card.style.display = 'none'; return; }
-
-      let show = true;
-      if (active === 'favorite') {
-        show = id && localStorage.getItem('notif_fav_' + id) === '1';
-      } else if (active === 'archive') {
-        show = id && localStorage.getItem('notif_archived_' + id) === '1';
-      } else {
-        show = true;
-      }
-
-      if (q) {
-        const title = (card.querySelector('.notif-title')||{textContent:''}).textContent.toLowerCase();
-        const desc = (card.querySelector('.notif-desc')||{textContent:''}).textContent.toLowerCase();
-        show = show && (title.includes(q) || desc.includes(q));
-      }
-      card.style.display = show ? '' : 'none';
-    });
-    updateCounts();
     currentPageClient = 1;
+    updateCounts();
     paginateDisplay();
   }
 
@@ -857,39 +891,28 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 
   $('.calendar-popup .close-btn').addEventListener('click', closeCalendar);
 
+  // Clear now also resets date filter and reapplies pagination
   $('.calendar-popup .clear').addEventListener('click', () => {
     selectedDate = null;
+    dateFilter = null;
     $$('.calendar-table td').forEach(td => td.classList.remove('selected'));
+    applyFilter();
   });
 
+  // Confirm applies date filter and paginates
   $('.calendar-popup .confirm').addEventListener('click', () => {
-    if (selectedDate) {
-      // Filter notifications by selected date
-      $$('.notif-card-wrapper').forEach(card => {
-        const cardDate = new Date(card.getAttribute('data-created_at'));
-        const show = cardDate.toDateString() === selectedDate.toDateString();
-        card.style.display = show ? '' : 'none';
-      });
-      updateCounts();
-      paginateDisplay();
-    }
+    dateFilter = selectedDate ? new Date(selectedDate) : null;
+    applyFilter();
     closeCalendar();
   });
 
   overlay.addEventListener('click', closeCalendar);
 
-  // initial counts update
+  // initial render
   updateCounts();
-  // initial pagination setup
-  setTimeout(()=>{
-    updatePagination();
-    paginateDisplay();
-  }, 50);
+  setTimeout(()=>{ applyFilter(); }, 50);
 
-  // Initialize card actions including delete and favorite
   wirePerCardActions();
-  
-  // stars init
   initStars();
 })();
 </script>

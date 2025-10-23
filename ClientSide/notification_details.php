@@ -42,6 +42,21 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
         }
     }
 }
+
+// Small helpers: current user name and account label for header
+$appName = 'RestEase';
+$currentUserName = 'there';
+if ($user_id) {
+    if ($stmt = $conn->prepare("SELECT first_name FROM users WHERE id = ? LIMIT 1")) {
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($u = $res->fetch_assoc()) {
+            $currentUserName = trim($u['first_name'] ?: 'there');
+        }
+        $stmt->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,26 +84,26 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
             padding: 28px 28px 22px;
         }
 
-        /* Header w/ icon + pill */
-        .details-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
-        .icon-circle {
-            width: 40px; height: 40px; border-radius: 50%;
-            display: grid; place-items: center; color: #fff; flex: none;
+        /* Email-like header and body (from screenshot) */
+        .email-head { text-align:center; margin-bottom:18px; }
+        .bubble-icon {
+            width: 54px; height: 54px; border-radius: 14px;
+            display:grid; place-items:center; margin: 0 auto 10px;
+            background:#eef2ff; color:#4f46e5; font-size:22px;
         }
-        .icon-circle.success { background: #2ecc71; }
-        .icon-circle.danger  { background: #e74c3c; }
-        .icon-circle.warn    { background: #f39c12; }
-        .details-title-txt { font-size: 1.15rem; font-weight: 700; color: #1f2a37; }
-        .status-pill {
-            margin-left: 8px; padding: 2px 10px; border-radius: 999px;
-            font-size: .78rem; font-weight: 700; letter-spacing: .3px;
-            display: inline-block; vertical-align: middle;
-        }
-        .status-pill.success { background: rgba(46,204,113,.15); color: #1e8449; }
-        .status-pill.danger  { background: rgba(231,76,60,.15); color: #c0392b; }
-        .status-pill.warn    { background: rgba(243,156,18,.18); color: #a56500; }
+        .eyebrow { color:#ef6c00; font-weight:600; font-size:.95rem; }
+        .email-title { font-weight:800; color:#111827; font-size:1.6rem; margin:6px 0 6px; }
+        .email-sub { color:#6b7280; margin:0; }
 
-        .divider { height: 1px; background: linear-gradient(90deg,#f0f3f8, #e6ecf5, #f0f3f8); margin: 10px 0 14px; }
+        .email-body-box {
+            background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px;
+            padding:16px; color:#374151; line-height:1.55; margin:16px 0 12px;
+        }
+        .email-meta { color:#6b7280; font-size:.95rem; margin:6px 0 16px; }
+        .email-btn {
+            display:none;
+        }
+        .email-btn:hover { filter:brightness(.95); }
 
         /* Key/Value list */
         .kv-grid { display: grid; gap: 10px; }
@@ -118,128 +133,50 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
 
         <div class="details-card">
             <?php if ($notif): ?>
-                <?php $isAccepted = ($type === 'accepted'); ?>
-                <!-- New styled header -->
-                <div class="details-header">
-                    <div class="icon-circle <?php echo $isAccepted ? 'success' : 'danger'; ?>">
-                        <i class="fas <?php echo $isAccepted ? 'fa-check' : 'fa-times'; ?>"></i>
-                    </div>
-                    <div>
-                        <div class="details-title-txt">Request <?php echo $isAccepted ? 'Accepted' : 'Denied'; ?></div>
-                        <span class="status-pill <?php echo $isAccepted ? 'success' : 'danger'; ?>"><?php echo $isAccepted ? 'ACCEPTED' : 'DENIED'; ?></span>
-                    </div>
+                <?php
+                    $isAccepted = ($type === 'accepted');
+                    $fullName = trim(($notif['first_name'] ?? '').' '.($notif['middle_name'] ?? '').' '.($notif['last_name'] ?? ''));
+                    $msgTxt = $isAccepted
+                        ? "Good news! Your request for {$notif['type']} regarding {$fullName} has been accepted."
+                        : "We’re sorry. Your request for {$notif['type']} regarding {$fullName} has been denied.";
+                    $sentOn = date('M d, Y h:i A', strtotime($notif['created_at']));
+                ?>
+                <div class="email-head">
+                    <div class="bubble-icon"><i class="far fa-comment-dots"></i></div>
+                    <div class="eyebrow">Hi there, <?php echo htmlspecialchars($currentUserName); ?>.</div>
+                    <h1 class="email-title">You have a new message.</h1>
+                    <p class="email-sub">New message at <?php echo htmlspecialchars($appName); ?></p>
                 </div>
-                <div class="divider"></div>
 
-                <!-- Key/Value rows -->
-                <div class="kv-grid">
-                    <div class="kv-row">
-                        <span class="kv-label">Type</span>
-                        <span class="kv-value"><?php echo htmlspecialchars($notif['type']); ?></span>
-                    </div>
-                    <div class="kv-row">
-                        <span class="kv-label">Name</span>
-                        <span class="kv-value"><?php echo htmlspecialchars($notif['first_name'].' '.($notif['middle_name']??'').' '.$notif['last_name']); ?></span>
-                    </div>
-                    <div class="kv-row">
-                        <span class="kv-label">Date</span>
-                        <span class="kv-value"><?php echo date('M d, Y h:i A', strtotime($notif['created_at'])); ?></span>
-                    </div>
+                <div class="email-body-box">
+                    <?php echo htmlspecialchars($msgTxt); ?>
+                </div>
+
+                <div class="email-meta">
+                    Sent by Admin on <?php echo htmlspecialchars($sentOn); ?>.
                 </div>
 
             <?php elseif ($assessment && !empty($details)): ?>
-                <!-- Assessment header -->
-                <div class="details-header">
-                    <div class="icon-circle warn">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                    </div>
-                    <div>
-                        <div class="details-title-txt">Assessment of Fees</div>
-                        <span class="status-pill warn">FEES</span>
-                    </div>
-                </div>
-                <div class="divider"></div>
-
-                <!-- Keep existing rows but benefit from upgraded styles -->
-                <div class="kv-grid">
-                    <div class="detail-row"><span class="detail-label">Informant Name:</span><span class="detail-value"><?php echo htmlspecialchars($details['informant_name'] ?? ''); ?></span></div>
-                    <div class="detail-row"><span class="detail-label">Email:</span><span class="detail-value"><?php echo htmlspecialchars($details['email'] ?? ''); ?></span></div>
-                    <div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value"><?php echo htmlspecialchars($details['type'] ?? ''); ?></span></div>
-                    <div class="detail-row" style="display:<?php echo !empty($details['first_name']) ? '' : 'none'; ?>;"><span class="detail-label">Name of Deceased:</span><span class="detail-value"><?php echo htmlspecialchars($details['first_name'].' '.($details['middle_name']??'').' '.$details['last_name']); ?></span></div>
-                    <div class="detail-row" style="display:<?php echo !empty($details['residency']) ? '' : 'none'; ?>;"><span class="detail-label">Residency:</span><span class="detail-value"><?php echo htmlspecialchars($details['residency'] ?? ''); ?></span></div>
-                    <div class="detail-row" style="display:<?php echo !empty($details['dob']) ? '' : 'none'; ?>;"><span class="detail-label">Date of Birth:</span><span class="detail-value"><?php echo htmlspecialchars($details['dob'] ?? ''); ?></span></div>
-                    <div class="detail-row" style="display:<?php echo !empty($details['dod']) ? '' : 'none'; ?>;"><span class="detail-label">Date of Death:</span><span class="detail-value"><?php echo htmlspecialchars($details['dod'] ?? ''); ?></span></div>
-                    <div class="detail-row"><span class="detail-label">Age:</span><span class="detail-value"><?php echo htmlspecialchars($details['age'] ?? ''); ?></span></div>
-                    <div class="detail-row" style="display:<?php echo ($details['type'] === 'Transfer' || $details['type'] === 'Exhumation') ? '' : 'none'; ?>;"><span class="detail-label">Niche ID:</span><span class="detail-value"><?php echo htmlspecialchars($details['niche_id'] ?? ''); ?></span></div>
-                </div>
-
-                <div class="section-title">Computation</div>
-                <div class="divider" style="margin-top:4px;"></div>
-
                 <?php
-                // Calculate fees
-                $totalFee = 0;
-                $renewalFee = 5000;
-                if ($details['type'] === 'Relocate') {
-                    $openingFee = 1000;
-                    $remainsCount = intval($details['remains_count'] ?? 1);
-                    $relocationFee = 500 * $remainsCount;
-                    $totalFee = $openingFee + $relocationFee;
-                    echo '<div class="detail-row"><span class="detail-label">Opening Fee:</span><span class="detail-value">₱ 1,000.00</span></div>';
-                    echo '<div class="detail-row"><span class="detail-label">Relocation Fee:</span><span class="detail-value">₱ 500.00 x '.$remainsCount.' = ₱ '.number_format($relocationFee,2).'</span></div>';
-                    echo '<div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ '.number_format($totalFee,2).'</span></div>';
-                } else {
-                    $age = intval($details['age'] ?? 0);
-                    $discountNote = '';
-                    $babyNote = '';
-                    $isBaby = false;
-                    if ($details['type'] === 'New') {
-                        if ($age <= 2) {
-                            $totalFee = 5000;
-                            $babyNote = ' (Newborn/Baby Rate)';
-                        } else {
-                            $residency = trim($details['residency'] ?? '');
-                            $padreGarciaBarangays = [
-                                'Banaba, Padre Garcia, Batangas',
-                                'Banaybanay, Padre Garcia, Batangas',
-                                'Bawi, Padre Garcia, Batangas',
-                                'Bukal, Padre Garcia, Batangas',
-                                'Castillo, Padre Garcia, Batangas',
-                                'Cawongan, Padre Garcia, Batangas',
-                                'Manggas, Padre Garcia, Batangas',
-                                'Maugat East, Padre Garcia, Batangas',
-                                'Maugat West, Padre Garcia, Batangas',
-                                'Pansol, Padre Garcia, Batangas',
-                                'Payapa, Padre Garcia, Batangas',
-                                'Poblacion, Padre Garcia, Batangas',
-                                'Quilo-quilo North, Padre Garcia, Batangas',
-                                'Quilo-quilo South, Padre Garcia, Batangas',
-                                'San Felipe, Padre Garcia, Batangas',
-                                'San Miguel, Padre Garcia, Batangas',
-                                'Tamak, Padre Garcia, Batangas',
-                                'Tangob, Padre Garcia, Batangas'
-                            ];
-                            $isPadreGarcia = in_array($residency, $padreGarciaBarangays);
-                            if ($isPadreGarcia) {
-                                $totalFee = 10000;
-                                $discountNote = ' (Graciano discount applied)';
-                            } else {
-                                $totalFee = 15000;
-                            }
-                        }
-                    }
-                    // Expiration date (5 years from date of death)
-                    $expirationDate = '';
-                    if (!empty($details['dod'])) {
-                        $dod = strtotime($details['dod']);
-                        $exp = strtotime('+5 years', $dod);
-                        $expirationDate = date('d-M-Y', $exp);
-                    }
-                    echo $totalFee ? '<div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ '.number_format($totalFee,2).$babyNote.$discountNote.'</span></div>' : '';
-                    echo '<div class="detail-row"><span class="detail-label">Renewal Fee:</span><span class="detail-value">₱ 5,000.00</span></div>';
-                    echo $expirationDate ? '<div class="detail-row"><span class="detail-label">Certificate Expiration:</span><span class="detail-value">'.$expirationDate.'</span></div>' : '';
-                }
+                    $primaryLink = !empty($assessment['link']) ? $assessment['link'] : '#';
+                    $sentOn = date('M d, Y h:i A', strtotime($assessment['created_at']));
+                    $assessMsg = trim($assessment['message'] ?? 'Please review the assessment details below.');
                 ?>
+                <div class="email-head">
+                    <div class="bubble-icon"><i class="far fa-comment-dots"></i></div>
+                    <div class="eyebrow">Hi there, <?php echo htmlspecialchars($currentUserName); ?>.</div>
+                    <h1 class="email-title">You have a new message.</h1>
+                    <p class="email-sub">New message at <?php echo htmlspecialchars($appName); ?></p>
+                </div>
+
+                <div class="email-body-box">
+                    <?php echo htmlspecialchars($assessMsg); ?>
+                </div>
+
+                <div class="email-meta">
+                    Sent by Admin on <?php echo htmlspecialchars($sentOn); ?>.
+                </div>
+
             <?php else: ?>
                 <div class="text-center text-danger">Notification not found or you do not have access.</div>
             <?php endif; ?>
