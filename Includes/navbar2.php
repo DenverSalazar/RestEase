@@ -88,12 +88,21 @@ if ($user_id) {
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         $trimmed = trim($row['message'] ?? '');
-        $status = ($trimmed === 'Welcome to RestEase!') ? 'welcome' : 'assessment';
+        $lc = strtolower($trimmed);
+        // map message to a status for the UI
+        if ($trimmed === 'Welcome to RestEase!') {
+            $status = 'welcome';
+        } elseif (strpos($lc, 'renew') !== false || strpos($lc, 'expire') !== false) {
+            // treat any admin-sent renewal/expiration reminder as "renewal"
+            $status = 'renewal';
+        } else {
+            $status = 'assessment';
+        }
         $latest_notifications[] = [
-            'status' => $status,
-            'message' => $row['message'],
-            'link' => $row['link'],
-            'created_at' => $row['created_at']
+            'status'      => $status,
+            'message'     => $row['message'],
+            'link'        => $row['link'],
+            'created_at'  => $row['created_at']
         ];
     }
     $stmt->close();
@@ -121,6 +130,22 @@ if ($user_id) {
 }
 if (isset($_POST['mark_all_read'])) {
     $_SESSION['notifications_read'] = true;
+}
+
+// Add: compact relative time helper to mimic "2HR", "3DY" style (guarded to avoid redeclare errors)
+if (!function_exists('re_short_relative_time')) {
+    function re_short_relative_time($datetime) {
+        $ts = strtotime($datetime);
+        if (!$ts) return '';
+        $diff = time() - $ts;
+        if ($diff < 3600) { // minutes
+            $m = max(1, round($diff / 60));
+            return $m . 'MIN';
+        } elseif ($diff < 86400) { // hours
+            return round($diff / 3600) . 'HR';
+        }
+        return round($diff / 86400) . 'DY';
+    }
 }
 ?>
 <!-- Custom Navbar -->
@@ -152,6 +177,36 @@ if (isset($_POST['mark_all_read'])) {
     /* Hide profile avatar on small devices - avatar not needed in mobile view */
     #profileAvatar { display: none !important; }
 }
+
+/* === Redesigned notification dropdown (card-like, similar to the image) === */
+.notification-dropdown { width: 360px !important; border-radius: 14px; overflow: hidden; }
+.nd-header { padding: 0.75rem 1.25rem 0.4rem; background: #fff; border-bottom: 1px solid #e9eef6; }
+.nd-title { font-weight: 700; letter-spacing: .2px; font-size: 1.05rem; margin-bottom: .35rem; }
+.nd-tabs { display: flex; gap: 18px; }
+.nd-tab { position: relative; padding: .35rem 0; color: #7b8794; font-weight: 600; font-size: .92rem; cursor: default; user-select: none; }
+.nd-tab.active { color: #2f3a4a; }
+.nd-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -10px; height: 2px; background: #4B7BEC; border-radius: 2px; }
+
+/* List */
+.nd-list { max-height: 260px; overflow-y: auto; background: #fff; }
+.nd-item { display: flex; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #f2f4f8; }
+.nd-avatar { flex: 0 0 36px; height: 36px; width: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; }
+.nd-avatar--accepted { background: #2ecc71; }
+.nd-avatar--denied { background: #e74c3c; }
+.nd-avatar--welcome { background: #4B7BEC; }
+.nd-avatar--assessment { background: #f39c12; }
+/* New: renewal reminder avatar color */
+.nd-avatar--renewal { background: #8e44ad; }
+.nd-body { flex: 1; min-width: 0; }
+.nd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.nd-name { font-weight: 700; color: #2f3a4a; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nd-time { color: #98a2b3; font-weight: 700; font-size: .75rem; letter-spacing: .6px; }
+.nd-text { color: #394150; font-size: .95rem; line-height: 1.25rem; margin-top: 2px; }
+.nd-sub { color: #6b7785; font-size: .9rem; }
+
+/* Footer */
+.nd-footer { text-align: center; padding: .75rem 1.25rem; background: #f7faff; border-top: 1px solid #e5e9f2; }
+.nd-footer a { color: #4B7BEC; font-weight: 600; text-decoration: none; font-size: .98rem; }
 </style>
 
 <nav class="custom-navbar position-relative">
@@ -209,48 +264,67 @@ if (isset($_POST['mark_all_read'])) {
                     <span style="font-size:1rem;">Log Out</span>
                 </div>
             </div>
-        </div>
-        <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
+            <div class="notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;top:44px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.14);z-index:1000;padding:0.5rem 0;overflow:hidden;">
                 <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e9f2;font-weight:600;display:flex;justify-content:space-between;align-items:center;background:#f7faff;">
                     <span style="font-size:1.05rem;letter-spacing:0.5px;">Notifications</span>
                 </div>
-                <div style="max-height:260px;overflow-y:auto;">
+
+                <div id="notifList" class="nd-list">
                     <?php if ($user_id && count($latest_notifications) > 0): ?>
                         <?php foreach ($latest_notifications as $notif): ?>
-                            <div style="padding:0.85rem 1.25rem;border-bottom:1px solid #f2f2f2;display:flex;align-items:flex-start;gap:0.75rem;">
-                                <div style="flex-shrink:0;">
-                                    <?php if ($notif['status'] === 'accepted'): ?>
-                                        <i class="fas fa-check-circle" style="color:#2ecc71;font-size:1.25rem;"></i>
-                                    <?php elseif ($notif['status'] === 'denied'): ?>
-                                        <i class="fas fa-times-circle" style="color:#e74c3c;font-size:1.25rem;"></i>
-                                    <?php elseif ($notif['status'] === 'welcome'): ?>
-                                        <i class="fas fa-smile-beam" style="color:#4B7BEC;font-size:1.25rem;"></i>
-                                    <?php elseif ($notif['status'] === 'assessment'): ?>
-                                        <i class="fas fa-file-invoice-dollar" style="color:#f39c12;font-size:1.25rem;"></i>
-                                    <?php endif; ?>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <span style="font-weight:500;font-size:1rem;">
-                                        <?php if ($notif['status'] === 'accepted'): ?>Request Accepted<?php elseif ($notif['status'] === 'denied'): ?>Request Denied<?php elseif ($notif['status'] === 'welcome'): ?>Welcome to RestEase!<?php elseif ($notif['status'] === 'assessment'): ?>Assessment of Fees<?php endif; ?>
-                                    </span><br>
-                                    <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
-                                        <span style="font-size:0.97rem;">Type: <b><?php echo htmlspecialchars($notif['type'] ?? ''); ?></b></span><br>
-                                        <span style="font-size:0.97rem;">Name: <b><?php echo htmlspecialchars($notif['name'] ?? ''); ?></b></span><br>
-                                    <?php elseif ($notif['status'] === 'assessment'): ?>
-                                        <span style="font-size:0.97rem;"><?php echo htmlspecialchars($notif['message']); ?></span><br>
-                                    <?php endif; ?>
-                                    <small style="color:#888;font-size:0.93rem;display:block;margin-top:2px;"><?php echo date('M d, Y h:i A', strtotime($notif['created_at'])); ?></small>
+                            <?php
+                                $status = $notif['status'];
+                                // Avatar style + title/name + main text
+                                $avatarClass = 'nd-avatar--welcome';
+                                $avatarIcon  = '<i class="fas fa-smile-beam"></i>';
+                                $titleName   = 'RestEase';
+                                $text        = 'Welcome to RestEase!';
+                                if ($status === 'accepted') {
+                                    $avatarClass = 'nd-avatar--accepted';
+                                    $avatarIcon  = '<i class="fas fa-check"></i>';
+                                    $titleName   = htmlspecialchars($notif['name'] ?? 'Request');
+                                    $text        = 'accepted your request.';
+                                } elseif ($status === 'denied') {
+                                    $avatarClass = 'nd-avatar--denied';
+                                    $avatarIcon  = '<i class="fas fa-times"></i>';
+                                    $titleName   = htmlspecialchars($notif['name'] ?? 'Request');
+                                    $text        = 'denied your request.';
+                                } elseif ($status === 'assessment') {
+                                    $avatarClass = 'nd-avatar--assessment';
+                                    $avatarIcon  = '<i class="fas fa-file-invoice-dollar"></i>';
+                                    $titleName   = 'Assessment of Fees';
+                                    $text        = htmlspecialchars($notif['message'] ?? '');
+                                } elseif ($status === 'renewal') {
+                                    // New: renewal reminder
+                                    $avatarClass = 'nd-avatar--renewal';
+                                    $avatarIcon  = '<i class="fas fa-calendar-alt"></i>';
+                                    $titleName   = 'Renewal Reminder';
+                                    $text        = htmlspecialchars($notif['message'] ?: 'Your renewal is near.');
+                                }
+                                $when   = re_short_relative_time($notif['created_at']);
+                                $href   = isset($notif['link']) ? trim($notif['link']) : '';
+                                $onclick= $href !== '' ? ' onclick="window.location.href=\''. htmlspecialchars($href) .'\';" style="cursor:pointer;"' : '';
+                            ?>
+                            <div class="nd-item"<?php echo $onclick; ?>>
+                                <div class="nd-avatar <?php echo $avatarClass; ?>"><?php echo $avatarIcon; ?></div>
+                                <div class="nd-body">
+                                    <div class="nd-top">
+                                        <span class="nd-name"><?php echo $titleName; ?></span>
+                                        <span class="nd-time"><?php echo $when; ?></span>
+                                    </div>
+                                    <div class="nd-text"><?php echo $text; ?></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding:1.25rem;text-align:center;color:#888;font-size:1rem;">No notifications yet.</div>
+                        <div class="nd-item" style="justify-content:center;color:#888;">No notifications yet.</div>
                     <?php endif; ?>
                 </div>
                 <div style="text-align:center;padding:0.75rem 1.25rem;background:#f7faff;border-top:1px solid #e5e9f2;">
                     <a href="../ClientSide/view_all_notifications.php" style="color:#4B7BEC;font-weight:500;text-decoration:none;font-size:0.98rem;">View all</a>
                 </div>
             </div>
+        </div>
     </div>
     <div class="navbar-overlay" onclick="toggleMobileMenu()"></div>
 </nav>
@@ -274,10 +348,12 @@ function toggleNotificationDropdown(e, sourceEl) {
 
         // ✅ Adjust dropdown position for mobile
         if (window.innerWidth <= 768) {
+            // FIX: append 'px' outside the parentheses
             dropdown.style.right = '10px';
             dropdown.style.left = 'auto';
             dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8) + 'px';
         } else {
+            // FIX: append 'px' outside the parentheses
             dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
             dropdown.style.right = '0px';
         }
@@ -326,9 +402,10 @@ function updateNotificationBadge() {
     fetch('../ClientSide/get_notification_count.php')
         .then(response => response.json())
         .then(data => {
-            // remove existing badges from both desktop and mobile bells
             var desktopBell = document.getElementById('notificationBell');
             var mobileBell = document.getElementById('notificationBellMobile');
+            if (!desktopBell && !mobileBell) return; // guard
+
             if (desktopBell) {
                 var span = desktopBell.querySelector('span');
                 if (span) span.remove();
@@ -337,11 +414,9 @@ function updateNotificationBadge() {
                 var spanm = mobileBell.querySelector('.nbadge');
                 if (spanm) spanm.remove();
             }
-            if (data.count > 0) {
-                // create badge for desktop
+            if (data && Number(data.count) > 0) {
                 if (desktopBell) {
                     var span = document.createElement('span');
-                    span.textContent = data.count;
                     span.style.position = 'absolute';
                     span.style.top = '-7px';
                     span.style.right = '-7px';
@@ -356,9 +431,9 @@ function updateNotificationBadge() {
                     span.style.lineHeight = '1';
                     span.style.boxShadow = '0 1px 4px rgba(0,0,0,0.12)';
                     span.style.zIndex = '2';
+                    span.textContent = data.count;
                     desktopBell.appendChild(span);
                 }
-                // create badge for mobile
                 if (mobileBell) {
                     var spanm = document.createElement('span');
                     spanm.className = 'nbadge';
@@ -366,6 +441,9 @@ function updateNotificationBadge() {
                     mobileBell.appendChild(spanm);
                 }
             }
+        })
+        .catch(() => {
+            // swallow network/parse errors to prevent breaking UI
         });
 }
 
@@ -374,50 +452,88 @@ function updateNotificationDropdown() {
     fetch('../ClientSide/get_latest_notifications.php')
         .then(response => response.json())
         .then(data => {
-            var dropdown = document.getElementById('notificationDropdown');
-            var container = dropdown.querySelector('div[max-height]');
-            if (!container) {
-                container = dropdown.querySelector('div[style*="max-height"]');
-            }
-            if (!container) return;
-            container.innerHTML = '';
-            if (data && data.length > 0) {
+            var list = document.getElementById('notifList');
+            if (!list) return;
+            list.innerHTML = '';
+            if (Array.isArray(data) && data.length > 0) {
                 data.forEach(function(notif) {
-                    let icon = '';
-                    let color = '';
-                    let title = '';
-                    if (notif.status === 'accepted') {
-                        icon = '<i class="fas fa-check-circle" style="color:#2ecc71;font-size:1.25rem;"></i>';
-                        title = 'Request Accepted';
-                    } else if (notif.status === 'denied') {
-                        icon = '<i class="fas fa-times-circle" style="color:#e74c3c;font-size:1.25rem;"></i>';
-                        title = 'Request Denied';
-                    } else if (notif.status === 'welcome') {
-                        icon = '<i class="fas fa-smile-beam" style="color:#4B7BEC;font-size:1.25rem;"></i>';
-                        title = 'Welcome to RestEase!';
-                    } else if (notif.status === 'assessment') {
-                        icon = '<i class="fas fa-file-invoice-dollar" style="color:#f39c12;font-size:1.25rem;"></i>';
+                    const rawStatus = (notif.status || '').toLowerCase();
+                    // accept both "renewal" and "reminder" from adminside
+                    const isRenewal = rawStatus === 'renewal' || rawStatus === 'reminder';
+                    const status = isRenewal ? 'renewal' : rawStatus;
+
+                    let avatarClass = 'nd-avatar--welcome';
+                    let icon  = '<i class="fas fa-smile-beam"></i>';
+                    let title = 'RestEase';
+                    let text  = 'Welcome to RestEase!';
+                    if (status === 'accepted') {
+                        avatarClass = 'nd-avatar--accepted';
+                        icon  = '<i class="fas fa-check"></i>';
+                        title = notif.name || 'Request';
+                        text  = 'accepted your request.';
+                    } else if (status === 'denied') {
+                        avatarClass = 'nd-avatar--denied';
+                        icon  = '<i class="fas fa-times"></i>';
+                        title = notif.name || 'Request';
+                        text  = 'denied your request.';
+                    } else if (status === 'assessment') {
+                        avatarClass = 'nd-avatar--assessment';
+                        icon  = '<i class="fas fa-file-invoice-dollar"></i>';
                         title = 'Assessment of Fees';
+                        text  = escapeHtml(notif.message || '');
+                    } else if (status === 'renewal') {
+                        avatarClass = 'nd-avatar--renewal';
+                        icon  = '<i class="fas fa-calendar-alt"></i>';
+                        title = 'Renewal Reminder';
+                        text  = escapeHtml(notif.message || 'Your renewal is near.');
                     }
-                    let html = `<div style="padding:0.85rem 1.25rem;border-bottom:1px solid #f2f2f2;display:flex;align-items:flex-start;gap:0.75rem;">
-                        <div style="flex-shrink:0;">${icon}</div>
-                        <div style="flex:1;min-width:0;">
-                            <span style="font-weight:500;font-size:1rem;">${title}</span><br>`;
-                    if (notif.status === 'accepted' || notif.status === 'denied') {
-                        html += `<span style="font-size:0.97rem;">Type: <b>${notif.type ?? ''}</b></span><br>
-                                 <span style="font-size:0.97rem;">Name: <b>${notif.name ?? ''}</b></span><br>`;
-                    } else if (notif.status === 'assessment') {
-                        html += `<span style="font-size:0.97rem;">${notif.message}</span><br>`;
+
+                    const when = reShortRelativeTime(notif.created_at);
+                    const item = document.createElement('div');
+                    item.className = 'nd-item';
+                    if (notif.link) {
+                        item.style.cursor = 'pointer';
+                        item.addEventListener('click', () => { window.location.href = notif.link; });
                     }
-                    html += `<small style="color:#888;font-size:0.93rem;display:block;margin-top:2px;">${notif.created_at}</small>
-                        </div>
-                    </div>`;
-                    container.innerHTML += html;
+                    item.innerHTML = `
+                        <div class="nd-avatar ${avatarClass}">${icon}</div>
+                        <div class="nd-body">
+                            <div class="nd-top">
+                                <span class="nd-name">${escapeHtml(title)}</span>
+                                <span class="nd-time">${when}</span>
+                            </div>
+                            <div class="nd-text">${text}</div>
+                        </div>`;
+                    list.appendChild(item);
                 });
             } else {
-                container.innerHTML = '<div style="padding:1.25rem;text-align:center;color:#888;font-size:1rem;">No notifications yet.</div>';
+                list.innerHTML = '<div class="nd-item" style="justify-content:center;color:#888;">No notifications yet.</div>';
             }
+        })
+        .catch(() => {
+            var list = document.getElementById('notifList');
+            if (list) list.innerHTML = '<div class="nd-item" style="justify-content:center;color:#888;">Unable to load notifications.</div>';
         });
+}
+
+// Small helpers for client-side formatting/escaping
+function reShortRelativeTime(iso) {
+    // tolerate "YYYY-mm-dd HH:ii:ss" by replacing space
+    const d = new Date(iso && iso.replace(' ', 'T'));
+    if (isNaN(d)) return '';
+    const diff = Math.max(1, Math.round((Date.now() - d.getTime()) / 1000));
+    if (diff < 3600) return Math.max(1, Math.round(diff / 60)) + 'MIN';
+    if (diff < 86400) return Math.round(diff / 3600) + 'HR';
+    return Math.round(diff / 86400) + 'DY';
+}
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
 }
 
 // Poll every 5 seconds for badge and dropdown

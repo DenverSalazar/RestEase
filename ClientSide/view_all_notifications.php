@@ -113,7 +113,12 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 .notif-left{display:flex;align-items:center;gap:12px;min-width:120px}
 .notif-dot{width:10px;height:10px;border-radius:50%;background:#ffffff !important;box-shadow:none !important;border:1px solid #e6e9ec !important;}
 .notif-star-left{background:transparent;border:none;padding:0;margin:0 4px 0 0;cursor:pointer;color:#bfc6cc;font-size:1.05rem;transition:color 180ms}
-.notif-star-left[aria-pressed="true"]{color:#f0b400}
+.notif-star-left[aria-pressed="true"] {
+  color: #f0b400 !important;
+}
+.notif-star-left:hover {
+  color: #f0b400;
+}
 .notif-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(7,119,182,0.06);color:var(--accent);font-size:16px}
 .notif-main{flex:1;min-width:0}
 .notif-title{font-weight:700;font-size:1.05rem;margin-bottom:6px;color:#222}
@@ -138,6 +143,14 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 .notif-card-wrapper[data-status="accepted"] .notif-title,
 .notif-card-wrapper[data-status="accepted"] .notif-desc {
   color: #222 !important;
+}
+
+/* notification status colors */
+.notif-card-wrapper[data-status="accepted"] .notif-title {
+  color: #198754 !important;
+}
+.notif-card-wrapper[data-status="denied"] .notif-title {
+  color: #DC3545 !important;
 }
 
 /* focus style */
@@ -177,12 +190,151 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   border-color:var(--accent);
 }
 
+/* Calendar Popup Styles */
+.calendar-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 300px;
+}
+
+.calendar-popup.active {
+  display: block;
+}
+
+.calendar-popup .header {
+  display: flex;
+  justify-content: flex-end; /* move content to the right */
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-popup .header h3 {
+  display: none; /* hide Select Date */
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.calendar-popup .close-btn {
+  display: none; /* hide X button */
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.calendar-popup select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 0 5px;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.calendar-table th {
+  padding: 8px;
+  text-align: center;
+  color: #666;
+  font-weight: 600;
+}
+
+.calendar-table td {
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.calendar-table td:hover {
+  background: #f0f0f0;
+}
+
+.calendar-table td.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.calendar-table td.today {
+  border: 1px solid var(--accent);
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.calendar-controls button {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.calendar-controls button.confirm {
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+.overlay.active {
+  display: block;
+}
+
 /* responsive */
 @media (max-width:760px){
   .notif-left{min-width:70px}
   .notif-time{display:none}
   .search-input-wrapper{max-width:260px}
 }
+
+/* Anchored calendar (opens near the icon). Keeps existing .calendar-popup styles for fallback modal use */
+.calendar-popup.anchored {
+  position: fixed;            /* anchor to viewport for reliable math */
+  top: 0; left: 0;            /* will be set via JS */
+  transform: none;            /* override center transform */
+  min-width: 320px;
+  z-index: 5000;              /* above any headers */
+}
+.calendar-popup.anchored::after {
+  content: "";
+  position: absolute;
+  width: 10px; height: 10px;
+  background: white;
+  transform: rotate(45deg);
+  top: calc(100% - 5px);      /* small arrow when popup is above button (fallback below adjusts in JS) */
+  right: 18px;
+  border-left: 1px solid rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  display: none;              /* toggled by JS depending on placement */
+}
+.calendar-popup.anchored.show-arrow::after { display: block; }
 </style>
 </head>
 <body>
@@ -224,10 +376,10 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   <?php if ($user_id && count($notifications) > 0): ?>
     <ul class="notif-list" id="notifications-list">
       <?php foreach ($notifications as $notif):
-        $borderColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#DC3545' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
-        $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF' : (($notif['status'] === 'denied') ? '#FDEDEC' : (($notif['status'] === 'welcome') ? '#EAF1FF' : '#FFF8E1'));
+        $borderColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
+        $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#EAF1FF' : '#FFF8E1'));
         $icon = ($notif['status'] === 'accepted') ? 'fa-check-circle' : (($notif['status'] === 'denied') ? 'fa-times-circle' : (($notif['status'] === 'welcome') ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
-        $iconColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#DC3545' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
+        $iconColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
       ?>
       <li class="notif-card-wrapper unread" data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>" data-status="<?php echo htmlspecialchars($notif['status']); ?>" data-created_at="<?php echo htmlspecialchars($notif['created_at']); ?>" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;">
         <div class="notif-left">
@@ -284,6 +436,49 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
       No notifications available yet.<br>Please contact the administrator or check back later.
     </div>
   <?php endif; ?>
+</div>
+
+<div class="overlay" id="calendarOverlay"></div>
+<div class="calendar-popup" id="calendarPopup">
+  <div class="header">
+    <h3>Select Date</h3>
+    <button class="close-btn">&times;</button>
+  </div>
+  <div>
+    <select id="monthSelect">
+      <option value="0">January</option>
+      <option value="1">February</option>
+      <option value="2">March</option>
+      <option value="3">April</option>
+      <option value="4">May</option>
+      <option value="5">June</option>
+      <option value="6">July</option>
+      <option value="7">August</option>
+      <option value="8">September</option>
+      <option value="9">October</option>
+      <option value="10">November</option>
+      <option value="11">December</option>
+    </select>
+    <select id="yearSelect"></select>
+  </div>
+  <table class="calendar-table">
+    <thead>
+      <tr>
+        <th>Sun</th>
+        <th>Mon</th>
+        <th>Tue</th>
+        <th>Wed</th>
+        <th>Thu</th>
+        <th>Fri</th>
+        <th>Sat</th>
+      </tr>
+    </thead>
+    <tbody id="calendarBody"></tbody>
+  </table>
+  <div class="calendar-controls">
+    <button class="clear">Clear</button>
+    <button class="confirm">Confirm</button>
+  </div>
 </div>
 
 <footer><?php include '../Includes/footer-client.php'; ?></footer>
@@ -512,6 +707,177 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     });
   }
 
+  // calendar
+  const calendarPopup = $('#calendarPopup');
+  const overlay = $('#calendarOverlay');
+  const monthSelect = $('#monthSelect');
+  const yearSelect = $('#yearSelect');
+  const calendarBody = $('#calendarBody');
+  let selectedDate = null;
+
+  // Move the Clear button into the header so it replaces the X (keeps existing click handler)
+  (function moveClearIntoHeader(){
+    const headerEl = calendarPopup ? calendarPopup.querySelector('.header') : null;
+    const clearBtn = calendarPopup ? calendarPopup.querySelector('.calendar-controls .clear') : null;
+    if (headerEl && clearBtn && clearBtn.parentElement !== headerEl) {
+      headerEl.appendChild(clearBtn);
+    }
+  })();
+
+  // Initialize year select
+  const currentYear = new Date().getFullYear();
+  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearSelect.appendChild(option);
+  }
+  yearSelect.value = currentYear;
+
+  function generateCalendar(month, year) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const today = new Date();
+    
+    calendarBody.innerHTML = '';
+    let date = 1;
+    for (let i = 0; i < 6; i++) {
+      const row = document.createElement('tr');
+      for (let j = 0; j < 7; j++) {
+        const cell = document.createElement('td');
+        if (i === 0 && j < firstDay.getDay()) {
+          cell.textContent = '';
+        } else if (date > lastDay.getDate()) {
+          cell.textContent = '';
+        } else {
+          cell.textContent = date;
+          const currentDate = new Date(year, month, date);
+          
+          if (currentDate.toDateString() === today.toDateString()) {
+            cell.classList.add('today');
+          }
+          
+          if (selectedDate && currentDate.toDateString() === selectedDate.toDateString()) {
+            cell.classList.add('selected');
+          }
+          
+          cell.addEventListener('click', () => {
+            $$('.calendar-table td').forEach(td => td.classList.remove('selected'));
+            cell.classList.add('selected');
+            selectedDate = currentDate;
+          });
+          
+          date++;
+        }
+        row.appendChild(cell);
+      }
+      calendarBody.appendChild(row);
+      if (date > lastDay.getDate()) break;
+    }
+  }
+
+  monthSelect.addEventListener('change', () => {
+    generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+  });
+
+  yearSelect.addEventListener('change', () => {
+    generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+  });
+
+  function positionCalendarAnchored() {
+    if (!calendarPopup || !headerCalendarBtn) return;
+
+    // Ensure we can measure size
+    calendarPopup.style.visibility = 'hidden';
+    calendarPopup.classList.add('active', 'anchored');
+    const popupW = calendarPopup.offsetWidth || 340;
+    const popupH = calendarPopup.offsetHeight || 280;
+
+    const rect = headerCalendarBtn.getBoundingClientRect();
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const margin = 10;
+
+    // Preferred: above the button, right-aligned to the button
+    let left = rect.right + scrollX - popupW;
+    // Keep within viewport
+    left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+
+    let top = rect.top + scrollY - popupH - margin;  // above
+    let placedAbove = true;
+
+    // If not enough space above, place below the button
+    if (top < scrollY + 8) {
+      top = rect.bottom + scrollY + margin;          // below
+      placedAbove = false;
+    }
+
+    calendarPopup.style.left = left + 'px';
+    calendarPopup.style.top = top + 'px';
+    // Toggle small arrow depending on placement (arrow points to button)
+    calendarPopup.classList.toggle('show-arrow', placedAbove);
+
+    calendarPopup.style.visibility = 'visible';
+  }
+
+  function openCalendarAnchored() {
+    // Build current month/year calendar
+    const now = new Date();
+    monthSelect.value = now.getMonth();
+    yearSelect.value = now.getFullYear();
+    generateCalendar(now.getMonth(), now.getFullYear());
+
+    // Show popup and overlay, then position
+    overlay.classList.add('active');
+    positionCalendarAnchored();
+
+    // Reposition on resize/scroll while open
+    const reposer = () => { if (calendarPopup.classList.contains('active')) positionCalendarAnchored(); };
+    window.addEventListener('resize', reposer, { passive: true });
+    window.addEventListener('scroll', reposer, { passive: true });
+
+    // Store to remove later
+    calendarPopup._reposer = reposer;
+  }
+
+  function closeCalendar() {
+    calendarPopup.classList.remove('active', 'anchored', 'show-arrow');
+    overlay.classList.remove('active');
+    calendarPopup.style.left = '';
+    calendarPopup.style.top = '';
+    if (calendarPopup._reposer) {
+      window.removeEventListener('resize', calendarPopup._reposer);
+      window.removeEventListener('scroll', calendarPopup._reposer);
+      calendarPopup._reposer = null;
+    }
+  }
+
+  // Replace previous click handler to use anchored positioning
+  headerCalendarBtn.addEventListener('click', openCalendarAnchored);
+
+  $('.calendar-popup .close-btn').addEventListener('click', closeCalendar);
+
+  $('.calendar-popup .clear').addEventListener('click', () => {
+    selectedDate = null;
+    $$('.calendar-table td').forEach(td => td.classList.remove('selected'));
+  });
+
+  $('.calendar-popup .confirm').addEventListener('click', () => {
+    if (selectedDate) {
+      // Filter notifications by selected date
+      $$('.notif-card-wrapper').forEach(card => {
+        const cardDate = new Date(card.getAttribute('data-created_at'));
+        const show = cardDate.toDateString() === selectedDate.toDateString();
+        card.style.display = show ? '' : 'none';
+      });
+      updateCounts();
+      paginateDisplay();
+    }
+    closeCalendar();
+  });
+
+  overlay.addEventListener('click', closeCalendar);
+
   // initial counts update
   updateCounts();
   // initial pagination setup
@@ -520,6 +886,9 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     paginateDisplay();
   }, 50);
 
+  // Initialize card actions including delete and favorite
+  wirePerCardActions();
+  
   // stars init
   initStars();
 })();
