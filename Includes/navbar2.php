@@ -351,10 +351,10 @@ function toggleNotificationDropdown(e, sourceEl) {
             // FIX: append 'px' outside the parentheses
             dropdown.style.right = '10px';
             dropdown.style.left = 'auto';
-            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8) + 'px';
+            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8 + 'px');
         } else {
             // FIX: append 'px' outside the parentheses
-            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
+            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8 + 'px');
             dropdown.style.right = '0px';
         }
 
@@ -382,7 +382,7 @@ function toggleProfileDropdown(e) {
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
         var avatarRect = avatar.getBoundingClientRect();
-        dropdown.style.top = (avatar.offsetTop + avatar.offsetHeight + 8) + 'px';
+        dropdown.style.top = (avatar.offsetTop + avatar.offsetHeight + 8 + 'px');
         dropdown.style.right = '0px';
         setTimeout(function() {
             document.addEventListener('click', closeProfileDropdown);
