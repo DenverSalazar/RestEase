@@ -1069,11 +1069,12 @@ function goToAssessment() {
           <div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
         `;
       } else {
+        // New and Transfer use same logic (Transfer should behave like New)
         const age = parseInt(data.age);
         let babyNote = '';
         let discountNote = '';
 
-        if (data.type === 'New') {
+        if (data.type === 'New' || data.type === 'Transfer') {
           if (!isNaN(age) && age <= 2) {
             totalFee = 5000;
             babyNote = ' (Newborn/Baby Rate)';
@@ -1085,7 +1086,7 @@ function goToAssessment() {
           }
         }
 
-        // Expiration date (5 years from date of death)
+        // Expiration date (5 years from date of death) - apply for New / Transfer too if dod available
         if (data.dod) {
           const dod = new Date(data.dod);
           const exp = new Date(dod);
@@ -1122,7 +1123,7 @@ function goToAssessment() {
             <hr style="margin:24px 0;">
             ${summaryHtml}
             <div style="text-align:right;margin-top:24px;">
-              <button type="submit" class="accept-btn">Submit Assessment</button>
+            <button type="submit" class="accept-btn">Submit Assessment</button>
             </div>
           </form>
           <div id="assessmentLoadingSpinner" style="display:none;justify-content:center;align-items:center;margin-top:18px;">
@@ -1172,7 +1173,8 @@ function goToAssessment() {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
               body: 'id=' + encodeURIComponent(data.id)
-            });
+            }).catch(()=>{ /* non blocking */ });
+
             showActionSuccessNotification('Assessment submitted and user notified!');
             updateDoneAssessmentTable();
           } else {

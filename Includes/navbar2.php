@@ -92,8 +92,10 @@ if ($user_id) {
         // map message to a status for the UI
         if ($trimmed === 'Welcome to RestEase!') {
             $status = 'welcome';
-        } elseif (strpos($lc, 'renew') !== false || strpos($lc, 'expire') !== false) {
-            // treat any admin-sent renewal/expiration reminder as "renewal"
+        } elseif (stripos($lc, 'expiry') !== false || stripos($lc, 'expire') !== false || stripos($lc, 'validity') !== false) {
+            // treat any admin-sent expiry/validity notice as "expiry"
+            $status = 'expiry';
+        } elseif (strpos($lc, 'renew') !== false) {
             $status = 'renewal';
         } else {
             $status = 'assessment';
@@ -210,6 +212,8 @@ if (!function_exists('re_short_relative_time')) {
 .nd-avatar--assessment { background: #f39c12; }
 /* New: renewal reminder avatar color */
 .nd-avatar--renewal { background: #8e44ad; }
+/* New: explicit expiry avatar color (amber) */
+.nd-avatar--expiry { background: #f59e0b; }
 .nd-body { flex: 1; min-width: 0; }
 .nd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .nd-name { font-weight: 700; color: #2f3a4a; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -307,6 +311,12 @@ if (!function_exists('re_short_relative_time')) {
                                     $avatarClass = 'nd-avatar--assessment';
                                     $avatarIcon  = '<i class="fas fa-file-invoice-dollar"></i>';
                                     $titleName   = 'Assessment of Fees';
+                                    $text        = htmlspecialchars($notif['message'] ?? '');
+                                } elseif ($status === 'expiry') {
+                                    // Expiration Notice: exclamation icon + title change
+                                    $avatarClass = 'nd-avatar--expiry';
+                                    $avatarIcon  = '<i class="fas fa-exclamation-circle"></i>';
+                                    $titleName   = 'Expiration Notice';
                                     $text        = htmlspecialchars($notif['message'] ?? '');
                                 } elseif ($status === 'renewal') {
                                     // New: renewal reminder
@@ -479,8 +489,15 @@ function updateNotificationDropdown() {
                 data.forEach(function(notif) {
                     const rawStatus = (notif.status || '').toLowerCase();
                     // accept both "renewal" and "reminder" from adminside
-                    const isRenewal = rawStatus === 'renewal' || rawStatus === 'reminder';
-                    const status = isRenewal ? 'renewal' : rawStatus;
+                    // prefer explicit expiry detection, but also detect expiry by message content
+                    let status = rawStatus;
+                    if (!status || status === 'assessment') {
+                        const msg = (notif.message || '').toLowerCase();
+                        if (msg.indexOf('expiry') !== -1 || msg.indexOf('expire') !== -1 || msg.indexOf('validity') !== -1) {
+                            status = 'expiry';
+                        }
+                    }
+                    if (status === 'reminder') status = 'renewal';
 
                     let avatarClass = 'nd-avatar--welcome';
                     let icon  = '<i class="fas fa-smile-beam"></i>';
@@ -500,6 +517,11 @@ function updateNotificationDropdown() {
                         avatarClass = 'nd-avatar--assessment';
                         icon  = '<i class="fas fa-file-invoice-dollar"></i>';
                         title = 'Assessment of Fees';
+                        text  = escapeHtml(notif.message || '');
+                    } else if (status === 'expiry') {
+                        avatarClass = 'nd-avatar--expiry';
+                        icon  = '<i class="fas fa-exclamation-circle"></i>';
+                        title = 'Expiration Notice';
                         text  = escapeHtml(notif.message || '');
                     } else if (status === 'renewal') {
                         avatarClass = 'nd-avatar--renewal';

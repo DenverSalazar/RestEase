@@ -26,17 +26,45 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
     $result = $stmt->get_result();
     $assessment = $result->fetch_assoc();
     $stmt->close();
-    // If found, try to get the related request details
+
+    $details = null;
+    $assessmentRow = null;
+
     if ($assessment && !empty($assessment['link'])) {
         // Extract request_id from link
         if (preg_match('/request_id=(\d+)/', $assessment['link'], $matches)) {
-            $request_id = $matches[1];
-            $stmt = $conn->prepare("SELECT ar.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM accepted_request ar JOIN users u ON ar.user_id = u.id WHERE ar.id = ? AND ar.user_id = ? LIMIT 1");
-            $stmt->bind_param("ii", $request_id, $user_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $details = $result->fetch_assoc();
-            $stmt->close();
+            $request_id = (int)$matches[1];
+
+            // Helper to try fetching from multiple request tables
+            $tryTables = [
+                'accepted_request' => "SELECT ar.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM accepted_request ar JOIN users u ON ar.user_id = u.id WHERE ar.id = ? AND ar.user_id = ? LIMIT 1",
+                'client_requests'  => "SELECT cr.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id WHERE cr.id = ? AND cr.user_id = ? LIMIT 1",
+                'denied_request'   => "SELECT dr.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM denied_request dr JOIN users u ON dr.user_id = u.id WHERE dr.id = ? AND dr.user_id = ? LIMIT 1"
+            ];
+
+            foreach ($tryTables as $tbl => $sql) {
+                $stmt = $conn->prepare($sql);
+                if ($stmt) {
+                    $stmt->bind_param("ii", $request_id, $user_id);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    if ($row = $res->fetch_assoc()) {
+                        $details = $row;
+                        $stmt->close();
+                        break;
+                    }
+                    $stmt->close();
+                }
+            }
+
+            // Fetch admin-generated assessment record (authoritative for fees)
+            if ($stmt = $conn->prepare("SELECT * FROM assessment WHERE request_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1")) {
+                $stmt->bind_param("ii", $request_id, $user_id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $assessmentRow = $res->fetch_assoc();
+                $stmt->close();
+            }
         } else {
             $details = null;
         }
@@ -88,47 +116,91 @@ function calc_age($dob, $dod = null) {
 $assessView = [
     'informant' => null, 'email' => null, 'type' => null,
     'deceased' => null, 'residency' => null, 'dob' => null, 'dod' => null, 'age' => null,
-    'fees' => ['opening' => null, 'reloc_rate' => null, 'reloc_count' => 0, 'total' => null]
+    'fees' => ['opening' => null, 'reloc_rate' => null, 'reloc_count' => 0, 'total' => null, 'renewal' => null],
+    'expiration' => null
 ];
 
+// If the admin assessment row exists use it as source-of-truth, otherwise fallback to details + assessment_fees/defaults
 if (!empty($assessment) && !empty($details)) {
-    $assessView['informant'] = full_name($details['user_first'] ?? '', '', $details['user_last'] ?? '');
-    $assessView['email'] = $details['email'] ?? '';
-    $assessView['type'] = ucfirst($details['type'] ?? '');
-    $assessView['deceased'] = full_name($details['first_name'] ?? '', $details['middle_name'] ?? '', $details['last_name'] ?? '');
-    $assessView['residency'] = pick($details, ['residency', 'address', 'residence']) ?? '-';
-    $assessView['dob'] = pick($details, ['date_of_birth', 'dob', 'birth_date']);
-    $assessView['dod'] = pick($details, ['date_of_death', 'dod', 'death_date']);
-    $assessView['age'] = calc_age($assessView['dob'], $assessView['dod']);
 
-    // Fees: prefer assessment_fees table; else sensible defaults
-    $opening = 1000;
-    $relocRate = 500;
-    $relocCount = (stripos($assessView['type'] ?? '', 'relocate') !== false) ? 1 : 0;
-    $total = $opening + ($relocRate * $relocCount);
+    // Use assessment row values when available
+    if (!empty($assessmentRow)) {
+        $assessView['informant'] = trim($assessmentRow['informant_name'] ?? ($details['informant_name'] ?? ''));
+        $assessView['email'] = $assessmentRow['email'] ?? ($details['email'] ?? '');
+        $assessView['type'] = ucfirst($assessmentRow['type'] ?? ($details['type'] ?? ''));
+        $assessView['deceased'] = $assessmentRow['deceased_name'] ?? full_name($details['first_name'] ?? '', $details['middle_name'] ?? '', $details['last_name'] ?? '');
+        $assessView['residency'] = $assessmentRow['residency'] ?? pick($details, ['residency', 'address', 'residence']) ?? '-';
+        // dob/dod in assessment table may be YYYY-MM-DD; keep as-is if present
+        $assessView['dob'] = $assessmentRow['dob'] ?? pick($details, ['date_of_birth','dob','birth_date']);
+        $assessView['dod'] = $assessmentRow['dod'] ?? pick($details, ['date_of_death','dod','death_date']);
+        $assessView['age'] = $assessmentRow['age'] ?? calc_age($assessView['dob'], $assessView['dod']);
 
-    if (table_exists($conn, 'assessment_fees')) {
-        if ($stmt = $conn->prepare("SELECT opening_fee, relocation_fee_rate, relocation_count, total_fee FROM assessment_fees WHERE request_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1")) {
-            $request_id = $details['id'] ?? null;
-            $stmt->bind_param("ii", $request_id, $user_id);
-            if ($stmt->execute()) {
-                $res = $stmt->get_result();
-                if ($row = $res->fetch_assoc()) {
-                    $opening = $row['opening_fee'] ?? $opening;
-                    $relocRate = $row['relocation_fee_rate'] ?? $relocRate;
-                    $relocCount = (int)($row['relocation_count'] ?? $relocCount);
-                    $total = $row['total_fee'] ?? ($opening + ($relocRate * $relocCount));
-                }
-            }
-            $stmt->close();
+        // Fees from assessment table
+        $opening = null;
+        $total = isset($assessmentRow['total_fee']) ? (float)$assessmentRow['total_fee'] : null;
+        $renewal = isset($assessmentRow['renewal_fee']) ? (float)$assessmentRow['renewal_fee'] : null;
+
+        // Reasonable assignment: for New/Transfer treat total as opening; for Relocate treat total as relocation/one-off
+        $t = strtolower($assessView['type'] ?? '');
+        if ($t === 'new' || $t === 'transfer') {
+            $opening = $total;
+        } elseif ($t === 'relocate') {
+            // for relocate, show the relocation cost as opening and total as relocation amount (admin-defined)
+            $opening = $total;
+        } else {
+            $opening = $total;
         }
+
+        $assessView['fees'] = [
+            'opening' => $opening,
+            'reloc_rate' => null,
+            'reloc_count' => 0,
+            'total' => $total,
+            'renewal' => $renewal
+        ];
+        $assessView['expiration'] = $assessmentRow['expiration'] ?? null;
+
+    } else {
+        // No assessment row: fall back to existing logic (assessment_fees table or defaults)
+        $assessView['informant'] = full_name($details['user_first'] ?? '', '', $details['user_last'] ?? '');
+        $assessView['email'] = $details['email'] ?? '';
+        $assessView['type'] = ucfirst($details['type'] ?? '');
+        $assessView['deceased'] = full_name($details['first_name'] ?? '', $details['middle_name'] ?? '', $details['last_name'] ?? '');
+        $assessView['residency'] = pick($details, ['residency', 'address', 'residence']) ?? '-';
+        $assessView['dob'] = pick($details, ['date_of_birth', 'dob', 'birth_date']);
+        $assessView['dod'] = pick($details, ['date_of_death', 'dod', 'death_date']);
+        $assessView['age'] = calc_age($assessView['dob'], $assessView['dod']);
+
+        // Fees: prefer assessment_fees table; else sensible defaults
+        $opening = 1000;
+        $relocRate = 500;
+        $relocCount = (stripos($assessView['type'] ?? '', 'relocate') !== false) ? 1 : 0;
+        $total = $opening + ($relocRate * $relocCount);
+        if (table_exists($conn, 'assessment_fees')) {
+            if ($stmt = $conn->prepare("SELECT opening_fee, relocation_fee_rate, relocation_count, total_fee FROM assessment_fees WHERE request_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1")) {
+                $request_id = $details['id'] ?? null;
+                $stmt->bind_param("ii", $request_id, $user_id);
+                if ($stmt->execute()) {
+                    $res = $stmt->get_result();
+                    if ($row = $res->fetch_assoc()) {
+                        $opening = $row['opening_fee'] ?? $opening;
+                        $relocRate = $row['relocation_fee_rate'] ?? $relocRate;
+                        $relocCount = (int)($row['relocation_count'] ?? $relocCount);
+                        $total = $row['total_fee'] ?? ($opening + ($relocRate * $relocCount));
+                    }
+                }
+                $stmt->close();
+            }
+        }
+        $assessView['fees'] = [
+            'opening' => (float)$opening,
+            'reloc_rate' => (float)$relocRate,
+            'reloc_count' => (int)$relocCount,
+            'total' => (float)$total,
+            'renewal' => null
+        ];
     }
-    $assessView['fees'] = [
-        'opening' => (float)$opening,
-        'reloc_rate' => (float)$relocRate,
-        'reloc_count' => (int)$relocCount,
-        'total' => (float)$total
-    ];
+
 }
 ?>
 <!DOCTYPE html>
@@ -180,9 +252,7 @@ if (!empty($assessment) && !empty($details)) {
         .kv-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:6px 0; }
         .kv-label { color:#374151; min-width:200px; font-weight:600; }
         .kv-value { color:#111827; text-align:right; flex:1; }
-        .divider { border-top:1px solid #e5e7eb; margin:14px 0; }
-        .total-row .kv-label, .total-row .kv-value { font-weight:800; }
-        .muted { color:#6b7280; font-size:.9rem; }
+        .small-muted { color:#6b7280; font-size:.95rem; }
     </style>
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
@@ -242,7 +312,15 @@ if (!empty($assessment) && !empty($details)) {
                         ?>
                         <div class="kv-row"><div class="kv-label">Relocation Fee:</div><div class="kv-value"><?php echo $line; ?></div></div>
                     <?php endif; ?>
-                    <div class="kv-row total-row"><div class="kv-label">Total Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['total']); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Total Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['total']); ?></div></div>
+
+                    <?php if (!empty($assessView['fees']['renewal'])): ?>
+                        <div class="kv-row"><div class="kv-label">Renewal Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['renewal']); ?></div></div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($assessView['expiration'])): ?>
+                        <div class="kv-row"><div class="kv-label">Certificate Expiration:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['expiration']); ?></div></div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="divider"></div>

@@ -57,14 +57,23 @@ if ($user_id) {
     $stmt->close();
 
     // Assessment notifications (normalize welcome messages)
-    $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
+    // include the notifications table id so client-side delete can target the notifications row
+    $stmt = $conn->prepare("SELECT id AS notif_id, message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         $msg = $row['message'] ?? '';
+        $link = $row['link'] ?? '';
+        $notif_row_id = $row['notif_id'] ?? null; // notifications table id
         // treat notifications containing "welcome" (case-insensitive) as welcome notifications
         $isWelcomeMsg = stripos($msg, 'welcome') !== false;
+
+        // also detect denial messages (admin may insert a notifications row when denying)
+        $isDeniedMsg = (stripos($msg, 'denied') !== false) || (stripos($msg, 'deny') !== false);
+
+        // detect expiry/validity notifications
+        $isExpiryMsg = (stripos($msg, 'validity expiry') !== false) || (stripos($msg, 'expiration notice') !== false) || (stripos($msg, 'validity expiry notice') !== false);
 
         // if we already added a welcome notification earlier (e.g. from users.created_at),
         // avoid adding a second welcome notification
@@ -79,11 +88,61 @@ if ($user_id) {
             if ($alreadyHasWelcome) continue;
         }
 
+        // If the message indicates denial, try to associate to the request id (if present in link)
+        if ($isDeniedMsg) {
+            $deniedEntry = [
+                'status' => 'denied',
+                'message' => $msg,
+                'link' => $link,
+                'created_at' => $row['created_at'],
+                // notif_id is the id of the notifications row (used for deletion)
+                'notif_id' => $notif_row_id
+            ];
+            // try to extract request id from link e.g. ...?request_id=123 or ...?id=123 or ...?req=123
+            $foundId = null;
+            if (!empty($link)) {
+                if (preg_match('/request_id=(\d+)/i', $link, $m) || preg_match('/\bid=(\d+)\b/i', $link, $m) || preg_match('/req(?:uest)?_?id=(\d+)/i', $link, $m)) {
+                    $foundId = (int)$m[1];
+                    $deniedEntry['id'] = $foundId;
+                }
+            }
+
+            // If we found an id, try to populate type/name by querying denied_request (so the card shows Type & Name)
+            if (!empty($foundId)) {
+                if ($q = $conn->prepare("SELECT type, first_name, middle_name, last_name FROM denied_request WHERE id = ? AND user_id = ? LIMIT 1")) {
+                    $q->bind_param("ii", $foundId, $user_id);
+                    $q->execute();
+                    $r = $q->get_result();
+                    if ($row2 = $r->fetch_assoc()) {
+                        $deniedEntry['type'] = $row2['type'];
+                        $deniedEntry['name'] = trim(($row2['first_name'] ?? '') . ' ' . ($row2['middle_name'] ?? '') . ' ' . ($row2['last_name'] ?? ''));
+                    }
+                    $q->close();
+                }
+            }
+
+            $notifications[] = $deniedEntry;
+            continue;
+        }
+
+        // If the message is an expiry/validity notice, add as 'expiry' so we render title "Expiration Notice"
+        if ($isExpiryMsg) {
+            $notifications[] = [
+                'status' => 'expiry',
+                'message' => $msg,
+                'link' => $link,
+                'created_at' => $row['created_at'],
+                'notif_id' => $notif_row_id
+            ];
+            continue;
+        }
+
         $notifications[] = [
             'status' => $isWelcomeMsg ? 'welcome' : 'assessment',
             'message' => $msg,
-            'link' => $row['link'],
-            'created_at' => $row['created_at']
+            'link' => $link,
+            'created_at' => $row['created_at'],
+            'notif_id' => $notif_row_id
         ];
     }
     $stmt->close();
@@ -163,28 +222,35 @@ if ($user_id) {
   <?php if ($user_id && count($notifications) > 0): ?>
     <ul class="notif-list" id="notifications-list">
       <?php foreach ($notifications as $notif):
-        // changed: make "assessment" cards neutral (white bg, neutral left border)
-        // keep welcome visually neutral (no blue background/left border)
+        // make denied cards visually match others (white background / neutral border)
         $borderColor = ($notif['status'] === 'accepted') ? '#198754'
-                     : (($notif['status'] === 'denied') ? '#ffffff'
-                     : '#ffffff');
+                     : '#ffffff';
 
         $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF'
                  : '#ffffff';
  
-        $icon = ($notif['status'] === 'accepted') ? 'fa-check-circle'
-              : (($notif['status'] === 'denied') ? 'fa-times-circle'
-              : (($notif['status'] === 'welcome') ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
-
-        $iconColor = ($notif['status'] === 'accepted') ? '#198754'
-                   : (($notif['status'] === 'denied') ? '#ffffff'
-                   : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
+        // icon selection: use an inline green-check SVG for accepted notifications,
+        // keep Font Awesome icons for other statuses
+        if ($notif['status'] === 'accepted') {
+            // inline green check circle (white check on green circle)
+            $iconHtml = '<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" fill="#198754"></circle><path d="M7 12.5l3 3 7-7" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+            $iconColor = '#198754';
+        } else {
+            $icon = ($notif['status'] === 'denied') ? 'fa-times-circle'
+                  : (($notif['status'] === 'welcome') ? 'fa-smile-beam'
+                  : (($notif['status'] === 'expiry') ? 'fa-exclamation-circle' : 'fa-file-invoice-dollar'));
+            $iconHtml = '<i class="fas ' . $icon . '"></i>';
+            $iconColor = ($notif['status'] === 'denied') ? '#DC2626'
+                       : (($notif['status'] === 'welcome') ? '#4B7BEC' : (($notif['status'] === 'expiry') ? '#f59e0b' : '#FFC107'));
+        }
       ?>
-      <li class="notif-card-wrapper unread" data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>" data-status="<?php echo htmlspecialchars($notif['status']); ?>" data-created_at="<?php echo htmlspecialchars($notif['created_at']); ?>" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;">
+      <!-- use notif_id (notifications table id) when present so delete targets the notifications row.
+           fall back to the request id (for accepted/denied requests that came from request tables) -->
+      <li class="notif-card-wrapper unread" data-id="<?php echo htmlspecialchars($notif['notif_id'] ?? ($notif['id'] ?? '')); ?>" data-status="<?php echo htmlspecialchars($notif['status']); ?>" data-created_at="<?php echo htmlspecialchars($notif['created_at']); ?>" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;">
         <div class="notif-left">
           <span class="notif-dot" title="<?php echo ($notif['status'] === 'accepted'?'Unread':''); ?>"></span>
           <button class="notif-star-left" aria-pressed="false" title="Favorite"><i class="fas fa-star"></i></button>
-          <span class="notif-icon" style="color:<?php echo $iconColor; ?>"><i class="fas <?php echo $icon; ?>"></i></span>
+          <span class="notif-icon" style="color:<?php echo $iconColor; ?>"><?php echo $iconHtml; ?></span>
         </div>
 
         <div class="notif-main">
@@ -193,6 +259,7 @@ if ($user_id) {
               if ($notif['status'] === 'accepted') echo 'Request Accepted';
               elseif ($notif['status'] === 'denied') echo 'Request Denied';
               elseif ($notif['status'] === 'welcome') echo 'Welcome User';
+              elseif ($notif['status'] === 'expiry') echo 'Expiration Notice';
               else echo 'Assessment of Fees';
             ?>
           </div>
@@ -201,7 +268,7 @@ if ($user_id) {
               Type: <b><?php echo htmlspecialchars($notif['type'] ?? ''); ?></b> &nbsp;|&nbsp; Name: <b><?php echo htmlspecialchars($notif['name'] ?? ''); ?></b>
             <?php elseif ($notif['status'] === 'welcome'): ?>
               Welcome to RestEase!
-            <?php elseif ($notif['status'] === 'assessment'): ?>
+            <?php elseif ($notif['status'] === 'assessment' || $notif['status'] === 'expiry'): ?>
               <?php echo htmlspecialchars($notif['message']); ?>
             <?php endif; ?>
           </div>
@@ -211,15 +278,20 @@ if ($user_id) {
 
         <div class="notif-actions">
           <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
-            <a href="notification_details.php?id=<?php echo isset($notif['id']) ? urlencode($notif['id']) : ''; ?>&type=<?php echo urlencode($notif['status']); ?>" title="View Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
+            <?php
+              // Prefer id-based details link when we have an id from the request row or extracted from notification.link
+              if (!empty($notif['id'])) {
+                $detailsHref = "notification_details.php?id=" . urlencode($notif['id']) . "&type=" . urlencode($notif['status']);
+              } else {
+                // fallback to created_at (for denied notifications that came only as a notifications row)
+                $detailsHref = "notification_details.php?type=" . urlencode($notif['status']) . "&created_at=" . urlencode($notif['created_at']);
+              }
+            ?>
+            <a href="<?php echo $detailsHref; ?>" title="View Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
               Details
             </a>
-          <?php elseif ($notif['status'] === 'assessment'): ?>
-            <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
-              Details
-            </a>
-          <?php elseif ($notif['status'] === 'welcome'): ?>
-            <a href="notification_details.php?type=welcome&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Welcome Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
+          <?php elseif ($notif['status'] === 'assessment' || $notif['status'] === 'expiry'): ?>
+            <a href="notification_details.php?type=<?php echo $notif['status']; ?>&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View <?php echo ($notif['status'] === 'expiry' ? 'Expiration' : 'Assessment'); ?> Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
               Details
             </a>
           <?php endif; ?>
