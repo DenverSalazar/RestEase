@@ -56,15 +56,32 @@ if ($user_id) {
     }
     $stmt->close();
 
-    // Assessment notifications
+    // Assessment notifications (normalize welcome messages)
     $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
+        $msg = $row['message'] ?? '';
+        // treat notifications containing "welcome" (case-insensitive) as welcome notifications
+        $isWelcomeMsg = stripos($msg, 'welcome') !== false;
+
+        // if we already added a welcome notification earlier (e.g. from users.created_at),
+        // avoid adding a second welcome notification
+        if ($isWelcomeMsg) {
+            $alreadyHasWelcome = false;
+            foreach ($notifications as $n) {
+                if (isset($n['status']) && $n['status'] === 'welcome') {
+                    $alreadyHasWelcome = true;
+                    break;
+                }
+            }
+            if ($alreadyHasWelcome) continue;
+        }
+
         $notifications[] = [
-            'status' => 'assessment',
-            'message' => $row['message'],
+            'status' => $isWelcomeMsg ? 'welcome' : 'assessment',
+            'message' => $msg,
             'link' => $row['link'],
             'created_at' => $row['created_at']
         ];
@@ -88,265 +105,16 @@ if ($user_id) {
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../css/navbar.css">
 <link rel="stylesheet" href="../css/footer.css">
-<style>
-:root{--accent:#0077B6;--muted:#888;--card-border:#eef2f5;--card-bg:#f2f4f6;}
-body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
-.container-main{max-width:980px;margin:28px auto;padding:18px;}
-.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
-.search-input-wrapper{position:relative;max-width:640px;width:100%;}
-.search-input{width:100%;padding:14px 48px 14px 44px;border:1px solid #e6ecf3;border-radius:14px;background:#fff;font-size:1rem;box-shadow:none;}
-.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#9aa3ad;font-size:1.15rem;}
-.tabs{display:flex;gap:18px;align-items:center;}
-.notif-tab{background:transparent;border:none;padding:8px 10px;cursor:pointer;font-weight:600;color:#444;position:relative;border-radius:6px;display:inline-flex;align-items:center;gap:8px;}
-.notif-tab.active{color:var(--accent);}
-.notif-tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-8px;height:3px;background:var(--accent);border-radius:3px;opacity:1;}
-.notif-tab .tab-badge{display:inline-block;background:#eaf1ff;color:var(--accent);padding:6px 10px;border-radius:999px;font-weight:700;font-size:0.92rem;min-width:28px;text-align:center;}
-
-.controls{display:flex;gap:8px;align-items:center;}
-.icon-btn{border:none;background:transparent;cursor:pointer;padding:6px;font-size:18px;color:#666;}
-.icon-btn.warn{color:#dc3545;}
-
-.notif-list{list-style:none;padding:0;margin:22px 0;}
-/* card */
-.notif-card-wrapper{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:#fbfbfb;border:1px solid #eef2f5;box-shadow:none;transition:box-shadow .12s, transform .06s;}
-.notif-card-wrapper:hover{box-shadow:0 6px 18px rgba(39,54,66,0.06);}
-.notif-left{display:flex;align-items:center;gap:12px;min-width:120px}
-.notif-dot{width:10px;height:10px;border-radius:50%;background:#ffffff !important;box-shadow:none !important;border:1px solid #e6e9ec !important;}
-.notif-star-left{background:transparent;border:none;padding:0;margin:0 4px 0 0;cursor:pointer;color:#bfc6cc;font-size:1.05rem;transition:color 180ms}
-.notif-star-left[aria-pressed="true"] {
-  color: #f0b400 !important;
-}
-.notif-star-left:hover {
-  color: #f0b400;
-}
-.notif-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(7,119,182,0.06);color:var(--accent);font-size:16px}
-.notif-main{flex:1;min-width:0}
-.notif-title{font-weight:700;font-size:1.05rem;margin-bottom:6px;color:#222}
-.notif-desc{color:#6f767d;font-size:0.95rem}
-.notif-time{color:var(--muted);font-size:0.92rem;white-space:nowrap;margin-left:12px}
-.notif-actions{display:flex;align-items:center;gap:8px;margin-left:12px;}
-.action-btn { background:transparent;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:1rem;display:inline-flex;align-items:center;justify-content:center; }
-.action-btn.read { color:var(--accent); }
-.action-btn.archive { color:#6d7780; }
-.action-btn.delete { background:#ff6b6b;color:#fff;border:none; }
-
-/* accepted items override */
-.notif-card-wrapper[data-status="accepted"] {
-  background: #ffffff !important;
-  border-left-color: #ffffff !important;
-}
-.notif-card-wrapper[data-status="accepted"] .notif-icon {
-  color: #ffffff !important;
-  background: #ffffff !important;
-  border-color: transparent !important;
-}
-.notif-card-wrapper[data-status="accepted"] .notif-title,
-.notif-card-wrapper[data-status="accepted"] .notif-desc {
-  color: #222 !important;
-}
-
-/* notification status colors */
-.notif-card-wrapper[data-status="accepted"] .notif-title {
-  color: #198754 !important;
-}
-.notif-card-wrapper[data-status="denied"] .notif-title {
-  color: #DC3545 !important;
-}
-
-/* focus style */
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 6px 20px rgba(0,119,182,0.06);
-}
-
-/* pagination styles */
-#notifPagination {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-top:12px;
-  gap:12px;
-  padding-top:6px;
-  position: relative; /* added: allow absolute centering of middle group */
-}
-#notifPagination .pg-info { color:#666; font-size:0.95rem; }
-#notifPagination .pg-center {
-  display:flex; gap:8px; align-items:center; justify-content:center;
-  position: absolute; left: 50%; transform: translateX(-50%); /* centered */
-}
-#notifPagination .pg-btn {
-  border:1px solid #e3e7ed;
-  background:transparent;
-  color:#444;
-  padding:6px 10px;
-  border-radius:8px;
-  cursor:pointer;
-  min-width:36px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-}
-#notifPagination .pg-btn[disabled] { opacity:0.45; cursor:not-allowed; }
-#notifPagination .pg-btn.current {
-  background:var(--accent);
-  color:#fff;
-  border-color:var(--accent);
-}
-
-/* Calendar Popup Styles */
-.calendar-popup {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-  z-index: 1000;
-  min-width: 300px;
-}
-
-.calendar-popup.active {
-  display: block;
-}
-
-.calendar-popup .header {
-  display: flex;
-  justify-content: flex-end; /* move content to the right */
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.calendar-popup .header h3 {
-  display: none; /* hide Select Date */
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.calendar-popup .close-btn {
-  display: none; /* hide X button */
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #666;
-}
-
-.calendar-popup select {
-  padding: 5px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin: 0 5px;
-}
-
-.calendar-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-.calendar-table th {
-  padding: 8px;
-  text-align: center;
-  color: #666;
-  font-weight: 600;
-}
-
-.calendar-table td {
-  padding: 8px;
-  text-align: center;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.calendar-table td:hover {
-  background: #f0f0f0;
-}
-
-.calendar-table td.selected {
-  background: var(--accent);
-  color: white;
-}
-
-.calendar-table td.today {
-  border: 1px solid var(--accent);
-}
-
-.calendar-controls {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.calendar-controls button {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-}
-
-.calendar-controls button.confirm {
-  background: var(--accent);
-  color: white;
-  border: none;
-}
-
-.overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: transparent; /* was rgba(0,0,0,0.5); remove black bg */
-  z-index: 999;
-}
-
-.overlay.active {
-  display: block;
-}
-
-/* responsive */
-@media (max-width:760px){
-  .notif-left{min-width:70px}
-  .notif-time{display:none}
-  .search-input-wrapper{max-width:260px}
-}
-
-/* Anchored calendar (opens near the icon). Keeps existing .calendar-popup styles for fallback modal use */
-.calendar-popup.anchored {
-  position: fixed;            /* anchor to viewport for reliable math */
-  top: 0; left: 0;            /* will be set via JS */
-  transform: none;            /* override center transform */
-  min-width: 320px;
-  z-index: 5000;              /* above any headers */
-}
-.calendar-popup.anchored::after {
-  content: "";
-  position: absolute;
-  width: 10px; height: 10px;
-  background: white;
-  transform: rotate(45deg);
-  top: calc(100% - 5px);      /* small arrow when popup is above button (fallback below adjusts in JS) */
-  right: 18px;
-  border-left: 1px solid rgba(0,0,0,0.1);
-  border-bottom: 1px solid rgba(0,0,0,0.1);
-  display: none;              /* toggled by JS depending on placement */
-}
-.calendar-popup.anchored.show-arrow::after { display: block; }
-</style>
+<link rel="stylesheet" href="../css/notif.css">
 </head>
 <body>
 <?php include '../Includes/navbar2.php'; ?>
-<div class="container-main">
+<div class="main-content">
+  <div class="container-main">
+
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
     <a href="ClientHome.php" style="color:#506C84;text-decoration:none;font-weight:600"><i class="fas fa-arrow-left"></i> Back</a>
-    <div style="font-weight:700;font-size:1.15rem;color:#222">All Notifications</div>
+    <div style="font-weight:700;font-size:1.15rem;color:#222; padding-right:45px;">All Notifications</div>
     <div></div>
   </div>
 
@@ -357,7 +125,22 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
       <button class="notif-tab" data-filter="archive" id="tab-arch"><span class="tab-badge" id="count-arch">0</span>Archive</button>
     </div>
 
-    <div style="display:flex;align-items:center;gap:8px">
+    <!-- small-screen top row: dropdown + actions (shown only on small screens) -->
+    <div class="mobile-top">
+      <select id="notifDropdown" class="notif-dropdown" aria-label="Notifications filter">
+        <option value="all">All (0)</option>
+        <option value="favorite">Favorites (0)</option>
+        <option value="archive">Archive (0)</option>
+      </select>
+      <div class="small-controls" aria-hidden="false">
+        <button id="headerDeleteVisibleBtnSmall" class="icon-btn warn" title="Delete visible" aria-label="Delete visible (mobile)"><i class="fas fa-trash"></i></button>
+        <button id="headerMarkReadBtnSmall" class="icon-btn" title="Mark visible as read" aria-label="Mark visible read (mobile)"><i class="fas fa-envelope-open-text"></i></button>
+        <button id="headerCalendarBtnSmall" class="icon-btn" title="Select date" aria-label="Calendar (mobile)"><i class="fas fa-calendar-alt"></i></button>
+      </div>
+    </div>
+
+    <!-- added class for responsive reflow -->
+    <div class="header-right" style="display:flex;align-items:center;gap:8px">
       <div class="search-input-wrapper">
         <input id="notifSearch" class="search-input" placeholder="Search notifications..." />
         <i class="fas fa-search search-icon"></i>
@@ -380,10 +163,22 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   <?php if ($user_id && count($notifications) > 0): ?>
     <ul class="notif-list" id="notifications-list">
       <?php foreach ($notifications as $notif):
-        $borderColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
-        $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#EAF1FF' : '#FFF8E1'));
-        $icon = ($notif['status'] === 'accepted') ? 'fa-check-circle' : (($notif['status'] === 'denied') ? 'fa-times-circle' : (($notif['status'] === 'welcome') ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
-        $iconColor = ($notif['status'] === 'accepted') ? '#198754' : (($notif['status'] === 'denied') ? '#ffffff' : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
+        // changed: make "assessment" cards neutral (white bg, neutral left border)
+        // keep welcome visually neutral (no blue background/left border)
+        $borderColor = ($notif['status'] === 'accepted') ? '#198754'
+                     : (($notif['status'] === 'denied') ? '#ffffff'
+                     : '#ffffff');
+
+        $bgColor = ($notif['status'] === 'accepted') ? '#E9F7EF'
+                 : '#ffffff';
+ 
+        $icon = ($notif['status'] === 'accepted') ? 'fa-check-circle'
+              : (($notif['status'] === 'denied') ? 'fa-times-circle'
+              : (($notif['status'] === 'welcome') ? 'fa-smile-beam' : 'fa-file-invoice-dollar'));
+
+        $iconColor = ($notif['status'] === 'accepted') ? '#198754'
+                   : (($notif['status'] === 'denied') ? '#ffffff'
+                   : (($notif['status'] === 'welcome') ? '#4B7BEC' : '#FFC107'));
       ?>
       <li class="notif-card-wrapper unread" data-id="<?php echo isset($notif['id']) ? htmlspecialchars($notif['id']) : ''; ?>" data-status="<?php echo htmlspecialchars($notif['status']); ?>" data-created_at="<?php echo htmlspecialchars($notif['created_at']); ?>" style="background:<?php echo $bgColor; ?>;border-left:8px solid <?php echo $borderColor; ?>;">
         <div class="notif-left">
@@ -397,13 +192,15 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
             <?php
               if ($notif['status'] === 'accepted') echo 'Request Accepted';
               elseif ($notif['status'] === 'denied') echo 'Request Denied';
-              elseif ($notif['status'] === 'welcome') echo 'Welcome to RestEase!';
+              elseif ($notif['status'] === 'welcome') echo 'Welcome User';
               else echo 'Assessment of Fees';
             ?>
           </div>
           <div class="notif-desc">
             <?php if ($notif['status'] === 'accepted' || $notif['status'] === 'denied'): ?>
               Type: <b><?php echo htmlspecialchars($notif['type'] ?? ''); ?></b> &nbsp;|&nbsp; Name: <b><?php echo htmlspecialchars($notif['name'] ?? ''); ?></b>
+            <?php elseif ($notif['status'] === 'welcome'): ?>
+              Welcome to RestEase!
             <?php elseif ($notif['status'] === 'assessment'): ?>
               <?php echo htmlspecialchars($notif['message']); ?>
             <?php endif; ?>
@@ -418,7 +215,11 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
               Details
             </a>
           <?php elseif ($notif['status'] === 'assessment'): ?>
-            <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details" style="font-size:0.98rem;color:#f39c12;text-decoration:none;font-weight:600;">
+            <a href="notification_details.php?type=assessment&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Assessment Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
+              Details
+            </a>
+          <?php elseif ($notif['status'] === 'welcome'): ?>
+            <a href="notification_details.php?type=welcome&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View Welcome Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
               Details
             </a>
           <?php endif; ?>
@@ -436,11 +237,13 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     </div>
 
   <?php else: ?>
-    <div style="text-align:center;padding:64px 8px;color:#888;">
-      No notifications available yet.<br>Please contact the administrator or check back later.
+    <div class="no-cert-msg text-muted">
+      No notifications available yet.<br>
+      Please contact the administrator or check back later.
     </div>
   <?php endif; ?>
-</div>
+  </div> <!-- /.container-main -->
+</div> <!-- /.main-content -->
 
 <div class="overlay" id="calendarOverlay"></div>
 <div class="calendar-popup" id="calendarPopup">
@@ -499,6 +302,14 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   const headerDeleteVisibleBtn = $('#headerDeleteVisibleBtn');
   const headerCalendarBtn = $('#headerCalendarBtn');
 
+  // dropdown for small screens
+  const notifDropdown = $('#notifDropdown');
+
+  // small-screen action buttons (visible next to dropdown)
+  const headerDeleteVisibleBtnSmall = $('#headerDeleteVisibleBtnSmall');
+  const headerMarkReadBtnSmall = $('#headerMarkReadBtnSmall');
+  const headerCalendarBtnSmall = $('#headerCalendarBtnSmall');
+
   // pagination
   const PAGE_SIZE_CLIENT = 10; // was 5; show 10 notifications per page
   let currentPageClient = 1;
@@ -525,6 +336,16 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
     $('#count-all').textContent = allCount;
     $('#count-fav').textContent = fav;
     $('#count-arch').textContent = arch;
+
+    // update dropdown labels (if present)
+    if (notifDropdown) {
+      const optAll = notifDropdown.querySelector('option[value="all"]');
+      const optFav = notifDropdown.querySelector('option[value="favorite"]');
+      const optArch = notifDropdown.querySelector('option[value="archive"]');
+      if (optAll) optAll.textContent = `All (${allCount})`;
+      if (optFav) optFav.textContent = `Favorites (${fav})`;
+      if (optArch) optArch.textContent = `Archive (${arch})`;
+    }
   }
 
   // ---- Filtering helpers (source-of-truth for pagination) ----
@@ -650,8 +471,19 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   tabs.forEach(t => t.addEventListener('click', function(){
     tabs.forEach(x=>x.classList.remove('active'));
     this.classList.add('active');
+    // sync dropdown when a tab is clicked
+    if (notifDropdown) notifDropdown.value = this.getAttribute('data-filter');
     applyFilter();
   }));
+
+  // dropdown change -> sync tabs and apply filter
+  if (notifDropdown) {
+    notifDropdown.addEventListener('change', function(){
+      const val = this.value;
+      tabs.forEach(x => x.classList.toggle('active', x.getAttribute('data-filter') === val));
+      applyFilter();
+    });
+  }
 
   searchInput && searchInput.addEventListener('input', applyFilter);
 
@@ -710,36 +542,38 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   }
 
   // header bulk actions
-  if (headerMarkReadBtn) {
-    headerMarkReadBtn.addEventListener('click', function(){
-      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-      if (visible.length === 0) return;
-      if (!confirm('Mark all visible notifications as read?')) return;
-      visible.forEach(card => {
-        const id = card.getAttribute('data-id');
-        try { if (id) localStorage.setItem('notif_read_' + id, '1'); } catch(e){}
-        const dot = card.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
-        card.classList.remove('unread');
-      });
-      updateCounts();
-      applyFilter();
+  // shared handler for marking visible as read
+  function handleMarkRead() {
+    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+    if (visible.length === 0) return;
+    if (!confirm('Mark all visible notifications as read?')) return;
+    visible.forEach(card => {
+      const id = card.getAttribute('data-id');
+      try { if (id) localStorage.setItem('notif_read_' + id, '1'); } catch(e){}
+      const dot = card.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
+      card.classList.remove('unread');
     });
+    updateCounts();
+    applyFilter();
   }
+  if (headerMarkReadBtn) headerMarkReadBtn.addEventListener('click', handleMarkRead);
+  if (headerMarkReadBtnSmall) headerMarkReadBtnSmall.addEventListener('click', handleMarkRead);
 
-  if (headerDeleteVisibleBtn) {
-    headerDeleteVisibleBtn.addEventListener('click', function(){
-      const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-      if (visible.length === 0) return;
-      if (!confirm('Delete all visible notifications?')) return;
-      visible.forEach(card => {
-        const id = card.getAttribute('data-id');
-        try { if (id) localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-        card.remove();
-      });
-      updateCounts();
-      applyFilter();
+  // shared handler for deleting visible
+  function handleDeleteVisible() {
+    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+    if (visible.length === 0) return;
+    if (!confirm('Delete all visible notifications?')) return;
+    visible.forEach(card => {
+      const id = card.getAttribute('data-id');
+      try { if (id) localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
+      card.remove();
     });
+    updateCounts();
+    applyFilter();
   }
+  if (headerDeleteVisibleBtn) headerDeleteVisibleBtn.addEventListener('click', handleDeleteVisible);
+  if (headerDeleteVisibleBtnSmall) headerDeleteVisibleBtnSmall.addEventListener('click', handleDeleteVisible);
 
   // calendar
   const calendarPopup = $('#calendarPopup');
@@ -887,7 +721,8 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
   }
 
   // Replace previous click handler to use anchored positioning
-  headerCalendarBtn.addEventListener('click', openCalendarAnchored);
+  if (headerCalendarBtn) headerCalendarBtn.addEventListener('click', openCalendarAnchored);
+  if (headerCalendarBtnSmall) headerCalendarBtnSmall.addEventListener('click', openCalendarAnchored);
 
   $('.calendar-popup .close-btn').addEventListener('click', closeCalendar);
 
@@ -910,6 +745,11 @@ body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;}
 
   // initial render
   updateCounts();
+  // ensure dropdown reflects the initial active tab
+  if (notifDropdown) {
+    const activeTab = $('#notif-tabs .notif-tab.active');
+    if (activeTab) notifDropdown.value = activeTab.getAttribute('data-filter') || 'all';
+  }
   setTimeout(()=>{ applyFilter(); }, 50);
 
   wirePerCardActions();

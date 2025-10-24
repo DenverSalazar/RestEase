@@ -1,0 +1,354 @@
+:root{--accent:#0077B6;--muted:#888;--card-border:#eef2f5;--card-bg:#f2f4f6;}
+body{font-family:'Poppins',system-ui,Arial;color:#222;background:#fff;min-height:100vh;display:flex;flex-direction:column;margin:0;}
+.main-content { flex: 1 0 auto; display:block; }
+.container-main{max-width:980px;margin:28px auto;padding:18px;}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.search-input-wrapper{position:relative;max-width:640px;width:100%;}
+.search-input{width:100%;padding:14px 48px 14px 44px;border:1px solid #e6ecf3;border-radius:14px;background:#fff;font-size:1rem;box-shadow:none;}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#9aa3ad;font-size:1.15rem;}
+.tabs{display:flex;gap:18px;align-items:center;}
+.notif-tab{background:transparent;border:none;padding:8px 10px;cursor:pointer;font-weight:600;color:#444;position:relative;border-radius:6px;display:inline-flex;align-items:center;gap:8px;}
+.notif-tab.active{color:var(--accent);}
+.notif-tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-8px;height:3px;background:var(--accent);border-radius:3px;opacity:1;}
+.notif-tab .tab-badge{display:inline-block;background:#eaf1ff;color:var(--accent);padding:6px 10px;border-radius:999px;font-weight:700;font-size:0.92rem;min-width:28px;text-align:center;}
+
+.controls{display:flex;gap:8px;align-items:center;}
+.icon-btn{border:none;background:transparent;cursor:pointer;padding:6px;font-size:18px;color:#666;}
+.icon-btn.warn{color:#dc3545;}
+
+.notif-list{list-style:none;padding:0;margin:22px 0;}
+/* card */
+.notif-card-wrapper{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:12px;background:#fbfbfb;border:1px solid #eef2f5;box-shadow:none;transition:box-shadow .12s, transform .06s;}
+.notif-card-wrapper:hover{box-shadow:0 6px 18px rgba(39,54,66,0.06);}
+.notif-left{display:flex;align-items:center;gap:12px;min-width:120px}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#ffffff !important;box-shadow:none !important;border:1px solid #e6e9ec !important;}
+.notif-star-left{background:transparent;border:none;padding:0;margin:0 4px 0 0;cursor:pointer;color:#bfc6cc;font-size:1.05rem;transition:color 180ms}
+.notif-star-left[aria-pressed="true"] {
+  color: #f0b400 !important;
+}
+.notif-star-left:hover {
+  color: #f0b400;
+}
+.notif-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(7,119,182,0.06);color:var(--accent);font-size:16px}
+.notif-main{flex:1;min-width:0}
+.notif-title{font-weight:700;font-size:1.05rem;margin-bottom:6px;color:#222}
+.notif-desc{color:#6f767d;font-size:0.95rem}
+.notif-time{color:var(--muted);font-size:0.92rem;white-space:nowrap;margin-left:12px}
+.notif-actions{display:flex;align-items:center;gap:8px;margin-left:12px;}
+.action-btn { background:transparent;border:none;padding:6px;border-radius:8px;cursor:pointer;font-size:1rem;display:inline-flex;align-items:center;justify-content:center; }
+.action-btn.read { color:var(--accent); }
+.action-btn.archive { color:#6d7780; }
+.action-btn.delete { background:#ff6b6b;color:#fff;border:none; }
+
+/* accepted items override */
+.notif-card-wrapper[data-status="accepted"] {
+  background: #ffffff !important;
+  border-left-color: #ffffff !important;
+}
+.notif-card-wrapper[data-status="accepted"] .notif-icon {
+  color: #ffffff !important;
+  background: #ffffff !important;
+  border-color: transparent !important;
+}
+.notif-card-wrapper[data-status="accepted"] .notif-title,
+.notif-card-wrapper[data-status="accepted"] .notif-desc {
+  color: #222 !important;
+}
+
+/* notification status colors */
+.notif-card-wrapper[data-status="accepted"] .notif-title {
+  color: #198754 !important;
+}
+.notif-card-wrapper[data-status="denied"] .notif-title {
+  color: #DC3545 !important;
+}
+
+/* Add: make assessment cards visually neutral (no colored background/left border) */
+.notif-card-wrapper[data-status="assessment"] {
+  background: #ffffff !important;
+  border-left-color: #ffffff !important;
+}
+.notif-card-wrapper[data-status="assessment"] .notif-title,
+.notif-card-wrapper[data-status="assessment"] .notif-desc {
+  color: #222 !important;
+}
+
+/* focus style */
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0,119,182,0.06);
+}
+
+/* pagination styles */
+#notifPagination {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:12px;
+  gap:12px;
+  padding-top:6px;
+  position: relative; /* added: allow absolute centering of middle group */
+}
+#notifPagination .pg-info { color:#666; font-size:0.95rem; }
+#notifPagination .pg-center {
+  display:flex; gap:8px; align-items:center; justify-content:center;
+  position: absolute; left: 50%; transform: translateX(-50%); /* centered */
+}
+#notifPagination .pg-btn {
+  border:1px solid #e3e7ed;
+  background:transparent;
+  color:#444;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  min-width:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+#notifPagination .pg-btn[disabled] { opacity:0.45; cursor:not-allowed; }
+#notifPagination .pg-btn.current {
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+
+/* Calendar Popup Styles */
+.calendar-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 300px;
+}
+
+.calendar-popup.active {
+  display: block;
+}
+
+.calendar-popup .header {
+  display: flex;
+  justify-content: flex-end; /* move content to the right */
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-popup .header h3 {
+  display: none; /* hide Select Date */
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.calendar-popup .close-btn {
+  display: none; /* hide X button */
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.calendar-popup select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 0 5px;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.calendar-table th {
+  padding: 8px;
+  text-align: center;
+  color: #666;
+  font-weight: 600;
+}
+
+.calendar-table td {
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.calendar-table td:hover {
+  background: #f0f0f0;
+}
+
+.calendar-table td.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.calendar-table td.today {
+  border: 1px solid var(--accent);
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.calendar-controls button {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+.calendar-controls button.confirm {
+  background: var(--accent);
+  color: white;
+  border: none;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent; /* was rgba(0,0,0,0.5); remove black bg */
+  z-index: 999;
+}
+
+.overlay.active {
+  display: block;
+}
+
+/* default: hide dropdown on large screens */
+.notif-dropdown { display: none; }
+
+/* mobile helper: hidden by default (shown on small screens) */
+.mobile-top { display: none; align-items: center; gap: 8px; }
+
+/* responsive */
+@media (max-width:760px){
+  .notif-left{min-width:70px}
+  .notif-time{display:none}
+
+  /* make header stack and search full width on small devices */
+  .header-row { flex-direction: column; align-items: stretch; }
+
+  /* hide tabs on small — dropdown shown */
+  .tabs { display: none; }
+
+  /* mobile top row: dropdown (left) + small action icons (right) */
+  .mobile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* dropdown left, controls right */
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  /* dropdown occupies available space but not full width; keeps some room for controls */
+  .notif-dropdown {
+    display: inline-block;
+    width: calc(100% - 120px); /* leave room for controls (approx) */
+    max-width: 70%;
+    margin: 0;
+    padding: 8px 36px 8px 12px;            /* room for caret on right */
+    border-radius: 10px;
+    border: 1px solid #e6ecf3;
+    background: linear-gradient(#ffffff, #fbfdff);
+    box-shadow: 0 6px 18px rgba(7,119,182,0.06);
+    font-weight: 600;
+    color: #243041;
+    line-height: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    /* subtle custom caret (SVG) */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230077B6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  }
+  /* hover / focus affordance */
+  .notif-dropdown:hover {
+    box-shadow: 0 8px 22px rgba(7,119,182,0.08);
+  }
+  .notif-dropdown:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 10px 28px rgba(0,119,182,0.10);
+  }
+
+  .small-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+  }
+  /* slightly enlarge mobile icons for easier tapping */
+  .small-controls .icon-btn { font-size:20px; padding:8px; }
+
+  .header-right { width:100%; display:flex; flex-direction:column; gap:8px; }
+  .search-input-wrapper{max-width:none; width:100%;}
+  /* hide top-right action icons on small devices (we show small-controls instead) */
+  .header-right .controls { display: none; }
+
+  /* NEW: hide the descriptive text on small devices — show only the title */
+  .notif-main .notif-desc { display: none !important; }
+
+  /* make title single-line with ellipsis to avoid wrapping overflow */
+  .notif-main .notif-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Remove left dot and logo on small screens so title has more space.
+     Keep the favorite star visible and slightly larger for tapping. */
+  .notif-dot,
+  .notif-icon {
+    display: none !important;
+  }
+  .notif-left {
+    min-width: 42px;        /* smaller left column */
+    gap: 8px;
+    align-items: center;
+  }
+  .notif-star-left {
+    font-size: 1.2rem;
+    padding: 6px;
+    margin: 0;              /* tighter layout */
+  }
+}
+
+/* Anchored calendar (opens near the icon). Keeps existing .calendar-popup styles for fallback modal use */
+.calendar-popup.anchored {
+  position: fixed;            /* anchor to viewport for reliable math */
+  top: 0; left: 0;            /* will be set via JS */
+  transform: none;            /* override center transform */
+  min-width: 320px;
+  z-index: 5000;              /* above any headers */
+}
+.calendar-popup.anchored::after {
+  content: "";
+  position: absolute;
+  width: 10px; height: 10px;
+  background: white;
+  transform: rotate(45deg);
+  top: calc(100% - 5px);      /* small arrow when popup is above button (fallback below adjusts in JS) */
+  right: 18px;
+  border-left: 1px solid rgba(0,0,0,0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  display: none;              /* toggled by JS depending on placement */
+}
+.calendar-popup.anchored.show-arrow::after { display: block; }
