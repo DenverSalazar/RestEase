@@ -34,13 +34,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'lourenzangelfrancisco@gmail.com';         // 🔁 Replace with your Gmail address
-            $mail->Password   = 'lbtyxpmubmrpovix';    // 🔁 Use your App Password (no spaces)
+            $mail->Username   = 'resteasempdo@gmail.com';         // Updated Gmail address
+            $mail->Password   = 'vvkblrlppiflbksu';               // Updated App Password (no spaces)
             $mail->SMTPSecure = 'tls';
             $mail->Port       = 587;
 
             // Email headers
-            $mail->setFrom('lourenzangelfrancisco@gmail.com', 'RestEase'); // 🔁 Same as above
+            $mail->setFrom('resteasempdo@gmail.com', 'RestEase'); // Updated sender address
             $mail->addAddress($email);                    // Recipient's email
             $mail->isHTML(true);
             $mail->Subject = 'RestEase Password Reset Code';
