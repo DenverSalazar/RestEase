@@ -57,6 +57,79 @@ if ($user_id) {
         $stmt->close();
     }
 }
+
+/* ===== New helpers for assessment view ===== */
+function peso($n) {
+    if ($n === null || $n === '') return '-';
+    return '₱ ' . number_format((float)$n, 2);
+}
+function table_exists(mysqli $conn, $name) {
+    $name = $conn->real_escape_string($name);
+    $res = $conn->query("SHOW TABLES LIKE '{$name}'");
+    return $res && $res->num_rows > 0;
+}
+function full_name($first = '', $middle = '', $last = '') {
+    return trim(preg_replace('/\s+/', ' ', trim($first . ' ' . $middle . ' ' . $last)));
+}
+function pick($arr, $keys) {
+    foreach ($keys as $k) if (!empty($arr[$k])) return $arr[$k];
+    return null;
+}
+function calc_age($dob, $dod = null) {
+    if (empty($dob)) return null;
+    try {
+        $start = new DateTime($dob);
+        $end = $dod ? new DateTime($dod) : new DateTime();
+        return $start->diff($end)->y;
+    } catch (Exception $e) { return null; }
+}
+
+/* ===== Build assessment data if available ===== */
+$assessView = [
+    'informant' => null, 'email' => null, 'type' => null,
+    'deceased' => null, 'residency' => null, 'dob' => null, 'dod' => null, 'age' => null,
+    'fees' => ['opening' => null, 'reloc_rate' => null, 'reloc_count' => 0, 'total' => null]
+];
+
+if (!empty($assessment) && !empty($details)) {
+    $assessView['informant'] = full_name($details['user_first'] ?? '', '', $details['user_last'] ?? '');
+    $assessView['email'] = $details['email'] ?? '';
+    $assessView['type'] = ucfirst($details['type'] ?? '');
+    $assessView['deceased'] = full_name($details['first_name'] ?? '', $details['middle_name'] ?? '', $details['last_name'] ?? '');
+    $assessView['residency'] = pick($details, ['residency', 'address', 'residence']) ?? '-';
+    $assessView['dob'] = pick($details, ['date_of_birth', 'dob', 'birth_date']);
+    $assessView['dod'] = pick($details, ['date_of_death', 'dod', 'death_date']);
+    $assessView['age'] = calc_age($assessView['dob'], $assessView['dod']);
+
+    // Fees: prefer assessment_fees table; else sensible defaults
+    $opening = 1000;
+    $relocRate = 500;
+    $relocCount = (stripos($assessView['type'] ?? '', 'relocate') !== false) ? 1 : 0;
+    $total = $opening + ($relocRate * $relocCount);
+
+    if (table_exists($conn, 'assessment_fees')) {
+        if ($stmt = $conn->prepare("SELECT opening_fee, relocation_fee_rate, relocation_count, total_fee FROM assessment_fees WHERE request_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1")) {
+            $request_id = $details['id'] ?? null;
+            $stmt->bind_param("ii", $request_id, $user_id);
+            if ($stmt->execute()) {
+                $res = $stmt->get_result();
+                if ($row = $res->fetch_assoc()) {
+                    $opening = $row['opening_fee'] ?? $opening;
+                    $relocRate = $row['relocation_fee_rate'] ?? $relocRate;
+                    $relocCount = (int)($row['relocation_count'] ?? $relocCount);
+                    $total = $row['total_fee'] ?? ($opening + ($relocRate * $relocCount));
+                }
+            }
+            $stmt->close();
+        }
+    }
+    $assessView['fees'] = [
+        'opening' => (float)$opening,
+        'reloc_rate' => (float)$relocRate,
+        'reloc_count' => (int)$relocCount,
+        'total' => (float)$total
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -84,7 +157,7 @@ if ($user_id) {
             padding: 28px 28px 22px;
         }
 
-        /* Email-like header and body (from screenshot) */
+        /* Email-like header (kept for accepted/denied) */
         .email-head { text-align:center; margin-bottom:18px; }
         .bubble-icon {
             width: 54px; height: 54px; border-radius: 14px;
@@ -100,30 +173,16 @@ if ($user_id) {
             padding:16px; color:#374151; line-height:1.55; margin:16px 0 12px;
         }
         .email-meta { color:#6b7280; font-size:.95rem; margin:6px 0 16px; }
-        .email-btn {
-            display:none;
-        }
-        .email-btn:hover { filter:brightness(.95); }
 
-        /* Key/Value list */
-        .kv-grid { display: grid; gap: 10px; }
-        @media (min-width: 576px) { .kv-grid { grid-template-columns: 1fr; } }
-        .kv-row, .detail-row { /* also upgrade existing .detail-row */
-            display: flex; align-items: baseline; justify-content: space-between;
-            gap: 12px; padding: 8px 0;
-            border-bottom: 1px dashed #eef2f8;
-        }
-        .kv-row:last-child, .detail-row:last-child { border-bottom: none; }
-        .kv-label, .detail-label { font-weight: 600; color: #374151; min-width: 140px; font-size: .95rem; }
-        .kv-value, .detail-value { color: #566173; font-size: .95rem; text-align: right; flex: 1; }
-
-        /* Back button */
-        .btn-back { color: #2463eb; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-back i { transition: transform .18s ease; }
-        .btn-back:hover i { transform: translateX(-3px); }
-
-        /* Section title inside card (for assessment) */
-        .section-title { font-weight: 700; color: #25304a; font-size: 1rem; margin: 14px 0 6px; }
+        /* Assessment header + grid */
+        .assess-title { font-weight: 800; color: #111827; font-size: 1.5rem; margin: 4px 0 18px; }
+        .kv-grid { display: grid; gap: 6px; }
+        .kv-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:6px 0; }
+        .kv-label { color:#374151; min-width:200px; font-weight:600; }
+        .kv-value { color:#111827; text-align:right; flex:1; }
+        .divider { border-top:1px solid #e5e7eb; margin:14px 0; }
+        .total-row .kv-label, .total-row .kv-value { font-weight:800; }
+        .muted { color:#6b7280; font-size:.9rem; }
     </style>
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
@@ -157,25 +216,37 @@ if ($user_id) {
                 </div>
 
             <?php elseif ($assessment && !empty($details)): ?>
-                <?php
-                    $primaryLink = !empty($assessment['link']) ? $assessment['link'] : '#';
-                    $sentOn = date('M d, Y h:i A', strtotime($assessment['created_at']));
-                    $assessMsg = trim($assessment['message'] ?? 'Please review the assessment details below.');
-                ?>
-                <div class="email-head">
-                    <div class="bubble-icon"><i class="far fa-comment-dots"></i></div>
-                    <div class="eyebrow">Hi there, <?php echo htmlspecialchars($currentUserName); ?>.</div>
-                    <h1 class="email-title">You have a new message.</h1>
-                    <p class="email-sub">New message at <?php echo htmlspecialchars($appName); ?></p>
+                <!-- ===== Redesigned Assessment of Fees ===== -->
+                <h2 class="assess-title">Assessment of Fees</h2>
+
+                <div class="kv-grid">
+                    <div class="kv-row"><div class="kv-label">Informant Name:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['informant'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Email:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['email'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Type:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['type'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Name of Deceased:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['deceased'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Residency:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['residency'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Date of Birth:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dob'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Date of Death:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dod'] ?: '-'); ?></div></div>
+                    <div class="kv-row"><div class="kv-label">Age:</div><div class="kv-value"><?php echo htmlspecialchars(($assessView['age'] !== null ? $assessView['age'] : '-')); ?></div></div>
                 </div>
 
-                <div class="email-body-box">
-                    <?php echo htmlspecialchars($assessMsg); ?>
+                <div class="divider"></div>
+
+                <div class="kv-grid">
+                    <div class="kv-row"><div class="kv-label">Opening Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['opening']); ?></div></div>
+                    <?php if (!empty($assessView['fees']['reloc_count'])): ?>
+                        <?php
+                            $rate = $assessView['fees']['reloc_rate'];
+                            $cnt = $assessView['fees']['reloc_count'];
+                            $line = peso($rate) . " x {$cnt} = " . peso($rate * $cnt);
+                        ?>
+                        <div class="kv-row"><div class="kv-label">Relocation Fee:</div><div class="kv-value"><?php echo $line; ?></div></div>
+                    <?php endif; ?>
+                    <div class="kv-row total-row"><div class="kv-label">Total Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['total']); ?></div></div>
                 </div>
 
-                <div class="email-meta">
-                    Sent by Admin on <?php echo htmlspecialchars($sentOn); ?>.
-                </div>
+                <div class="divider"></div>
+                <div class="muted">Generated on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($assessment['created_at']))); ?></div>
 
             <?php else: ?>
                 <div class="text-center text-danger">Notification not found or you do not have access.</div>
