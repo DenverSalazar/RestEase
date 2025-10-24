@@ -8,6 +8,11 @@ if (!isset($_SESSION['admin_id'])) {
 
 include_once '../Includes/db.php';
 
+// --- Add PHPMailer ---
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/../vendor/autoload.php';
+
 // --- Add: compute project web base and settings URL (same logic as Includes/header.php) ---
 $projectRootFs = realpath(__DIR__ . '/..') ?: '';
 $docRootFs = realpath($_SERVER['DOCUMENT_ROOT']) ?: '';
@@ -27,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notify_niche'])) {
     $niche = trim($_POST['notify_niche']);
     $name = isset($_POST['notify_name']) ? trim($_POST['notify_name']) : '';
     $validity = isset($_POST['notify_validity']) ? trim($_POST['notify_validity']) : '';
-    $contact_type = isset($_POST['contact_type']) ? trim($_POST['contact_type']) : ''; // 'email' or 'phone' or 'internal'
+    $contact_type = isset($_POST['contact_type']) ? trim($_POST['contact_type']) : '';
     $contact_value = isset($_POST['contact_value']) ? trim($_POST['contact_value']) : '';
 
     // server-side validation: contact_value is required
@@ -51,7 +56,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notify_niche'])) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    $message = "Validity expiry notice for {$name} (Apt: {$niche}) on {$validity}";
+    // Determine if expired or upcoming
+    $today = date('Y-m-d');
+    $isExpired = ($validity < $today);
+
+    // Prepare subject and body based on expiry status
+    if ($isExpired) {
+        $subject = "Notice of Expired Lease";
+        $bodyHtml = "Dear " . htmlspecialchars($name) . ",<br><br>"
+            . "This is to inform you that your lease for <b>Apt. No/ Niche: " . htmlspecialchars($niche) . "</b> has expired as of <b>" . htmlspecialchars($validity) . "</b>.<br><br>"
+            . "Please take the necessary action to renew or settle your account to avoid any inconvenience. If payment or renewal has already been made, kindly disregard this message.<br><br>"
+            . "For assistance or inquiries, you may contact us at <a href='mailto:resteasempdo@gmail.com'>resteasempdo@gmail.com</a>.<br><br>"
+            . "Thank you for your prompt attention.<br><br>"
+            . "Sincerely,<br>RestEase MPDO";
+        $bodyText = "Dear {$name},\n\n"
+            . "This is to inform you that your lease for Apt. No/ Niche: {$niche} has expired as of {$validity}.\n\n"
+            . "Please take the necessary action to renew or settle your account to avoid any inconvenience. If payment or renewal has already been made, kindly disregard this message.\n\n"
+            . "For assistance or inquiries, you may contact us at resteasempdo@gmail.com.\n\n"
+            . "Thank you for your prompt attention.\n\n"
+            . "Sincerely,\nRestEase MPDO";
+    } else {
+        $subject = "Reminder: Lease Expiring Soon";
+        $bodyHtml = "Dear " . htmlspecialchars($name) . ",<br><br>"
+            . "We would like to remind you that your lease for <b>Apt. No/ Niche: " . htmlspecialchars($niche) . "</b> is set to expire on <b>" . htmlspecialchars($validity) . "</b>.<br><br>"
+            . "To ensure continuous service and avoid interruption, please process your renewal or payment before the expiration date.<br><br>"
+            . "If you have already completed the renewal, kindly ignore this reminder.<br><br>"
+            . "Thank you for your continued support.<br><br>"
+            . "Best regards,<br>resteasempdo@gmail.com";
+        $bodyText = "Dear {$name},\n\n"
+            . "We would like to remind you that your lease for Apt. No/ Niche: {$niche} is set to expire on {$validity}.\n\n"
+            . "To ensure continuous service and avoid interruption, please process your renewal or payment before the expiration date.\n\n"
+            . "If you have already completed the renewal, kindly ignore this reminder.\n\n"
+            . "Thank you for your continued support.\n\n"
+            . "Best regards,\nresteasempdo@gmail.com";
+    }
+
+    $message = $isExpired
+        ? "Expired lease notice for {$name} (Apt: {$niche}) on {$validity}"
+        : "Upcoming expiry notice for {$name} (Apt: {$niche}) on {$validity}";
 
     $status = 'queued';
     $sent = false;
@@ -90,23 +132,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notify_niche'])) {
             } else {
                 $status = 'failed';
             }
+
+            // --- NEW: Also send expiry notice to their email account using PHPMailer ---
+            // Only send if email is valid
+            if (filter_var($contact_value, FILTER_VALIDATE_EMAIL)) {
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'resteasempdo@gmail.com';
+                    $mail->Password   = 'vvkblrlppiflbksu';
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port       = 587;
+                    $mail->setFrom('resteasempdo@gmail.com', 'RestEase');
+                    $mail->addAddress($contact_value);
+                    $mail->isHTML(true);
+                    $mail->Subject = $subject;
+                    $mail->Body    = $bodyHtml;
+                    $mail->AltBody = $bodyText;
+                    $mail->send();
+                } catch (Exception $e) {
+                    // ignore email errors for now, main status is for in-app
+                }
+            }
+            // --- END NEW ---
         } else {
             // If internal requested but user not found, keep queued
             $status = 'queued';
         }
     } elseif ($contact_type === 'email' && filter_var($contact_value, FILTER_VALIDATE_EMAIL)) {
-        // Attempt to send email using mail() — replace with real SMTP if available
-        $to = $contact_value;
-        $subject = "RestEase: Validity Expiry Notice";
-        $body = "Hello,\n\nThis is a notice that the validity for {$name} (Apt: {$niche}) is on {$validity}.\n\nRegards,\nRestEase Admin";
-        $headers = "From: noreply@restease.local\r\nReply-To: noreply@restease.local";
-
-        // suppress warnings from mail() but capture boolean result
-        $mailResult = @mail($to, $subject, $body, $headers);
-        if ($mailResult) {
-            $status = 'sent';
-            $sent = true;
-        } else {
+        // --- Use PHPMailer for email notifications ---
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'resteasempdo@gmail.com';
+            $mail->Password   = 'vvkblrlppiflbksu';
+            $mail->SMTPSecure = 'tls';
+            $mail->Port       = 587;
+            $mail->setFrom('resteasempdo@gmail.com', 'RestEase');
+            $mail->addAddress($contact_value);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $bodyHtml;
+            $mail->AltBody = $bodyText;
+            $mailResult = $mail->send();
+            if ($mailResult) {
+                $status = 'sent';
+                $sent = true;
+            } else {
+                $status = 'failed';
+            }
+        } catch (Exception $e) {
             $status = 'failed';
         }
     } else {
@@ -242,9 +321,10 @@ if ($stmt->fetch()) {
 }
 $stmt->close();
 
-// Get records whose validity is closest to today (future dates only)
+// Get records whose validity is expired or expiring within 1 year (from today)
 $expiringRecords = [];
 $today = date('Y-m-d');
+$oneYearFromNow = date('Y-m-d', strtotime('+1 year'));
 $sql = "SELECT id, nicheID, lastName, firstName, middleName, suffix, dateInternment, informantName FROM deceased WHERE dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00'";
 $res = $conn->query($sql);
 if ($res && $res->num_rows > 0) {
@@ -252,7 +332,8 @@ if ($res && $res->num_rows > 0) {
         $internmentDate = $row['dateInternment'];
         try {
             $validityDate = (new DateTime($internmentDate))->modify('+5 years')->format('Y-m-d');
-            if ($validityDate >= $today) {
+            // Only include if validity is expired or will expire within 1 year from today
+            if ($validityDate <= $oneYearFromNow) {
                 $name = $row['lastName'] . ', ' . $row['firstName'];
                 if (!empty($row['middleName'])) $name .= ' ' . strtoupper(substr(trim($row['middleName']), 0, 1)) . '.';
                 if (!empty($row['suffix'])) $name .= ' ' . $row['suffix'];
@@ -301,12 +382,10 @@ if ($res && $res->num_rows > 0) {
             }
         } catch (Exception $e) {}
     }
-    // Sort by closest validity date
+    // Sort by closest validity date (expired first, then soonest expiry)
     usort($expiringRecords, function($a, $b) {
         return strcmp($a['validity'], $b['validity']);
     });
-    // Limit to top 10 closest
-    $expiringRecords = array_slice($expiringRecords, 0, 10);
 
     // --- NEW: ensure expiry_notifications table exists and load notified statuses (persist one-time notifications) ---
     $conn->query("CREATE TABLE IF NOT EXISTS expiry_notifications (
@@ -522,9 +601,10 @@ if ($stmt->fetch()) {
 }
 $stmt->close();
 
-// Get records whose validity is closest to today (future dates only)
+// Get records whose validity is expired or expiring within 1 year (from today)
 $expiringRecords = [];
 $today = date('Y-m-d');
+$oneYearFromNow = date('Y-m-d', strtotime('+1 year'));
 $sql = "SELECT id, nicheID, lastName, firstName, middleName, suffix, dateInternment, informantName FROM deceased WHERE dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00'";
 $res = $conn->query($sql);
 if ($res && $res->num_rows > 0) {
@@ -532,7 +612,8 @@ if ($res && $res->num_rows > 0) {
         $internmentDate = $row['dateInternment'];
         try {
             $validityDate = (new DateTime($internmentDate))->modify('+5 years')->format('Y-m-d');
-            if ($validityDate >= $today) {
+            // Only include if validity is expired or will expire within 1 year from today
+            if ($validityDate <= $oneYearFromNow) {
                 $name = $row['lastName'] . ', ' . $row['firstName'];
                 if (!empty($row['middleName'])) $name .= ' ' . strtoupper(substr(trim($row['middleName']), 0, 1)) . '.';
                 if (!empty($row['suffix'])) $name .= ' ' . $row['suffix'];
@@ -581,12 +662,10 @@ if ($res && $res->num_rows > 0) {
             }
         } catch (Exception $e) {}
     }
-    // Sort by closest validity date
+    // Sort by closest validity date (expired first, then soonest expiry)
     usort($expiringRecords, function($a, $b) {
         return strcmp($a['validity'], $b['validity']);
     });
-    // Limit to top 10 closest
-    $expiringRecords = array_slice($expiringRecords, 0, 10);
 
     // --- NEW: ensure expiry_notifications table exists and load notified statuses (persist one-time notifications) ---
     $conn->query("CREATE TABLE IF NOT EXISTS expiry_notifications (
@@ -919,6 +998,28 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       background: #fff;
       box-sizing: border-box;
     }
+
+    /* New: style for the View Map button */
+    .view-map-btn {
+      background: #003591ff;          
+      color: #ffffff;                /* text color */
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(16,185,129,0.12);
+      transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+    }
+    .view-map-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(16,185,129,0.14);
+      filter: brightness(0.97);
+    }
+    .view-map-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 8px rgba(16,185,129,0.10);
+    }
   </style>
 </head>
 <body>
@@ -1106,7 +1207,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
               elseif ($oldChange < 0) { $cls2='down'; $sym2='▼'; $disp2=(string)$oldChange; }
               else { $cls2='neutral'; $sym2='•'; $disp2='0'; }
             ?>
-            <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $cls2; ?>"><?php echo $sym2; ?></span><span class="change-value <?php echo $cls2; ?>"><?php echo htmlspecialchars($disp2); ?></span><span style="color:#6b7280;">vs 30d</span></div></div>
+                       <div class="stat-meta"><div class="stat-indicator"><span class="icon <?php echo $cls2; ?>"><?php echo $sym2; ?></span><span class="change-value <?php echo $cls2; ?>"><?php echo htmlspecialchars($disp2); ?></span><span style="color:#6b7280;">vs 30d</span></div></div>
           </div>
         </div>
 
@@ -1210,6 +1311,10 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
             <?php if (count($expiringRecords) > 0): ?>
               <ul style="list-style: none; padding: 0; margin: 0;">
                 <?php foreach ($expiringRecords as $rec): ?>
+                  <?php
+                    // Determine validity color: expired = red, upcoming = orange
+                    $validityColor = ($rec['validity'] < $today) ? '#ef4444' : '#eab308';
+                  ?>
                   <li data-exp-item="1"
                       data-name="<?php echo htmlspecialchars($rec['name']); ?>"
                       data-apt="<?php echo htmlspecialchars($rec['nicheID']); ?>"
@@ -1224,7 +1329,9 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
                           <?php echo htmlspecialchars($rec['name']); ?>
                         </div>
                         <div style="font-size: 0.93rem; color: #2563eb; font-weight: 500; margin-bottom: 2px;">Apt: <?php echo htmlspecialchars($rec['nicheID']); ?></div>
-                        <div style="font-size: 0.93rem; color: #eab308; font-weight: 500;">Validity: <?php echo htmlspecialchars($rec['validity']); ?></div>
+                        <div style="font-size: 0.93rem; font-weight: 500; color: <?php echo $validityColor; ?>;">
+                          Validity: <?php echo htmlspecialchars($rec['validity']); ?>
+                        </div>
                       </div>
                       <div style="margin-left: 16px; display:flex; flex-direction:column; align-items:flex-end; justify-content:center;">
                         <?php
@@ -1294,6 +1401,9 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       </div>
     </section>
   </main>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed;top:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <script>
     // Pass PHP data to JS for both maps
@@ -1509,6 +1619,49 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       renderCharts(flipped);
     });
 
+    // --- TOAST FUNCTION ---
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.textContent = msg;
+      toast.style.cssText = `
+        min-width:220px;
+        max-width:340px;
+        background:${type==='success' ? '#10b981':'#ef4444'};
+        color:#fff;
+        font-weight:600;
+        padding:12px 18px;
+        border-radius:8px;
+        box-shadow:0 4px 16px rgba(0,0,0,0.13);
+        font-size:1rem;
+        margin-bottom:2px;
+        opacity:1;
+        pointer-events:auto;
+        cursor:pointer;
+        transition:opacity 0.3s;
+        position:relative;
+        z-index:100000;
+      `;
+      // Animate in
+      toast.style.transform = 'translateY(-20px)';
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+      }, 10);
+
+      toast.onclick = () => { 
+        toast.style.opacity = 0; 
+        setTimeout(()=>toast.remove(),200); 
+      };
+      container.appendChild(toast);
+      setTimeout(()=>{
+        toast.style.opacity = 0;
+        setTimeout(()=>toast.remove(),300);
+      }, 3200);
+    }
+
     // New: modal flow for notify (opens modal, posts contact info)
     document.addEventListener('DOMContentLoaded', function() {
       const overlay = document.getElementById('notifyModalOverlay');
@@ -1621,6 +1774,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
               if (statusEl) { statusEl.style.display = ''; statusEl.textContent = (data.status === 'sent') ? 'Sent' : 'Queued'; }
             }
             overlay.style.display = 'none';
+            showToast('Expiry notice sent successfully!', 'success');
             currentPayload = null;
           } else {
             if (data && data.message) {
@@ -1633,12 +1787,14 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
               errorEl.textContent = 'Failed to send notification. Please try again.';
               errorEl.style.display = '';
             }
+            showToast('Failed to send expiry notice.', 'error');
           }
         })
         .catch(err => {
           console.error(err);
           errorEl.textContent = 'An error occurred while sending notification. Check server logs.';
           errorEl.style.display = '';
+          showToast('Failed to send expiry notice.', 'error');
         })
         .finally(()=> {
           sendBtn.disabled = false;
@@ -1823,5 +1979,5 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
   }
 })();
   </script>
-  </body>
-  </html>
+</body>
+</html>

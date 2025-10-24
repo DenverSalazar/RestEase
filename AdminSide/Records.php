@@ -1,4 +1,4 @@
-<?php
+  <?php
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../AdminLogin.php");
@@ -23,7 +23,11 @@ if (!isset($_SESSION['admin_id'])) {
   <style>
     /* Highlight validity dates for upcoming expiring records (top 10) */
     .validity-expiring {
-      color: #e74c3c;
+      color: #ff9800; /* Orange for upcoming (within 1 year) */
+      font-weight: 600;
+    }
+    .validity-expired {
+      color: #e74c3c; /* Red for expired */
       font-weight: 600;
     }
   </style>
@@ -46,10 +50,20 @@ if (!isset($_SESSION['admin_id'])) {
       </div>
       <div class="cemetery-masterlist-desc">View all Records Information.</div>
       <div class="cemetery-masterlist-controls">
-         <div class="search-container">
-        <i class="fas fa-search"></i>
-        <input type="text" id="search-input" placeholder="Search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-      </div>
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-input" placeholder="Search" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+        </div>
+        <div class="validity-filter-container" style="margin-left: 16px;">
+          <label for="validity-filter" style="font-weight:500;margin-right:6px;">Validity:</label>
+          <select id="validity-filter" style="padding:4px 8px;border-radius:4px;">
+            <option value="all">All</option>
+            <option value="expired">Expired</option>
+            <option value="1year">Expire in 1 year</option>
+            <option value="6months">Expire in 6 months</option>
+            <option value="4weeks">Expire in 4 weeks</option>
+          </select>
+        </div>
         <div class="cemetery-masterlist-actions">
           <a href="Insert.php?from=records"><button><i class="fas fa-plus"></i> Insert</button></a>
           <a href="ExportExcel.php" target="_blank"><button type="button" class="export-btn"><i class="fas fa-file-excel"></i> Export Data</button></a>
@@ -188,9 +202,23 @@ if (!isset($_SESSION['admin_id'])) {
                   }
                 }
 
-                // If this record is in the top-10 upcoming expiries, wrap validity in red span
-                $isExpiring = isset($expiringIds[intval($row['id'])]);
-                $validityCell = $validityDate ? ($isExpiring ? "<span class='validity-expiring'>{$validityDate}</span>" : $validityDate) : '';
+                // Add color effect for expired and upcoming expiry (within 1 year)
+                $validityCell = $validityDate;
+                if ($validityDate) {
+                  $todayObj = new DateTime();
+                  $validityObj = new DateTime($validityDate);
+                  $diff = $todayObj->diff($validityObj);
+                  $days = (int)$todayObj->format('Ymd') > (int)$validityObj->format('Ymd') ? -1 : (int)$diff->days;
+                  if ($validityObj < $todayObj) {
+                    // Expired
+                    $validityCell = "<span class='validity-expired'>{$validityDate}</span>";
+                  } else if ($days <= 365) {
+                    // Upcoming expiry within 1 year
+                    $validityCell = "<span class='validity-expiring'>{$validityDate}</span>";
+                  }
+                } else {
+                  $validityCell = '';
+                }
 
                 // Build query parameters for EditNiches.php, include unique id and all fields
                 $queryParams = http_build_query([
@@ -250,6 +278,52 @@ if (!isset($_SESSION['admin_id'])) {
           // Connect upper search bar to DataTables search
           document.getElementById('search-input').addEventListener('keyup', function() {
             dataTable.search(this.value).draw();
+          });
+
+          // Validity filter logic
+          function parseDate(str) {
+            // Accepts 'YYYY-MM-DD', returns Date or null
+            if (!str || str === '' || str === '0000-00-00') return null;
+            const parts = str.split('-');
+            if (parts.length !== 3) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+          }
+
+          $('#validity-filter').on('change', function() {
+            dataTable.draw();
+          });
+
+          // Custom filter for validity
+          $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            const filter = $('#validity-filter').val();
+            if (!filter || filter === 'all') return true;
+
+            // Validity is column 8 (0-based)
+            let validityCell = data[8] || '';
+            // Remove HTML tags if present
+            validityCell = validityCell.replace(/<[^>]*>/g, '');
+            const validityDate = parseDate(validityCell);
+            if (!validityDate) return false;
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            if (filter === 'expired') {
+              return validityDate < today;
+            } else if (filter === '1year') {
+              const oneYear = new Date(today);
+              oneYear.setFullYear(oneYear.getFullYear() + 1);
+              return validityDate >= today && validityDate <= oneYear;
+            } else if (filter === '6months') {
+              const sixMonths = new Date(today);
+              sixMonths.setMonth(sixMonths.getMonth() + 6);
+              return validityDate >= today && validityDate <= sixMonths;
+            } else if (filter === '4weeks') {
+              const fourWeeks = new Date(today);
+              fourWeeks.setDate(fourWeeks.getDate() + 28);
+              return validityDate >= today && validityDate <= fourWeeks;
+            }
+            return true;
           });
 
           // Toggle delete mode
