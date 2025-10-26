@@ -184,6 +184,26 @@ include_once '../Includes/db.php';
 
     // Archive sub-tab logic, DataTables, Requests popup, Notifications, Activate settings tab from URL
     // ...existing code...
+
+    // ===== ADDED: activate tab from URL query (e.g. ?tab=notification) =====
+    (function activateTabFromUrl(){
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const requested = params.get('tab');
+        if (requested && tabContents[requested]) {
+          // remove active from all tabs and set the requested one
+          tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === requested));
+          // hide all contents and show requested
+          Object.values(tabContents).forEach(tc => { if (tc) tc.style.display = 'none'; });
+          tabContents[requested].style.display = '';
+          // scroll into view lightly (optional)
+          tabContents[requested].scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      } catch (e) {
+        // silent fallback — keep default tab
+        console && console.debug && console.debug('activateTabFromUrl error', e);
+      }
+    })();
   </script>
 
   <style>
