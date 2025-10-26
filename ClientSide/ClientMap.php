@@ -350,6 +350,9 @@ while ($row = $result->fetch_assoc()) {
    <script src="../data/floor3_4.js"></script>
    <script src="../data/oldmap/floor1.js"></script>
    <script src="../data/oldmap/floor1_4.js"></script>
+   <!-- Fallback for case-sensitive hosts: try alternate folder casing -->
+   <script src="../data/OldMap/floor1.js" onerror="this.remove();"></script>
+   <script src="../data/OldMap/floor1_4.js" onerror="this.remove();"></script>
    <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -749,12 +752,12 @@ while ($row = $result->fetch_assoc()) {
         // --- Robust OldMap JSON handling (fixes case-sensitive hosting issues) ---
         (function() {
             function getJsonGlobal(name) {
-                // Try a few common casing variants to be tolerant to case mismatches in included scripts
                 var variants = [
                     name,
                     name.replace('oldmap','oldMap'),
                     name.replace('oldmap','OldMap'),
-                    name.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase()
+                    name.replace('oldmap','Oldmap'),
+                    name.replace(/([A-Z])/g, '_$1').toLowerCase()
                 ];
                 for (var i = 0; i < variants.length; i++) {
                     var v = variants[i];
@@ -762,27 +765,126 @@ while ($row = $result->fetch_assoc()) {
                         if (typeof window[v] !== 'undefined') return window[v];
                     } catch (e) {}
                 }
-                // final try: enumerate window keys for a case-insensitive match
                 var lname = name.toLowerCase();
                 for (var key in window) {
-                    if (key.toLowerCase() === lname) return window[key];
+                    try {
+                        if (key.toLowerCase() === lname) return window[key];
+                    } catch (e) {}
                 }
                 return undefined;
             }
 
-            var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
-            var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
+            function createOldMapLayers() {
+                var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
+                var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
 
-            if (json_oldmap_floor1_data) {
-                window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1', layerName: 'layer_OldMap_1', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
-            } else {
-                window.layer_OldMap_1 = null;
+                if (json_oldmap_floor1_data) {
+                    try {
+                        window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, {
+                            attribution: '',
+                            interactive: true,
+                            dataVar: 'json_oldmap_floor1',
+                            layerName: 'layer_OldMap_1',
+                            pane: 'pane_Floor1',
+                            onEachFeature: pop_Floor1,
+                            style: style_Floor1_0,
+                        });
+                        // also expose plain global
+                        layer_OldMap_1 = window.layer_OldMap_1;
+                    } catch (e) {
+                        window.layer_OldMap_1 = null;
+                        layer_OldMap_1 = null;
+                    }
+                } else {
+                    window.layer_OldMap_1 = window.layer_OldMap_1 || null;
+                    layer_OldMap_1 = layer_OldMap_1 || null;
+                }
+
+                if (json_oldmap_floor1_4_data) {
+                    try {
+                        window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, {
+                            attribution: '',
+                            interactive: true,
+                            dataVar: 'json_oldmap_floor1_4',
+                            layerName: 'layer_OldMap_4',
+                            pane: 'pane_Floor1',
+                            onEachFeature: pop_Floor1,
+                            style: style_Floor1_0,
+                        });
+                        layer_OldMap_4 = window.layer_OldMap_4;
+                    } catch (e) {
+                        window.layer_OldMap_4 = null;
+                        layer_OldMap_4 = null;
+                    }
+                } else {
+                    window.layer_OldMap_4 = window.layer_OldMap_4 || null;
+                    layer_OldMap_4 = layer_OldMap_4 || null;
+                }
+
+                if (typeof bounds_group !== 'undefined') {
+                    if (window.layer_OldMap_1 && !bounds_group.hasLayer(window.layer_OldMap_1)) bounds_group.addLayer(window.layer_OldMap_1);
+                    if (window.layer_OldMap_4 && !bounds_group.hasLayer(window.layer_OldMap_4)) bounds_group.addLayer(window.layer_OldMap_4);
+                }
             }
-            if (json_oldmap_floor1_4_data) {
-                window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, { attribution: '', interactive: true, dataVar: 'json_oldmap_floor1_4', layerName: 'layer_OldMap_4', pane: 'pane_Floor1', onEachFeature: pop_Floor1, style: style_Floor1_0 });
-            } else {
-                window.layer_OldMap_4 = null;
+
+            function tryLoadVariantsIfNeeded() {
+                if (window.layer_OldMap_1 || window.layer_OldMap_4) return;
+
+                var candidates = [
+                    '../data/oldmap/floor1.js',
+                    '../data/OldMap/floor1.js',
+                    '../data/oldMap/floor1.js',
+                    '../data/oldmap/Floor1.js',
+                    '../data/oldmap/floor1_4.js',
+                    '../data/OldMap/floor1_4.js',
+                    '../data/oldMap/floor1_4.js',
+                    '../data/oldmap/Floor1_4.js'
+                ];
+                var tried = {};
+                var i = 0;
+
+                function loadNext() {
+                    if (i >= candidates.length) {
+                        createOldMapLayers();
+                        return;
+                    }
+                    var url = candidates[i++];
+                    if (tried[url]) return loadNext();
+                    tried[url] = true;
+
+                    // Prefer a quick HEAD check, but still inject script if check fails
+                    fetch(url, { method: 'HEAD' }).then(function(resp) {
+                        if (resp.ok) {
+                            var s = document.createElement('script');
+                            s.src = url;
+                            s.async = false;
+                            s.onload = function() {
+                                try { createOldMapLayers(); } catch (e) {}
+                                if (!window.layer_OldMap_1 && !window.layer_OldMap_4) setTimeout(loadNext, 60);
+                            };
+                            s.onerror = function() { setTimeout(loadNext, 60); };
+                            document.head.appendChild(s);
+                        } else {
+                            setTimeout(loadNext, 10);
+                        }
+                    }).catch(function() {
+                        var s2 = document.createElement('script');
+                        s2.src = url;
+                        s2.async = false;
+                        s2.onload = function() { createOldMapLayers(); if (!window.layer_OldMap_1 && !window.layer_OldMap_4) setTimeout(loadNext, 60); };
+                        s2.onerror = function() { setTimeout(loadNext, 60); };
+                        document.head.appendChild(s2);
+                    });
+                }
+
+                loadNext();
             }
+
+            // initial attempt then fallback
+            setTimeout(function() {
+                createOldMapLayers();
+                tryLoadVariantsIfNeeded();
+            }, 40);
         })();
 
         // --- Floor Control Logic ---

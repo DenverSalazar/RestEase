@@ -1,4 +1,4 @@
-  <?php
+<?php
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header("Location: ../AdminLogin.php");
@@ -29,6 +29,38 @@ if (!isset($_SESSION['admin_id'])) {
     .validity-expired {
       color: #e74c3c; /* Red for expired */
       font-weight: 600;
+    }
+
+    /* Sticky pagination wrapper placed after .clients-table-container */
+    .clients-table-container + .dataTables_wrapper {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding: 10px 12px;
+      border-top: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      /* keep info left, pagination pushed to the right */
+      justify-content: flex-start;
+      gap: 12px;
+      z-index: 5;
+    }
+
+    /* Make the DataTables wrapper layout stable and push pagination to the far right */
+    .clients-table-container + .dataTables_wrapper,
+    .dataTables_wrapper {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dataTables_wrapper .dataTables_info {
+      /* allow info to take available space on the left */
+      flex: 0 1 auto;
+    }
+    .dataTables_wrapper .dataTables_paginate {
+      /* push pagination to the far right */
+      margin-left: auto;
     }
   </style>
 </head>
@@ -96,7 +128,7 @@ if (!isset($_SESSION['admin_id'])) {
         <button id="closeNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
       </div>
       <form id="delete-form" method="post" style="margin:0;">
-      <div style="overflow-x:auto;">
+      <div class="clients-table-container" style="overflow-x:auto;">
         <table class="cemetery-masterlist-table" id="records-table">
           <thead>
             <tr>
@@ -258,27 +290,37 @@ if (!isset($_SESSION['admin_id'])) {
           </tbody>
         </table>
       </div>
-      </form>
-      <!-- DataTables JS -->
-      <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-      <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-      <script>
-        $(document).ready(function() {
+      <div class="dataTables_wrapper"></div>
+       </form>
+       <!-- DataTables JS -->
+       <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+       <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+       <script>
+         $(document).ready(function() {
           const dataTable = $('#records-table').DataTable({
             "paging": true,
             "searching": true,
             "ordering": true,
             "info": true,
-            "dom": 'lrtip', // Remove 'f' (filter/search box)
+            // use 'rtip' so info and paginate are rendered and available to move
+            "dom": 'rtip',
             "columnDefs": [
               { "orderable": false, "targets": [9, 10] } // Both edit and checkbox columns non-sortable
-            ]
+            ],
+            "drawCallback": function() {
+              const tableWrapper = $('#records-table').closest('.clients-table-container');
+              const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+              // detach built-in info & pagination and append into external wrapper
+              const info = $('#records-table_info').detach();
+              const paginate = $('#records-table_paginate').detach();
+              externalWrapper.empty().append(info).append(paginate);
+            }
           });
-
-          // Connect upper search bar to DataTables search
-          document.getElementById('search-input').addEventListener('keyup', function() {
-            dataTable.search(this.value).draw();
-          });
+          
+           // Connect upper search bar to DataTables search
+           document.getElementById('search-input').addEventListener('keyup', function() {
+             dataTable.search(this.value).draw();
+           });
 
           // Validity filter logic
           function parseDate(str) {
@@ -511,9 +553,8 @@ if (!isset($_SESSION['admin_id'])) {
           });
         });
       </script>
-      <!-- Remove custom pagination/search/filter HTML/JS -->
-    </div>
-  </main>
-</body>
-</html>
+     </div>
+   </main>
+ </body>
+ </html>
 

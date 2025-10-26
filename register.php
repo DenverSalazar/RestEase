@@ -56,11 +56,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!$input['first_name'] || !$input['last_name'] || !$input['email'] || !$input['contact_no'] || !$input['password'] || !$input['confirm_password']) {
         $register_error = "All fields are required.";
         foreach ($field_errors as $k => $_) $field_errors[$k] = !$input[$k];
-    } elseif (!preg_match('/^[A-Za-z]+$/', $input['first_name'])) {
-        $register_error = "First name must only contain letters.";
+    } elseif (!preg_match('/^[\p{L} ]+$/u', $input['first_name'])) {
+        // allow letters and spaces (Unicode aware)
+        $register_error = "First name must only contain letters and spaces.";
         $field_errors['first_name'] = true;
-    } elseif (!preg_match('/^[A-Za-z]+$/', $input['last_name'])) {
-        $register_error = "Last name must only contain letters.";
+    } elseif (!preg_match('/^[\p{L} ]+$/u', $input['last_name'])) {
+        // allow letters and spaces (Unicode aware)
+        $register_error = "Last name must only contain letters and spaces.";
         $field_errors['last_name'] = true;
     } elseif (!filter_var($input['email'], FILTER_VALIDATE_EMAIL) ||
               !(preg_match('/@gmail\.com$/', $input['email']) || preg_match('/@yahoo\.com$/', $input['email']))) {
@@ -352,12 +354,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <form method="POST" action="">
                             <div class="row ">
                                 <div class="col-md-6">
-                                    <input type="text" maxlength="25" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
+                                    <input type="text" maxlength="30" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
                                         placeholder="First name" name="first_name" required
                                         value="<?php echo htmlspecialchars($input['first_name']); ?>">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" maxlength="25" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
+                                    <input type="text" maxlength="30" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
                                         placeholder="Last name" name="last_name" required
                                         value="<?php echo htmlspecialchars($input['last_name']); ?>">
                                 </div>

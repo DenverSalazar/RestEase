@@ -20,13 +20,6 @@ if (!$request_id || !$user_id || !$total_fee) {
     exit;
 }
 
-// Save assessment (optional, you can expand this logic)
-// Example: Insert into assessments table
-// $stmt = $conn->prepare("INSERT INTO assessments (request_id, user_id, total_fee, created_at) VALUES (?, ?, ?, NOW())");
-// $stmt->bind_param('iid', $request_id, $user_id, $total_fee);
-// $stmt->execute();
-// $stmt->close();
-
 // Save assessment to database
 $type = isset($_POST['type']) ? $_POST['type'] : '';
 $informant_name = isset($_POST['informant_name']) ? $_POST['informant_name'] : '';
@@ -35,17 +28,28 @@ $deceased_name = isset($_POST['deceased_name']) ? $_POST['deceased_name'] : '';
 $residency = isset($_POST['residency']) ? $_POST['residency'] : '';
 $dob = isset($_POST['dob']) ? $_POST['dob'] : null;
 $dod = isset($_POST['dod']) ? $_POST['dod'] : null;
+$internment_date = isset($_POST['internment_date']) && $_POST['internment_date'] !== '' ? $_POST['internment_date'] : null;
 $age = isset($_POST['age']) ? $_POST['age'] : '';
-$niche_id = isset($_POST['niche_id']) ? $_POST['niche_id'] : '';
+// Normalize niche_id: treat empty or '0' as NULL to avoid storing 0
+$niche_id = isset($_POST['niche_id']) ? trim($_POST['niche_id']) : null;
+if ($niche_id === '' || $niche_id === '0') $niche_id = null;
 $expiration = isset($_POST['expiration']) ? $_POST['expiration'] : '';
-$renewal_fee = isset($_POST['renewal_fee']) ? floatval($_POST['renewal_fee']) : 0;
+$renewal_fee = isset($_POST['renewal_fee']) ? floatval($_POST['renewal_fee']) : 0.0;
+$total_fee = isset($_POST['total_fee']) ? floatval($_POST['total_fee']) : 0.0;
 
+// updated INSERT: include internment_date column and placeholder (same order as below)
 $stmt = $conn->prepare("INSERT INTO assessment 
-(request_id, user_id, type, informant_name, email, deceased_name, residency, dob, dod, age, niche_id, total_fee, expiration, renewal_fee, created_at) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+(request_id, user_id, type, informant_name, email, deceased_name, residency, dob, dod, internment_date, age, niche_id, total_fee, expiration, renewal_fee, created_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
 
+if (!$stmt) {
+    echo json_encode(['success'=>false,'message'=>'DB prepare error: '.$conn->error]);
+    exit;
+}
+
+// Bind types: request_id (i), user_id (i), then strings..., niche_id is string (s) or NULL, total_fee (d), expiration (s), renewal_fee (d)
 $stmt->bind_param(
-    'iisssssssssdss',
+    'iissssssssssdsd',
     $request_id,
     $user_id,
     $type,
@@ -55,6 +59,7 @@ $stmt->bind_param(
     $residency,
     $dob,
     $dod,
+    $internment_date,
     $age,
     $niche_id,
     $total_fee,

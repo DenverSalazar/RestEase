@@ -554,31 +554,48 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     </style>
     <!-- Success Popup Modal for Ledger Information submission -->
     <?php if ($showLedgerSuccessModal): ?>
-    <div id="ledgerSuccessModal" class="modal-overlay" style="position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);display:flex;align-items:center;justify-content:center;">
-      <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
-        <div class="modal-header">
-          <i class="fas fa-check-circle" style="color:#2ecc71;font-size:2.5rem;margin-bottom:8px;"></i>
-          <h2 style="color:#2ecc71;margin:0;font-size:1.3rem;">Success!</h2>
-        </div>
-        <div class="modal-body" style="margin:18px 0 24px 0;">
-          <p style="color:#444;font-size:1.07rem;margin:0;">
-            Ledger Information has been submitted successfully.
-          </p>
-        </div>
-        <div class="modal-footer" style="display:flex;justify-content:center;gap:16px;">
-          <button id="ledgerSuccessModalCloseBtn" style="background:#506C84;color:#fff;border:none;padding:12px 32px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">OK</button>
-        </div>
-      </div>
-    </div>
-    <script>
-      document.getElementById('ledgerSuccessModalCloseBtn').onclick = function() {
-        window.location.href = "Ledger.php";
-      };
-      document.getElementById('ledgerSuccessModal').onclick = function(e) {
-        if (e.target === this) window.location.href = "Ledger.php";
-      };
-    </script>
-    <?php endif; ?>
+<!-- Compact ClientsRequest-style success notification (top-right) -->
+<div id="ledgerSuccessPopup" style="display:flex;position:fixed;top:32px;right:32px;z-index:10000;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:14px 18px;min-width:260px;align-items:center;gap:12px;font-family:'Poppins',sans-serif;">
+  <span style="color:#27ae60;font-size:1.6rem;line-height:1;"><i class="fas fa-check-circle"></i></span>
+  <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
+    <div style="font-weight:600;color:#222;font-size:1.02rem;line-height:1;">Success</div>
+    <div id="ledgerSuccessPopupMessage" style="color:#555;font-size:0.95rem;line-height:1.2;">Ledger Information has been submitted successfully.</div>
+  </div>
+  <button id="ledgerSuccessPopupClose" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;padding:6px 8px;border-radius:6px;">&times;</button>
+</div>
+<script>
+  (function() {
+    var popup = document.getElementById('ledgerSuccessPopup');
+    var closeBtn = document.getElementById('ledgerSuccessPopupClose');
+    var timer = null;
+    function hideAndRedirect() {
+      if (!popup) return;
+      popup.style.display = 'none';
+      // Redirect to the ledger page (refresh) to reflect new data
+      try { window.location.href = 'Ledger.php'; } catch(e) { /* fallback */ window.location.reload(); }
+    }
+    // Auto-hide after 3000ms
+    timer = setTimeout(hideAndRedirect, 3000);
+    // Close button behavior: cancel timer and redirect immediately
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (timer) clearTimeout(timer);
+        hideAndRedirect();
+      });
+    }
+    // Also hide + redirect if user clicks outside popup (optional)
+    // Not strictly needed, but keeps UX consistent if user clicks around
+    document.addEventListener('click', function(ev) {
+      if (!popup) return;
+      if (!popup.contains(ev.target)) {
+        if (timer) clearTimeout(timer);
+        hideAndRedirect();
+      }
+    }, { once: true });
+  })();
+</script>
+<?php endif; ?>
     <script>
       // Tab switching logic for two tabs (Ledger Information is default)
       const ledgerTabBtn = document.getElementById('ledgerTabBtn');

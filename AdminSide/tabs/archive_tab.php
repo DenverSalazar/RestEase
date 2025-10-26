@@ -121,7 +121,7 @@ if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_error) {
           <input type="text" placeholder="Search Records" id="archiveRecordsSearchInput">
         </span>
       </div>
-      <div class="archive-table-container">
+      <div class="archive-table-container" style="overflow-x:auto;">
         <table class="archive-table" id="archiveRecordsTable">
           <thead>
             <tr>
@@ -165,6 +165,8 @@ if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_error) {
           </tbody>
         </table>
       </div>
+      <!-- External wrapper for DataTables info + pagination (ONLY for Archive Records) -->
+      <div class="archive-records-dt-wrapper dataTables_wrapper"></div>
     </div>
 
     <style>
@@ -172,6 +174,22 @@ if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_error) {
       margin: 24px 0;
       overflow-x: auto;
     }
+    /* Sticky external pagination specific to Archive Records table only */
+    .archive-records-dt-wrapper {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding: 10px 12px;
+      border-top: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-sizing: border-box;
+      z-index: 5;
+      width: 100%;
+    }
+    .archive-records-dt-wrapper .dataTables_info { flex: 0 1 auto; }
+    .archive-records-dt-wrapper .dataTables_paginate { margin-left: auto; }
     .archive-table {
       width: 100%;
       border-collapse: collapse;
@@ -606,7 +624,20 @@ if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_error) {
     // records
     if (activeTab === 'records') {
       if (recordsTableInstance) { try { recordsTableInstance.destroy(); } catch(e){} recordsTableInstance = null; }
-      recordsTableInstance = safeInitDataTable('#archiveRecordsTable', {});
+      // Initialize with drawCallback that moves info & paginate into the dedicated external wrapper for records
+      recordsTableInstance = safeInitDataTable('#archiveRecordsTable', {
+        // include 'l' so the length ("Show N entries") control is rendered
+        dom: 'lrtip',
+        drawCallback: function() {
+          try {
+            const tableWrapper = $('#archiveRecordsTable').closest('.archive-table-container');
+            const externalWrapper = $('.archive-records-dt-wrapper');
+            const info = $('#archiveRecordsTable_info').detach();
+            const paginate = $('#archiveRecordsTable_paginate').detach();
+            externalWrapper.empty().append(info).append(paginate);
+          } catch (e) { /* fail silently */ }
+        }
+      });
       if (recordsTableInstance) {
         $('#archiveRecordsSearchInput').off('keyup').on('keyup', function(){ recordsTableInstance.search(this.value).draw(); });
       } else {

@@ -303,7 +303,7 @@ if (!isset($_SESSION['admin_id'])) {
       $sql_assessment = "SELECT * FROM assessment ORDER BY created_at DESC";
       $result_assessment = $conn->query($sql_assessment);
       ?>
-      <div style="overflow-x:auto;">
+      <div class="clients-table-container" style="overflow-x:auto;">
         <table class="cemetery-masterlist-table" id="done-assessment-table">
           <thead>
             <tr>
@@ -314,6 +314,7 @@ if (!isset($_SESSION['admin_id'])) {
               <th>Residency</th>
               <th>Date of Birth</th>
               <th>Date of Death</th>
+              <th>Date of Internment</th>
               <th>Age</th>
               <th>Niche ID</th>
               <th>Total Fee</th>
@@ -333,15 +334,20 @@ if (!isset($_SESSION['admin_id'])) {
                   <td><?php echo htmlspecialchars($row['residency']); ?></td>
                   <td><?php echo htmlspecialchars($row['dob']); ?></td>
                   <td><?php echo htmlspecialchars($row['dod']); ?></td>
+                  <td><?php echo htmlspecialchars($row['internment_date']); ?></td>
                   <td><?php echo htmlspecialchars($row['age']); ?></td>
                   <td>
                     <?php
-                      // For Relocate, show current_niche_id if available, otherwise niche_id
+                      // For Relocate, show current_niche_id if available, otherwise niche_id (but treat 0 as empty)
+                      $displayNiche = '';
                       if ($row['type'] === 'Relocate' && !empty($row['current_niche_id'])) {
-                        echo htmlspecialchars($row['current_niche_id']);
+                        $displayNiche = $row['current_niche_id'];
                       } else {
-                        echo htmlspecialchars($row['niche_id']);
+                        $n = $row['niche_id'] ?? '';
+                        if ($n === '0' || $n === 0) $n = '';
+                        $displayNiche = $n;
                       }
+                      echo htmlspecialchars($displayNiche);
                     ?>
                   </td>
                   <td>₱ <?php echo number_format($row['total_fee'], 2); ?></td>
@@ -558,7 +564,7 @@ if (!isset($_SESSION['admin_id'])) {
               "infoFiltered": "(filtered from _MAX_ total entries)"
             },
             "columnDefs": [
-              { "orderable": false, "targets": [12] }
+              { "orderable": false, "targets": [13] }
             ],
             "drawCallback": function() {
               const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');
@@ -1117,6 +1123,7 @@ function goToAssessment() {
             <div class="detail-row" style="display:${data.residency ? '' : 'none'};"><span class="detail-label">Residency:</span><span class="detail-value">${data.residency || ''}</span></div>
             <div class="detail-row" style="display:${data.dob ? '' : 'none'};"><span class="detail-label">Date of Birth:</span><span class="detail-value">${data.dob || ''}</span></div>
             <div class="detail-row" style="display:${data.dod ? '' : 'none'};"><span class="detail-label">Date of Death:</span><span class="detail-value">${data.dod || ''}</span></div>
+            <div class="detail-row" style="display:${data.internment_date ? '' : 'none'};"><span class="detail-label">Date of Internment:</span><span class="detail-value">${data.internment_date || ''}</span></div>
             <div class="detail-row"><span class="detail-label">Age:</span><span class="detail-value">${data.age || ''}</span></div>
             <div class="detail-row" style="display:${(data.type === 'Transfer' || data.type === 'Exhumation') ? '' : 'none'};"><span class="detail-label">Niche ID:</span><span class="detail-value">${data.niche_id || ''}</span></div>
 
@@ -1153,6 +1160,7 @@ function goToAssessment() {
           residency: data.residency || '',
           dob: data.dob || '',
           dod: data.dod || '',
+          internment_date: data.internment_date || '',
           age: data.age || '',
           niche_id: data.niche_id || '',
           expiration: expirationDate || '',
@@ -1199,6 +1207,15 @@ function updateDoneAssessmentTable() {
         data.forEach(row => {
           const tr = document.createElement('tr');
           tr.setAttribute('data-assessed-date', row.created_at);
+          // Determine niche cell: for Relocate prefer current_niche_id, otherwise niche_id.
+          let niche = '';
+          if (row.type === 'Relocate' && row.current_niche_id) {
+            niche = row.current_niche_id;
+          } else {
+            niche = row.niche_id;
+          }
+          if (niche === 0 || niche === '0' || niche === null) niche = '';
+          
           tr.innerHTML = `
             <td>${row.informant_name}</td>
             <td>${row.email}</td>
@@ -1207,8 +1224,9 @@ function updateDoneAssessmentTable() {
             <td>${row.residency}</td>
             <td>${row.dob}</td>
             <td>${row.dod}</td>
+            <td>${row.internment_date || ''}</td>
             <td>${row.age}</td>
-            <td>${row.niche_id}</td>
+            <td>${niche}</td>
             <td>₱ ${parseFloat(row.total_fee).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
             <td>${row.expiration}</td>
             <td>₱ ${parseFloat(row.renewal_fee).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
@@ -1234,7 +1252,7 @@ function updateDoneAssessmentTable() {
               "infoFiltered": "(filtered from _MAX_ total entries)"
             },
             "columnDefs": [
-              { "orderable": false, "targets": [12] }
+              { "orderable": false, "targets": [13] }
             ],
             "drawCallback": function() {
               const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');

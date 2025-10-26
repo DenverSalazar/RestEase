@@ -665,6 +665,9 @@ while ($row = $result->fetch_assoc()) {
    <script src="../data/floor3_4.js"></script>
    <script src="../data/oldmap/floor1.js"></script>
    <script src="../data/oldmap/floor1_4.js"></script>
+   <!-- Fallback for case-sensitive hosts: try alternate folder casing -->
+   <script src="../data/OldMap/floor1.js" onerror="this.remove();"></script>
+   <script src="../data/OldMap/floor1_4.js" onerror="this.remove();"></script>
    <script>
         var highlightLayer;
         function highlightFeature(e) {
@@ -1369,12 +1372,13 @@ while ($row = $result->fetch_assoc()) {
 
         // --- Robust OldMap JSON handling (fixes case-sensitive hosting issues) ---
         (function() {
+            // Helper: try multiple window global name variants (case-insensitive search)
             function getJsonGlobal(name) {
-                // Try a few common casing variants to be tolerant to case mismatches in included scripts
                 var variants = [
                     name,
                     name.replace('oldmap','oldMap'),
                     name.replace('oldmap','OldMap'),
+                    name.replace('oldmap','Oldmap'),
                     name.replace(/([A-Z])/g, '_$1').toLowerCase()
                 ];
                 for (var i = 0; i < variants.length; i++) {
@@ -1393,39 +1397,134 @@ while ($row = $result->fetch_assoc()) {
                 return undefined;
             }
 
-            var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
-            var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
+            // Create OldMap layers (idempotent) and expose both window.* and plain global variables
+            function createOldMapLayers() {
+                var json_oldmap_floor1_data = getJsonGlobal('json_oldmap_floor1');
+                var json_oldmap_floor1_4_data = getJsonGlobal('json_oldmap_floor1_4');
 
-            if (json_oldmap_floor1_data) {
-                window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, {
-                    attribution: '',
-                    interactive: true,
-                    dataVar: 'json_oldmap_floor1',
-                    layerName: 'layer_OldMap_1',
-                    pane: 'pane_OldMap',
-                    onEachFeature: pop_Floor1, // reuse popup logic
-                    style: style_OldMap_0,
-                });
-            } else {
-                window.layer_OldMap_1 = null;
+                if (json_oldmap_floor1_data) {
+                    try {
+                        window.layer_OldMap_1 = new L.geoJson(json_oldmap_floor1_data, {
+                            attribution: '',
+                            interactive: true,
+                            dataVar: 'json_oldmap_floor1',
+                            layerName: 'layer_OldMap_1',
+                            pane: 'pane_OldMap',
+                            onEachFeature: pop_Floor1,
+                            style: style_OldMap_0,
+                        });
+                        layer_OldMap_1 = window.layer_OldMap_1;
+                    } catch (e) {
+                        window.layer_OldMap_1 = null;
+                        layer_OldMap_1 = null;
+                    }
+                } else {
+                    window.layer_OldMap_1 = window.layer_OldMap_1 || null;
+                    layer_OldMap_1 = layer_OldMap_1 || null;
+                }
+
+                if (json_oldmap_floor1_4_data) {
+                    try {
+                        window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, {
+                            attribution: '',
+                            interactive: true,
+                            dataVar: 'json_oldmap_floor1_4',
+                            layerName: 'layer_OldMap_4',
+                            pane: 'pane_OldMap',
+                            onEachFeature: pop_Floor1,
+                            style: style_OldMap_0,
+                        });
+                        layer_OldMap_4 = window.layer_OldMap_4;
+                    } catch (e) {
+                        window.layer_OldMap_4 = null;
+                        layer_OldMap_4 = null;
+                    }
+                } else {
+                    window.layer_OldMap_4 = window.layer_OldMap_4 || null;
+                    layer_OldMap_4 = layer_OldMap_4 || null;
+                }
+
+                // Add to bounds_group if created
+                if (window.layer_OldMap_1 && !bounds_group.hasLayer(window.layer_OldMap_1)) bounds_group.addLayer(window.layer_OldMap_1);
+                if (window.layer_OldMap_4 && !bounds_group.hasLayer(window.layer_OldMap_4)) bounds_group.addLayer(window.layer_OldMap_4);
             }
 
-            if (json_oldmap_floor1_4_data) {
-                window.layer_OldMap_4 = new L.geoJson(json_oldmap_floor1_4_data, {
-                    attribution: '',
-                    interactive: true,
-                    dataVar: 'json_oldmap_floor1_4',
-                    layerName: 'layer_OldMap_4',
-                    pane: 'pane_OldMap',
-                    onEachFeature: pop_Floor1,
-                    style: style_OldMap_0,
-                });
-            } else {
-                window.layer_OldMap_4 = null;
+            // Initial attempt (covers most cases)
+            createOldMapLayers();
+
+            // If layers are still missing on the hosted environment, attempt to load common case-variants of the JS files and recreate layers.
+            function tryLoadVariantsIfNeeded() {
+                if (window.layer_OldMap_1 || window.layer_OldMap_4) return; // already present
+
+                var candidates = [
+                    '../data/oldmap/floor1.js',
+                    '../data/OldMap/floor1.js',
+                    '../data/oldMap/floor1.js',
+                    '../data/oldmap/Floor1.js',
+                    '../data/oldmap/floor1_4.js',
+                    '../data/OldMap/floor1_4.js',
+                    '../data/oldMap/floor1_4.js',
+                    '../data/oldmap/Floor1_4.js'
+                ];
+
+                // keep track of attempted URLs to avoid duplicates
+                var tried = {};
+                var i = 0;
+
+                function loadNext() {
+                    if (i >= candidates.length) {
+                        // final attempt to create layers from any globals that may have loaded
+                        createOldMapLayers();
+                        return;
+                    }
+                    var url = candidates[i++];
+                    if (tried[url]) return loadNext();
+                    tried[url] = true;
+
+                    // quick HEAD check using fetch to avoid injecting 404 scripts unnecessarily
+                    fetch(url, { method: 'HEAD' }).then(function(resp) {
+                        if (resp.ok) {
+                            var s = document.createElement('script');
+                            s.src = url;
+                            s.async = false;
+                            s.onload = function() {
+                                // try to create layers after the script loads
+                                try {
+                                    createOldMapLayers();
+                                } catch (e) {}
+                                // if still not found continue to next candidate
+                                if (!window.layer_OldMap_1 && !window.layer_OldMap_4) {
+                                    setTimeout(loadNext, 60);
+                                }
+                            };
+                            s.onerror = function() {
+                                setTimeout(loadNext, 60);
+                            };
+                            document.head.appendChild(s);
+                        } else {
+                            // not found, try next
+                            setTimeout(loadNext, 10);
+                        }
+                    }).catch(function() {
+                        // network/error, try adding the script anyway (some hosts block HEAD)
+                        var s2 = document.createElement('script');
+                        s2.src = url;
+                        s2.async = false;
+                        s2.onload = function() { createOldMapLayers(); if (!window.layer_OldMap_1 && !window.layer_OldMap_4) setTimeout(loadNext, 60); };
+                        s2.onerror = function() { setTimeout(loadNext, 60); };
+                        document.head.appendChild(s2);
+                    });
+                }
+
+                // start attempting
+                loadNext();
             }
 
-            if (window.layer_OldMap_1) bounds_group.addLayer(window.layer_OldMap_1);
-            if (window.layer_OldMap_4) bounds_group.addLayer(window.layer_OldMap_4);
+            // Schedule fallback attempts shortly after initial creation (gives included <script> tags a chance to run)
+            setTimeout(function() {
+                createOldMapLayers();
+                tryLoadVariantsIfNeeded();
+            }, 40);
         })();
  
         // Only add Section 1 by default
@@ -1724,6 +1823,7 @@ document.getElementById('insertButton').addEventListener('click', function() {
     window.location.href = 'insert.php?' + params.toString();
 });
 
+
 // Close popup when clicking outside
 document.getElementById('popupOverlay').addEventListener('click', function() {
     document.getElementById('popupOverlay').classList.remove('active');
@@ -1827,6 +1927,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
 
 // --- SEARCH FUNCTIONALITY ---
 document.addEventListener('DOMContentLoaded', function() {

@@ -212,77 +212,182 @@ if ($id) {
             $deceased = $stmt->get_result()->fetch_assoc();
             $stmt->close();
         }
-        // 2. If not found in deceased, try to fetch from assessment table using user_id (foreign key)
+
+        // 2. If not found in deceased, try to fetch from assessment using multiple fallbacks
         if (!$deceased) {
-            // Try to get user_id from users table by matching Payee (informant name)
-            $payee = $ledger['Payee'];
-            $user_id = null;
-            $nameParts = explode(' ', $payee, 2);
-            if (count($nameParts) == 2) {
-                $first = $nameParts[0];
-                $last = $nameParts[1];
-                $stmt = $conn->prepare("SELECT id FROM users WHERE first_name = ? AND last_name = ? LIMIT 1");
-                $stmt->bind_param('ss', $first, $last);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($row = $result->fetch_assoc()) {
-                    $user_id = $row['id'];
-                }
-                $stmt->close();
-            }
-            // If user_id found, get latest assessment for that user
-            if ($user_id) {
-                $stmt = $conn->prepare("SELECT * FROM assessment WHERE user_id = ? ORDER BY id DESC LIMIT 1");
-                $stmt->bind_param('i', $user_id);
-                $stmt->execute();
-                $assessment = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                // Fetch accepted_request for this assessment if possible
-                if ($assessment && isset($assessment['request_id'])) {
-                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
-                    $stmt->bind_param('i', $assessment['request_id']);
+            $payee = trim($ledger['Payee'] ?? '');
+            $foundUserId = null;
+
+            // Clean payee for name search
+            $payeeClean = preg_replace('/\s+/', ' ', trim($payee));
+
+            if ($payeeClean !== '') {
+                // A) Try to find user by exact full name (case-insensitive) or by email equal to payee
+                $likeName = mb_strtolower($payeeClean, 'UTF-8');
+                $stmt = $conn->prepare("SELECT id FROM users WHERE LOWER(CONCAT(first_name, ' ', last_name)) = ? LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param('s', $likeName);
                     $stmt->execute();
-                    $accepted_request = $stmt->get_result()->fetch_assoc();
+                    $r = $stmt->get_result()->fetch_assoc();
+                    if ($r) $foundUserId = $r['id'];
                     $stmt->close();
                 }
-            } else {
-                // Fallback: try to match by informant_name and deceased_name
-                $stmt = $conn->prepare("SELECT * FROM assessment WHERE informant_name = ? AND deceased_name = ? LIMIT 1");
-                $stmt->bind_param('ss', $ledger['Payee'], $ledger['Description']);
-                $stmt->execute();
-                $assessment = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-                // Fetch accepted_request for this assessment if possible
-                if ($assessment && isset($assessment['request_id'])) {
-                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
-                    $stmt->bind_param('i', $assessment['request_id']);
-                    $stmt->execute();
-                    $accepted_request = $stmt->get_result()->fetch_assoc();
-                    $stmt->close();
-                }
-            }
-            // --- Split deceased_name for type New ---
-            if ($assessment && isset($assessment['type']) && $assessment['type'] === 'New' && !empty($assessment['deceased_name'])) {
-                $name = trim($assessment['deceased_name']);
-                // Try to split by space, handle suffix (Jr., Sr., III, etc.)
-                $parts = preg_split('/\s+/', $name);
-                $suffixes = ['JR.', 'SR.', 'III', 'IV', 'JR', 'SR', 'II', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'JR,', 'SR,'];
-                $suffix = '';
-                if (count($parts) > 2) {
-                    // If last part is a suffix
-                    $lastPart = strtoupper(str_replace('.', '', end($parts)));
-                    if (in_array($lastPart, $suffixes)) {
-                        $suffix = array_pop($parts);
+                // B) If not found, try matching email exactly (some payees might be email)
+                if (!$foundUserId) {
+                    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('s', $payeeClean);
+                        $stmt->execute();
+                        $r = $stmt->get_result()->fetch_assoc();
+                        if ($r) $foundUserId = $r['id'];
+                        $stmt->close();
                     }
                 }
-                // Assign
-                $parsedAssessmentName['firstName'] = $parts[0] ?? '';
-                $parsedAssessmentName['middleName'] = (count($parts) > 2) ? $parts[1] : '';
-                $parsedAssessmentName['lastName'] = (count($parts) > 2) ? $parts[2] : ($parts[1] ?? '');
-                $parsedAssessmentName['suffix'] = $suffix;
+                // C) If still not found, try loose LIKE on concatenated name (first + last) or first/last parts
+                if (!$foundUserId) {
+                    $likeParam = '%' . $payeeClean . '%';
+                    $stmt = $conn->prepare("SELECT id FROM users WHERE LOWER(CONCAT(first_name, ' ', last_name)) LIKE ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('s', $likeParam);
+                        $stmt->execute();
+                        $r = $stmt->get_result()->fetch_assoc();
+                        if ($r) $foundUserId = $r['id'];
+                        $stmt->close();
+                    }
+                }
+            }
+
+            // If we found a user id, fetch their latest assessment
+            if ($foundUserId) {
+                $stmt = $conn->prepare("SELECT * FROM assessment WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param('i', $foundUserId);
+                    $stmt->execute();
+                    $assessment = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                }
+                // if assessment found and has request_id, fetch accepted_request for richer context
+                if ($assessment && !empty($assessment['request_id'])) {
+                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $assessment['request_id']);
+                        $stmt->execute();
+                        $accepted_request = $stmt->get_result()->fetch_assoc();
+                        $stmt->close();
+                    }
+                }
+            }
+
+            // 3. If still no assessment, try finding assessment by informant_name = Payee (exact), then LIKE
+            if (!$assessment && $payee !== '') {
+                // exact informant_name
+                $stmt = $conn->prepare("SELECT * FROM assessment WHERE informant_name = ? ORDER BY id DESC LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param('s', $payee);
+                    $stmt->execute();
+                    $assessment = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                }
+                // fallback: informant_name LIKE
+                if (!$assessment) {
+                    $likeParam = '%' . $payee . '%';
+                    $stmt = $conn->prepare("SELECT * FROM assessment WHERE informant_name LIKE ? ORDER BY id DESC LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('s', $likeParam);
+                        $stmt->execute();
+                        $assessment = $stmt->get_result()->fetch_assoc();
+                        $stmt->close();
+                    }
+                }
+                // if assessment found, try accepted_request as well
+                if ($assessment && !empty($assessment['request_id'])) {
+                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $assessment['request_id']);
+                        $stmt->execute();
+                        $accepted_request = $stmt->get_result()->fetch_assoc();
+                        $stmt->close();
+                    }
+                }
+            }
+
+            // 4. Final fallback: try matching by deceased name stored in ledger.Description (if ledger.Description contains deceased name)
+            if (!$assessment && !empty($ledger['Description'])) {
+                $desc = trim($ledger['Description']);
+                $stmt = $conn->prepare("SELECT * FROM assessment WHERE deceased_name = ? ORDER BY id DESC LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param('s', $desc);
+                    $stmt->execute();
+                    $assessment = $stmt->get_result()->fetch_assoc();
+                    $stmt->close();
+                }
+                if ($assessment && !empty($assessment['request_id'])) {
+                    $stmt = $conn->prepare("SELECT * FROM accepted_request WHERE id = ? LIMIT 1");
+                    if ($stmt) {
+                        $stmt->bind_param('i', $assessment['request_id']);
+                        $stmt->execute();
+                        $accepted_request = $stmt->get_result()->fetch_assoc();
+                        $stmt->close();
+                    }
+                }
             }
         }
+
+        // --- Split deceased_name for type New (existing logic continues) ---
+        if ($assessment && isset($assessment['type']) && $assessment['type'] === 'New' && !empty($assessment['deceased_name'])) {
+            $name = trim($assessment['deceased_name']);
+            // Try to split by space, handle suffix (Jr., Sr., III, etc.)
+            $parts = preg_split('/\s+/', $name);
+            $suffixes = ['JR.', 'SR.', 'III', 'IV', 'JR', 'SR', 'II', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'JR,', 'SR,'];
+            $suffix = '';
+            if (count($parts) > 2) {
+                // If last part is a suffix
+                $lastPart = strtoupper(str_replace('.', '', end($parts)));
+                if (in_array($lastPart, $suffixes)) {
+                    $suffix = array_pop($parts);
+                }
+            }
+            // Assign
+            $parsedAssessmentName['firstName'] = $parts[0] ?? '';
+            $parsedAssessmentName['middleName'] = (count($parts) > 2) ? $parts[1] : '';
+            $parsedAssessmentName['lastName'] = (count($parts) > 2) ? $parts[2] : ($parts[1] ?? '');
+            $parsedAssessmentName['suffix'] = $suffix;
+        }
     }
+}
+
+// After attempts to populate $deceased, $assessment and $accepted_request
+// Normalize/choose a date of internment from available sources and possible column names
+$dateInternmentPrefill = '';
+$possibleKeys = ['dateInternment', 'date_internment', 'internment_date', 'dateInternment', 'date_of_internment'];
+
+$sources = [
+  $deceased ?? [],
+  $accepted_request ?? [],
+  $assessment ?? [],
+  $_POST ?? []
+];
+
+foreach ($sources as $src) {
+  if (!is_array($src)) continue;
+  foreach ($possibleKeys as $k) {
+    if (isset($src[$k]) && $src[$k] !== '' && $src[$k] !== '0000-00-00' && $src[$k] !== null) {
+      $dateInternmentPrefill = $src[$k];
+      break 2;
+    }
+  }
+}
+
+// If value exists and is in DATETIME format, try to convert to YYYY-MM-DD for the date input
+if ($dateInternmentPrefill) {
+  // common case: already Y-m-d — keep it; if contains space/time, extract date part
+  if (preg_match('/^\d{4}-\d{2}-\d{2}\s/', $dateInternmentPrefill)) {
+    $dateInternmentPrefill = substr($dateInternmentPrefill, 0, 10);
+  } elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $dateInternmentPrefill)) {
+    // convert MM/DD/YYYY -> YYYY-MM-DD
+    $parts = explode('/', $dateInternmentPrefill);
+    $dateInternmentPrefill = $parts[2] . '-' . $parts[0] . '-' . $parts[1];
+  }
 }
 ?>
 <!DOCTYPE html>
@@ -647,7 +752,7 @@ if ($id) {
             <div class="form-group">
               <label for="dateInternment">Date of Internment</label>
               <input type="date" id="dateInternment" name="dateInternment" placeholder="Date of Internment"
-                value="<?php echo htmlspecialchars($deceased['dateInternment'] ?? ($accepted_request['dateInternment'] ?? ($assessment['dateInternment'] ?? $_POST['dateInternment'] ?? ''))); ?>"
+                value="<?php echo htmlspecialchars($dateInternmentPrefill !== '' ? $dateInternmentPrefill : ($deceased['dateInternment'] ?? ($accepted_request['dateInternment'] ?? ($assessment['dateInternment'] ?? $_POST['dateInternment'] ?? '')))); ?>"
                 class="<?php echo isset($fieldErrors['dateInternment']) ? 'input-error' : ''; ?>">
               <?php if (isset($fieldErrors['dateInternment'])): ?>
                 <div class="field-error"><?php echo $fieldErrors['dateInternment']; ?></div>

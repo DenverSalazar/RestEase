@@ -39,7 +39,7 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
 
     // Search by: normalized full name LIKE, exact first+last (case-insensitive), or nicheID exact
     $stmt = $conn->prepare("
-        SELECT id, firstName, middleName, lastName, suffix, residency, nicheID, dateDied, informantName
+        SELECT id, firstName, middleName, lastName, suffix, residency, nicheID, dateDied, informantName, dateInternment
         FROM deceased
         WHERE LOWER(CONCAT_WS(' ', firstName, middleName, lastName, suffix)) LIKE ?
            OR (LOWER(firstName) = ? AND LOWER(lastName) = ?)
@@ -168,7 +168,11 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           </div>
         </div>
 
-        <div class="mc-no">MC No. <?php echo $mc_no ?: '<span style="color:#e74c3c;">No data</span>'; ?></div>
+        <div style="margin-top:12px;display:flex;justify-content:flex-end; padding-right: 40px;">
+          <span class="mc-no" style="background:yellow;padding:2px 10px;font-weight:700;display:inline-block;">
+            MC No. <?php echo $mc_no ?: '<span style="color:#e74c3c;">No data</span>'; ?>
+          </span>
+        </div>
 
         <div class="body">
           <p>This is to certify that <strong><?php echo htmlspecialchars($informantName); ?></strong> of Barangay <strong><?php echo htmlspecialchars($informantAddress); ?></strong></p>
@@ -748,7 +752,8 @@ button.btn-insert:hover {
           <div id="certificatePreview" class="card" style="max-width:850px; width:850px; background:#f9f9f9;">
             <div style="display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:0;">
               <!-- Left Logo -->
-              <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon" style="height:80px;width:auto;margin-right:32px;align-self:center;">
+              <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon"
+                   style="flex:0 0 auto; max-width:80px; max-height:80px; width:auto; height:auto; object-fit:contain; margin-right:16px; align-self:center;">
               <div style="flex:1;text-align:center;">
                 <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
                   Republic of the Philippines<br>
@@ -756,25 +761,26 @@ button.btn-insert:hover {
                   MUNICIPALITY OF PADRE GARCIA
                 </div>
                 <div style="display:flex;align-items:center;justify-content:center;">
-                  <span style="font-family:'Rockwell Nova', 'Times New Roman', serif;font-size:2rem;font-weight:700;letter-spacing:1px;margin-bottom:0;white-space:nowrap;">
+                  <span style="font-family:'Rockwell Nova', 'Times New Roman', serif;font-size:1.83rem;font-weight:700;letter-spacing:1px;margin-bottom:0;white-space:nowrap;">
                     OFFICE OF THE MUNICIPAL MAYOR
                   </span>
                 </div>
                 <hr style="border:0; border-top:5px solid #222; margin:18px 0 18px 0;">
                 <div style="display:flex;align-items:center;justify-content:center;">
                   <!-- Use Bernard font for CERTIFICATION in the on-page preview -->
-                  <span style="font-family:'Bernard MT Std Condensed', 'Times New Roman', serif;font-size:2rem;font-weight:900;letter-spacing:18px;margin-top:0;margin-bottom:0;white-space:nowrap;">
+                  <span style="font-family:'Bernard MT Std Condensed', 'Times New Roman', serif;font-size:1.83rem;font-weight:900;letter-spacing:18px;margin-top:0;margin-bottom:0;white-space:nowrap;">
                     CERTIFICATION
                   </span>
                 </div>
               </div>
               <!-- Right Logo -->
-              <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal" style="height:80px;width:auto;margin-left:32px;align-self:center;">
+              <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal"
+                   style="flex:0 0 auto; max-width:80px; max-height:80px; width:auto; height:auto; object-fit:contain; margin-left:16px; align-self:center;">
             </div>
             <div style="margin-top:20px;">
               <!-- MC No. on the far right between CERTIFICATION and certificate body -->
               <div style="margin-top:12px;display:flex;justify-content:flex-end;">
-                <span style="background:yellow; padding:2px 18px; font-weight:bold; font-size:1.15rem;">
+                <span class="mc-no" style="background:yellow;padding:2px 10px;font-weight:700;display:inline-block;">
                   MC No. <?php echo $mc_no !== '' ? htmlspecialchars($mc_no) : '<span style="color:#e74c3c;">No data</span>'; ?>
                 </span>
               </div>
@@ -944,7 +950,7 @@ button.btn-insert:hover {
           </button>
         </div>
       </div>
-      <div style="overflow-x:auto;">
+      <div class="clients-table-container" style="overflow-x:auto;">
         <form id="certDeleteForm" method="post" style="margin:0;">
         <table class="certificate-masterlist-table" id="certificate-masterlist-table" style="min-width:1100px;">
           <thead>
@@ -1117,8 +1123,10 @@ button.btn-insert:hover {
             }
             ?>
           </tbody>
-  </table>
-  </form>
+        </table>
+        </form>
+      </div>
+      <div class="dataTables_wrapper"></div>
       <!-- Delete Confirmation Modal -->
       <div id="certDeleteModal" class="modal-overlay" style="display:none;position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
         <div class="modal-content" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
@@ -1353,10 +1361,18 @@ button.btn-insert:hover {
           info: true,
           lengthChange: true,
           pageLength: 10,
-          dom: 'lrtip',
+          // ensure info & paginate are rendered so we can move them to external wrapper
+          dom: 'rtip',
           language: {
             search: "",
             searchPlaceholder: "Search..."
+          },
+          drawCallback: function() {
+            const tableWrapper = $('#certificate-masterlist-table').closest('.clients-table-container');
+            const externalWrapper = tableWrapper.next('.dataTables_wrapper');
+            const info = $('#certificate-masterlist-table_info').detach();
+            const paginate = $('#certificate-masterlist-table_paginate').detach();
+            externalWrapper.empty().append(info).append(paginate);
           }
         });
 
@@ -1529,6 +1545,7 @@ button.btn-insert:hover {
             if (data.nicheID) document.getElementById('apartmentField').value = data.nicheID;
             if (data.residency) document.getElementById('barangayField').value = data.residency;
             if (data.informantName) document.getElementById('nameField').value = data.informantName;
+            if (data.dateInternment) document.getElementById('dateInternmentField').value = data.dateInternment;
           });
       });
 
@@ -1568,6 +1585,7 @@ button.btn-insert:hover {
                   if (d.nicheID) apartmentField.value = d.nicheID;
                   if (d.residency) barangayField.value = d.residency;
                   if (d.informantName) nameField.value = d.informantName;
+                  if (d.dateInternment) document.getElementById('dateInternmentField').value = d.dateInternment;
                   clearMatches();
                   return;
                 }
@@ -1587,6 +1605,7 @@ button.btn-insert:hover {
                     if (item.nicheID) apartmentField.value = item.nicheID;
                     if (item.residency) barangayField.value = item.residency;
                     if (item.informantName) nameField.value = item.informantName;
+                    if (item.dateInternment) document.getElementById('dateInternmentField').value = item.dateInternment;
                     clearMatches();
                   });
                   listWrap.appendChild(row);
@@ -1803,38 +1822,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
   $informantAddress = $_POST['barangay'] ?? '';
   $addressOfDeceased = $_POST['barangay'] ?? '';
   $dateDied = $_POST['date_died'] ?? '';
-  $dateInternment = ''; // You may need to add this field to the form if needed
-  $dNew = in_array('register_death', $_POST['actions'] ?? []) ? '✔' : '';
-  $dRenew = in_array('renewal_crypt', $_POST['actions'] ?? []) ? '✔' : '';
-  $dTransfer = in_array('transfer_remains', $_POST['actions'] ?? []) ? '✔' : '';
-  $dReOpen = in_array('reopen_tomb', $_POST['actions'] ?? []) ? '✔' : '';
-  $dReEnter = in_array('reenter_remains', $_POST['actions'] ?? []) ? '✔' : '';
-  // Get payment details from ledger (same logic as preview)
-  $orNo = '';
-  $datePaid = '';
-  $amount = '';
-  $mc_no = '';
-  if (!empty($aptNo) && !empty($informantName)) {
-    $aptNoEsc = $conn->real_escape_string($aptNo);
-    $payeeEsc = $conn->real_escape_string($informantName);
-    $ledgerRes = $conn->query("SELECT ORNumber, DatePaid, Amount, MCNo FROM ledger WHERE ApartmentNo='$aptNoEsc' AND Payee='$payeeEsc' AND DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC LIMIT 1");
-    if ($ledgerRes && $ledgerRes->num_rows > 0) {
-      $ledgerRow = $ledgerRes->fetch_assoc();
-      $orNo = $ledgerRow['ORNumber'];
-      $datePaid = $ledgerRow['DatePaid'];
-      $amount = $ledgerRow['Amount'];
-      $mc_no = $ledgerRow['MCNo'];
-    } else {
-      $ledgerRes = $conn->query("SELECT ORNumber, DatePaid, Amount, MCNo FROM ledger WHERE Payee='$payeeEsc' AND DatePaid IS NOT NULL AND DatePaid != '' ORDER BY DatePaid DESC LIMIT 1");
-      if ($ledgerRes && $ledgerRes->num_rows > 0) {
-        $ledgerRow = $ledgerRes->fetch_assoc();
-        $orNo = $ledgerRow['ORNumber'];
-        $datePaid = $ledgerRow['DatePaid'];
-        $amount = $ledgerRow['Amount'];
-        $mc_no = $ledgerRow['MCNo'];
-      }
-    }
+
+  // New: determine DateInternment
+  $dateInternment = null;
+  // 1) prefer explicitly submitted date_internment
+  if (!empty($_POST['date_internment'])) {
+      // basic validation/normalize
+      $d = date_create($_POST['date_internment']);
+      if ($d !== false) $dateInternment = $d->format('Y-m-d');
   }
+  // 2) fallback: try to find from deceased table by AptNo
+  if (empty($dateInternment) && !empty($aptNo)) {
+      $stmt = $conn->prepare("SELECT dateInternment FROM deceased WHERE nicheID = ? AND dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00' LIMIT 1");
+      if ($stmt) {
+          $stmt->bind_param('s', $aptNo);
+          $stmt->execute();
+          $r = $stmt->get_result()->fetch_assoc();
+          if ($r && !empty($r['dateInternment'])) $dateInternment = $r['dateInternment'];
+          $stmt->close();
+      }
+  }
+  // 3) fallback: exact normalized full name match in deceased
+  if (empty($dateInternment) && !empty($nameOfDeceased)) {
+      $nameNorm = mb_strtolower(trim(preg_replace('/\s+/', ' ', $nameOfDeceased)), 'UTF-8');
+      $stmt = $conn->prepare("SELECT dateInternment FROM deceased WHERE LOWER(CONCAT_WS(' ', firstName, COALESCE(middleName,''), lastName, COALESCE(suffix,''))) = ? AND dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00' LIMIT 1");
+      if ($stmt) {
+          $stmt->bind_param('s', $nameNorm);
+          $stmt->execute();
+          $r = $stmt->get_result()->fetch_assoc();
+          if ($r && !empty($r['dateInternment'])) $dateInternment = $r['dateInternment'];
+          $stmt->close();
+      }
+  }
+  // 4) fallback: LIKE normalized name
+  if (empty($dateInternment) && !empty($nameOfDeceased)) {
+      $like = '%' . mb_strtolower(trim(preg_replace('/\s+/', ' ', $nameOfDeceased)), 'UTF-8') . '%';
+      $stmt = $conn->prepare("SELECT dateInternment FROM deceased WHERE LOWER(CONCAT_WS(' ', firstName, COALESCE(middleName,''), lastName, COALESCE(suffix,''))) LIKE ? AND dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00' LIMIT 1");
+      if ($stmt) {
+          $stmt->bind_param('s', $like);
+          $stmt->execute();
+          $r = $stmt->get_result()->fetch_assoc();
+          if ($r && !empty($r['dateInternment'])) $dateInternment = $r['dateInternment'];
+          $stmt->close();
+      }
+  }
+  // 5) fallback: try first+last parts
+  if (empty($dateInternment) && !empty($nameOfDeceased)) {
+      $parts = preg_split('/\s+/', trim($nameOfDeceased));
+      if (count($parts) >= 2) {
+          $first = mb_strtolower($parts[0], 'UTF-8');
+          $last = mb_strtolower($parts[count($parts)-1], 'UTF-8');
+          $stmt = $conn->prepare("SELECT dateInternment FROM deceased WHERE LOWER(firstName) = ? AND LOWER(lastName) = ? AND dateInternment IS NOT NULL AND dateInternment != '' AND dateInternment != '0000-00-00' LIMIT 1");
+          if ($stmt) {
+              $stmt->bind_param('ss', $first, $last);
+              $stmt->execute();
+              $r = $stmt->get_result()->fetch_assoc();
+              if ($r && !empty($r['dateInternment'])) $dateInternment = $r['dateInternment'];
+              $stmt->close();
+          }
+      }
+  }
+
+  // Ensure $dateInternment is a string acceptable by DB (NULL or 'YYYY-MM-DD')
+  if (empty($dateInternment)) $dateInternment = null;
+
+  // Map posted checkbox actions[] to certification columns (store '✔' when checked, else empty)
+  $postedActions = isset($_POST['actions']) && is_array($_POST['actions']) ? $_POST['actions'] : [];
+  // default empty
+  $dNew = $dRenew = $dTransfer = $dReOpen = $dReEnter = '';
+  if (in_array('register_death', $postedActions))  $dNew     = '✔';
+  if (in_array('renewal_crypt', $postedActions))   $dRenew   = '✔';
+  if (in_array('transfer_remains', $postedActions))$dTransfer= '✔';
+  if (in_array('reopen_tomb', $postedActions))    $dReOpen  = '✔';
+  if (in_array('reenter_remains', $postedActions)) $dReEnter = '✔';
+
   $validity = $_POST['renewal'] ?? '';
   $payee = $informantName;
   // Get accurate admin display name (same logic as preview)
@@ -1852,12 +1913,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
       }
   }
   $adminDisplayName = strtoupper($adminDisplayName);
-  $masterlistFields = [
-    'AptNo', 'NameOfDeceased', 'InformantName', 'InformantAddress', 'AddressOfDeceased',
-    'DateDied', 'DateInternment', 'DNew', 'DRenew', 'DTransfer', 'DReOpen', 'DReEnter',
-    'DatePaid', 'Payee', 'Amount', 'ORNumber', 'Validity', 'MCNo'
-  ];
-  // Insert into certification table
+
+  // Insert into certification table (reuse current prepared insert; pass $dateInternment)
   $stmt = $conn->prepare("INSERT INTO certification (AptNo, NameOfDeceased, InformantName, InformantAddress, AddressOfDeceased, DateDied, DateInternment, DNew, DRenew, DTransfer, DReOpen, DReEnter, DatePaid, Payee, Amount, ORNumber, Validity, MCNo, AdminName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
   $stmt->bind_param(
     'sssssssssssssssssss',
@@ -1879,35 +1936,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cert'])) {
     $orNo,
     $validity,
     $mc_no,
-    $adminDisplayName // <-- Save admin name
+    $adminDisplayName
   );
   $stmt->execute();
   $stmt->close();
-  // Output HTML before closing PHP to ensure modal is rendered
+
+  // After successful insert, show compact top-right success notification (replaces previous centered modal)
   ?>
-  <div id="certSuccessModal" style="position:fixed;z-index:9999;left:0;top:0;right:0;bottom:0;background:rgba(44,62,80,0.18);display:flex;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
-      <div>
-        <i class='fas fa-check-circle' style='color:#2ecc71;font-size:2.5rem;margin-bottom:8px;'></i>
-        <h2 style="color:#2ecc71;margin:0;font-size:1.3rem;">Success!</h2>
-      </div>
-      <div style="margin:18px 0 24px 0;">
-        <p style="color:#444;font-size:1.07rem;margin:0;">
-          Certificate has been submitted successfully.
-        </p>
-      </div>
-      <div style="display:flex;justify-content:center;gap:16px;">
-        <button id="certSuccessModalCloseBtn" style="background:#506C84;color:#fff;border:none;padding:12px 32px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">OK</button>
-      </div>
+  <div id="certSuccessPopup" style="display:flex;position:fixed;top:32px;right:32px;z-index:10000;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:14px 18px;min-width:260px;align-items:center;gap:12px;font-family:'Poppins',sans-serif;">
+    <span style="color:#27ae60;font-size:1.6rem;line-height:1;"><i class="fas fa-check-circle"></i></span>
+    <div style="display:flex;flex-direction:column;flex:1;min-width:0;">
+      <div style="font-weight:600;color:#222;font-size:1.02rem;line-height:1;">Success</div>
+      <div id="certSuccessPopupMessage" style="color:#555;font-size:0.95rem;line-height:1.2;">Certificate has been submitted successfully.</div>
     </div>
+    <button id="certSuccessPopupClose" style="background:none;border:none;color:#888;font-size:1.2rem;cursor:pointer;padding:6px 8px;border-radius:6px;">&times;</button>
   </div>
   <script>
-    document.getElementById("certSuccessModalCloseBtn").onclick = function() {
-      window.location.href = "Certificate.php";
-    };
-    document.getElementById("certSuccessModal").onclick = function(e) {
-      if (e.target === this) window.location.href = "Certificate.php";
-    };
+    (function() {
+      var popup = document.getElementById('certSuccessPopup');
+      var closeBtn = document.getElementById('certSuccessPopupClose');
+      var timer = null;
+      function hideAndRedirect() {
+        if (!popup) return;
+        popup.style.display = 'none';
+        try { window.location.href = 'Certificate.php'; } catch (e) { window.location.reload(); }
+      }
+      // Auto-hide after 3s and redirect
+      timer = setTimeout(hideAndRedirect, 3000);
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (timer) clearTimeout(timer);
+          hideAndRedirect();
+        });
+      }
+      // Optional: clicking outside will also dismiss & redirect (one-time listener)
+      document.addEventListener('click', function(ev) {
+        if (!popup) return;
+        if (!popup.contains(ev.target)) {
+          if (timer) clearTimeout(timer);
+          hideAndRedirect();
+        }
+      }, { once: true });
+    })();
   </script>
   <?php
   exit;

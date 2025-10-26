@@ -14,23 +14,23 @@ $recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secr
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-  //  $recaptcha_response = $_POST['g-recaptcha-response'] ?? ''; // <-- FIXED
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? ''; // <-- FIXED
 
     // Basic validation
     if (!$email || !$password) {
         $login_error = "All fields are required.";
-    // } elseif (empty($recaptcha_response)) {
-    //     $login_error = "Please complete the reCAPTCHA.";
-    // } else {
+     } elseif (empty($recaptcha_response)) {
+         $login_error = "Please complete the reCAPTCHA.";
+     } else {
 
-    //     // reCAPTCHA validation
-    //     $recaptcha_verify = file_get_contents(
-    //         "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-    //     );
-    //     $recaptcha_success = json_decode($recaptcha_verify);
-    //     if (!$recaptcha_success->success) {
-    //         $login_error = "reCAPTCHA verification failed. Please try again.";
-    //     }
+    // reCAPTCHA validation
+    $recaptcha_verify = file_get_contents(
+        "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
+    );
+    $recaptcha_success = json_decode($recaptcha_verify);
+    if (!$recaptcha_success->success) {
+        $login_error = "reCAPTCHA verification failed. Please try again.";
+    }
     }
     // Only proceed if no error
     if (!$login_error) {
@@ -179,10 +179,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                                 <!-- reCAPTCHA widget -->
                             
-                            <!-- <div class="mb-3 w-100 recaptcha-fullwidth">
+                            <div class="mb-3 w-100 recaptcha-fullwidth">
                                 <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
                             </div>
-                            -->
+                            
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
                             <div class="divider">
