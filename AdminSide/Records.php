@@ -62,6 +62,30 @@ if (!isset($_SESSION['admin_id'])) {
       /* push pagination to the far right */
       margin-left: auto;
     }
+
+    /* length control top row inside the table area */
+    .dt-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      margin: 8px 12px;
+    }
+    #length-control-container .dataTables_length {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: #374151;
+    }
+    #length-control-container .dataTables_length select {
+      margin-left: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      min-width: 56px;
+    }
   </style>
 </head>
 <body>
@@ -129,6 +153,12 @@ if (!isset($_SESSION['admin_id'])) {
       </div>
       <form id="delete-form" method="post" style="margin:0;">
       <div class="clients-table-container" style="overflow-x:auto;">
+        <!-- Top row for DataTables length control (placed inside table area, top-left) -->
+        <div class="dt-top-row">
+          <div id="length-control-container"></div>
+          <div style="flex:1"></div>
+        </div>
+
         <table class="cemetery-masterlist-table" id="records-table">
           <thead>
             <tr>
@@ -302,8 +332,7 @@ if (!isset($_SESSION['admin_id'])) {
             "searching": true,
             "ordering": true,
             "info": true,
-            // use 'rtip' so info and paginate are rendered and available to move
-            "dom": 'rtip',
+            "dom": 'lrtip',
             "columnDefs": [
               { "orderable": false, "targets": [9, 10] } // Both edit and checkbox columns non-sortable
             ],
@@ -314,6 +343,10 @@ if (!isset($_SESSION['admin_id'])) {
               const info = $('#records-table_info').detach();
               const paginate = $('#records-table_paginate').detach();
               externalWrapper.empty().append(info).append(paginate);
+
+              // detach the length control and move it into our top-row container (top-left of table)
+              const lengthCtl = $('#records-table_length').detach();
+              tableWrapper.find('#length-control-container').empty().append(lengthCtl);
             }
           });
           
