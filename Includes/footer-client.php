@@ -25,7 +25,7 @@
             <div class="col-12 col-md-5 mb-4">
                 <h5 class="mb-3" style="opacity: 0.7;">Contact Info</h5>
                 <p class="mb-2" style="opacity: 0.7;"><i class="fas fa-map-marker-alt me-2"></i>V6MF+8JH, Banaba, Padre Garcia, Batangas</p>
-                <p class="mb-2" style="opacity: 0.7;"><i class="fas fa-envelope me-2"></i>restease@gmail.com</p>
+                <p class="mb-2" style="opacity: 0.7;"><i class="fas fa-envelope me-2"></i>resteasempdo@gmail.com</p>
                 <p class="mb-4" style="opacity: 0.7;"><i class="fas fa-phone me-2"></i>+0923-456-789</p>
                 
                 <!-- Social Media Icons -->

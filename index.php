@@ -1,3 +1,57 @@
+<?php
+session_start();
+require 'vendor/autoload.php';      // PHPMailer via Composer
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+$successMsg = $_SESSION['successMsg'] ?? '';
+$errorMsg = $_SESSION['errorMsg'] ?? '';
+unset($_SESSION['successMsg'], $_SESSION['errorMsg']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Simple server-side validation
+    $name = trim($_POST['name'] ?? '');
+    $contact = trim($_POST['contact'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+
+    if (!$name) {
+        $_SESSION['errorMsg'] = 'Name is required.';
+    } elseif (!$contact) {
+        $_SESSION['errorMsg'] = 'Contact is required.';
+    } elseif (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['errorMsg'] = 'Valid email is required.';
+    } elseif (!$message) {
+        $_SESSION['errorMsg'] = 'Message is required.';
+    } else {
+        // Send email via PHPMailer
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'resteasempdo@gmail.com';
+            $mail->Password = 'vvkblrlppiflbksu';
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 587;
+
+            $mail->setFrom('resteasempdo@gmail.com', 'RestEase Contact Form');
+            $mail->addAddress('resteasempdo@gmail.com');
+
+            $mail->Subject = 'New Contact Form Submission';
+            $mail->Body = "Name: $name\nContact: $contact\nEmail: $email\nMessage:\n$message";
+
+            $mail->send();
+            $_SESSION['successMsg'] = 'Your message has been sent successfully!';
+        } catch (Exception $e) {
+            $_SESSION['errorMsg'] = 'Message could not be sent. Please try again later.';
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,20 +244,30 @@ The system provides a secure and transparent way to manage cemetery information,
                     <h2>Contact Us</h2>
                     <p class="mb-4">Connect with us for more information or assistance. Whether you have concerns, suggestions, or need help, we're just a message away!</p>
                     
-                    <form>
+                    <?php if ($successMsg): ?>
+                        <div class="alert alert-success"><?php echo $successMsg; ?></div>
+                    <?php elseif ($errorMsg): ?>
+                        <div class="alert alert-danger"><?php echo $errorMsg; ?></div>
+                    <?php endif; ?>
+
+                    <form method="POST" id="contactForm" novalidate>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Name">
+                                <input type="text" class="form-control" name="name" placeholder="Name" required>
+                                <div class="invalid-feedback">Name is required.</div>
                             </div>
                             <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Contact">
+                                <input type="text" class="form-control" name="contact" placeholder="Contact" required>
+                                <div class="invalid-feedback">Contact is required.</div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Email Address">
+                            <input type="email" class="form-control" name="email" placeholder="Email Address" required>
+                            <div class="invalid-feedback">Valid email is required.</div>
                         </div>
                         <div class="mb-3">
-                            <textarea class="form-control" rows="6" placeholder="Message"></textarea>
+                            <textarea class="form-control" name="message" rows="6" placeholder="Message" required></textarea>
+                            <div class="invalid-feedback">Message is required.</div>
                         </div>
                         <button type="submit" class="submit-btn">Submit</button>
                     </form>
@@ -235,7 +299,7 @@ The system provides a secure and transparent way to manage cemetery information,
                         
                         <h3>Contact</h3>
                         <p>Phone: +0923-456-789</p>
-                        <p>Email: restease@gmail.com</p>
+                        <p>Email: resteasempdo@gmail.com</p>
                         
                         <h3>Open Time</h3>
                         <p>Monday - Sunday : 8:00am - 5:00pm</p>
@@ -328,6 +392,43 @@ The system provides a secure and transparent way to manage cemetery information,
     document.addEventListener('DOMContentLoaded', animateOnScroll);
     window.addEventListener('resize', animateOnScroll);
     setTimeout(animateOnScroll, 100);
+
+    // Client-side validation for contact form
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        let valid = true;
+        const form = e.target;
+        // Name
+        if (!form.name.value.trim()) {
+            form.name.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.name.classList.remove('is-invalid');
+        }
+        // Contact
+        if (!form.contact.value.trim()) {
+            form.contact.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.contact.classList.remove('is-invalid');
+        }
+        // Email
+        if (!form.email.value.trim() || !form.email.value.match(/^[^@]+@[^@]+\.[^@]+$/)) {
+            form.email.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.email.classList.remove('is-invalid');
+        }
+        // Message
+        if (!form.message.value.trim()) {
+            form.message.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.message.classList.remove('is-invalid');
+        }
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
     </script>
 </body>
 </html>
