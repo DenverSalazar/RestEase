@@ -73,7 +73,14 @@ if ($user_id) {
         $isDeniedMsg = (stripos($msg, 'denied') !== false) || (stripos($msg, 'deny') !== false);
 
         // detect expiry/validity notifications
-        $isExpiryMsg = (stripos($msg, 'validity expiry') !== false) || (stripos($msg, 'expiration notice') !== false) || (stripos($msg, 'validity expiry notice') !== false);
+        // Treat several known keywords/phrases as expiry notices.
+        // Include admin notify phrase "Expired lease notice for ..." (case-insensitive).
+        $trimmedMsg = trim($msg);
+        $isExpiryMsg = (stripos($msg, 'validity expiry') !== false)
+                    || (stripos($msg, 'expiration notice') !== false)
+                    || (stripos($msg, 'validity expiry notice') !== false)
+                    || (stripos($msg, 'expired lease notice for') !== false)  // anywhere in message
+                    || (stripos($trimmedMsg, 'expired lease notice for') === 0); // starts with phrase
 
         // if we already added a welcome notification earlier (e.g. from users.created_at),
         // avoid adding a second welcome notification
@@ -291,7 +298,15 @@ if ($user_id) {
               Details
             </a>
           <?php elseif ($notif['status'] === 'assessment' || $notif['status'] === 'expiry'): ?>
-            <a href="notification_details.php?type=<?php echo $notif['status']; ?>&created_at=<?php echo urlencode($notif['created_at']); ?>" title="View <?php echo ($notif['status'] === 'expiry' ? 'Expiration' : 'Assessment'); ?> Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
+            <?php
+              // Prefer notif_id when present for a reliable lookup on hosted systems
+              if (!empty($notif['notif_id'])) {
+                  $detailsHref = "notification_details.php?type=" . urlencode($notif['status']) . "&notif_id=" . urlencode($notif['notif_id']);
+              } else {
+                  $detailsHref = "notification_details.php?type=" . urlencode($notif['status']) . "&created_at=" . urlencode($notif['created_at']);
+              }
+            ?>
+            <a href="<?php echo $detailsHref; ?>" title="View <?php echo ($notif['status'] === 'expiry' ? 'Expiration' : 'Assessment'); ?> Details" style="font-size:0.98rem;color:#4B7BEC;text-decoration:none;font-weight:600;">
               Details
             </a>
           <?php endif; ?>
@@ -397,10 +412,16 @@ if ($user_id) {
   }
 
   function updateCounts(){
-    const cards = $$('.notif-card-wrapper').filter(c => !c.hasAttribute('data-deleted'));
-    const allCount = cards.length;
+    const allCards = $$('.notif-card-wrapper');
+    // Count only non-archived and non-permanently-deleted for "All"
+    const allCount = allCards.reduce((acc, c) => {
+      const id = c.getAttribute('data-id');
+      const isDeleted = id && localStorage.getItem('notif_deleted_' + id) === '1';
+      const isArchived = id && localStorage.getItem('notif_archived_' + id) === '1';
+      return acc + ((isDeleted || isArchived) ? 0 : 1);
+    }, 0);
     let fav = 0, arch = 0;
-    cards.forEach(c=>{
+    allCards.forEach(c=>{
       const id = c.getAttribute('data-id');
       if (id && localStorage.getItem('notif_fav_' + id) === '1') fav++;
       if (id && localStorage.getItem('notif_archived_' + id) === '1') arch++;
@@ -408,7 +429,7 @@ if ($user_id) {
     $('#count-all').textContent = allCount;
     $('#count-fav').textContent = fav;
     $('#count-arch').textContent = arch;
-
+ 
     // update dropdown labels (if present)
     if (notifDropdown) {
       const optAll = notifDropdown.querySelector('option[value="all"]');
@@ -419,125 +440,127 @@ if ($user_id) {
       if (optArch) optArch.textContent = `Archive (${arch})`;
     }
   }
+ 
+   // ---- Filtering helpers (source-of-truth for pagination) ----
+   let dateFilter = null; // selected date filter (Date or null)
+ 
+   function getActiveTabKey(){
+     const activeBtn = $('#notif-tabs .notif-tab.active');
+     return activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+   }
+ 
+   function cardMatches(card){
+     const id = card.getAttribute('data-id') || '';
+     // Permanently deleted items (server-side) should not be shown
+     if (id && localStorage.getItem('notif_deleted_' + id) === '1') return false;
+ 
+     // archived items should be hidden from "All" and "Favorites" views; only visible in "archive"
+     const isArchived = id && localStorage.getItem('notif_archived_' + id) === '1';
+     const tab = getActiveTabKey();
+     if (tab === 'favorite' && !(id && localStorage.getItem('notif_fav_' + id) === '1' && !isArchived)) return false;
+     if (tab === 'archive' && !isArchived) return false;
+     if (tab === 'all' && isArchived) return false;
+ 
+     // search filter
+     const q = (searchInput.value || '').trim().toLowerCase();
+     if (q) {
+       const title = (card.querySelector('.notif-title')||{textContent:''}).textContent.toLowerCase();
+       const desc  = (card.querySelector('.notif-desc') ||{textContent:''}).textContent.toLowerCase();
+       if (!title.includes(q) && !desc.includes(q)) return false;
+     }
+ 
+     // date filter (compare date-only)
+     if (dateFilter instanceof Date) {
+       const cardDate = new Date(card.getAttribute('data-created_at'));
+       if (cardDate.toDateString() !== dateFilter.toDateString()) return false;
+     }
+     return true;
+   }
+ 
+   function getFilteredCards(){
+     return $$('.notif-card-wrapper').filter(cardMatches);
+   }
+ 
+   // ---- Pagination based on filtered cards ----
+   function updatePagination() {
+     const pagRoot = document.getElementById('notifPagination');
+     if (!pagRoot) return;
 
-  // ---- Filtering helpers (source-of-truth for pagination) ----
-  let dateFilter = null; // selected date filter (Date or null)
+     const allFiltered = getFilteredCards();
+     const total = allFiltered.length;
+     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
+     if (currentPageClient > totalPages) currentPageClient = 1;
 
-  function getActiveTabKey(){
-    const activeBtn = $('#notif-tabs .notif-tab.active');
-    return activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
-  }
+     const center = pagRoot.querySelector('.pg-center');
+     const info   = pagRoot.querySelector('.pg-info');
+     info.textContent = `Page ${total ? currentPageClient : 1} of ${totalPages}`;
+     center.innerHTML = '';
 
-  function cardMatches(card){
-    // ignore already deleted via localStorage
-    const id = card.getAttribute('data-id') || '';
-    if (id && localStorage.getItem('notif_deleted_' + id) === '1') return false;
+     center.appendChild(createPageButton('‹', currentPageClient <= 1, () => {
+       currentPageClient = Math.max(1, currentPageClient - 1);
+       paginateDisplay();
+     }, false));
 
-    // tab filter
-    const tab = getActiveTabKey();
-    if (tab === 'favorite' && !(id && localStorage.getItem('notif_fav_' + id) === '1')) return false;
-    if (tab === 'archive' && !(id && localStorage.getItem('notif_archived_' + id) === '1')) return false;
+     const maxButtons = 5;
+     let start = Math.max(1, currentPageClient - Math.floor(maxButtons/2));
+     let end   = Math.min(totalPages, start + maxButtons - 1);
+     start     = Math.max(1, end - maxButtons + 1);
 
-    // search filter
-    const q = (searchInput.value || '').trim().toLowerCase();
-    if (q) {
-      const title = (card.querySelector('.notif-title')||{textContent:''}).textContent.toLowerCase();
-      const desc  = (card.querySelector('.notif-desc') ||{textContent:''}).textContent.toLowerCase();
-      if (!title.includes(q) && !desc.includes(q)) return false;
-    }
+     for (let p = start; p <= end; p++) {
+       center.appendChild(createPageButton(String(p), false, (() => {
+         const page = p;
+         return () => { currentPageClient = page; paginateDisplay(); };
+       })(), p === currentPageClient));
+     }
 
-    // date filter (compare date-only)
-    if (dateFilter instanceof Date) {
-      const cardDate = new Date(card.getAttribute('data-created_at'));
-      if (cardDate.toDateString() !== dateFilter.toDateString()) return false;
-    }
-    return true;
-  }
+     center.appendChild(createPageButton('›', currentPageClient >= totalPages, () => {
+       currentPageClient = Math.min(totalPages, currentPageClient + 1);
+       paginateDisplay();
+     }, false));
 
-  function getFilteredCards(){
-    return $$('.notif-card-wrapper').filter(cardMatches);
-  }
+     pagRoot.style.display = total > 0 ? 'flex' : 'none';
+   }
 
-  // ---- Pagination based on filtered cards ----
-  function updatePagination() {
-    const pagRoot = document.getElementById('notifPagination');
-    if (!pagRoot) return;
+   function paginateDisplay() {
+     // hide all first
+     $$('.notif-card-wrapper').forEach(el => el.style.display = 'none');
 
-    const allFiltered = getFilteredCards();
-    const total = allFiltered.length;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_CLIENT));
-    if (currentPageClient > totalPages) currentPageClient = 1;
+     const cards = getFilteredCards();
+     const totalPages = Math.max(1, Math.ceil(cards.length / PAGE_SIZE_CLIENT));
+     if (currentPageClient > totalPages) currentPageClient = 1;
 
-    const center = pagRoot.querySelector('.pg-center');
-    const info   = pagRoot.querySelector('.pg-info');
-    info.textContent = `Page ${total ? currentPageClient : 1} of ${totalPages}`;
-    center.innerHTML = '';
+     const start = (currentPageClient - 1) * PAGE_SIZE_CLIENT;
+     const end   = start + PAGE_SIZE_CLIENT;
+     cards.slice(start, end).forEach(el => el.style.display = '');
 
-    center.appendChild(createPageButton('‹', currentPageClient <= 1, () => {
-      currentPageClient = Math.max(1, currentPageClient - 1);
-      paginateDisplay();
-    }, false));
+     updatePagination();
+   }
 
-    const maxButtons = 5;
-    let start = Math.max(1, currentPageClient - Math.floor(maxButtons/2));
-    let end   = Math.min(totalPages, start + maxButtons - 1);
-    start     = Math.max(1, end - maxButtons + 1);
+   function applyFilter(){
+     currentPageClient = 1;
+     updateCounts();
+     paginateDisplay();
+   }
 
-    for (let p = start; p <= end; p++) {
-      center.appendChild(createPageButton(String(p), false, (() => {
-        const page = p;
-        return () => { currentPageClient = page; paginateDisplay(); };
-      })(), p === currentPageClient));
-    }
-
-    center.appendChild(createPageButton('›', currentPageClient >= totalPages, () => {
-      currentPageClient = Math.min(totalPages, currentPageClient + 1);
-      paginateDisplay();
-    }, false));
-
-    pagRoot.style.display = total > 0 ? 'flex' : 'none';
-  }
-
-  function paginateDisplay() {
-    // hide all first
-    $$('.notif-card-wrapper').forEach(el => el.style.display = 'none');
-
-    const cards = getFilteredCards();
-    const totalPages = Math.max(1, Math.ceil(cards.length / PAGE_SIZE_CLIENT));
-    if (currentPageClient > totalPages) currentPageClient = 1;
-
-    const start = (currentPageClient - 1) * PAGE_SIZE_CLIENT;
-    const end   = start + PAGE_SIZE_CLIENT;
-    cards.slice(start, end).forEach(el => el.style.display = '');
-
-    updatePagination();
-  }
-
-  function applyFilter(){
-    currentPageClient = 1;
-    updateCounts();
-    paginateDisplay();
-  }
-
-  function initStars(){
-    $$('.notif-card-wrapper').forEach(card=>{
-      const id = card.getAttribute('data-id');
-      const star = card.querySelector('.notif-star-left');
-      if (!star) return;
-      if (id && localStorage.getItem('notif_fav_' + id) === '1') star.setAttribute('aria-pressed','true');
-      else star.setAttribute('aria-pressed','false');
-      star.addEventListener('click', function(e){
-        e.stopPropagation();
-        if (!id) return;
-        const key = 'notif_fav_' + id;
-        const is = localStorage.getItem(key) === '1';
-        if (is) localStorage.removeItem(key); else localStorage.setItem(key,'1');
-        star.setAttribute('aria-pressed', is ? 'false' : 'true');
-        updateCounts();
-        if ($('#notif-tabs .notif-tab.active').getAttribute('data-filter') === 'favorite') applyFilter();
-      });
-    });
-  }
+   function initStars(){
+     $$('.notif-card-wrapper').forEach(card=>{
+       const id = card.getAttribute('data-id');
+       const star = card.querySelector('.notif-star-left');
+       if (!star) return;
+       if (id && localStorage.getItem('notif_fav_' + id) === '1') star.setAttribute('aria-pressed','true');
+       else star.setAttribute('aria-pressed','false');
+       star.addEventListener('click', function(e){
+         e.stopPropagation();
+         if (!id) return;
+         const key = 'notif_fav_' + id;
+         const is = localStorage.getItem(key) === '1';
+         if (is) localStorage.removeItem(key); else localStorage.setItem(key,'1');
+         star.setAttribute('aria-pressed', is ? 'false' : 'true');
+         updateCounts();
+         if ($('#notif-tabs .notif-tab.active').getAttribute('data-filter') === 'favorite') applyFilter();
+       });
+     });
+   }
 
   // tabs
   tabs.forEach(t => t.addEventListener('click', function(){
@@ -575,11 +598,11 @@ if ($user_id) {
               try{ localStorage.setItem('notif_deleted_' + id, '1'); localStorage.removeItem('notif_archived_' + id); localStorage.removeItem('notif_fav_' + id); } catch(e){}
               card.remove();
             }
-          });
-          updateCounts();
-          applyFilter();
-        } else alert('Failed to delete all notifications.');
-      }).catch(()=> alert('Failed to delete all notifications.'));
+           });
+           updateCounts();
+           applyFilter();
+         } else alert('Failed to delete all notifications.');
+       }).catch(()=> alert('Failed to delete all notifications.'));
     });
   }
 
@@ -592,22 +615,22 @@ if ($user_id) {
         delBtn.addEventListener('click', function(e){
           e.stopPropagation();
           if (!id) return;
-          if (!confirm('Delete this notification?')) return;
-          fetch('delete_notification.php', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ action: 'delete_single', id: id })
-          }).then(r=>r.json()).then(data=>{
-            try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-            card.remove();
-            updateCounts();
+          if (!confirm('Archive this notification?')) return;
+          // Mark archived locally and keep the element in DOM
+          try { localStorage.setItem('notif_archived_' + id, '1'); } catch(e){}
+          // Also remove any favorite flag
+          try { localStorage.removeItem('notif_fav_' + id); } catch(e){}
+          // Add visual marker/class so developers can style archived items if desired
+          card.classList.add('archived');
+          // Ensure counts update
+          updateCounts();
+          // Switch to Archive tab so user sees archived items immediately
+          const archiveTab = document.querySelector('#notif-tabs .notif-tab[data-filter="archive"]');
+          if (archiveTab) {
+            archiveTab.click();
+          } else {
             applyFilter();
-          }).catch(()=>{
-            try { localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-            card.remove();
-            updateCounts();
-            applyFilter();
-          });
+          }
         });
       }
     });
@@ -630,167 +653,177 @@ if ($user_id) {
   }
   if (headerMarkReadBtn) headerMarkReadBtn.addEventListener('click', handleMarkRead);
   if (headerMarkReadBtnSmall) headerMarkReadBtnSmall.addEventListener('click', handleMarkRead);
+ 
+   // shared handler for deleting visible
+   function handleDeleteVisible() {
+     const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
+     if (visible.length === 0) return;
+     if (!confirm('Archive all visible notifications?')) return;
+     // Archive visible notifications instead of permanently deleting
+     visible.forEach(card => {
+       const id = card.getAttribute('data-id');
+       try { if (id) localStorage.setItem('notif_archived_' + id, '1'); } catch(e){}
+       try { if (id) localStorage.removeItem('notif_fav_' + id); } catch(e){}
+       // mark visually; keep DOM node so archive tab can show it
+       card.classList.add('archived');
+     });
+     // Update counts
+     updateCounts();
+     // Switch to Archive tab to show archived items immediately
+     const archiveTab = document.querySelector('#notif-tabs .notif-tab[data-filter="archive"]');
+     if (archiveTab) {
+       archiveTab.click();
+     } else {
+       applyFilter();
+     }
+   }
+   if (headerDeleteVisibleBtn) headerDeleteVisibleBtn.addEventListener('click', handleDeleteVisible);
+   if (headerDeleteVisibleBtnSmall) headerDeleteVisibleBtnSmall.addEventListener('click', handleDeleteVisible);
+ 
+   // calendar
+   const calendarPopup = $('#calendarPopup');
+   const overlay = $('#calendarOverlay');
+   const monthSelect = $('#monthSelect');
+   const yearSelect = $('#yearSelect');
+   const calendarBody = $('#calendarBody');
+   let selectedDate = null;
 
-  // shared handler for deleting visible
-  function handleDeleteVisible() {
-    const visible = $$('.notif-card-wrapper').filter(c => c.style.display !== 'none');
-    if (visible.length === 0) return;
-    if (!confirm('Delete all visible notifications?')) return;
-    visible.forEach(card => {
-      const id = card.getAttribute('data-id');
-      try { if (id) localStorage.setItem('notif_deleted_' + id, '1'); } catch(e){}
-      card.remove();
-    });
-    updateCounts();
-    applyFilter();
-  }
-  if (headerDeleteVisibleBtn) headerDeleteVisibleBtn.addEventListener('click', handleDeleteVisible);
-  if (headerDeleteVisibleBtnSmall) headerDeleteVisibleBtnSmall.addEventListener('click', handleDeleteVisible);
+   // Move the Clear button into the header so it replaces the X (keeps existing click handler)
+   (function moveClearIntoHeader(){
+     const headerEl = calendarPopup ? calendarPopup.querySelector('.header') : null;
+     const clearBtn = calendarPopup ? calendarPopup.querySelector('.calendar-controls .clear') : null;
+     if (headerEl && clearBtn && clearBtn.parentElement !== headerEl) {
+       headerEl.appendChild(clearBtn);
+     }
+   })();
 
-  // calendar
-  const calendarPopup = $('#calendarPopup');
-  const overlay = $('#calendarOverlay');
-  const monthSelect = $('#monthSelect');
-  const yearSelect = $('#yearSelect');
-  const calendarBody = $('#calendarBody');
-  let selectedDate = null;
+   // Initialize year select
+   const currentYear = new Date().getFullYear();
+   for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+     const option = document.createElement('option');
+     option.value = year;
+     option.textContent = year;
+     yearSelect.appendChild(option);
+   }
+   yearSelect.value = currentYear;
 
-  // Move the Clear button into the header so it replaces the X (keeps existing click handler)
-  (function moveClearIntoHeader(){
-    const headerEl = calendarPopup ? calendarPopup.querySelector('.header') : null;
-    const clearBtn = calendarPopup ? calendarPopup.querySelector('.calendar-controls .clear') : null;
-    if (headerEl && clearBtn && clearBtn.parentElement !== headerEl) {
-      headerEl.appendChild(clearBtn);
-    }
-  })();
-
-  // Initialize year select
-  const currentYear = new Date().getFullYear();
-  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
-    const option = document.createElement('option');
-    option.value = year;
-    option.textContent = year;
-    yearSelect.appendChild(option);
-  }
-  yearSelect.value = currentYear;
-
-  function generateCalendar(month, year) {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const today = new Date();
-    
-    calendarBody.innerHTML = '';
-    let date = 1;
-    for (let i = 0; i < 6; i++) {
-      const row = document.createElement('tr');
-      for (let j = 0; j < 7; j++) {
-        const cell = document.createElement('td');
-        if (i === 0 && j < firstDay.getDay()) {
-          cell.textContent = '';
-        } else if (date > lastDay.getDate()) {
-          cell.textContent = '';
-        } else {
-          cell.textContent = date;
-          const currentDate = new Date(year, month, date);
+   function generateCalendar(month, year) {
+     const firstDay = new Date(year, month, 1);
+     const lastDay = new Date(year, month + 1, 0);
+     const today = new Date();
+     
+     calendarBody.innerHTML = '';
+     let date = 1;
+     for (let i = 0; i < 6; i++) {
+       const row = document.createElement('tr');
+       for (let j = 0; j < 7; j++) {
+         const cell = document.createElement('td');
+         if (i === 0 && j < firstDay.getDay()) {
+           cell.textContent = '';
+         } else if (date > lastDay.getDate()) {
+           cell.textContent = '';
+         } else {
+           cell.textContent = date;
+           const currentDate = new Date(year, month, date);
           
-          if (currentDate.toDateString() === today.toDateString()) {
-            cell.classList.add('today');
-          }
+           if (currentDate.toDateString() === today.toDateString()) {
+             cell.classList.add('today');
+           }
           
-          if (selectedDate && currentDate.toDateString() === selectedDate.toDateString()) {
-            cell.classList.add('selected');
-          }
+           if (selectedDate && currentDate.toDateString() === selectedDate.toDateString()) {
+             cell.classList.add('selected');
+           }
           
-          cell.addEventListener('click', () => {
-            $$('.calendar-table td').forEach(td => td.classList.remove('selected'));
-            cell.classList.add('selected');
-            selectedDate = currentDate;
-          });
+           cell.addEventListener('click', () => {
+             $$('.calendar-table td').forEach(td => td.classList.remove('selected'));
+             cell.classList.add('selected');
+             selectedDate = currentDate;
+           });
           
-          date++;
-        }
-        row.appendChild(cell);
-      }
+           date++;
+         }
+         row.appendChild(cell);
+       }
       calendarBody.appendChild(row);
       if (date > lastDay.getDate()) break;
     }
-  }
+   }
 
-  monthSelect.addEventListener('change', () => {
-    generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
-  });
+   monthSelect.addEventListener('change', () => {
+     generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+   });
 
-  yearSelect.addEventListener('change', () => {
-    generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
-  });
+   yearSelect.addEventListener('change', () => {
+     generateCalendar(parseInt(monthSelect.value), parseInt(yearSelect.value));
+   });
 
-  function positionCalendarAnchored() {
-    if (!calendarPopup || !headerCalendarBtn) return;
+   function positionCalendarAnchored() {
+     if (!calendarPopup || !headerCalendarBtn) return;
 
-    // Ensure we can measure size
-    calendarPopup.style.visibility = 'hidden';
-    calendarPopup.classList.add('active', 'anchored');
-    const popupW = calendarPopup.offsetWidth || 340;
-    const popupH = calendarPopup.offsetHeight || 280;
+     // Ensure we can measure size
+     calendarPopup.style.visibility = 'hidden';
+     calendarPopup.classList.add('active', 'anchored');
+     const popupW = calendarPopup.offsetWidth || 340;
+     const popupH = calendarPopup.offsetHeight || 280;
 
-    const rect = headerCalendarBtn.getBoundingClientRect();
-    const scrollX = window.scrollX || document.documentElement.scrollLeft;
-    const scrollY = window.scrollY || document.documentElement.scrollTop;
-    const margin = 10;
+     const rect = headerCalendarBtn.getBoundingClientRect();
+     const scrollX = window.scrollX || document.documentElement.scrollLeft;
+     const scrollY = window.scrollY || document.documentElement.scrollTop;
+     const margin = 10;
 
-    // Preferred: above the button, right-aligned to the button
-    let left = rect.right + scrollX - popupW;
-    // Keep within viewport
-    left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+     // Preferred: above the button, right-aligned to the button
+     let left = rect.right + scrollX - popupW;
+     // Keep within viewport
+     left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
 
-    let top = rect.top + scrollY - popupH - margin;  // above
-    let placedAbove = true;
+     let top = rect.top + scrollY - popupH - margin;  // above
+     let placedAbove = true;
 
-    // If not enough space above, place below the button
-    if (top < scrollY + 8) {
-      top = rect.bottom + scrollY + margin;          // below
-      placedAbove = false;
-    }
+     // If not enough space above, place below the button
+     if (top < scrollY + 8) {
+       top = rect.bottom + scrollY + margin;          // below
+       placedAbove = false;
+     }
 
-    calendarPopup.style.left = left + 'px';
-    calendarPopup.style.top = top + 'px';
-    // Toggle small arrow depending on placement (arrow points to button)
-    calendarPopup.classList.toggle('show-arrow', placedAbove);
+     calendarPopup.style.left = left + 'px';
+     calendarPopup.style.top = top + 'px';
+     // Toggle small arrow depending on placement (arrow points to button)
+     calendarPopup.classList.toggle('show-arrow', placedAbove);
 
-    calendarPopup.style.visibility = 'visible';
-  }
+     calendarPopup.style.visibility = 'visible';
+   }
 
-  function openCalendarAnchored() {
-    // Build current month/year calendar
-    const now = new Date();
-    monthSelect.value = now.getMonth();
-    yearSelect.value = now.getFullYear();
-    generateCalendar(now.getMonth(), now.getFullYear());
+   function openCalendarAnchored() {
+     // Build current month/year calendar
+     const now = new Date();
+     monthSelect.value = now.getMonth();
+     yearSelect.value = now.getFullYear();
+     generateCalendar(now.getMonth(), now.getFullYear());
 
-    // Show popup and overlay, then position
-    overlay.classList.add('active');
-    positionCalendarAnchored();
+     // Show popup and overlay, then position
+     overlay.classList.add('active');
+     positionCalendarAnchored();
 
-    // Reposition on resize/scroll while open
-    const reposer = () => { if (calendarPopup.classList.contains('active')) positionCalendarAnchored(); };
-    window.addEventListener('resize', reposer, { passive: true });
-    window.addEventListener('scroll', reposer, { passive: true });
+     // Reposition on resize/scroll while open
+     const reposer = () => { if (calendarPopup.classList.contains('active')) positionCalendarAnchored(); };
+     window.addEventListener('resize', reposer, { passive: true });
+     window.addEventListener('scroll', reposer, { passive: true });
 
-    // Store to remove later
-    calendarPopup._reposer = reposer;
-  }
+     // Store to remove later
+     calendarPopup._reposer = reposer;
+   }
 
-  function closeCalendar() {
-    calendarPopup.classList.remove('active', 'anchored', 'show-arrow');
-    overlay.classList.remove('active');
-    calendarPopup.style.left = '';
-    calendarPopup.style.top = '';
-    if (calendarPopup._reposer) {
-      window.removeEventListener('resize', calendarPopup._reposer);
-      window.removeEventListener('scroll', calendarPopup._reposer);
-      calendarPopup._reposer = null;
-    }
-  }
+   function closeCalendar() {
+     calendarPopup.classList.remove('active', 'anchored', 'show-arrow');
+     overlay.classList.remove('active');
+     calendarPopup.style.left = '';
+     calendarPopup.style.top = '';
+     if (calendarPopup._reposer) {
+       window.removeEventListener('resize', calendarPopup._reposer);
+       window.removeEventListener('scroll', calendarPopup._reposer);
+       calendarPopup._reposer = null;
+     }
+   }
 
   // Replace previous click handler to use anchored positioning
   if (headerCalendarBtn) headerCalendarBtn.addEventListener('click', openCalendarAnchored);

@@ -65,7 +65,7 @@
                 <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 52px; width: auto;">
                 <img src="assets/RestLogo.webp" alt="Logo 3" style="height: 60px; width: auto;">
                    <img src="assets/BSU Logo.png" alt="Logo 3" style="height: 53px; width: auto;">
-                      <img src="assets/AICS Logo.png" alt="Logo 3" style="height: 60px; width: auto;">
+                      <img src="assets/Seal_of_Batangas.png" alt="Logo 3" style="height: 53px; width: auto;">
             </div>
         </div>
     </section>

@@ -9,7 +9,7 @@ if ($conn->connect_error) {
 
 $login_error = "";
 $login_success = false;
-$recaptcha_secret = '6LfMVFkrAAAAAKe2_YKsNREt5rseU-c4NcqCJkw-'; // Set your secret key here
+$recaptcha_secret = '6LeglPgrAAAAAHSMVrHSVQbVMTdWgARzX_CfVSqi'; // Set your secret key here
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
@@ -180,7 +180,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <!-- reCAPTCHA widget -->
                             
                             <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
+                                <div class="g-recaptcha" data-sitekey="6LeglPgrAAAAAMel22NXv9-w4fH7EhB7Osk7WO28"></div>
                             </div>
                             
 

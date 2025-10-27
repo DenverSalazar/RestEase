@@ -373,6 +373,47 @@ if ($user_id) {
   /* Ensure the X button is not shown (final override) */
   .request-modal-close { display: none !important; }
   @media (max-width: 480px) { .request-modal-close { display: none !important; } }
+
+  /* ===========================
+     ADDED: small-screen override
+     Move search + filter under the title (do not remove anything)
+     =========================== */
+  @media (max-width: 480px) {
+    /* make the controls flow normally below the title */
+    .cert-title-controls {
+      position: static !important;
+      transform: none !important;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 8px;
+      justify-content: flex-start;
+      align-items: center;
+      width: 100%;
+      margin-top: 8px;
+      padding: 0 8px;
+      box-sizing: border-box;
+      /* keep visual spacing from title */
+    }
+
+    /* Ensure title stays centered and controls take their own line */
+    .cert-title-row {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Slight adjustments to make inputs fit nicely on small screens */
+    .cert-title-controls .cert-search {
+      width: calc(100% - 128px); /* leave space for select */
+      max-width: 100%;
+    }
+    .cert-title-controls .cert-filter-select {
+      width: 120px;
+      min-width: 0;
+    }
+  }
 </style>
 </head>
 <body>

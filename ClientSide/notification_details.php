@@ -7,6 +7,7 @@ $user_id = $_SESSION['user_id'] ?? null;
 $id = $_GET['id'] ?? null;
 $type = $_GET['type'] ?? null;
 $created_at = $_GET['created_at'] ?? null;
+$notif_id = $_GET['notif_id'] ?? null;
 $notif = null;
 $assessment = null;
 
@@ -18,24 +19,29 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
     $result = $stmt->get_result();
     $notif = $result->fetch_assoc();
     $stmt->close();
-} elseif ($user_id && $type === 'assessment' && $created_at) {
-    // Find the assessment notification
-    $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? AND created_at = ? LIMIT 1");
-    $stmt->bind_param("is", $user_id, $created_at);
+} elseif ($user_id && ($type === 'assessment' || $type === 'expiry') && ($notif_id || $created_at)) {
+    // Prefer lookup by notif_id (stable). If not provided, fall back to a tolerant created_at match.
+    if (!empty($notif_id)) {
+        $stmt = $conn->prepare("SELECT id AS notif_id, message, link, created_at FROM notifications WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt->bind_param("ii", $notif_id, $user_id);
+    } else {
+        // created_at fallback: use LIKE in case hosted DB stores microseconds/timezone differences
+        $stmt = $conn->prepare("SELECT id AS notif_id, message, link, created_at FROM notifications WHERE user_id = ? AND created_at LIKE CONCAT(?, '%') LIMIT 1");
+        $stmt->bind_param("is", $user_id, $created_at);
+    }
     $stmt->execute();
     $result = $stmt->get_result();
-    $assessment = $result->fetch_assoc();
+    $assessment = $result->fetch_assoc(); // contains message/link/created_at/notif_id
     $stmt->close();
 
     $details = null;
     $assessmentRow = null;
 
-    if ($assessment && !empty($assessment['link'])) {
-        // Extract request_id from link
+    // Only attempt to derive request details when this is an assessment (admin linked to a request)
+    if ($type === 'assessment' && $assessment && !empty($assessment['link'])) {
         if (preg_match('/request_id=(\d+)/', $assessment['link'], $matches)) {
             $request_id = (int)$matches[1];
 
-            // Helper to try fetching from multiple request tables
             $tryTables = [
                 'accepted_request' => "SELECT ar.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM accepted_request ar JOIN users u ON ar.user_id = u.id WHERE ar.id = ? AND ar.user_id = ? LIMIT 1",
                 'client_requests'  => "SELECT cr.*, u.first_name AS user_first, u.last_name AS user_last, u.email FROM client_requests cr JOIN users u ON cr.user_id = u.id WHERE cr.id = ? AND cr.user_id = ? LIMIT 1",
@@ -57,7 +63,7 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
                 }
             }
 
-            // Fetch admin-generated assessment record (authoritative for fees)
+            // Fetch admin-generated assessment record if present
             if ($stmt = $conn->prepare("SELECT * FROM assessment WHERE request_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1")) {
                 $stmt->bind_param("ii", $request_id, $user_id);
                 $stmt->execute();
@@ -65,8 +71,6 @@ if ($user_id && $id && ($type === 'accepted' || $type === 'denied')) {
                 $assessmentRow = $res->fetch_assoc();
                 $stmt->close();
             }
-        } else {
-            $details = null;
         }
     }
 }
@@ -216,7 +220,7 @@ if (!empty($assessment) && !empty($details)) {
     <link rel="stylesheet" href="../css/footer.css">
     <style>
         /* App background + smooth rendering */
-        body { background: #f6f8fb; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        body { background: #f6f8fb; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-family: 'Poppins', Arial, sans-serif; }
 
         /* Card */
         .details-card {
@@ -249,16 +253,82 @@ if (!empty($assessment) && !empty($details)) {
         /* Assessment header + grid */
         .assess-title { font-weight: 800; color: #111827; font-size: 1.5rem; margin: 4px 0 18px; }
         .kv-grid { display: grid; gap: 6px; }
-        .kv-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:6px 0; }
-        .kv-label { color:#374151; min-width:200px; font-weight:600; }
-        .kv-value { color:#111827; text-align:right; flex:1; }
+
+        /* Make rows flexible and allow wrapping to avoid overflow */
+        .kv-row {
+            display:flex;
+            flex-wrap:wrap;              /* allow label/value to wrap */
+            align-items:baseline;
+            justify-content:space-between;
+            gap:12px;
+            padding:6px 0;
+        }
+
+        /* On wide screens give label a readable width; on small screens allow it to wrap */
+        .kv-label {
+            color:#374151;
+            font-weight:600;
+            min-width:0;                 /* important to prevent overflow */
+            flex: 0 0 42%;               /* label takes ~42% on larger screens */
+            white-space: nowrap;         /* keep single-line when space available */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .kv-value {
+            color:#111827;
+            text-align:right;
+            flex: 1 1 48%;
+            word-break: break-word;      /* allow long values to wrap */
+            min-width: 0;
+        }
+
         .small-muted { color:#6b7280; font-size:.95rem; }
+
+        /* Divider and muted styling */
+        .divider { height: 10px; }
+
+        /* = Responsive adjustments = */
+        @media (max-width: 768px) {
+            .details-card {
+                margin: 1rem;
+                padding: 20px;
+                border-radius: 12px;
+            }
+            .email-title { font-size: 1.25rem; }
+            .bubble-icon { width:44px; height:44px; font-size:18px; border-radius:12px; }
+
+            /* Stack label above value on narrow viewports to avoid truncation/overflow */
+            .kv-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap:6px;
+                padding:8px 0;
+            }
+            .kv-label {
+                flex: 0 0 auto;
+                white-space: normal;       /* allow wrap */
+                text-overflow: clip;
+            }
+            .kv-value {
+                width:100%;
+                text-align:left;
+                flex: 0 0 auto;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .details-card { padding: 14px; margin: 0.75rem; }
+            .email-title { font-size: 1.05rem; }
+            .kv-label { font-size: 0.95rem; }
+            .kv-value { font-size: 0.95rem; }
+        }
     </style>
 </head>
 <body style="background:#f6f8fa;min-height:100vh;display:flex;flex-direction:column;">
     <div class="container py-4 flex-grow-1">
         <!-- Back button above the card, leftmost -->
-        <a href="javascript:history.back()" class="btn-back mb-2"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="javascript:history.back()" class="btn-back mb-2" style="color:#506C84;text-decoration:none;font-weight:600"><i class="fas fa-arrow-left"></i> Back</a>
 
         <div class="details-card">
             <?php if ($notif): ?>
@@ -285,46 +355,75 @@ if (!empty($assessment) && !empty($details)) {
                     Sent by Admin on <?php echo htmlspecialchars($sentOn); ?>.
                 </div>
 
-            <?php elseif ($assessment && !empty($details)): ?>
-                <!-- ===== Redesigned Assessment of Fees ===== -->
-                <h2 class="assess-title">Assessment of Fees</h2>
-
-                <div class="kv-grid">
-                    <div class="kv-row"><div class="kv-label">Informant Name:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['informant'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Email:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['email'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Type:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['type'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Name of Deceased:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['deceased'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Residency:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['residency'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Date of Birth:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dob'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Date of Death:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dod'] ?: '-'); ?></div></div>
-                    <div class="kv-row"><div class="kv-label">Age:</div><div class="kv-value"><?php echo htmlspecialchars(($assessView['age'] !== null ? $assessView['age'] : '-')); ?></div></div>
+            <?php elseif ($type === 'expiry' && !empty($assessment) && !empty($assessment['message'])): ?>
+                <!-- Expiration Notice: show exact admin message -->
+                <div class="email-head">
+                    <div class="bubble-icon" style="background:#fff;color:#f59e0b;"><i class="fas fa-exclamation-circle"></i></div>
+                    <h1 class="email-title">Expiration Notice</h1>
+                    <p class="email-sub">Notification from Admin</p>
+                </div>
+                <div class="email-body-box">
+                    <?php echo nl2br(htmlspecialchars($assessment['message'])); ?>
+                </div>
+                <div class="email-meta">
+                    Sent by Admin on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($assessment['created_at']))); ?>.
                 </div>
 
-                <div class="divider"></div>
-
-                <div class="kv-grid">
-                    <div class="kv-row"><div class="kv-label">Opening Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['opening']); ?></div></div>
-                    <?php if (!empty($assessView['fees']['reloc_count'])): ?>
-                        <?php
-                            $rate = $assessView['fees']['reloc_rate'];
-                            $cnt = $assessView['fees']['reloc_count'];
-                            $line = peso($rate) . " x {$cnt} = " . peso($rate * $cnt);
-                        ?>
-                        <div class="kv-row"><div class="kv-label">Relocation Fee:</div><div class="kv-value"><?php echo $line; ?></div></div>
-                    <?php endif; ?>
-                    <div class="kv-row"><div class="kv-label">Total Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['total']); ?></div></div>
-
-                    <?php if (!empty($assessView['fees']['renewal'])): ?>
-                        <div class="kv-row"><div class="kv-label">Renewal Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['renewal']); ?></div></div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($assessView['expiration'])): ?>
-                        <div class="kv-row"><div class="kv-label">Certificate Expiration:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['expiration']); ?></div></div>
-                    <?php endif; ?>
+            <?php elseif ($type === 'assessment' && !empty($assessment)): ?>
+                <!-- Always show the admin message for assessment notifications even if request details are missing -->
+                <div class="email-head">
+                    <div class="bubble-icon" style="background:#eef2ff;color:#4B7BEC;"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <h1 class="email-title">Assessment Notification</h1>
+                    <p class="email-sub">Notification from Admin</p>
+                </div>
+                <div class="email-body-box">
+                    <?php echo nl2br(htmlspecialchars($assessment['message'])); ?>
+                </div>
+                <div class="email-meta">
+                    Sent by Admin on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($assessment['created_at']))); ?>.
                 </div>
 
-                <div class="divider"></div>
-                <div class="muted">Generated on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($assessment['created_at']))); ?></div>
+                <?php if (!empty($details)): ?>
+                    <!-- ===== Redesigned Assessment of Fees (only shown when request details exist) ===== -->
+                    <div class="divider"></div>
+                    <h2 class="assess-title">Assessment of Fees</h2>
+                    <div class="kv-grid">
+                        <div class="kv-row"><div class="kv-label">Informant Name:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['informant'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Email:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['email'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Type:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['type'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Name of Deceased:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['deceased'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Residency:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['residency'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Date of Birth:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dob'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Date of Death:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['dod'] ?: '-'); ?></div></div>
+                        <div class="kv-row"><div class="kv-label">Age:</div><div class="kv-value"><?php echo htmlspecialchars(($assessView['age'] !== null ? $assessView['age'] : '-')); ?></div></div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="kv-grid">
+                        <div class="kv-row"><div class="kv-label">Opening Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['opening']); ?></div></div>
+                        <?php if (!empty($assessView['fees']['reloc_count'])): ?>
+                            <?php
+                                $rate = $assessView['fees']['reloc_rate'];
+                                $cnt = $assessView['fees']['reloc_count'];
+                                $line = peso($rate) . " x {$cnt} = " . peso($rate * $cnt);
+                            ?>
+                            <div class="kv-row"><div class="kv-label">Relocation Fee:</div><div class="kv-value"><?php echo $line; ?></div></div>
+                        <?php endif; ?>
+                        <div class="kv-row"><div class="kv-label">Total Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['total']); ?></div></div>
+
+                        <?php if (!empty($assessView['fees']['renewal'])): ?>
+                            <div class="kv-row"><div class="kv-label">Renewal Fee:</div><div class="kv-value"><?php echo peso($assessView['fees']['renewal']); ?></div></div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($assessView['expiration'])): ?>
+                            <div class="kv-row"><div class="kv-label">Certificate Expiration:</div><div class="kv-value"><?php echo htmlspecialchars($assessView['expiration']); ?></div></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="muted">Generated on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($assessment['created_at']))); ?></div>
+                <?php else: ?>
+             <?php endif; ?>
 
             <?php else: ?>
                 <div class="text-center text-danger">Notification not found or you do not have access.</div>

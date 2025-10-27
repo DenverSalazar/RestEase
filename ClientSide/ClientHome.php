@@ -34,77 +34,148 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clienthome.css">
     <style>
-        /* Hero responsive tweaks */
         .main-bg-bar {
-            padding-top: 140px; /* desktop default - unchanged on large screens */
-            padding-bottom: 40px;
+            background-image:
+                linear-gradient(
+                    to bottom,
+                    rgba(255,255,255,0.18) 0%,
+                    rgba(214,214,214,0.59) 30%,
+                    rgba(139,139,139,0.77) 70%,
+                    rgba(84,84,84,0.94) 100%
+                ),
+                url('../assets/cemetery_bg.webp');
+            /* lock background so it doesn't shift like a slideshow on small screens */
+            background-size: cover;
+            background-position: 50% 50%;
+            background-repeat: no-repeat;
+            background-attachment: scroll; /* disable parallax/fixed behavior on mobile */
+            /* keep padding transition but prevent background-position/other bg transitions */
             transition: padding 200ms ease;
+            position: relative;
+            color: #111;
+            /* disable any possible CSS animation from other files and help rendering stability */
+            animation: none !important;
+            -webkit-animation: none !important;
+            will-change: auto !important;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
+        /* Remove any glass/card styling coming from other CSS by forcing transparent background,
+           removing border, shadow and disabling backdrop-filter (blur) on the container and hero. */
+        .main-bg-bar .container,
+        .main-bg-bar .container > .dashboard-header,
+        .main-bg-bar .dashboard-header,
+        .main-bg-bar .dashboard-header * {
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* Remove any glass/card styling coming from other css by forcing transparent background
+           and add top padding so the hero text sits lower in the hero image. */
         .dashboard-header.hero-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 24px;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0;
+            /* push text down inside the hero */
+            padding-top: 80px;
+            padding-bottom: 0;
         }
 
         .dashboard-header.hero-container h2 {
             font-size: 1.6rem;
             line-height: 1.12;
             margin: 0 0 8px 0;
+            color: #071428; /* darker text for legibility; tweak if needed */
         }
 
         .dashboard-header.hero-container p {
             margin: 0;
-            color: #444;
+            color: #233040;
         }
 
+        /* hide the right-side explore.png so the background image shows full-width like the reference */
         .dashboard-header.hero-container img {
-            max-width: 420px;
-            width: 100%;
-            height: auto;
-            border-radius: 16px;
-            object-fit: cover;
-            display: block;
+            display: none !important;
         }
 
         /* Medium screens */
         @media (max-width: 992px) {
             .main-bg-bar { padding-top: 110px; } /* keep medium unchanged */
-            .dashboard-header.hero-container img { max-width: 320px; }
+            /* enforce same background locking on medium screens */
+            .main-bg-bar {
+                background-position: 50% 50%;
+                background-attachment: scroll;
+                animation: none !important;
+            }
+            .dashboard-header.hero-container img { display: none !important; }
+            /* slightly less top offset on medium screens */
+            .dashboard-header.hero-container { padding-top: 60px; }
         }
 
         /* Small screens: stack content, center text, reduce spacing */
         @media (max-width: 768px) {
-            /* use CSS variable --nav-height for the actual navbar height (set by JS) */
-            .main-bg-bar { padding-top: calc(70px + var(--nav-height, 20px)); padding-bottom: 24px; }
-            .dashboard-header.hero-container {
-                flex-direction: column; /* text first, image below on narrow screens */
-                align-items: center;
-                text-align: center;
+            /* on small devices add stronger top spacing so text sits further below the navbar */
+            .main-bg-bar {
+                min-height: 60vh; /* taller hero on mobile */
+                /* navbar height + bigger gap to push text further down */
+                padding-top: calc(var(--nav-height, 56px) + 90px);
+                padding-bottom: 0;
+                display: block;
+                background-position: 50% 50% !important;
+                background-attachment: scroll !important;
+                animation: none !important;
+                -webkit-animation: none !important;
             }
-            .dashboard-header.hero-container > div { width: 100%; }
-            .dashboard-header.hero-container h2 {
-                font-size: 1.25rem;
-                line-height: 1.18;
+             /* keep container normal flow but allow extra inner padding if needed */
+             .main-bg-bar > .container {
+                 display: block;
+                 padding-top: 0;
+                 padding-bottom: 0;
+             }
+             .dashboard-header.hero-container {
+                 flex-direction: column; /* stack text */
+                 align-items: center;
+                 text-align: center;
+                 padding-top: 0;
+                 padding-bottom: 36px; /* a bit more breathing room from bottom */
+                 gap: 8px;
+                 margin-top: 0;
+             }
+             .dashboard-header.hero-container > div { width: 100%; }
+             .dashboard-header.hero-container h2 {
+                 font-size: 1.25rem;
+                 line-height: 1.18;
+             }
+             .dashboard-header.hero-container p {
+                 font-size: 0.98rem;
+             }
+             .dashboard-header.hero-container img { display: none !important; }
+         }
+ 
+         /* Very small phones */
+         @media (max-width: 420px) {
+            /* very small phones: still push down but slightly less than larger mobiles */
+            .main-bg-bar {
+                min-height: 54vh;
+                padding-top: calc(var(--nav-height, 56px) + 70px);
+                padding-bottom: 0;
             }
-            .dashboard-header.hero-container p {
-                font-size: 0.98rem;
-            }
-            .dashboard-header.hero-container img {
-                max-width: 260px;
-                width: 60%;
-                margin-top: 16px; /* breathing space between text and image */
-            }
-        }
-
-        /* Very small phones */
-        @media (max-width: 420px) {
-            /* include navbar height here as well */
-            .main-bg-bar { padding-top: calc(54px + var(--nav-height, 20px)); padding-bottom: 18px; }
+            .main-bg-bar > .container { display: block; }
             .dashboard-header.hero-container h2 { font-size: 1.05rem; }
-            .dashboard-header.hero-container img { max-width: 220px; width: 72%; }
-        }
+            .dashboard-header.hero-container img { display: none !important; }
+            /* small bottom padding on very small devices */
+            .dashboard-header.hero-container { padding-top: 0; padding-bottom: 22px; }
+         }
 
         /* Map responsive wrapper */
         .map-section .map-responsive {

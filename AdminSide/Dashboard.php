@@ -999,6 +999,19 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       box-sizing: border-box;
     }
 
+    /* ADDED: status filter styling to match floor filter */
+    #expStatusFilter {
+      min-width: 84px;
+      width: 84px;
+      max-width: 140px;
+      margin-left: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      box-sizing: border-box;
+    }
+
     /* New: style for the View Map button */
     .view-map-btn {
       background: #003591ff;          
@@ -1020,6 +1033,68 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       transform: translateY(0);
       box-shadow: 0 4px 8px rgba(16,185,129,0.10);
     }
+
+    /* ===== ADDED: reduce large side paddings and widen expiring cards ===== */
+    /* Make the title not push content to the right (overrides inline padding-left) */
+    .dashboard-card-small h3 {
+      padding-left: 93px !important;
+    }
+
+    /* Reduce the filter row horizontal padding so controls and list can use more width */
+    .dashboard-card-small .row {
+      padding: 0 16px 8px 16px !important;
+    }
+
+    /* Reduce the expiring-list container side padding (was 55px) */
+    #expListContainer {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+      /* keep the reserved min-height */
+    }
+
+    /* Ensure each list item uses full width and the inner "card" area expands */
+    #expListContainer > ul > li[data-exp-item] {
+      width: 100%;
+      margin-bottom: var(--exp-item-gap);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-sizing: border-box;
+    }
+
+    /* Target the main inner card (it's the 2nd child div inside the li) and make it full width */
+    #expListContainer > ul > li[data-exp-item] > div:nth-child(2) {
+      padding: 10px 14px !important;
+      min-width: 0;
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc; /* keep existing look */
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      box-sizing: border-box;
+    }
+
+    /* Slightly reduce badge/button right margin so content fits on one line on narrower viewports */
+    #expListContainer .notify-btn {
+      padding: 8px 10px;
+      font-size: 0.92rem;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+
+    /* Responsive: keep small screens comfortable */
+    @media (max-width: 520px) {
+      .dashboard-card-small h3 { padding-left: 12px !important; }
+      .dashboard-card-small .row { padding: 0 10px 8px 10px !important; }
+      #expListContainer { padding-left: 10px !important; padding-right: 10px !important; }
+      #expListContainer > ul > li[data-exp-item] > div:nth-child(2) { padding: 10px 10px !important; }
+      #expListContainer .notify-btn { padding: 7px 10px; font-size: 0.88rem; }
+    }
+    /* ===== end ADDED ===== */
+
+    /* ...existing styles... */
   </style>
 </head>
 <body>
@@ -1305,6 +1380,13 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
                <option value="3F">3F — 3rd Floor</option>
                <option value="OM">OM — Old Map</option>
              </select>
+
+             <!-- ADDED: new status filter dropdown (All / Expired / Upcoming) -->
+             <select id="expStatusFilter" title="Filter by status">
+               <option value="all">All</option>
+               <option value="expired">Expired</option>
+               <option value="upcoming">Upcoming</option>
+             </select>
            </div>
           <!-- keep a stable container so layout/padding doesn't collapse after filtering -->
           <div id="expListContainer" style="flex: 1; max-height: 320px; margin-top: 0; box-sizing: border-box;">
@@ -1553,6 +1635,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         deceasedData = (deceasedFloorFilter === 'all') ? deceasedPerFloorNewAll : deceasedPerFloorNew;
         deceasedLabels = deceasedFloorLabels;
       }
+      // Use distributed bars so each floor gets its own distinct color
       var floorBarOptions = {
         chart: { type: 'bar', height: '100%', toolbar: { show: false } },
         series: [{
@@ -1560,8 +1643,11 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
           data: deceasedData
         }],
         xaxis: { categories: deceasedLabels },
-        colors: ['#F59E42'],
-        plotOptions: { bar: { columnWidth: '40%', borderRadius: 4 } },
+        // Provide distinct palettes for new-map (3 floors) and old-map (2 floors)
+        colors: isOldMap
+          ? ['#2563EB', '#EF4444']                 // Old map: blue, red (2 floors)
+          : ['#F97316', '#2563EB', '#10B981'],     // New map: orange, blue, green (3 floors)
+        plotOptions: { bar: { columnWidth: '40%', borderRadius: 4, distributed: true } },
         dataLabels: { enabled: true },
         title: {
           text: isOldMap
@@ -1813,7 +1899,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       <div class="modal-header">
         <div>
           <h3 id="notifyModalTitle">Send Expiry Notice!</h3>
-          <div style="font-size:0.86rem;color:#64748b;margin-top:2px;">Notify via email, SMS, or in-app</div>
+          <div style="font-size:0.86rem;color:#64748b;margin-top:2px;">Notify via email or in-app</div>
         </div>
         <button class="notify-close" title="Close" onclick="document.getElementById('notifyCancelBtn').click()">✕</button>
       </div>
@@ -1828,18 +1914,17 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         <select id="contactType">
           <option value="internal">Registered Client (In-app)</option>
           <option value="email">Email</option>
-          <option value="phone">Phone / SMS</option>
         </select>
       </div>
 
       <div class="notify-field">
-        <label for="contactValue">Contact (email or phone)</label>
+        <label for="contactValue">Contact (email)</label>
         <input id="contactValue" type="text" placeholder="Enter email address or phone number">
       </div>
 
       <div id="notifyModalError" role="alert" aria-live="assertive" style="display:none;"></div>
 
-      <div style="font-size:0.9rem;color:#6b7280;margin-top:6px;">Note: Email and SMS will be sent through the configured messaging gateway. Ensure contact details are valid.</div>
+      <div style="font-size:0.9rem;color:#6b7280;margin-top:6px;">Note: Email will be sent through the configured messaging gateway. Ensure contact details are valid.</div>
 
       <div class="notify-actions">
         <button id="notifyCancelBtn" class="btn-secondary">Cancel</button>
@@ -1852,6 +1937,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
 (function(){
   const expInput = document.getElementById('expSearch');
   const floorSelect = document.getElementById('expFloorFilter');
+  const statusSelect = document.getElementById('expStatusFilter'); // ADDED
   const listItemsSelector = 'li[data-exp-item]';
   const firstLi = document.querySelector(listItemsSelector);
   // stable list container (keeps padding/box model consistent)
@@ -1875,10 +1961,11 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
     }
   }
 
-  // q = text query, floor = 'all'|'1F'|'2F'|'3F'|'OM'
-  function filterExpiringRecords(q, floor){
+  // q = text query, floor = 'all'|'1F'|'2F'|'3F'|'OM', status = 'all'|'expired'|'upcoming'
+  function filterExpiringRecords(q, floor, status){
     const query = String(q || '').trim().toLowerCase();
     const floorFilter = (floor || 'all').toUpperCase();
+    const statusFilter = (status || 'all').toLowerCase();
 
     const items = Array.from(document.querySelectorAll(listItemsSelector));
     if (!items.length){
@@ -1887,6 +1974,9 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
       return;
     }
     let anyVisible = false;
+    // Today's date in YYYY-MM-DD format for comparison
+    const todayStr = (new Date()).toISOString().slice(0,10);
+
     items.forEach(function(li){
       const name = (li.getAttribute('data-name') || '').toLowerCase();
       const apt = (li.getAttribute('data-apt') || '').toLowerCase();
@@ -1901,9 +1991,20 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
           matchesFloor = apt.indexOf(floorFilter.toLowerCase() + '-') === 0 || apt.indexOf(floorFilter.toLowerCase()) === 0;
         }
       }
+      // Determine status of this record by comparing validity against today
+      let matchesStatus = true;
+      if (statusFilter && statusFilter !== 'all') {
+        // validity is in 'yyyy-mm-dd' — compare lexicographically
+        if (statusFilter === 'expired') {
+          matchesStatus = validity < todayStr;
+        } else if (statusFilter === 'upcoming') {
+          matchesStatus = validity >= todayStr;
+        }
+      }
+
       const matches = matchesText && matchesFloor;
       // use class toggle to avoid interfering with other inline styles
-      if (matches) {
+      if (matches && matchesStatus) {
         li.classList.remove('exp-hidden');
         li.style.display = '';
       } else {
@@ -1921,11 +2022,11 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
   }
 
   if (expInput){
-    expInput.addEventListener('input', function(){ filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all'); });
+    expInput.addEventListener('input', function(){ filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all', statusSelect ? statusSelect.value : 'all'); });
     expInput.addEventListener('keydown', function(e){
       if (e.key === 'Enter'){
         e.preventDefault();
-        filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all');
+        filterExpiringRecords(this.value, floorSelect ? floorSelect.value : 'all', statusSelect ? statusSelect.value : 'all');
       }
       // Ctrl/Cmd+E export shortcut
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e'){
@@ -1938,7 +2039,14 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
   // Filter when the floor dropdown changes (no separate button needed)
   if (floorSelect) {
     floorSelect.addEventListener('change', function() {
-      filterExpiringRecords(expInput ? expInput.value : '', floorSelect.value);
+      filterExpiringRecords(expInput ? expInput.value : '', floorSelect.value, statusSelect ? statusSelect.value : 'all');
+    });
+  }
+
+  // Filter when the status dropdown changes
+  if (statusSelect) {
+    statusSelect.addEventListener('change', function() {
+      filterExpiringRecords(expInput ? expInput.value : '', floorSelect ? floorSelect.value : 'all', this.value);
     });
   }
 
