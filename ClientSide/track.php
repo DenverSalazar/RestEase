@@ -151,7 +151,7 @@ if ($user_id) {
   }
   .cert-list-details {
     font-size: 0.86rem;
-    color: #3a4954;
+    color: #6f7d87; /* match date color, was #3a4954 */
     margin-bottom: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -195,16 +195,13 @@ if ($user_id) {
 
   /* Status-specific borders only (interior remains white) and matching text color */
   .cert-list-item.pending { border-color: #FFC107; background: #fff; }
-  .cert-list-item.pending .cert-list-name,
-  .cert-list-item.pending .cert-list-details { color: #CC9900; } /* slightly darker for legibility */
-
   .cert-list-item.approved { border-color: #28A745; background: #fff; }
-  .cert-list-item.approved .cert-list-name,
-  .cert-list-item.approved .cert-list-details { color: #1f7f35; }
-
   .cert-list-item.denied { border-color: #DC3545; background: #fff; }
-  .cert-list-item.denied .cert-list-name,
-  .cert-list-item.denied .cert-list-details { color: #b02a2f; }
+
+  /* Only color the title per status (remove color from details) */
+  .cert-list-item.pending .cert-list-name { color: #CC9900; }
+  .cert-list-item.approved .cert-list-name { color: #1f7f35; }
+  .cert-list-item.denied .cert-list-name { color: #b02a2f; }
 
   /* Responsive: compact + align button on same line as Request Type for small screens */
   @media (max-width: 480px) {
@@ -311,6 +308,71 @@ if ($user_id) {
       font-size: 17px;
     }
   }
+
+  /* Filter dropdown layout and style */
+  .cert-filter-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .cert-filter-select {
+    width: 120px;        /* compact width */
+    min-width: 0;        /* override previous 170px */
+    padding: 4px 8px;    /* tighter */
+    border: 1px solid #d6dee6;
+    border-radius: 6px;  /* slightly smaller radius */
+    background: #fff;
+    color: #3a4954;
+    font-size: 0.88rem;
+  }
+  @media (max-width: 480px) {
+    .cert-filter-select {
+      width: 100px;      /* smaller on mobile */
+      font-size: 0.86rem;
+    }
+  }
+
+  /* Title + controls alignment */
+  .cert-title-row {
+    position: relative;
+    margin: 6px 0 12px;
+  }
+  .cert-title-row .cert-list-title {
+    text-align: center;
+    margin: 12px 0 8px;
+  }
+  /* New controls container on the right (search + dropdown) */
+  .cert-title-controls {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Override previous absolute rule on select inside title row */
+  .cert-title-row .cert-filter-select { position: static; transform: none; }
+
+  /* Search input style */
+  .cert-search {
+    width: 200px;
+    padding: 6px 10px;
+    border: 1px solid #d6dee6;
+    border-radius: 6px;
+    background: #fff;
+    color: #3a4954;
+    font-size: 0.88rem;
+  }
+  @media (max-width: 480px) {
+    .cert-search { width: 140px; font-size: 0.86rem; }
+  }
+
+  /* Ensure the X button is not shown (final override) */
+  .request-modal-close { display: none !important; }
+  @media (max-width: 480px) { .request-modal-close { display: none !important; } }
 </style>
 </head>
 <body>
@@ -319,16 +381,34 @@ if ($user_id) {
    <div class="main-content">
      <div class="cert-list-container">
        <div style="height:32px;"></div>
-       <a href="javascript:history.back()" class="cert-list-back" style="display:inline-block;color:#506C84;font-size:1.08rem;font-weight:500;margin-bottom:0px;text-decoration:none;cursor:pointer;transition:color 0.18s;">
-         <i class="fas fa-arrow-left"></i> Back
-       </a>
-       <div class="cert-list-title text-muted">Your Requests Status</div>
+
+       <!-- Top row: Back (left) only -->
+       <div class="cert-filter-wrap">
+         <a href="javascript:history.back()" class="cert-list-back" style="display:inline-block;color:#506C84;font-size:1.08rem;font-weight:500;margin-bottom:0px;text-decoration:none;cursor:pointer;transition:color 0.18s;">
+           <i class="fas fa-arrow-left"></i> Back
+         </a>
+       </div>
+
+       <!-- Title row with right-aligned controls (search + filter) -->
+       <div class="cert-title-row">
+         <div class="cert-list-title text-muted">Your Requests Status</div>
+         <div class="cert-title-controls">
+           <input id="requestSearch" class="cert-search" type="text" placeholder="Search..." oninput="applyFilters()">
+           <select id="statusFilter" class="cert-filter-select" onchange="filterRequests(this.value)">
+             <option value="all">All</option>
+             <option value="pending">Pending</option>
+             <option value="approved">Accepted</option>
+             <option value="denied">Denied</option>
+           </select>
+         </div>
+       </div>
+
        <?php if (empty($pending_requests) && empty($approved_requests) && empty($denied_requests)): ?>
          <div class="no-records-msg text-muted">
            Nothing to display. You have no requests yet.
          </div>
        <?php else: ?>
-         <ul class="cert-list">
+         <ul class="cert-list" id="requestList">
            <?php
            $all_requests = [];
            foreach ($pending_requests as $r) { $r['_status'] = 'Pending'; $all_requests[] = $r; }
@@ -336,7 +416,8 @@ if ($user_id) {
            foreach ($denied_requests as $r) { $r['_status'] = 'Denied'; $all_requests[] = $r; }
            foreach ($all_requests as $idx => $req):
            ?>
-             <li class="cert-list-item <?php echo strtolower($req['_status']); ?>">
+             <li class="cert-list-item <?php echo strtolower($req['_status']); ?>"
+                 data-status="<?php echo strtolower($req['_status']); ?>">
                <div class="cert-list-info">
                  <div class="cert-list-name">
                    <?php echo $req['_status']; ?> Request
@@ -367,15 +448,21 @@ if ($user_id) {
              </li>
            <?php endforeach; ?>
          </ul>
+
+         <!-- No results for current filter -->
+         <div id="noFilterResults" class="no-records-msg text-muted" style="display:none;">
+           No requests found for this filter.
+         </div>
+
          <!-- Request Details Modal -->
          <div id="requestDetailsModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
            <div id="requestDetailsContent" style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;max-width:500px;width:95vw;position:relative;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;">
-             <button class="request-modal-close" onclick="closeRequestDetails()" aria-label="Close">&times;</button>
-             <div id="requestDetailsBody"></div>
+              <div id="requestDetailsBody"></div>
            </div>
          </div>
          <script>
            var allRequests = <?php echo json_encode($all_requests); ?>;
+
            function showRequestDetails(idx) {
              var req = allRequests[idx];
              // Correct color for pending (yellow)
@@ -456,6 +543,41 @@ if ($user_id) {
            function closeRequestDetails() {
              document.getElementById('requestDetailsModal').style.display = 'none';
            }
+
+           // Keep old API; route to combined filter
+           function filterRequests(val) {
+             var select = document.getElementById('statusFilter');
+             if (select) select.value = val;
+             applyFilters();
+           }
+
+           // New: apply both status and text search
+           function applyFilters() {
+             var list = document.getElementById('requestList');
+             if (!list) return;
+             var statusVal = (document.getElementById('statusFilter') || {}).value || 'all';
+             var term = (document.getElementById('requestSearch') || {}).value || '';
+             term = term.trim().toLowerCase();
+
+             var items = list.querySelectorAll('.cert-list-item');
+             var shown = 0;
+             items.forEach(function(li){
+               var status = li.getAttribute('data-status'); // approved | denied | pending
+               var matchStatus = (statusVal === 'all') || status === statusVal;
+               var text = li.innerText.toLowerCase(); // search within visible text
+               var matchText = !term || text.indexOf(term) !== -1;
+
+               var show = matchStatus && matchText;
+               li.style.display = show ? '' : 'none';
+               if (show) shown++;
+             });
+
+             var emptyMsg = document.getElementById('noFilterResults');
+             if (emptyMsg) emptyMsg.style.display = shown ? 'none' : 'block';
+           }
+
+           // Initialize
+           applyFilters();
          </script>
        <?php endif; ?>
      </div>
