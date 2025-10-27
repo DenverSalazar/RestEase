@@ -8,6 +8,15 @@ if (!isset($_SESSION['user_id'])) {
 include_once '../Includes/db.php';
 $success = '';
 $error = '';
+
+// Handle redirect messages
+if (isset($_GET['success'])) {
+    $success = htmlspecialchars($_GET['success']);
+}
+if (isset($_GET['error'])) {
+    $error = htmlspecialchars($_GET['error']);
+}
+
 // Check if this is an API request (e.g., by a custom header or a query param)
 $isApi = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
@@ -94,8 +103,13 @@ if (!$error) {
             }
                     if ($stmt->execute()) {
             $success = "Request submitted successfully!";
+            // Redirect to avoid resubmission and persistent message
+            header("Location: clientrequest.php?success=" . urlencode($success));
+            exit;
         } else {
             $error = "Database error: " . $conn->error;
+            header("Location: clientrequest.php?error=" . urlencode($error));
+            exit;
         }
         $stmt->close();
     }
@@ -190,9 +204,9 @@ $stmt->close();
                     <b>Transfer</b> – Request to move your loved one’s remains from this cemetery to another one.
                 </div>
                 <?php if ($success): ?>
-                    <div class="alert alert-success"><?php echo $success; ?></div>
+                    <div class="alert alert-success" id="success-msg"><?php echo $success; ?></div>
                 <?php elseif ($error): ?>
-                    <div class="alert alert-danger"><?php echo $error; ?></div>
+                    <div class="alert alert-danger" id="error-msg"><?php echo $error; ?></div>
                 <?php endif; ?>
                 <form method="post" enctype="multipart/form-data" id="client-request-form">
                     <div class="mb-3">
@@ -497,6 +511,18 @@ document.getElementById('file-upload').addEventListener('change', checkUploadReq
             fileInput.focus();
             e.preventDefault();
             return false;
+        }
+    });
+
+    // Remove ?success=... or ?error=... from URL after showing message
+    document.addEventListener('DOMContentLoaded', function() {
+        // ...existing code...
+        var hasMsg = document.getElementById('success-msg') || document.getElementById('error-msg');
+        if (hasMsg && window.location.search.match(/(\?|&)success=|(\?|&)error=/)) {
+            if (window.history.replaceState) {
+                var url = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, url);
+            }
         }
     });
     </script>
