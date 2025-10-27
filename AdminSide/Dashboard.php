@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notify_niche'])) {
     // server-side validation: contact_value is required
     if ($contact_value === '') {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'missing_contact', 'message' => 'Contact (email or phone) is required.']);
+        echo json_encode(['success' => false, 'error' => 'missing_contact', 'message' => 'Contact (email) is required.']);
         exit;
     }
 
@@ -1832,7 +1832,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         if (!currentPayload) return;
         const contact_type = contactTypeEl.value;
         const contact_value = contactValueEl.value.trim();
-        if (!contact_value) { errorEl.textContent = 'Please enter contact email or phone.'; errorEl.style.display = ''; contactValueEl.focus(); return; }
+        if (!contact_value) { errorEl.textContent = 'Please enter contact email.'; errorEl.style.display = ''; contactValueEl.focus(); return; }
 
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending...';
@@ -1919,7 +1919,7 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
 
       <div class="notify-field">
         <label for="contactValue">Contact (email)</label>
-        <input id="contactValue" type="text" placeholder="Enter email address or phone number">
+        <input id="contactValue" type="text" placeholder="Enter email address">
       </div>
 
       <div id="notifyModalError" role="alert" aria-live="assertive" style="display:none;"></div>
