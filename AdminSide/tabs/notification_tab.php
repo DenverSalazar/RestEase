@@ -332,6 +332,13 @@
     /* unread marker */
     .notif-dot { width:11px; height:11px; border-radius:50%; background:#8fd08a; display:inline-block; margin-right:6px; }
 
+    /* make read rows white immediately (override other .notif-list-item backgrounds) */
+    .notif-list-item.notif-read {
+      background: #fff !important;
+      border-color: #eef2f5 !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important;
+    }
+
     /* footer pagination centered */
     #notifListFooter { margin-top:12px; padding-top:8px; border-top:0; display:flex; justify-content:center; align-items:center; gap:12px; }
 
@@ -743,7 +750,12 @@
         metaEl.textContent = dt ? dt.toLocaleString() : 'Just Now';
       }
 
-      if (!isRead) row.classList.add('notif-new');
+      // apply explicit read or unread class so we can force the visual immediately
+      if (isRead) {
+        row.classList.add('notif-read');
+      } else {
+        row.classList.add('notif-new');
+      }
 
       const starBtn = row.querySelector('.notif-star-left');
       starBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
@@ -769,21 +781,35 @@
         updateDeleteBtnState();
       });
 
+      // Updated icon click handler: ensure visual read state is applied immediately
       const iconBtn = row.querySelector('.notif-icon');
       iconBtn.addEventListener('click', function(ev){
         ev.stopPropagation();
-        try { localStorage.setItem(item.readKey, '1'); } catch(e){}
+        try {
+          if (item.readKey) localStorage.setItem(item.readKey, '1');
+          else localStorage.setItem('notif_read_' + item.id, '1');
+        } catch(e){}
         const dot = row.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
+        // remove unread highlight and show explicit read state
         row.classList.remove('notif-new');
+        row.classList.add('notif-read');
+        row.style.background = ''; // clear any inline background
         updateCounts();
       });
 
+      // Updated row click handler: mark as read immediately and update UI/counts
       row.addEventListener('click', function(e){
         if (e.target.closest('.notif-delete') || e.target.closest('.notif-star-left') || e.target.closest('.notif-dot') || e.target.closest('.notif-icon')) return;
-        try { localStorage.setItem(item.readKey, '1'); } catch(e){}
+        try {
+          if (item.readKey) localStorage.setItem(item.readKey, '1');
+          else localStorage.setItem('notif_read_' + item.id, '1');
+        } catch(e){}
         const dot = row.querySelector('.notif-dot');
         if (dot) dot.classList.add('read');
         row.classList.remove('notif-new');
+        row.classList.add('notif-read');
+        row.style.background = ''; // ensure the grey highlight is cleared immediately
+        updateCounts();
         if (item.kind === 'request') window.location.href = 'ClientsRequest.php';
       });
 
@@ -997,8 +1023,9 @@
              const it = all.find(x => x.id === id);
              const readKey = it ? it.readKey : ('notif_read_' + id);
              try { localStorage.setItem(readKey, '1'); } catch(err){}
-             const dot = r.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
-             r.classList.remove('notif-new');
+            const dot = r.querySelector('.notif-dot'); if (dot) dot.classList.add('read');
+            r.classList.remove('notif-new');
+            r.classList.add('notif-read');
            });
          } else {
            // new: no explicit selection -> mark all notifications matching current filter & date range

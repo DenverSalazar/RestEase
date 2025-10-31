@@ -11,30 +11,77 @@
 	opacity: 0.7;
 	margin-bottom: 0.5rem;
 }
+/* Title for logo area */
+.footer-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin-bottom: .25rem;
+	font-family: "Segoe UI", Roboto, Arial, sans-serif;
+	color: #ffffff;
+}
+/* subtitle under the title */
+.footer-subtitle {
+	font-size: 0.95rem;
+	font-weight: 400;
+	opacity: 0.85;
+	margin: 0;
+	font-family: "Segoe UI", Roboto, Arial, sans-serif;
+	color: rgba(255,255,255,0.95);
+}
+/* Make quick-links text light / thin */
+.footer .list-unstyled a {
+	font-weight: 300;                        /* lighter / thin */
+	color: rgba(255,255,255,0.95) !important; /* keep white but slightly muted */
+	opacity: 0.95;
+	font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
+/* Make copyright / designer text light & thin */
+.footer-credit {
+	font-weight: 300;       /* lighter / thin */
+	opacity: 0.85;          /* slightly muted */
+	font-family: "Segoe UI", Roboto, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
 .footer-contact i { font-size: 1rem; margin-right: .5rem; color: inherit; }
+/* make logo bigger and slightly lighter/brighter */
+.footer-logo {
+	height: 48px;               /* bigger on desktop */
+	width: auto;
+	filter: brightness(1.12);   /* slightly lighter */
+	transition: transform .15s ease;
+}
 
-/* Footer horizontal alignment: adjust the --footer-h-pad-md value to line up with your testimonials yellow guide */
-:root {
-	--footer-h-pad-sm: 1rem;   /* small screens */
-	--footer-h-pad-md: 4.5rem; /* desktop — tweak this value (e.g. 4rem / 5rem / 120px) to match the yellow line */
+/* horizontal footer rule */
+.footer-hr {
+	border: 0;
+	border-top: 1px solid rgba(255,255,255,0.14); /* thin white line */
+	margin: 2.5rem 0 1.5rem 0; /* spacing above/below */
+	width: 100%;
+	opacity: 1;
 }
-.footer .container {
-	padding-left: var(--footer-h-pad-sm);
-	padding-right: var(--footer-h-pad-sm);
+
+/* remove vertical separator, no .footer-sep needed */
+/* remove separator on small screens */
+@media (max-width: 767.98px) {
+	.footer-sep { border-left: none; padding-left: 0; margin-left: 0; }
 }
-@media (min-width: 768px) {
-	.footer .container {
-		padding-left: var(--footer-h-pad-md);
-		padding-right: var(--footer-h-pad-md);
-	}
+@media (max-width: 576px) {
+	.footer-logo { height: 40px; } /* smaller on mobile */
 }
 </style>
 <footer class="footer py-5" style="background-color: #03045e; color: white;">
-    <div class="container px-4 px-md-5">
+    <div class="container">
         <div class="row align-items-start">
-            <!-- Logo and Tagline Section -->
+            <!-- Logo and Title + Taglines Section -->
             <div class="col-12 col-md-4 mb-4">
-                <img src="./assets/white.png" alt="RestEase Logo" style="height: 35px;">
+                <div class="d-flex align-items-center">
+                    <img src="./assets/white.png" alt="RestEase Logo" class="footer-logo">
+                    <div class="ms-3">
+                        <h4 class="footer-title mb-0">RestEase</h4>
+                        <p class="footer-subtitle mb-0">MPDO</p>
+                    </div>
+                </div>
                 <p class="footer-tagline mt-3 mb-0">Honoring memories, simplifying legacy.</p>
                 <p class="footer-tagline mb-0">RestEase brings clarity, care, and convenience to every remembrance in Padre Garcia.</p>
             </div>
@@ -60,25 +107,19 @@
                 <p class="footer-contact mb-4"><i class="fas fa-phone"></i>+0923-456-789</p>
                 
                 <!-- Social Media Icons -->
-                <div class="d-flex gap-3">
-                    <a href="https://www.facebook.com/PadreGarcia" class="text-white"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="text-white"><i class="fab fa-linkedin"></i></a>
-                    <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
-                </div>
+                <!-- Social media icons removed -->
             </div>
         </div>
 
-        <hr style="border-color: rgba(255,255,255,0.1);">
+        <hr class="footer-hr">
 
         <!-- Copyright Section -->
         <div class="row pt-3">
             <div class="col-12 col-md-6 text-center text-md-start">
-                <p class="mb-0">&copy; 2025 RestEase. All rights reserved.</p>
+                <p class="mb-0 footer-credit">&copy; 2025 RestEase. All rights reserved.</p>
             </div>
             <div class="col-12 col-md-6 text-center text-md-end">
-                <p class="mb-0">Designed By: RestEase Team.</p>
+                <p class="mb-0 footer-credit">Designed By: RestEase Team.</p>
             </div>
         </div>
     </div>
