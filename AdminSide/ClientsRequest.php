@@ -1062,20 +1062,37 @@ function goToAssessment() {
       let expirationDate = '';
       let totalFee = 0;
       let renewalFee = 5000;
+      let openingFee = 0;
+      let relocationFee = 0;
+      let remainsCount = parseInt(data.remains_count) || 0;
 
       // Calculate fees and expiration
       if (data.type === 'Relocate') {
-        const openingFee = 1000;
-        const remainsCount = parseInt(data.remains_count) || 1;
-        const relocationFee = 500 * remainsCount;
+        openingFee = 1000;
+        remainsCount = parseInt(data.remains_count) || 1;
+        relocationFee = 500 * remainsCount;
         totalFee = openingFee + relocationFee;
+
+        // Make opening/relocation/total editable
         summaryHtml = `
-          <div class="detail-row"><span class="detail-label">Opening Fee:</span><span class="detail-value">₱ 1,000.00</span></div>
-          <div class="detail-row"><span class="detail-label">Relocation Fee:</span><span class="detail-value">₱ 500.00 x ${remainsCount} = ₱ ${relocationFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
-          <div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+          <div class="detail-row"><span class="detail-label">Opening Fee:</span>
+            <span class="detail-value view" data-field="opening_fee">₱ ${openingFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+            <input type="number" step="0.01" class="detail-value edit" name="opening_fee" value="${openingFee}" style="display:none;width:100%;box-sizing:border-box;" />
+          </div>
+          <div class="detail-row"><span class="detail-label">Relocation Fee:</span>
+            <span class="detail-value view" data-field="relocation_fee">₱ ${relocationFee.toLocaleString('en-US', {minimumFractionDigits:2})} (x ${remainsCount})</span>
+            <div style="display:none;" class="edit-block">
+              <input type="number" step="1" class="detail-value edit" name="remains_count" value="${remainsCount}" style="display:none;width:100%;box-sizing:border-box;margin-bottom:6px;" />
+              <input type="number" step="0.01" class="detail-value edit" name="relocation_fee" value="${relocationFee}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+          </div>
+          <div class="detail-row"><span class="detail-label">Total Fee:</span>
+            <span class="detail-value view" data-field="total_fee">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+            <input type="number" step="0.01" class="detail-value edit" name="total_fee" value="${totalFee}" style="display:none;width:100%;box-sizing:border-box;" />
+          </div>
         `;
       } else {
-        // New and Transfer use same logic (Transfer should behave like New)
+        // New / Transfer logic
         const age = parseInt(data.age);
         let babyNote = '';
         let discountNote = '';
@@ -1092,7 +1109,6 @@ function goToAssessment() {
           }
         }
 
-        // Expiration date (5 years from date of death) - apply for New / Transfer too if dod available
         if (data.dod) {
           const dod = new Date(data.dod);
           const exp = new Date(dod);
@@ -1102,35 +1118,92 @@ function goToAssessment() {
           const month = months[exp.getMonth()];
           const year = exp.getFullYear();
           expirationDate = `${day}-${month}-${year}`;
+          // also prepare ISO format for the date input (YYYY-MM-DD)
+          var expirationISO = exp.toISOString().slice(0,10);
+        } else {
+          var expirationISO = '';
         }
 
+        // Make total_fee, renewal_fee and expiration editable (expiration input is a date picker)
         summaryHtml = `
-          <div class="detail-row"><span class="detail-label">Total Fee:</span><span class="detail-value">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}${babyNote || discountNote}</span></div>
-          <div class="detail-row"><span class="detail-label">Renewal Fee:</span><span class="detail-value">₱ ${renewalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
-          ${expirationDate ? `<div class="detail-row"><span class="detail-label">Certificate Expiration:</span><span class="detail-value">${expirationDate}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Total Fee:</span>
+            <span class="detail-value view" data-field="total_fee">₱ ${totalFee.toLocaleString('en-US', {minimumFractionDigits:2})}${babyNote || discountNote}</span>
+            <input type="number" step="0.01" class="detail-value edit" name="total_fee" value="${totalFee}" style="display:none;width:100%;box-sizing:border-box;" />
+          </div>
+          <div class="detail-row"><span class="detail-label">Renewal Fee:</span>
+            <span class="detail-value view" data-field="renewal_fee">₱ ${renewalFee.toLocaleString('en-US', {minimumFractionDigits:2})}</span>
+            <input type="number" step="0.01" class="detail-value edit" name="renewal_fee" value="${renewalFee}" style="display:none;width:100%;box-sizing:border-box;" />
+          </div>
+          ${expirationDate ? `<div class="detail-row"><span class="detail-label">Certificate Expiration:</span>
+            <span class="detail-value view" data-field="expiration">${expirationDate}</span>
+            <input type="date" class="detail-value edit" name="expiration" value="${expirationISO}" style="display:none;width:100%;box-sizing:border-box;" />
+          </div>` : ''}
         `;
       }
 
-      // Build the form HTML
+      // Build the form HTML with hidden request_id/user_id and editable pairs for every displayed field
       const formHtml = `
-        <div class="assessment-fees-container" style="max-width:600px;margin:0 auto;padding:32px 0;">
+        <div class="assessment-fees-container" style="max-width:700px;margin:0 auto;padding:32px 0;">
           <h2>Assessment of Fees</h2>
           <form id="assessmentForm">
-            <div class="detail-row"><span class="detail-label">Informant Name:</span><span class="detail-value">${data.informant_name || ''}</span></div>
-            <div class="detail-row"><span class="detail-label">Email:</span><span class="detail-value">${data.email || ''}</span></div>
-            <div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value">${data.type || ''}</span></div>
-            <div class="detail-row" style="display:${data.deceased_name ? '' : 'none'};"><span class="detail-label">Name of Deceased:</span><span class="detail-value">${data.deceased_name || ''}</span></div>
-            <div class="detail-row" style="display:${data.residency ? '' : 'none'};"><span class="detail-label">Residency:</span><span class="detail-value">${data.residency || ''}</span></div>
-            <div class="detail-row" style="display:${data.dob ? '' : 'none'};"><span class="detail-label">Date of Birth:</span><span class="detail-value">${data.dob || ''}</span></div>
-            <div class="detail-row" style="display:${data.dod ? '' : 'none'};"><span class="detail-label">Date of Death:</span><span class="detail-value">${data.dod || ''}</span></div>
-            <div class="detail-row" style="display:${data.internment_date ? '' : 'none'};"><span class="detail-label">Date of Internment:</span><span class="detail-value">${data.internment_date || ''}</span></div>
-            <div class="detail-row"><span class="detail-label">Age:</span><span class="detail-value">${data.age || ''}</span></div>
-            <div class="detail-row" style="display:${(data.type === 'Transfer' || data.type === 'Exhumation') ? '' : 'none'};"><span class="detail-label">Niche ID:</span><span class="detail-value">${data.niche_id || ''}</span></div>
+            <input type="hidden" name="request_id" value="${data.id}" />
+            <input type="hidden" name="user_id" value="${data.user_id || ''}" />
+
+            <div class="detail-row"><span class="detail-label">Informant Name:</span>
+              <span class="detail-value view" data-field="informant_name">${data.informant_name || ''}</span>
+              <input type="text" class="detail-value edit" name="informant_name" value="${data.informant_name || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row"><span class="detail-label">Email:</span>
+              <span class="detail-value view" data-field="email">${data.email || ''}</span>
+              <input type="email" class="detail-value edit" name="email" value="${data.email || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row"><span class="detail-label">Type:</span>
+              <span class="detail-value view" data-field="type">${data.type || ''}</span>
+              <input type="text" class="detail-value edit" name="type" value="${data.type || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${data.deceased_name ? '' : 'none'};"><span class="detail-label">Name of Deceased:</span>
+              <span class="detail-value view" data-field="deceased_name">${data.deceased_name || ''}</span>
+              <input type="text" class="detail-value edit" name="deceased_name" value="${data.deceased_name || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${data.residency ? '' : 'none'};"><span class="detail-label">Residency:</span>
+              <span class="detail-value view" data-field="residency">${data.residency || ''}</span>
+              <input type="text" class="detail-value edit" name="residency" value="${data.residency || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${data.dob ? '' : 'none'};"><span class="detail-label">Date of Birth:</span>
+              <span class="detail-value view" data-field="dob">${data.dob || ''}</span>
+              <input type="date" class="detail-value edit" name="dob" value="${data.dob || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${data.dod ? '' : 'none'};"><span class="detail-label">Date of Death:</span>
+              <span class="detail-value view" data-field="dod">${data.dod || ''}</span>
+              <input type="date" class="detail-value edit" name="dod" value="${data.dod || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${data.internment_date ? '' : 'none'};"><span class="detail-label">Date of Internment:</span>
+              <span class="detail-value view" data-field="internment_date">${data.internment_date || ''}</span>
+              <input type="date" class="detail-value edit" name="internment_date" value="${data.internment_date || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row"><span class="detail-label">Age:</span>
+              <span class="detail-value view" data-field="age">${data.age || ''}</span>
+              <input type="number" class="detail-value edit" name="age" value="${data.age || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
+
+            <div class="detail-row" style="display:${(data.type === 'Transfer' || data.type === 'Exhumation' || data.type === 'Relocate') ? '' : 'none'};"><span class="detail-label">Niche ID:</span>
+              <span class="detail-value view" data-field="niche_id">${data.niche_id || ''}</span>
+              <input type="text" class="detail-value edit" name="niche_id" value="${data.niche_id || ''}" style="display:none;width:100%;box-sizing:border-box;" />
+            </div>
 
             <hr style="margin:24px 0;">
             ${summaryHtml}
-            <div style="text-align:right;margin-top:24px;">
-            <button type="submit" class="accept-btn">Submit Assessment</button>
+            <div style="text-align:right;margin-top:24px;display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+              <button type="button" id="editAssessmentBtn" class="edit-btn" style="background:#f0f0f0;border:1px solid #ddd;color:#333;padding:8px 14px;border-radius:6px;cursor:pointer;" onclick="toggleEditAssessment(this)">Edit</button>
+              <button type="submit" class="accept-btn" style="background:#27ae60;color:#fff;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;">Submit Assessment</button>
             </div>
           </form>
           <div id="assessmentLoadingSpinner" style="display:none;justify-content:center;align-items:center;margin-top:18px;">
@@ -1143,28 +1216,112 @@ function goToAssessment() {
       showTab('assessment-fees');
       closePopup();
 
-      // Form submission using URLSearchParams
+      // Helper to get the current value of a field (prefers edited input if present)
+      function getFieldValueFromForm(form, name, fallback) {
+        const el = form.querySelector('[name="'+name+'"]');
+        if (el) return el.value;
+        return fallback || '';
+      }
+
+      // small helper to format YYYY-MM-DD to DD-MMM-YYYY for display
+      function formatExpirationDisplay(isoDate) {
+        if (!isoDate) return '';
+        const d = new Date(isoDate);
+        if (isNaN(d.getTime())) return isoDate;
+        const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const day = String(d.getDate()).padStart(2,'0');
+        const month = months[d.getMonth()];
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+      }
+
+      // Toggle Edit / View mode for assessment form (shows inputs / hides spans)
+      window.toggleEditAssessment = function(btn) {
+        const form = document.getElementById('assessmentForm');
+        if (!form) return;
+        const isEditing = btn.getAttribute('data-editing') === '1';
+        const viewEls = form.querySelectorAll('.detail-value.view');
+        const editEls = form.querySelectorAll('.detail-value.edit');
+
+        if (!isEditing) {
+          // enter edit mode: show inputs, hide views
+          editEls.forEach(e => e.style.display = 'inline-block');
+          // also unhide any edit-block container (relocation group) so its inputs are visible
+          const editBlocks = form.querySelectorAll('.edit-block');
+          editBlocks.forEach(b => {
+            b.style.display = 'block';
+            const inputs = b.querySelectorAll('.edit');
+            inputs.forEach(i => i.style.display = 'inline-block');
+          });
+          viewEls.forEach(v => v.style.display = 'none');
+          btn.textContent = 'Done Editing';
+          btn.setAttribute('data-editing','1');
+        } else {
+          // exit edit mode: copy input values into view spans and hide inputs
+          editEls.forEach(e => {
+            const name = e.getAttribute('name');
+            const view = form.querySelector('.detail-value.view[data-field="'+name+'"]');
+            if (view) {
+              if (name === 'total_fee' || name === 'renewal_fee' || name === 'opening_fee' || name === 'relocation_fee') {
+                const num = parseFloat(e.value) || 0;
+                view.textContent = '₱ ' + num.toLocaleString('en-US', {minimumFractionDigits:2});
+              } else if (name === 'remains_count') {
+                // update related relocation view display if exists
+                const relView = form.querySelector('.detail-value.view[data-field="relocation_fee"]');
+                if (relView) {
+                  const relFeeEl = form.querySelector('.detail-value.edit[name="relocation_fee"]');
+                  const relNum = relFeeEl ? (parseFloat(relFeeEl.value) || 0) : 0;
+                  relView.textContent = `₱ ${relNum.toLocaleString('en-US', {minimumFractionDigits:2})} (x ${e.value})`;
+                }
+              } else if (name === 'expiration') {
+                // expiration edit is a date input (YYYY-MM-DD) — format nicely for the view
+                view.textContent = formatExpirationDisplay(e.value);
+              } else {
+                view.textContent = e.value;
+              }
+            }
+            e.style.display = 'none';
+          });
+          // hide any inputs that were inside edit-block and hide the block itself
+          const editBlocks2 = form.querySelectorAll('.edit-block');
+          editBlocks2.forEach(b => {
+            const inputs = b.querySelectorAll('.edit');
+            inputs.forEach(i => i.style.display = 'none');
+            b.style.display = 'none';
+          });
+          viewEls.forEach(v => v.style.display = 'inline');
+          btn.textContent = 'Edit';
+          btn.setAttribute('data-editing','0');
+        }
+      };
+
+      // Form submission using URLSearchParams (reads current values from inputs if present)
       const assessmentForm = document.getElementById('assessmentForm');
       const loadingSpinner = document.getElementById('assessmentLoadingSpinner');
       assessmentForm.onsubmit = function(e) {
         e.preventDefault();
         if (loadingSpinner) loadingSpinner.style.display = 'flex';
+
+        // read values from form inputs when available, otherwise fallback to original data
         const params = new URLSearchParams({
-          request_id: data.id,
-          user_id: data.user_id,
-          total_fee: totalFee,
-          type: data.type || '',
-          informant_name: data.informant_name || '',
-          email: data.email || '',
-          deceased_name: data.deceased_name || '',
-          residency: data.residency || '',
-          dob: data.dob || '',
-          dod: data.dod || '',
-          internment_date: data.internment_date || '',
-          age: data.age || '',
-          niche_id: data.niche_id || '',
-          expiration: expirationDate || '',
-          renewal_fee: renewalFee || 0
+          request_id: getFieldValueFromForm(assessmentForm, 'request_id', data.id),
+          user_id: getFieldValueFromForm(assessmentForm, 'user_id', data.user_id),
+          total_fee: getFieldValueFromForm(assessmentForm, 'total_fee', totalFee),
+          opening_fee: getFieldValueFromForm(assessmentForm, 'opening_fee', openingFee || 0),
+          relocation_fee: getFieldValueFromForm(assessmentForm, 'relocation_fee', relocationFee || 0),
+          remains_count: getFieldValueFromForm(assessmentForm, 'remains_count', remainsCount || 0),
+          type: getFieldValueFromForm(assessmentForm, 'type', data.type || ''),
+          informant_name: getFieldValueFromForm(assessmentForm, 'informant_name', data.informant_name || ''),
+          email: getFieldValueFromForm(assessmentForm, 'email', data.email || ''),
+          deceased_name: getFieldValueFromForm(assessmentForm, 'deceased_name', data.deceased_name || ''),
+          residency: getFieldValueFromForm(assessmentForm, 'residency', data.residency || ''),
+          dob: getFieldValueFromForm(assessmentForm, 'dob', data.dob || ''),
+          dod: getFieldValueFromForm(assessmentForm, 'dod', data.dod || ''),
+          internment_date: getFieldValueFromForm(assessmentForm, 'internment_date', data.internment_date || ''),
+          age: getFieldValueFromForm(assessmentForm, 'age', data.age || ''),
+          niche_id: getFieldValueFromForm(assessmentForm, 'niche_id', data.niche_id || ''),
+          expiration: getFieldValueFromForm(assessmentForm, 'expiration', expirationDate || ''),
+          renewal_fee: getFieldValueFromForm(assessmentForm, 'renewal_fee', renewalFee || 0)
         });
 
         fetch('submit_assessment.php', {
@@ -1195,7 +1352,7 @@ function goToAssessment() {
         });
       };
     });
-}
+  }
 
 function updateDoneAssessmentTable() {
   fetch('get_done_assessments.php')
@@ -1306,6 +1463,7 @@ function fetchAndUpdateClientRequestsTable() {
         if (window.clientsRequestTable) {
           window.clientsRequestTable.clear().destroy();
           window.clientsRequestTable = $('#clients-request-table').DataTable({
+           
             "paging": true,
             "searching": true,
             "ordering": true,

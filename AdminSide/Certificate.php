@@ -178,17 +178,22 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           <p>This is to certify that <strong><?php echo htmlspecialchars($informantName); ?></strong> of Barangay <strong><?php echo htmlspecialchars($informantAddress); ?></strong></p>
           <ul style="list-style:none;padding-left:0;">
             <?php
-              // Always display all possible actions. Mark checked ones based on saved certification record.
-              $actionsList = [
-                'DNew'     => 'register the death of <strong>' . $nameOfDeceased . '</strong> and rent CRYPT for five (5) years',
-                'DRenew'   => 'renewal of CRYPT of <strong>' . $nameOfDeceased . '</strong>',
-                'DTransfer'=> 'transfer the remains of <strong>' . $nameOfDeceased . '</strong>',
-                'DReOpen'  => 're-open the tomb of <strong>' . $nameOfDeceased . '</strong>',
-                'DReEnter' => 're-enter the remains of <strong>' . $nameOfDeceased . '</strong>',
+              // Build descriptions only including the deceased name when the action is checked
+              $nameHtml = htmlspecialchars($nameOfDeceased);
+              $actionBases = [
+                'DNew'     => ['text' => 'register the death of', 'tail' => ' and rent CRYPT for five (5) years'],
+                'DRenew'   => ['text' => 'renewal of CRYPT of', 'tail' => ''],
+                'DTransfer'=> ['text' => 'transfer the remains of', 'tail' => ''],
+                'DReOpen'  => ['text' => 're-open the tomb of', 'tail' => ''],
+                'DReEnter' => ['text' => 're-enter the remains of', 'tail' => ''],
               ];
-              foreach ($actionsList as $col => $desc) {
-                $checked = (!empty($cert[$col]) && $cert[$col] === '✔') ? 'checked' : '';
-                echo '<li style="margin-bottom:12px;"><input type="checkbox" ' . $checked . ' disabled> ' . $desc . '</li>';
+              foreach ($actionBases as $col => $parts) {
+                $isChecked = (!empty($cert[$col]) && $cert[$col] === '✔');
+                // If checked include the name; otherwise show a generic phrase without the name
+                $namePart = $isChecked ? ' <strong>' . $nameHtml . '</strong>' : '';
+                $desc = $parts['text'] . $namePart . $parts['tail'];
+                $checkedAttr = $isChecked ? 'checked' : '';
+                echo '<li style="margin-bottom:12px;"><input type="checkbox" ' . $checkedAttr . ' disabled> ' . $desc . '</li>';
               }
             ?>
           </ul>
@@ -210,7 +215,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               <strong>Approved by:</strong><br><br>
               <div style="height:48px;"></div>
               <strong><?php echo $adminNameSaved; ?></strong><br>
-              Municipal Administrator
+              Department Head
             </div>
           </div>
 
@@ -678,7 +683,7 @@ button.btn-insert:hover {
             <input type="date" name="renewal" value="<?php echo $renewal; ?>" readonly style="width:90%;">
           </div>
           <div>
-            <label>Municipal Administrator Name:</label>
+            <label>Department Head Name:</label>
             <input type="text" name="admin_name" id="adminNameField"
               value="<?php
                 echo isset($_POST['admin_name']) && $_POST['admin_name'] !== ''
@@ -787,18 +792,21 @@ button.btn-insert:hover {
               <p>This is to certify that <strong><?php echo htmlspecialchars($_POST['name']); ?></strong> of Barangay <strong><?php echo htmlspecialchars($_POST['barangay']); ?></strong></p>
               <ul style="list-style:none; padding-left:0;">
                 <?php
-                  $actions = [
-                    'register_death' => 'register the death of <strong>' . htmlspecialchars($_POST['deceased'] ?? '') . '</strong> and rent CRYPT for five (5) years',
-                    'renewal_crypt' => 'renewal of CRYPT of <strong>' . htmlspecialchars($_POST['deceased'] ?? '') . '</strong>',
-                    'transfer_remains' => 'transfer the remains of <strong>' . htmlspecialchars($_POST['deceased'] ?? '') . '</strong>',
-                    'reopen_tomb' => 're-open the tomb of <strong>' . htmlspecialchars($_POST['deceased'] ?? '') . '</strong>',
-                    'reenter_remains' => 're-enter the remains of <strong>' . htmlspecialchars($_POST['deceased'] ?? '') . '</strong>'
+                  $deceasedHtml = htmlspecialchars($_POST['deceased'] ?? '');
+                  $previewBases = [
+                    'register_death'   => ['text' => 'register the death of', 'tail' => ' and rent CRYPT for five (5) years'],
+                    'renewal_crypt'    => ['text' => 'renewal of CRYPT of', 'tail' => ''],
+                    'transfer_remains' => ['text' => 'transfer the remains of', 'tail' => ''],
+                    'reopen_tomb'      => ['text' => 're-open the tomb of', 'tail' => ''],
+                    'reenter_remains'  => ['text' => 're-enter the remains of', 'tail' => ''],
                   ];
                   $selected = isset($_POST['actions']) ? $_POST['actions'] : [];
-                  foreach ($actions as $key => $desc) {
-                    $checked = in_array($key, $selected) ? 'checked' : '';
-                    // Add spacing between actions
-                    echo '<li style="margin-bottom:20px;"><input type="checkbox" ' . $checked . ' disabled> ' . $desc . '</li>';
+                  foreach ($previewBases as $key => $parts) {
+                    $isChecked = in_array($key, $selected);
+                    $namePart = $isChecked && $deceasedHtml !== '' ? ' <strong>' . $deceasedHtml . '</strong>' : '';
+                    $desc = $parts['text'] . $namePart . $parts['tail'];
+                    $checkedAttr = $isChecked ? 'checked' : '';
+                    echo '<li style="margin-bottom:20px;"><input type="checkbox" ' . $checkedAttr . ' disabled> ' . $desc . '</li>';
                   }
                 ?>
               </ul>
@@ -848,7 +856,7 @@ button.btn-insert:hover {
                   <strong>Approved by:</strong><br>
                   <div style="height:40px;"></div> <!-- Space for signature -->
                   <?php echo htmlspecialchars($admin_name); ?><br>
-                  Municipal Administrator
+                  Department Head
                 </div>
                 <div style="clear:both;"></div>
               </div>

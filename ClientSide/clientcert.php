@@ -346,9 +346,7 @@ if ($user) {
                  </div>
                </div>
                <div class="cert-list-actions">
-                 <button type="button" class="cert-list-btn" onclick="showCertPreview(<?php echo $idx; ?>, true)">
-                   <i class="fas fa-print"></i> Print
-                 </button>
+                 <!-- Print removed: only View is available -->
                  <button type="button" class="cert-list-btn" onclick="showCertPreview(<?php echo $idx; ?>)">
                    <i class="fas fa-eye"></i> View
                  </button>
@@ -569,6 +567,8 @@ if ($user) {
    <?php include '../Includes/footer-client.php'; ?>
     <!-- Bootstrap JS (optional, for responsive navbar) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
 </body>
 </html>
 

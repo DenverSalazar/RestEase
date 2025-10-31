@@ -119,15 +119,13 @@ if (!$validity) {
 }
 $orNumber = '';
 $mcNumber = '';
-if (($apartment || $informant) && empty($ledgerEntry['ORNumber'])) {
-  $orNumber = generateUniqueORNumber($conn);
-}
+// Do NOT auto-generate ORNumber anymore so it can be entered manually.
+// Keep MCNo generation where relevant.
 if (($apartment || $informant) && empty($ledgerEntry['MCNo'])) {
   $mcNumber = generateUniqueMCNumber($conn);
 }
-// For walk-in clients (no URL parameters), also generate numbers
+// For walk-in clients (no URL parameters), generate MCNo only; leave ORNumber empty for manual entry.
 if (!$apartment && !$informant && !$ledgerEntry) {
-  $orNumber = generateUniqueORNumber($conn);
   $mcNumber = generateUniqueMCNumber($conn);
 }
 ?>
@@ -338,11 +336,11 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formORNumber" style="font-weight:500;">OR Number</label>
-            <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f3f4f6;font-size:1rem;" value="<?php echo isset($ledgerEntry['ORNumber']) ? htmlspecialchars($ledgerEntry['ORNumber']) : htmlspecialchars($orNumber); ?>" readonly>
+            <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;" value="<?php echo isset($ledgerEntry['ORNumber']) ? htmlspecialchars($ledgerEntry['ORNumber']) : htmlspecialchars($orNumber); ?>">
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formMCNo" style="font-weight:500;">MC No.</label>
-            <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;"
+            <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f3f4f6;font-size:1rem;"
               value="<?php echo isset($ledgerEntry['MCNo']) && $ledgerEntry['MCNo'] !== null ? htmlspecialchars($ledgerEntry['MCNo']) : htmlspecialchars($mcNumber); ?>">
           </div>
         </div>

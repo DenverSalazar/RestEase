@@ -9,28 +9,40 @@ if ($conn->connect_error) {
 
 $login_error = "";
 $login_success = false;
-$recaptcha_secret = '6LeglPgrAAAAAHSMVrHSVQbVMTdWgARzX_CfVSqi'; // Set your secret key here
+// Cloudflare Turnstile keys (replace with your keys)
+$turnstile_sitekey = '0x4AAAAAAB9DMwi4JEs-E7Dk';
+$turnstile_secret  = '0x4AAAAAAB9DM0HH3_jtHziIMzaFQztRwcA';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $recaptcha_response = $_POST['g-recaptcha-response'] ?? ''; // <-- FIXED
+    $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
 
     // Basic validation
     if (!$email || !$password) {
         $login_error = "All fields are required.";
-     } elseif (empty($recaptcha_response)) {
-         $login_error = "Please complete the reCAPTCHA.";
-     } else {
+    } elseif (empty($turnstile_response)) {
+        $login_error = "Please complete the verification first(Cloudfare).";
+    } else {
+        // Cloudflare Turnstile verification
+        function verify_turnstile($token, $secret, $remoteip = null) {
+            if (empty($token) || empty($secret)) return false;
+            $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            $post = ['secret' => $secret, 'response' => $token];
+            if ($remoteip) $post['remoteip'] = $remoteip;
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            $resp = curl_exec($ch);
+            curl_close($ch);
+            $obj = json_decode($resp);
+            return ($obj && !empty($obj->success));
+        }
 
-    // reCAPTCHA validation
-    $recaptcha_verify = file_get_contents(
-        "https://www.google.com/recaptcha/api/siteverify?secret=" . urlencode($recaptcha_secret) . "&response=" . urlencode($recaptcha_response)
-    );
-    $recaptcha_success = json_decode($recaptcha_verify);
-    if (!$recaptcha_success->success) {
-        $login_error = "reCAPTCHA verification failed. Please try again.";
-    }
+        if (!verify_turnstile($turnstile_response, $turnstile_secret, $_SERVER['REMOTE_ADDR'] ?? '')) {
+            $login_error = "Turnstile verification failed. Please try again.";
+        }
     }
     // Only proceed if no error
     if (!$login_error) {
@@ -177,12 +189,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <a href="forgot.php" class="forgot-password">Forgot Password?</a>
                             </div>
-                                <!-- reCAPTCHA widget -->
-                            
-                            <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="6LeglPgrAAAAAMel22NXv9-w4fH7EhB7Osk7WO28"></div>
+                            <!-- Turnstile: centered & constrained to match input width -->
+                            <div class="mb-3 w-100 recaptcha-fullwidth turnstile-container" aria-hidden="false">
+                                <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>"></div>
                             </div>
-                            
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
                             <div class="divider">
@@ -404,6 +414,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-color: #005a8d !important;
         }
 
+        /* Turnstile alignment: center and constrain so it lines up with inputs */
+        .turnstile-container {
+            max-width: 420px;        /* match typical form width */
+            margin: 8px auto 16px;   /* center and add vertical spacing */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* Defensive: ensure the internal widget is centered */
+        .turnstile-container .cf-turnstile {
+            display: inline-flex !important;
+            justify-content: center;
+            align-items: center;
+        }
+        /* On narrow screens keep it fluid */
+        @media (max-width: 480px) {
+            .turnstile-container { max-width: 100%; padding: 0 12px; }
+        }
+
         @media (max-width: 600px) {
             .custom-toast {
                 right: 10px !important;
@@ -414,7 +443,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     </style>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 
 </html>
