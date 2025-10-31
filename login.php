@@ -96,6 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - RestEase</title>
+    <link rel="icon" type="image/png" href="../assets/re logo blue.png">
     <!-- Add Google Fonts for Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- Bootstrap CSS -->
@@ -173,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required
+                                <input type="password" class="form-control" placeholder="Password" id="password" name="password" required autocomplete="off"
                                     value="<?php echo htmlspecialchars($_POST['password'] ?? '', ENT_QUOTES); ?>">
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>

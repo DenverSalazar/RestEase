@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file']) && $_F
 <html>
 <head>
     <title>Import Ledger Excel</title>
+    <link rel="icon" type="image/png" href="../assets/re logo blue.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { font-family: 'Poppins', sans-serif; background: #f7f8fa; }

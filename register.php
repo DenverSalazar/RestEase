@@ -112,6 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../assets/re logo blue.png">
     <title>RestEase - Sign Up</title>
     <!-- Add Google Fonts for Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -375,8 +376,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     value="<?php echo htmlspecialchars($input['contact_no']); ?>">
                             </div>
                             <div class="mb-3 password-container">
-                                <input type="password" class="form-control <?php if($field_errors['password']) echo 'is-invalid'; ?>"
-                                    placeholder="Enter your password" id="password" name="password" required
+                                <input type="password" class="form-control <?php if($field_errors['password'])  echo 'is-invalid'; ?>"
+                                    placeholder="Enter your password" id="password" name="password" required autocomplete="off"
                                     value="<?php echo htmlspecialchars($input['password']); ?>">
                                 <span class="password-toggle">
                                     <i class="far fa-eye" id="togglePassword"></i>

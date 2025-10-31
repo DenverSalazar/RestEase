@@ -186,6 +186,7 @@ $all = implode("\n", array_map(function($m){ return htmlspecialchars($m); }, $me
 <head>
   <meta charset="utf-8">
   <title>Import Result</title>
+  <link rel="icon" type="image/png" href="../assets/re logo blue.png">
   <style>body{font-family:Arial,Helvetica,sans-serif;background:#f7fafc;padding:24px;color:#222} .box{background:#fff;padding:18px;border-radius:10px;max-width:720px;margin:40px auto;box-shadow:0 6px 20px rgba(0,0,0,0.06)}</style>
 </head>
 <body>
