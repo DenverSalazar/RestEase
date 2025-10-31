@@ -468,9 +468,6 @@ if ($user_id) {
                    <strong>Request Type:</strong> <?php echo htmlspecialchars($req['type'] ?? 'Unknown'); ?>
                  </div>
                  <?php if ($req['_status'] === 'Denied'): ?>
-                   <div class="cert-list-details">
-                     <strong>Reason:</strong> <?php echo htmlspecialchars($req['reason'] ?? 'No reason provided'); ?>
-                   </div>
                  <?php endif; ?>
                  <div class="cert-list-date">
                    <strong>

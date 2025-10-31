@@ -242,9 +242,12 @@ if ($availableNiches < 0) $availableNiches = 0;
 $result = $conn->query("SELECT COUNT(*) AS cnt FROM client_requests");
 $pendingRequest = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
 
-// Active clients
-$result = $conn->query("SELECT COUNT(*) AS cnt FROM users");
-$activeClients = ($result && $row = $result->fetch_assoc()) ? intval($row['cnt']) : 0;
+// REPLACED: compute active clients as users + walk-in_clients
+$usersRes = $conn->query("SELECT COUNT(*) AS cnt FROM users");
+$usersCnt = ($usersRes && $rowU = $usersRes->fetch_assoc()) ? intval($rowU['cnt']) : 0;
+$walkinRes = $conn->query("SELECT COUNT(*) AS cnt FROM walkin_clients");
+$walkinCnt = ($walkinRes && $rowW = $walkinRes->fetch_assoc()) ? intval($rowW['cnt']) : 0;
+$activeClients = $usersCnt + $walkinCnt;
 
 // --- MOVED: Prepare data for both new map and old map (compute before baselines) ---
 $newMapOccupiedArr = [];
