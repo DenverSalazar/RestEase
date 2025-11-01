@@ -451,6 +451,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         });
         <?php endif; ?>
 
+        <?php if ($register_success): ?>
+        // Redirect to login.php after 3 seconds if registration is successful
+        setTimeout(function() {
+            window.location.href = "login.php";
+        }, 2500);
+        <?php endif; ?>
+
         // Terms & Conditions Modal Logic
         document.addEventListener('DOMContentLoaded', function() {
             var termsModal = document.getElementById('termsModal');

@@ -43,16 +43,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Handle file upload
     if (isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
-        $target_dir = "../uploads/";
-        if (!is_dir($target_dir)) {
-            mkdir($target_dir, 0777, true);
-        }
-        $file_name = time() . '_' . basename($_FILES["file_upload"]["name"]);
-        $target_file = $target_dir . $file_name;
-        if (move_uploaded_file($_FILES["file_upload"]["tmp_name"], $target_file)) {
-            $file_upload = $file_name;
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        $file_type = mime_content_type($_FILES['file_upload']['tmp_name']);
+        if (!in_array($file_type, $allowed_types)) {
+            $error = "Only PDF or image files are allowed.";
         } else {
-            $error = "File upload failed.";
+            $target_dir = "../uploads/";
+            if (!is_dir($target_dir)) {
+                mkdir($target_dir, 0777, true);
+            }
+            $file_name = time() . '_' . basename($_FILES["file_upload"]["name"]);
+            $target_file = $target_dir . $file_name;
+            if (move_uploaded_file($_FILES["file_upload"]["tmp_name"], $target_file)) {
+                $file_upload = $file_name;
+            } else {
+                $error = "File upload failed.";
+            }
         }
     }
 
@@ -114,6 +120,14 @@ if (!$error) {
         $stmt->close();
     }
 }
+
+    // Validate date logic
+    if ($dob && $dod && strtotime($dod) < strtotime($dob)) {
+        $error = "Date of death cannot be before date of birth.";
+    }
+    if ($dob && $dateInternment && strtotime($dateInternment) < strtotime($dob)) {
+        $error = "Date of internment cannot be before date of birth.";
+    }
 
     // If API request, return JSON and exit
     if ($isApi) {
@@ -316,12 +330,12 @@ $stmt->close();
                             </button>
                         </div>
                     </div>
-                    <div class="section-title">Upload Files</div>
+                    <div class="section-title">Upload Death Certificate</div>
                     <div class="upload-area mb-2" id="upload-area">
                         <label for="file-upload" class="upload-label">
                             <span class="upload-icon"><i class="fas fa-upload"></i></span>
                             Upload file
-                            <input type="file" id="file-upload" name="file_upload">
+                            <input type="file" id="file-upload" name="file_upload" accept="image/*,application/pdf">
                         </label>
                         <div id="file-preview" style="margin-top:10px;"></div>
                         <div id="upload-required-msg" style="display:none;color:#d32f2f;font-size:0.97rem;margin-top:10px;">
@@ -474,6 +488,12 @@ $stmt->close();
         preview.innerHTML = '';
         const file = e.target.files[0];
         if (!file) return;
+        // Only allow image or PDF preview
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+            preview.textContent = 'Only PDF or image files are allowed.';
+            e.target.value = '';
+            return;
+        }
         // Show file name
         const nameDiv = document.createElement('div');
         nameDiv.textContent = 'Selected file: ' + file.name;
@@ -486,6 +506,12 @@ $stmt->close();
             img.style.marginTop = '8px';
             img.src = URL.createObjectURL(file);
             preview.appendChild(img);
+        }
+        // If PDF, show icon
+        if (file.type === 'application/pdf') {
+            const pdfIcon = document.createElement('span');
+            pdfIcon.innerHTML = '<i class="fas fa-file-pdf" style="font-size:2rem;color:#d32f2f;margin-top:8px;"></i>';
+            preview.appendChild(pdfIcon);
         }
     });
 
@@ -510,6 +536,33 @@ document.getElementById('file-upload').addEventListener('change', checkUploadReq
         if (type === 'New' && (!fileInput.files || fileInput.files.length === 0)) {
             checkUploadRequirement();
             fileInput.focus();
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    function validateDates() {
+        var dob = document.getElementById('dob').value;
+        var dod = document.getElementById('dod').value;
+        var dateInternment = document.getElementById('date_internment').value;
+        var errorMsg = '';
+
+        if (dob && dod && new Date(dod) < new Date(dob)) {
+            errorMsg = 'Date of death cannot be before date of birth.';
+        }
+        if (dob && dateInternment && new Date(dateInternment) < new Date(dob)) {
+            errorMsg = 'Date of internment cannot be before date of birth.';
+        }
+
+        if (errorMsg) {
+            alert(errorMsg);
+            return false;
+        }
+        return true;
+    }
+
+    document.getElementById('client-request-form').addEventListener('submit', function(e) {
+        if (!validateDates()) {
             e.preventDefault();
             return false;
         }
