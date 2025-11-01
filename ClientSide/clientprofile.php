@@ -450,7 +450,6 @@ $avatar_html = $has_profile_picture
         #profileAvatarContainer img.profile-avatar {
             display: block !important;
             margin: 0 auto !important;
-            vertical-align: middle !important;
             object-fit: cover !important;
             border-radius: 50% !important;
         }

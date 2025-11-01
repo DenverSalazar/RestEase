@@ -177,7 +177,7 @@ if ($user_id) {
 <body>
 <?php include '../Includes/navbar2.php'; ?>
 <div class="main-content">
-  <div class="container-main">
+  <div class="container-main" style="min-height: 400px; padding-bottom: 40px;">
 
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
     <a href="ClientHome.php" style="color:#506C84;text-decoration:none;font-weight:600"><i class="fas fa-arrow-left"></i> Back</a>
@@ -225,6 +225,23 @@ if ($user_id) {
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Message for empty notifications, favorites, and archive -->
+  <div id="notif-empty-message" class="text-muted" style="display:none;text-align:center;margin:30px 0 10px 0;font-size:1.1rem;">
+    There is nothing here yet.<br>
+    No notifications, favorites, or archived items.
+  </div>
+
+  <!-- Separate empty messages for each tab -->
+  <div id="notif-empty-all" class="text-muted notif-empty-msg" style="display:none;text-align:center;margin:30px 0 10px 0;font-size:1.1rem;">
+    There are no notifications yet.
+  </div>
+  <div id="notif-empty-fav" class="text-muted notif-empty-msg" style="display:none;text-align:center;margin:30px 0 10px 0;font-size:1.1rem;">
+    You have no favorite notifications.
+  </div>
+  <div id="notif-empty-arch" class="text-muted notif-empty-msg" style="display:none;text-align:center;margin:30px 0 10px 0;font-size:1.1rem;">
+    There are no archived notifications.
   </div>
 
   <?php if ($user_id && count($notifications) > 0): ?>
@@ -333,6 +350,9 @@ if ($user_id) {
   </div> <!-- /.container-main -->
 </div> <!-- /.main-content -->
 
+<!-- Move the footer below main-content for bottom placement -->
+<footer><?php include '../Includes/footer-client.php'; ?></footer>
+
 <div class="overlay" id="calendarOverlay"></div>
 <div class="calendar-popup" id="calendarPopup">
   <div class="header">
@@ -376,8 +396,6 @@ if ($user_id) {
   </div>
 </div>
 
-<footer><?php include '../Includes/footer-client.php'; ?></footer>
-
 <script>
 (function(){
   const $ = sel => document.querySelector(sel);
@@ -412,6 +430,36 @@ if ($user_id) {
     return btn;
   }
 
+  function showEmptyMessageIfNeeded() {
+    const allCount = parseInt(document.getElementById('count-all').textContent, 10) || 0;
+    const favCount = parseInt(document.getElementById('count-fav').textContent, 10) || 0;
+    const archCount = parseInt(document.getElementById('count-arch').textContent, 10) || 0;
+    const msg = document.getElementById('notif-empty-message');
+    if (msg) {
+      if (allCount === 0 && favCount === 0 && archCount === 0) {
+        msg.style.display = '';
+      } else {
+        msg.style.display = 'none';
+      }
+    }
+  }
+
+  function showEmptyMessageForTab() {
+    // Hide all empty messages first
+    $$('.notif-empty-msg').forEach(msg => msg.style.display = 'none');
+    // Get active tab
+    const tab = (document.querySelector('#notif-tabs .notif-tab.active') || {}).getAttribute('data-filter') || 'all';
+    let count = 0;
+    if (tab === 'all') count = parseInt(document.getElementById('count-all').textContent, 10) || 0;
+    if (tab === 'favorite') count = parseInt(document.getElementById('count-fav').textContent, 10) || 0;
+    if (tab === 'archive') count = parseInt(document.getElementById('count-arch').textContent, 10) || 0;
+    const msgId = tab === 'all' ? 'notif-empty-all' : (tab === 'favorite' ? 'notif-empty-fav' : 'notif-empty-arch');
+    if (count === 0) {
+      const msg = document.getElementById(msgId);
+      if (msg) msg.style.display = '';
+    }
+  }
+
   function updateCounts(){
     const allCards = $$('.notif-card-wrapper');
     // Count only non-archived and non-permanently-deleted for "All"
@@ -440,6 +488,9 @@ if ($user_id) {
       if (optFav) optFav.textContent = `Favorites (${fav})`;
       if (optArch) optArch.textContent = `Archive (${arch})`;
     }
+
+    showEmptyMessageIfNeeded();
+    showEmptyMessageForTab();
   }
  
    // ---- Filtering helpers (source-of-truth for pagination) ----
@@ -541,6 +592,7 @@ if ($user_id) {
      currentPageClient = 1;
      updateCounts();
      paginateDisplay();
+     showEmptyMessageForTab();
    }
 
    function initStars(){

@@ -90,20 +90,107 @@ if ($success) {
 
     if ($user_email) {
         // Generate PDF with assessment details
-        $pdf = new TCPDF();
+        $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+
+        // Disable default header and footer (removes horizontal line)
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        // Set document info
+        $pdf->SetCreator('RestEase');
+        $pdf->SetAuthor('RestEase');
+        $pdf->SetTitle('Assessment of Fees Certificate');
+
+        // Add page and set background
+        $pdf->SetAutoPageBreak(false, 0);
         $pdf->AddPage();
+        // certbg dead center: x=30, y=43.5, width=150, height=210
+        $pdf->Image('../assets/certbg.png', 30, 43.5, 150, 210, '', '', '', false, 300, '', false, false, 0);
+
+        // Add logo garcia2.png (top left)
+        $pdf->Image('../assets/logo garcia2.png', 15, 10, 30, 30, '', '', '', false, 300);
+
+        // Add Seal_of_Batangas.png (top right)
+        $pdf->Image('../assets/Seal_of_Batangas.png', 165, 10, 30, 30, '', '', '', false, 300);
+
+        // Add heading above the title
         $pdf->SetFont('helvetica', '', 12);
-        $html = "
-            <h2>Assessment of Fees</h2>
-            <p>Hello,</p>
-            <p>Your assessment of fees is ready.</p>
-            <p><b>Total fee: ₱ " . number_format($total_fee, 2) . "</b></p>
-            <p>You may view the details online or see the attached PDF.</p>
-            <br>
-            <p>Thanks,<br>RestEase Team</p>
-        ";
-        $pdf->writeHTML($html, true, false, true, false, '');
-        // Save PDF to a temp file
+        $pdf->SetXY(0, 15);
+        $pdf->Cell(210, 6, 'Republic of the Philippines', 0, 2, 'C', 0, '', 0);
+        $pdf->Cell(210, 6, 'Province of Batangas', 0, 2, 'C', 0, '', 0);
+        $pdf->SetFont('helvetica', 'B', 13);
+        $pdf->Cell(210, 6, 'MUNICIPALITY OF PADRE GARCIA', 0, 2, 'C', 0, '', 0);
+        $pdf->SetFont('helvetica', 'B', 16);
+        $pdf->Cell(210, 10, 'OFFICE OF THE MUNICIPAL MAYOR', 0, 2, 'C', 0, '', 0);
+        // Draw horizontal line under the office title
+        $pdf->SetLineWidth(1);
+        $pdf->Line(40, $pdf->GetY(), 170, $pdf->GetY());
+
+        // Title
+        $pdf->SetFont('helvetica', 'B', 32);
+        $pdf->SetXY(15, 45);
+        $pdf->Cell(180, 18, 'Assessment of Fees', 0, 1, 'C', 0, '', 0);
+
+        // Assessment Data Table (all fields)
+        $pdf->SetFont('helvetica', '', 12);
+        $pdf->SetXY(20, 65);
+        $html = '
+        <table cellpadding="6" style="width:100%; font-size:13px;">
+          <tr>
+            <td><b>Informant Name:</b></td>
+            <td>' . htmlspecialchars($informant_name) . '</td>
+          </tr>
+          <tr>
+            <td><b>Email:</b></td>
+            <td>' . htmlspecialchars($email) . '</td>
+          </tr>
+          <tr>
+            <td><b>Type:</b></td>
+            <td>' . htmlspecialchars($type) . '</td>
+          </tr>
+          <tr>
+            <td><b>Name of Deceased:</b></td>
+            <td>' . htmlspecialchars($deceased_name) . '</td>
+          </tr>
+          <tr>
+            <td><b>Residency:</b></td>
+            <td>' . htmlspecialchars($residency) . '</td>
+          </tr>
+          <tr>
+            <td><b>Date of Birth:</b></td>
+            <td>' . htmlspecialchars($dob) . '</td>
+          </tr>
+          <tr>
+            <td><b>Date of Death:</b></td>
+            <td>' . htmlspecialchars($dod) . '</td>
+          </tr>
+          <tr>
+            <td><b>Date of Internment:</b></td>
+            <td>' . htmlspecialchars($internment_date) . '</td>
+          </tr>
+          <tr>
+            <td><b>Age:</b></td>
+            <td>' . htmlspecialchars($age) . '</td>
+          </tr>
+          <tr>
+            <td><b>Total Fee:</b></td>
+            <td>PHP ' . number_format($total_fee, 2) . '</td>
+          </tr>
+          <tr>
+            <td><b>Renewal Fee:</b></td>
+            <td>PHP ' . number_format($renewal_fee, 2) . '</td>
+          </tr>
+          <tr>
+            <td><b>Certificate Expiration:</b></td>
+            <td>' . htmlspecialchars($expiration) . '</td>
+          </tr>
+        </table>
+        ';
+        $pdf->writeHTML($html, true, false, false, false, '');
+        // Footer image
+        $pdf->Image('../assets/certfooter.png', 0, 260, 210, 37, '', '', '', false, 300);
+
+        // Output PDF to temp file
         $pdf_path = sys_get_temp_dir() . "/assessment_" . uniqid() . ".pdf";
         $pdf->Output($pdf_path, 'F');
 

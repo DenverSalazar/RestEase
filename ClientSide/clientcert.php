@@ -42,6 +42,22 @@ if ($user) {
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <style>
+      /* --- Begin: Certificate Fonts --- */
+      @font-face {
+        font-family: 'Bernard MT Std Condensed';
+        src: url('../assets/fonts/Bernard MT Std Condensed/Bernard MT Std Condensed.otf') format('opentype');
+        font-display: swap;
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Rockwell Nova';
+        src: url('../assets/fonts/rockwell-nova/RockwellNova-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      /* --- End: Certificate Fonts --- */
       body {
         font-family: 'Poppins', sans-serif;
         background: #fafbfc;
@@ -69,6 +85,134 @@ if ($user) {
         margin: 48px 0 24px 0;
         font-weight: 500;
       }
+      /* Certificate Preview Modal and Page Styling */
+      #certPreviewModal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0; top: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(44,62,80,0.18);
+        align-items: center;
+        justify-content: center;
+      }
+      #certPreviewContent {
+        background: transparent; /* make transparent so page look is exact */
+        border-radius: 16px;
+        padding: 18px;
+        max-width: 100%;
+        width: 100%;
+        position: relative;
+        max-height: 100vh;
+        overflow: auto; /* allow scrolling around the fixed page on small devices */
+        overflow-x: hidden; /* prevent horizontal scroll caused by close button/box-shadow */
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+      }
+      .cert-preview-wrapper {
+        width: 900px;
+        display: flex;
+        justify-content: center;
+        transform-origin: top center;
+      }
+      .cert-preview-page {
+        width: 850px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);
+        padding: 32px 40px;
+        font-family: 'Poppins', sans-serif;
+        color: #222;
+        box-sizing: border-box;
+        position: relative;
+      }
+      .cert-close-btn {
+        position: absolute;
+        top: 12px;
+        right: 20px; /* move the X further inside to avoid expanding page width */
+        background: rgba(255,255,255,0.9);
+        border: 0;
+        padding: 6px 10px;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        color: #444;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        z-index: 20;
+      }
+      .cert-close-btn:hover { color:#111; }
+      @media print { .cert-close-btn { display:none !important; } }
+
+      /* Header and Title Styling */
+      .cert-preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        flex-wrap: nowrap;
+      }
+      .cert-preview-header img {
+        max-height: 80px;
+        width: auto;
+      }
+      .cert-title {
+        font-family: 'Rockwell Nova', 'Times New Roman', serif;
+        font-size: 20px;
+        font-weight: 700;
+        margin-top: 6px;
+        letter-spacing: 1px;
+      }
+      .bernard-title {
+        font-family: 'Bernard MT Std Condensed', 'Times New Roman', serif;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 10px;
+        margin-top: 0;
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+      .mc-no {
+        text-align: right;
+        margin-top: 8px;
+        font-weight: 700;
+        background: yellow;
+        display: inline-block;
+        padding: 4px 10px;
+        font-size: 15px;
+      }
+      .cert-body {
+        margin-top: 18px;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      .signatures {
+        margin-top: 36px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .signature-block {
+        width: 45%;
+        text-align: left;
+      }
+      .cert-footer {
+        margin-top: 36px;
+        text-align: center;
+      }
+      @media (max-width: 900px) {
+        .cert-preview-wrapper { width: 100vw; }
+        .cert-preview-page { width: 100vw; padding: 12px 2vw; }
+        .cert-preview-header img { max-height: 60px; }
+      }
+      @media print {
+        body * { visibility: hidden; }
+        #certPreviewModal, #certPreviewModal * { visibility: visible; }
+        #certPreviewModal { position: absolute; left:0; top:0; width:100%; }
+        .cert-preview-page { box-shadow: none; border-radius: 0; margin: 0 auto; }
+        .cert-close-btn { display: none !important; }
+      }
+
       /* Responsive and scrollable certificate preview modal */
       #certPreviewModal {
         display: none;
@@ -137,44 +281,70 @@ if ($user) {
       .cert-preview-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 18px;
+        justify-content: center;
+        gap: 28px;
         flex-wrap: nowrap;
       }
       .cert-preview-header img {
-        height: 64px;
+        max-height: 80px;
         width: auto;
       }
-      .cert-preview-page .cert-title {
-        font-family: 'Times New Roman', Times, serif;
-        font-size: 20px; /* px-based */
-        margin: 6px 0;
+      .cert-title {
+        font-family: 'Rockwell Nova', 'Times New Roman', serif;
+        font-size: 20px;
+        font-weight: 700;
+        margin-top: 6px;
+        letter-spacing: 1px;
       }
-      /* Fixed sizes for certificate body */
-      .cert-preview-page p, .cert-preview-page div, .cert-preview-page li {
+      .bernard-title {
+        font-family: 'Bernard MT Std Condensed', 'Times New Roman', serif;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 10px;
+        margin-top: 0;
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+      .mc-no {
+        text-align: right;
+        margin-top: 8px;
+        font-weight: 700;
+        background: yellow;
+        display: inline-block;
+        padding: 4px 10px;
+        font-size: 15px;
+      }
+      .cert-body {
+        margin-top: 18px;
         font-size: 14px;
-        line-height: 20px;
+        line-height: 1.35;
       }
-      .cert-preview-page .cert-actions-list li { margin-bottom: 12px; }
-      /* Print rules: render the page as a single printed page */
+      .signatures {
+        margin-top: 36px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .signature-block {
+        width: 45%;
+        text-align: left;
+      }
+      .cert-footer {
+        margin-top: 36px;
+        text-align: center;
+      }
+      @media (max-width: 900px) {
+        .cert-preview-wrapper { width: 100vw; }
+        .cert-preview-page { width: 100vw; padding: 12px 2vw; }
+        .cert-preview-header img { max-height: 60px; }
+      }
       @media print {
         body * { visibility: hidden; }
         #certPreviewModal, #certPreviewModal * { visibility: visible; }
         #certPreviewModal { position: absolute; left:0; top:0; width:100%; }
         .cert-preview-page { box-shadow: none; border-radius: 0; margin: 0 auto; }
+        .cert-close-btn { display: none !important; }
       }
-      /* On small devices scale the fixed page down to fit viewport without reflowing content */
-      @media (max-width: 820px) {
-        /* compute a scale so the 820px wrapper fits within viewport minus small padding */
-        .cert-preview-wrapper {
-          width: calc(100vw - 24px);
-        }
-        .cert-preview-page {
-          width: 800px; /* keep original page width for scaling calculation */
-        }
-        /* let JS compute the best scale (width + height aware). no CSS transform fallback here */
-        .cert-preview-wrapper { transform: none; transform-origin: top center; transition: transform .12s ease; }
-      }
+
       .cert-list-container {
         margin-top: 24px;
         margin-bottom: 12px;
@@ -367,83 +537,83 @@ if ($user) {
            function showCertPreview(idx, doPrint) {
               var cert = certificates[idx];
               var actions = [
-                { key: 'DNew', label: 'register the death of <strong>' + (cert.NameOfDeceased || '') + '</strong> and rent CRYPT for five (5) years' },
-                { key: 'DRenew', label: 'renewal of CRYPT' },
-                { key: 'DTransfer', label: 'transfer the remains of' },
-                { key: 'DReOpen', label: 're-open the tomb of' },
-                { key: 'DReEnter', label: 're-enter the remains of' }
+                { key: 'DNew', label: 'register the death of', tail: ' and rent CRYPT for five (5) years' },
+                { key: 'DRenew', label: 'renewal of CRYPT of', tail: '' },
+                { key: 'DTransfer', label: 'transfer the remains of', tail: '' },
+                { key: 'DReOpen', label: 're-open the tomb of', tail: '' },
+                { key: 'DReEnter', label: 're-enter the remains of', tail: '' }
               ];
               var actionsHtml = '';
               actions.forEach(function(action, i) {
                 var checked = cert[action.key] === '✔' ? 'checked' : '';
-                actionsHtml += '<li class="cert-actions-list-item"><input type="checkbox" ' + checked + ' disabled style="margin-right:8px;"> ' + action.label + '</li>';
+                var namePart = checked ? ' <strong>' + (cert.NameOfDeceased || '') + '</strong>' : '';
+                var desc = action.label + namePart + action.tail;
+                actionsHtml += '<li style="margin-bottom:12px;"><input type="checkbox" ' + checked + ' disabled style="margin-right:8px;"> ' + desc + '</li>';
               });
               var adminName = cert.AdminName ? cert.AdminName.toUpperCase() : '';
-              // Build certificate inside a fixed page wrapper so layout remains identical across devices.
+              // Use Bernard font for CERTIFICATION, Rockwell Nova for office title, and layout from admin certificate
               var html = `
                 <div class="cert-preview-wrapper" id="certPreviewWrapper">
                   <div class="cert-preview-page">
-                    <!-- Close button inside the certificate page (upper-right) -->
                     <button class="cert-close-btn" onclick="closeCertPreview()" aria-label="Close">&times;</button>
-                    <div class="cert-preview-header">
-                      <img src="../css/images/garciaIcon.jpg" alt="Padre Garcia Icon">
-                      <div style="flex:1;text-align:center;">
-                        <div style="font-family:'Times New Roman', Times, serif;font-size:13px;line-height:16px;">
-                          Republic of the Philippines<br>
-                          Province of Batangas<br>
-                          MUNICIPALITY OF PADRE GARCIA
+                    <!-- Certificate background image (behind content, covers area, low opacity) -->
+                    <img src="../assets/certbg.png" alt="Certificate Background"
+                         style="position:absolute;top:50%;left:50%;width:70%;height:auto;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:0.22;">
+                    <div style="position:relative;z-index:1;">
+                      <div class="cert-preview-header">
+                        <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon">
+                        <div style="text-align:center;">
+                          <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
+                            Republic of the Philippines<br>
+                            Province of Batangas<br>
+                            MUNICIPALITY OF PADRE GARCIA
+                          </div>
+                          <div class="cert-title">
+                            OFFICE OF THE MUNICIPAL MAYOR
+                          </div>
+                          <hr style="border-top:4px solid #222;margin:12px 0;">
+                          <div class="bernard-title">CERTIFICATION</div>
                         </div>
-                        <div class="cert-title" style="font-size:22px;letter-spacing:1px;font-weight:900;">
-                          OFFICE OF THE MUNICIPAL MAYOR
-                        </div>
-                        <hr style="border:0; border-top:4px solid #222; margin:10px 0;">
-                        <div style="font-family:'Times New Roman', Times, serif;font-size:18px;font-weight:900;letter-spacing:8px;">
-                          CERTIFICATION
-                        </div>
+                        <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal">
                       </div>
-                      <img src="../css/images/Seal_of_Batangas.png" alt="Batangas Seal">
-                    </div>
-
-                    <div style="margin-top:18px;">
-                      <div style="text-align:right;">
-                        <span style="background:yellow; padding:4px 20px; font-weight:bold; font-size:15px;">
-                          MC No. ${cert.MCNo || ''}
+                      <div style="margin-top:12px;display:flex;justify-content:flex-end; padding-right: 40px;">
+                        <span class="mc-no">
+                          MC No. ${cert.MCNo ? cert.MCNo : '<span style="color:#e74c3c;">No data</span>'}
                         </span>
                       </div>
-                      <p style="margin-top:18px; font-size:14px; line-height:20px;">
-                        This is to certify that <strong>${cert.InformantName || ''}</strong>
-                        of Barangay <strong>${cert.InformantAddress || ''}</strong>
-                      </p>
-                      <ul style="list-style:none; padding-left:0;" class="cert-actions-list">
-                        ${actionsHtml}
-                      </ul>
-                      <p style="font-size:14px;line-height:20px;">
-                        Who died last <strong>${cert.DateDied ? cert.DateDied : ''}</strong> and was buried at the Municipal Cemetery.<br>
-                        Issued this <strong>${cert.DatePaid ? cert.DatePaid : ''}</strong> upon the request of Mr./Ms. <strong>${cert.InformantName || ''}</strong> for whatever purpose it may serve.<br>
-                        Apartment No. <strong>${cert.AptNo || ''}</strong>
-                      </p>
-                      <div style="margin-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;">
-                        <div>
-                          <strong>Recommending Approval:</strong><br>
-                          <div style="height:32px;"></div>
-                          <span style="font-weight:600;">${adminName}</span><br>
-                          MPDC/ZA
+                      <div class="cert-body">
+                        <p>This is to certify that <strong>${cert.InformantName || ''}</strong> of Barangay <strong>${cert.InformantAddress || ''}</strong></p>
+                        <ul style="list-style:none;padding-left:0;">
+                          ${actionsHtml}
+                        </ul>
+                        <p>
+                          Who died last <strong>${cert.DateDied ? cert.DateDied : ''}</strong> and was buried at the Municipal Cemetery.<br>
+                          Issued this <strong>${cert.DatePaid ? cert.DatePaid : ''}</strong> upon the request of Mr./Ms. <strong>${cert.InformantName || ''}</strong> for whatever purpose it may serve.<br>
+                          Apartment No. <strong>${cert.AptNo || ''}</strong>
+                        </p>
+                        <div class="signatures">
+                          <div class="signature-block">
+                            <strong>Recommending Approval:</strong><br><br>
+                            <div style="height:48px;"></div>
+                            <strong>${adminName}</strong><br>
+                            MPDC/ZA
+                          </div>
+                          <div class="signature-block" style="text-align:right;">
+                            <strong>Approved by:</strong><br><br>
+                            <div style="height:48px;"></div>
+                            <strong>ATTY. MARK LESTER G. MANALO</strong><br>
+                            Municipal Administrator
+                          </div>
                         </div>
-                        <div>
-                          <strong>Approved by:</strong><br>
-                          <div style="height:32px;"></div>
-                          <span style="font-weight:600;">ATTY. MARK LESTER G. MANALO</span><br>
-                          Municipal Administrator
+                        <div style="margin-top:28px;">
+                          <strong>OR No.:</strong> ${cert.ORNumber ? cert.ORNumber : '<span style="color:#e74c3c;">No data</span>'}<br>
+                          <strong>Date Paid:</strong> ${cert.DatePaid ? cert.DatePaid : '<span style="color:#e74c3c;">No data</span>'}<br>
+                          <strong>Amount:</strong> ${cert.Amount !== null && cert.Amount !== undefined ? '₱' + parseFloat(cert.Amount).toLocaleString('en-US', {minimumFractionDigits:2}) : '<span style="color:#e74c3c;">No data</span>'}<br>
+                          <strong>Renewal:</strong> ${cert.Validity ? cert.Validity.substr(0,7) : ''}
                         </div>
-                      </div>
-                      <div style="margin-top:24px;">
-                        <strong>OR No.:</strong> ${cert.ORNumber || ''}<br>
-                        <strong>Date Paid:</strong> ${cert.DatePaid || ''}<br>
-                        <strong>Amount:</strong> ${cert.Amount !== null && cert.Amount !== undefined ? '₱' + parseFloat(cert.Amount).toLocaleString('en-US', {minimumFractionDigits:2}) : ''}<br>
-                        <strong>Renewal:</strong> ${cert.Validity ? cert.Validity.substr(0,7) : ''}
-                      </div>
-                      <div style="margin-top:24px;text-align:center;">
-                        <img src="../css/images/CertFooter.png" alt="Certificate Footer" style="width:100%;max-width:720px;height:auto;">
+                        <div class="cert-footer">
+                          <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
+                        </div>
                       </div>
                     </div>
                   </div>

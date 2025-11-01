@@ -309,14 +309,10 @@ if (!isset($_SESSION['admin_id'])) {
           <thead>
             <tr>
               <th>Informant Name</th>
-              <th>Email</th>
               <th>Type</th>
               <th>Deceased Name</th>
               <th>Residency</th>
-              <th>Date of Birth</th>
-              <th>Date of Death</th>
               <th>Date of Internment</th>
-              <th>Age</th>
               <th>Niche ID</th>
               <th>Total Fee</th>
               <th>Expiration</th>
@@ -328,15 +324,11 @@ if (!isset($_SESSION['admin_id'])) {
             <?php if ($result_assessment && $result_assessment->num_rows > 0): ?>
               <?php while ($row = $result_assessment->fetch_assoc()): ?>
                 <tr data-assessed-date='<?php echo htmlspecialchars($row['created_at']); ?>'>
-                  <td><?php echo htmlspecialchars($row['informant_name']); ?></td>
-                  <td><?php echo htmlspecialchars($row['email']); ?></td>
+                  <td><b><?php echo htmlspecialchars($row['informant_name']); ?></b></td>
                   <td><?php echo htmlspecialchars($row['type']); ?></td>
-                  <td><?php echo htmlspecialchars($row['deceased_name']); ?></td>
+                  <td><b><?php echo htmlspecialchars($row['deceased_name']); ?></b></td>
                   <td><?php echo htmlspecialchars($row['residency']); ?></td>
-                  <td><?php echo htmlspecialchars($row['dob']); ?></td>
-                  <td><?php echo htmlspecialchars($row['dod']); ?></td>
                   <td><?php echo htmlspecialchars($row['internment_date']); ?></td>
-                  <td><?php echo htmlspecialchars($row['age']); ?></td>
                   <td>
                     <?php
                       // For Relocate, show current_niche_id if available, otherwise niche_id (but treat 0 as empty)
@@ -565,7 +557,7 @@ if (!isset($_SESSION['admin_id'])) {
               "infoFiltered": "(filtered from _MAX_ total entries)"
             },
             "columnDefs": [
-              { "orderable": false, "targets": [13] }
+              { "orderable": false, "targets": [9] } // update to last column index
             ],
             "drawCallback": function() {
               const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');
@@ -1375,15 +1367,15 @@ function updateDoneAssessmentTable() {
           if (niche === 0 || niche === '0' || niche === null) niche = '';
           
           tr.innerHTML = `
-            <td>${row.informant_name}</td>
-            <td>${row.email}</td>
+            <td><b>${row.informant_name}</b></td>
+            <!-- <td>${row.email}</td> -->
             <td>${row.type}</td>
-            <td>${row.deceased_name}</td>
+            <td><b>${row.deceased_name}</b></td>
             <td>${row.residency}</td>
-            <td>${row.dob}</td>
-            <td>${row.dod}</td>
+            <!-- <td>${row.dob}</td> -->
+            <!-- <td>${row.dod}</td> -->
             <td>${row.internment_date || ''}</td>
-            <td>${row.age}</td>
+            <!-- <td>${row.age}</td> -->
             <td>${niche}</td>
             <td>₱ ${parseFloat(row.total_fee).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
             <td>${row.expiration}</td>
@@ -1410,7 +1402,7 @@ function updateDoneAssessmentTable() {
               "infoFiltered": "(filtered from _MAX_ total entries)"
             },
             "columnDefs": [
-              { "orderable": false, "targets": [13] }
+              { "orderable": false, "targets": [9] } // update to last column index
             ],
             "drawCallback": function() {
               const tableWrapper = $('#done-assessment-table').closest('.clients-table-container');
@@ -1435,7 +1427,7 @@ function fetchAndUpdateClientRequestsTable() {
       if (Array.isArray(data)) {
         const tbody = document.querySelector('#clients-request-table tbody');
         tbody.innerHTML = '';
-        data.forEach(row => {
+        data.forEach (row => {
           // Avatar logic (same as PHP)
           let avatarHtml = '';
           if (row.profile_picture && row.profile_picture !== '' && row.profile_picture !== null) {
@@ -1445,6 +1437,7 @@ function fetchAndUpdateClientRequestsTable() {
             const colorIndex = (Math.abs(crc32(row.first_name + row.last_name)) % 10) + 1;
             avatarHtml = `<div class="avatar-img avatar-google avatar-color-${colorIndex}" style="display:inline-flex;">${initials}</div>`;
           }
+
           const requestDate = row.created_at ? row.created_at.substring(0, 10) : 'N/A';
           tbody.innerHTML += `
             <tr data-request-date="${requestDate}">

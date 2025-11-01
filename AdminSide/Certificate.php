@@ -135,7 +135,19 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           font-display: swap;
         }
         body { font-family: 'Poppins', sans-serif; margin:0; padding:20px; background:#fff; color:#000; }
-        #certificatePreview { width: 210mm; margin:0 auto; padding:16mm; box-sizing:border-box; background:#fff; }
+        #certificatePreview { position:relative; width: 210mm; margin:0 auto; padding:16mm; box-sizing:border-box; background:#fff; }
+        /* --- New: Certificate background image style --- */
+        #certificatePreview img[alt="Certificate Background"] {
+          position:absolute;
+          top:50%;
+          left:50%;
+          width:70%;
+          height:auto;
+          transform:translate(-50%,-50%);
+          z-index:0;
+          pointer-events:none;
+          opacity:0.22;
+        }
         .header { text-align:center; }
         .logos { display:flex; align-items:center; justify-content:center; gap:28px; }
         .logos img { max-height:80px; width:auto; }
@@ -152,6 +164,10 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
     </head>
     <body>
       <div id="certificatePreview">
+        <!-- Certificate background image (behind content, covers area, low opacity) -->
+        <img src="../assets/certbg.png" alt="Certificate Background"
+             style="position:absolute;top:50%;left:50%;width:70%;height:auto;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:0.22;">
+        <div style="position:relative;z-index:1;">
         <div class="header">
           <div class="logos">
             <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon">
@@ -227,8 +243,9 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           </div>
 
           <div class="cert-footer">
-            <img src="../css/images/CertFooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
+            <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
           </div>
+        </div>
         </div>
       </div>
 
@@ -511,6 +528,11 @@ button.btn-insert:hover {
     .certificate-masterlist-table tr:last-child td {
       border-bottom: none;
     }
+    /* Hide Payee column by default (both header and cells) */
+    .certificate-masterlist-table th[data-col="Payee"],
+    .certificate-masterlist-table td[data-col="Payee"] {
+      display: none !important;
+    }
     /* Responsive adjustments */
     @media (max-width: 900px) {
       .certificate-masterlist-table th, .certificate-masterlist-table td {
@@ -689,7 +711,7 @@ button.btn-insert:hover {
               value="<?php
                 echo isset($_POST['admin_name']) && $_POST['admin_name'] !== ''
                   ? htmlspecialchars($_POST['admin_name'])
-                  : 'ATTY. MARK LESTER G. MANALO';
+                  : 'ENGR. KHRISTINE TAPALLA';
               ?>"
               required style="width:90%;">
           </div>
@@ -897,7 +919,7 @@ button.btn-insert:hover {
                 <?php echo strtoupper(date('M-Y', strtotime($renewal))); ?>
               </div>
               <div style="margin-top:30px; text-align:center;">
-                <img src="../css/images/CertFooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
+                <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
               </div>
             </div>
           </div>
@@ -1300,6 +1322,7 @@ button.btn-insert:hover {
       window.addEventListener('DOMContentLoaded', function() {
         setCertDeleteMode(false);
         certDeleteBtn.style.background = '#e74c3c';
+
       });
     })();
     </script>
@@ -1316,6 +1339,7 @@ button.btn-insert:hover {
         document.getElementById('certTab').style.display = tabId === 'certTab' ? '' : 'none';
         document.getElementById('masterlistTab').style.display = tabId === 'masterlistTab' ? '' : 'none';
         document.getElementById('certTabBtn').classList.toggle('active', tabId === 'certTab');
+       
         document.getElementById('masterlistTabBtn').classList.toggle('active', tabId === 'masterlistTab');
       }
       // Show correct tab on page load
@@ -1358,7 +1382,7 @@ button.btn-insert:hover {
         const table = document.getElementById('certificate-masterlist-table');
         const allCols = [
           "AptNo", "NameOfDeceased", "AddressOfDeceased", "InformantName", "InformantAddress", "DateDied", "DateInternment",
-          "DNew", "DRenew", "DTransfer", "DReOpen", "DReEnter", "DatePaid", "Payee", "Amount", "ORNumber", "Validity", "MCNo"
+          "DNew", "DRenew", "DTransfer", "DReOpen", "DReEnter", "DatePaid", /*"Payee",*/ "Amount", "ORNumber", "Validity", "MCNo"
         ];
          // include new Action column in the column list so custom showColumns can toggle it
          allCols.push("Action");
@@ -1394,13 +1418,23 @@ button.btn-insert:hover {
           // Show/hide headers
           table.querySelectorAll('th').forEach(th => {
             const col = th.getAttribute('data-col');
-            th.style.display = colsToShow.includes(col) ? '' : 'none';
+            // Always hide Payee column
+            if (col === "Payee") {
+              th.style.display = 'none';
+            } else {
+              th.style.display = colsToShow.includes(col) ? '' : 'none';
+            }
           });
           // Show/hide cells
           table.querySelectorAll('tbody tr').forEach(tr => {
             tr.querySelectorAll('td').forEach(td => {
               const col = td.getAttribute('data-col');
-              td.style.display = colsToShow.includes(col) ? '' : 'none';
+              // Always hide Payee column
+              if (col === "Payee") {
+                td.style.display = 'none';
+              } else {
+                td.style.display = colsToShow.includes(col) ? '' : 'none';
+              }
             });
           });
         }
