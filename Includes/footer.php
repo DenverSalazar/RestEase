@@ -69,6 +69,15 @@
 @media (max-width: 576px) {
 	.footer-logo { height: 40px; } /* smaller on mobile */
 }
+
+/* Align footer content to the page grid: shift container left on large screens only.
+   Tweak the -24px value until the vertical edges align exactly with your guideline. */
+@media (min-width: 992px) {
+	.footer .container {
+		position: relative;
+		left: -24px; /* adjust this value to fine-tune alignment */
+	}
+}
 </style>
 <footer class="footer py-5" style="background-color: #03045e; color: white;">
     <div class="container">
@@ -87,7 +96,7 @@
             </div>
 
             <!-- Quick Links Section -->
-            <div class="col-12 col-md-3 mb-4 mx-md-auto text-center">
+            <div class="col-12 col-md-3 mb-4 mx-md-auto text-md-center">
                 <div class="d-inline-block text-start">
                     <h5 class="mb-3" style="opacity: 0.7;">Quick Links</h5>
                     <ul class="list-unstyled ps-0 mb-0">

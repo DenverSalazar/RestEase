@@ -237,7 +237,8 @@ if (!isset($_SESSION['admin_id'])) {
                     <td>$statusHtml</td>
                     <td>
                         <div class=\"actions-dropdown\">
-                            <button class=\"actions-btn\" onclick=\"toggleActionsMenu(this); return false;\">
+                            <!-- removed inline onclick to rely on delegated JS handler -->
+                            <button class=\"actions-btn\" type=\"button\">
                                 <i class=\"fas fa-ellipsis-v\"></i>
                             </button>
                             <div class=\"actions-menu\">
@@ -438,37 +439,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function toggleActionsMenu(btn) {
-        event.stopPropagation();
-        document.querySelectorAll('.actions-menu').forEach(function(menu) {
-            menu.style.display = 'none';
-        });
-        var menu = btn.nextElementSibling;
-        if (menu) {
-            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
-        }
-    }
-    window.toggleActionsMenu = toggleActionsMenu;
-
-    document.querySelectorAll('.actions-dropdown').forEach(function(drop) {
-        drop.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
+    // Stop propagation for clicks inside actions-dropdown so the document click won't close it
+    $(document).on('click', '.actions-dropdown', function(e) {
+        e.stopPropagation();
     });
 
+    // Delegated toggle for actions button (works across pagination/search/redraw)
+    $(document).on('click', '.actions-btn', function(e) {
+        e.stopPropagation();
+        // hide other menus first
+        $('.actions-menu').hide();
+        const $menu = $(this).siblings('.actions-menu');
+        // toggle display as flex to match original intent
+        if ($menu.css('display') === 'flex') {
+            $menu.hide();
+        } else {
+            $menu.css('display','flex');
+        }
+    });
+
+    // Delegated handler for Archive (delete) button in Actions menu
     let deleteTargetRow = null;
     let deleteTargetEmail = null;
 
-    // Attach click event to all delete buttons
-    document.querySelectorAll('.dropdown-item.delete').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var row = this.closest('tr');
-            var email = row.querySelector('td:nth-child(2)').textContent.trim();
-            deleteTargetRow = row;
-            deleteTargetEmail = email;
-            document.getElementById('deleteModal').style.display = 'flex';
-        });
+    $(document).on('click', '.dropdown-item.delete', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const $row = $btn.closest('tr');
+        deleteTargetRow = $row.get(0);
+        deleteTargetEmail = $row.find('td:nth-child(2)').text().trim();
+        document.getElementById('deleteModal').style.display = 'flex';
     });
 
     // Cancel button closes modal
@@ -478,35 +479,47 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteTargetEmail = null;
     });
 
-    // Delete button archives client, removes row, and shows notification
+    // Delete (Archive) confirmation — ensure modal is hidden promptly and then remove row via DataTables
     document.getElementById('modalDeleteBtn').addEventListener('click', function() {
         if (!deleteTargetEmail || !deleteTargetRow) return;
-        
+
         const deleteBtn = this;
         const modal = document.getElementById('deleteModal');
         const cancelBtn = document.getElementById('modalCancelBtn');
-        
+
         // Show loading state
         deleteBtn.disabled = true;
         deleteBtn.textContent = 'Archiving...';
         cancelBtn.disabled = true;
-        
+
         fetch('archive_client.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'archive_client_email=' + encodeURIComponent(deleteTargetEmail)
         })
         .then(res => {
-            if (!res.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!res.ok) throw new Error('Network response was not ok');
             return res.json();
         })
         .then(data => {
             if (data.status === 'success') {
-                deleteTargetRow.parentNode.removeChild(deleteTargetRow);
-                showSuccessNotification('Client successfully archived');
-                modal.style.display = 'none';
+                try {
+                    // hide modal first so user sees the transition
+                    modal.style.display = 'none';
+                    // remove the row using DataTables where applicable
+                    const $tr = $(deleteTargetRow);
+                    if (walkinTable && $tr.closest('table').is('#walkin-table')) {
+                        walkinTable.row($tr).remove().draw(false);
+                    } else if (dataTable && $tr.closest('table').is('#clients-table')) {
+                        dataTable.row($tr).remove().draw(false);
+                    } else {
+                        $tr.remove();
+                    }
+                    showSuccessNotification(data.message || 'Client successfully archived');
+                } catch (err) {
+                    console.error('Error removing row from DataTable:', err);
+                    showErrorNotification('Archive succeeded but failed to update table view. Refresh page.');
+                }
             } else {
                 showErrorNotification(data.message || 'Failed to archive client');
             }
@@ -520,96 +533,136 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteBtn.disabled = false;
             deleteBtn.textContent = 'Archive';
             cancelBtn.disabled = false;
-            
+
             // Clear references
             deleteTargetRow = null;
             deleteTargetEmail = null;
         });
     });
 
-    // Show notification logic
+    // Delegated handler for Disable / Enable buttons so it works on searched/paginated rows
+    $(document).on('click', '.dropdown-item.disable, .dropdown-item.enable', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $btn = $(this);
+        const $row = $btn.closest('tr');
+        const email = $row.find('td:nth-child(2)').text().trim();
+        const isDisable = $btn.hasClass('disable');
+        const action = isDisable ? 'disable' : 'enable';
+
+        // Show loading state
+        $btn.prop('disabled', true);
+        const originalHtml = $btn.html();
+        $btn.html(isDisable ? 'Disabling...' : 'Enabling...');
+
+        fetch('disable_client.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'disable_client_email=' + encodeURIComponent(email) + '&action=' + action
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update status display
+                const $statusCell = $row.find('td:nth-child(5)');
+                if (isDisable) {
+                    $statusCell.html('<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Disabled</span>');
+                    $btn.html('<i class="fas fa-user-check"></i> Enable');
+                    $btn.removeClass('disable').addClass('enable');
+                } else {
+                    $statusCell.html('<span style="background:#19d64c;color:#fff;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>');
+                    $btn.html('<i class="fas fa-user-slash"></i> Disable');
+                    $btn.removeClass('enable').addClass('disable');
+                }
+                showSuccessNotification(data.message || 'Client status updated');
+                // If DataTables needs re-draw for consistent rendering, trigger minimal draw (no paging reset)
+                try {
+                    if ($row.closest('table').is('#clients-table')) dataTable.row($row).invalidate().draw(false);
+                    else if (walkinTable && $row.closest('table').is('#walkin-table')) walkinTable.row($row).invalidate().draw(false);
+                } catch (err) {
+                    // harmless if row not part of DataTable or draw fails
+                }
+            } else {
+                showErrorNotification(data.message || 'Failed to update client status');
+                $btn.html(originalHtml);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorNotification('An error occurred. Please try again.');
+            $btn.html(originalHtml);
+        })
+        .finally(() => {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    // Show notification logic (added)
     function showSuccessNotification(message) {
-        const notif = document.getElementById('successNotification');
-        notif.querySelector('span').innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
-        notif.style.display = 'flex';
-        notif.style.background = '#2ecc71';
-        
-        // Auto-close after 3 seconds
-        const timeout = setTimeout(() => {
-            notif.style.display = 'none';
-        }, 3000);
-        
-        document.getElementById('closeNotificationBtn').onclick = function() {
-            notif.style.display = 'none';
-            clearTimeout(timeout);
-        };
+        try {
+            const notif = document.getElementById('successNotification');
+            if (!notif) return;
+            const span = notif.querySelector('span');
+            if (span) span.innerHTML = `<i class="fas fa-check-circle" style="margin-right:8px;"></i>${message}`;
+            notif.style.display = 'flex';
+            notif.style.background = '#2ecc71';
+            // clear any previous timeout
+            if (notif._timeout) {
+                clearTimeout(notif._timeout);
+                notif._timeout = null;
+            }
+            // auto-close after 3s
+            notif._timeout = setTimeout(() => {
+                notif.style.display = 'none';
+                notif._timeout = null;
+            }, 3000);
+
+            const closeBtn = document.getElementById('closeNotificationBtn');
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    notif.style.display = 'none';
+                    if (notif._timeout) {
+                        clearTimeout(notif._timeout);
+                        notif._timeout = null;
+                    }
+                };
+            }
+        } catch (err) {
+            console.error('showSuccessNotification error', err);
+        }
     }
 
     function showErrorNotification(message) {
-        const notif = document.getElementById('successNotification');
-        notif.querySelector('span').innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
-        notif.style.display = 'flex';
-        notif.style.background = '#e74c3c';
-        
-        // Auto-close after 3 seconds
-        const timeout = setTimeout(() => {
-            notif.style.display = 'none';
-        }, 3000);
-        
-        document.getElementById('closeNotificationBtn').onclick = function() {
-            notif.style.display = 'none';
-            clearTimeout(timeout);
-        };
-    }
+        try {
+            const notif = document.getElementById('successNotification');
+            if (!notif) return;
+            const span = notif.querySelector('span');
+            if (span) span.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right:8px;"></i>${message}`;
+            notif.style.display = 'flex';
+            notif.style.background = '#e74c3c';
+            if (notif._timeout) {
+                clearTimeout(notif._timeout);
+                notif._timeout = null;
+            }
+            notif._timeout = setTimeout(() => {
+                notif.style.display = 'none';
+                notif._timeout = null;
+            }, 3000);
 
-    // Attach click event to all disable/enable buttons
-    document.querySelectorAll('.dropdown-item.disable, .dropdown-item.enable').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var row = this.closest('tr');
-            var email = row.querySelector('td:nth-child(2)').textContent.trim();
-            var isDisable = this.classList.contains('disable');
-            var action = isDisable ? 'disable' : 'enable';
-            
-            // Show loading state
-            this.disabled = true;
-            this.textContent = isDisable ? 'Disabling...' : 'Enabling...';
-            
-            fetch('disable_client.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'disable_client_email=' + encodeURIComponent(email) + '&action=' + action
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Update status display
-                    var statusCell = row.querySelector('td:nth-child(5)');
-                    if (isDisable) {
-                        statusCell.innerHTML = '<span style="background:#f8d7da;color:#721c24;padding:4px 14px;border-radius:6px;font-size:0.95em;">Disabled</span>';
-                        this.innerHTML = '<i class="fas fa-user-check"></i> Enable';
-                        this.classList.remove('disable');
-                        this.classList.add('enable');
-                    } else {
-                        statusCell.innerHTML = '<span style="background:#19d64c;color:#fff;padding:4px 14px;border-radius:6px;font-size:0.95em;">Active</span>';
-                        this.innerHTML = '<i class="fas fa-user-slash"></i> Disable';
-                        this.classList.remove('enable');
-                        this.classList.add('disable');
+            const closeBtn = document.getElementById('closeNotificationBtn');
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    notif.style.display = 'none';
+                    if (notif._timeout) {
+                        clearTimeout(notif._timeout);
+                        notif._timeout = null;
                     }
-                    showSuccessNotification(data.message);
-                } else {
-                    showErrorNotification(data.message || 'Failed to update client status');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorNotification('An error occurred. Please try again.');
-            })
-            .finally(() => {
-                this.disabled = false;
-            });
-        });
-    });
+                };
+            }
+        } catch (err) {
+            console.error('showErrorNotification error', err);
+        }
+    }
 
     // Tab switching helper
     window.showClientsTab = function(tab) {

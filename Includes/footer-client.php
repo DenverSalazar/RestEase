@@ -63,6 +63,15 @@
 	width: 100%;
 	opacity: 1;
 }
+
+/* Add: Align footer content to the page grid on large screens only.
+   Tweak -24px to match your guide exactly. */
+@media (min-width: 992px) {
+	.footer .container {
+		position: relative;
+		left: -24px; /* adjust this value to fine-tune alignment */
+	}
+}
 </style>
 
 <footer class="footer py-5" style="background-color: #03045e; color: white;">
@@ -71,7 +80,7 @@
             <!-- Logo and Title + Taglines Section -->
             <div class="col-12 col-md-4 mb-4">
                 <div class="d-flex align-items-center">
-                    <img src="../assets/RE Logo New White.png" alt="RestEase Logo" class="footer-logo">
+                    <img src="../assets/white.png" alt="RestEase Logo" class="footer-logo">
                     <div class="ms-3">
                         <h4 class="footer-title mb-0">RestEase</h4>
                         <p class="footer-subtitle mb-0">MPDO</p>
@@ -82,7 +91,7 @@
             </div>
 
             <!-- Quick Links Section -->
-            <div class="col-12 col-md-3 mb-4 mx-md-auto text-center">
+            <div class="col-12 col-md-3 mb-4 mx-md-auto text-md-center">
                 <div class="d-inline-block text-start">
                     <h5 class="mb-3" style="opacity: 0.7;">Quick Links</h5>
                     <ul class="list-unstyled ps-0 mb-0">

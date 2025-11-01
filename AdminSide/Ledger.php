@@ -42,6 +42,43 @@ if ($nicheResult && $nicheResult->num_rows > 0) {
     }
 }
 
+// --- NEW: Mapping informant/payee names to array of deceased names (from assessments/done-assessment) ---
+$informantDeceasedMap = [];
+$deceasedResult = $conn->query("SELECT informant_name, deceased_name FROM assessment WHERE informant_name IS NOT NULL AND informant_name != '' AND deceased_name IS NOT NULL AND deceased_name != ''");
+if ($deceasedResult && $deceasedResult->num_rows > 0) {
+    while ($row = $deceasedResult->fetch_assoc()) {
+        $name = trim($row['informant_name']);
+        $deceasedName = trim($row['deceased_name']);
+        if ($name !== '' && $deceasedName !== '') {
+            if (!isset($informantDeceasedMap[$name])) $informantDeceasedMap[$name] = [];
+            if (!in_array($deceasedName, $informantDeceasedMap[$name])) $informantDeceasedMap[$name][] = $deceasedName;
+        }
+    }
+}
+
+// --- NEW: Mapping nicheID -> deceased names for exact apartment lookup ---
+$nicheDeceasedMap = [];
+$nicheDeceasedResult = $conn->query("
+  SELECT nicheID, firstName, middleName, lastName
+  FROM deceased
+  WHERE nicheID IS NOT NULL AND nicheID != ''
+    AND (firstName IS NOT NULL OR lastName IS NOT NULL)
+ ");
+if ($nicheDeceasedResult && $nicheDeceasedResult->num_rows > 0) {
+    while ($row = $nicheDeceasedResult->fetch_assoc()) {
+        $nid = trim($row['nicheID']);
+        $parts = [];
+        if (!empty($row['firstName'])) $parts[] = trim($row['firstName']);
+        if (!empty($row['middleName'])) $parts[] = trim($row['middleName']);
+        if (!empty($row['lastName'])) $parts[] = trim($row['lastName']);
+        $dname = trim(implode(' ', $parts));
+        if ($nid !== '' && $dname !== '') {
+            if (!isset($nicheDeceasedMap[$nid])) $nicheDeceasedMap[$nid] = [];
+            if (!in_array($dname, $nicheDeceasedMap[$nid])) $nicheDeceasedMap[$nid][] = $dname;
+        }
+    }
+}
+
 // Handle Ledger Form Submission (Insert or Update)
 $showLedgerSuccessModal = false;
 if (
@@ -53,6 +90,7 @@ if (
     $id = isset($_POST['id']) && $_POST['id'] !== '' ? intval($_POST['id']) : null;
     $apartmentNo = $_POST['ApartmentNo'];
     $payee = $_POST['Payee'];
+    $deceasedName = isset($_POST['DeceasedName']) ? trim($_POST['DeceasedName']) : null;
     $amount = str_replace([',', '₱', ' '], '', $_POST['Amount']);
     $orNumber = $_POST['ORNumber'];
     $mcNo = $_POST['MCNo'];
@@ -60,15 +98,15 @@ if (
     $description = $_POST['Description'];
     $datePaid = isset($_POST['DatePaid']) ? $_POST['DatePaid'] : null;
     if ($id) {
-        // Update existing
-        $stmt = $conn->prepare("UPDATE ledger SET ApartmentNo=?, Payee=?, Amount=?, ORNumber=?, MCNo=?, Validity=?, Description=?, DatePaid=? WHERE id=?");
-        $stmt->bind_param('ssdsssssi', $apartmentNo, $payee, $amount, $orNumber, $mcNo, $validity, $description, $datePaid, $id);
+        // Update existing (include DeceasedName)
+        $stmt = $conn->prepare("UPDATE ledger SET ApartmentNo=?, Payee=?, DeceasedName=?, Amount=?, ORNumber=?, MCNo=?, Validity=?, Description=?, DatePaid=? WHERE id=?");
+        $stmt->bind_param('sssdsssssi', $apartmentNo, $payee, $deceasedName, $amount, $orNumber, $mcNo, $validity, $description, $datePaid, $id);
         $stmt->execute();
         $stmt->close();
     } else {
-        // Insert new
-        $stmt = $conn->prepare("INSERT INTO ledger (ApartmentNo, Payee, Amount, ORNumber, MCNo, Validity, Description, DatePaid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('ssdsssss', $apartmentNo, $payee, $amount, $orNumber, $mcNo, $validity, $description, $datePaid);
+        // Insert new (include DeceasedName)
+        $stmt = $conn->prepare("INSERT INTO ledger (ApartmentNo, Payee, DeceasedName, Amount, ORNumber, MCNo, Validity, Description, DatePaid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('sssdsssss', $apartmentNo, $payee, $deceasedName, $amount, $orNumber, $mcNo, $validity, $description, $datePaid);
         $stmt->execute();
         $stmt->close();
     }
@@ -280,7 +318,8 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       <form id="ledgerForm" method="post" action="" enctype="multipart/form-data" autocomplete="off" style="width:100%;">
         <!-- Section: Basic Information -->
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;">Basic Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;margin-bottom:18px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 32px;margin-bottom:18px;">
+          <!-- Row 1: Payee (left) | Apt No. (right) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formName" style="font-weight:500;">Payee Name</label>
             <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>" autocomplete="off" list="payeeNameList">
@@ -296,17 +335,27 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             <!-- NicheID dropdown (hidden by default) -->
             <select id="nicheDropdown"></select>
           </div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <label for="formDatePaid" style="font-weight:500;">Date Paid</label>
-            <input type="date" id="formDatePaid" name="DatePaid" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DatePaid'] ?? ''); ?>">
+
+          <!-- Row 2: Deceased Name (left) | Amount (right) [same line] -->
+          <div style="display:flex;flex-direction:column;gap:6px;position:relative;">
+            <label for="formDeceased" style="font-weight:500;">Deceased Name</label>
+            <input type="text" id="formDeceased" name="DeceasedName" placeholder="Deceased Name" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DeceasedName'] ?? ''); ?>" autocomplete="off">
+            <select id="deceasedDropdown" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem;"></select>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formAmount" style="font-weight:500;">Amount</label>
             <div style="position:relative;">
               <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#888;font-size:1.08rem;">₱</span>
-              <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:104.5%;box-sizing:border-box;padding-left:28px;padding-right:12px;padding-top:10px;padding-bottom:10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
+              <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:104%;box-sizing:border-box;padding-left:28px;padding-right:12px;padding-top:10px;padding-bottom:10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
             </div>
           </div>
+
+          <!-- Row 3: Date Paid (left) | (right kept empty or for future fields) -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <label for="formDatePaid" style="font-weight:500;">Date Paid</label>
+            <input type="date" id="formDatePaid" name="DatePaid" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DatePaid'] ?? ''); ?>">
+          </div>
+          <div></div>
         </div>
         <!-- Section: Details -->
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;margin-top:18px;">Details</div>
@@ -396,7 +445,8 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             <thead>
               <tr>
                 <th style="min-width:100px;">Apt No.</th>
-                <th style="min-width:100px;">Payee</th>
+                <th style="min-width:100px;">Payee Name</th>
+                <th style="min-width:140px;">Deceased Name</th>
                 <th style="min-width:100px;">Date Paid</th>
                 <th>Amount</th>
                 <th style="min-width:100px;">Description</th>
@@ -460,6 +510,8 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     echo '<td style="display:flex;flex-direction:column;">';
     echo '<span style="font-weight:600;">' . $payee . '</span>';
     echo '</td>';
+    // Deceased (from ledger.DeceasedName)
+    echo '<td style="color:#000000;">' . htmlspecialchars($row['DeceasedName'] ?? '') . '</td>';
     // Date Paid
     echo '<td>' . $datePaid . '</td>';
     // Amount
@@ -944,9 +996,63 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <script>
       // --- Autofill Apt No. with dropdown if multiple nicheIDs for Payee ---
       const informantNicheMap = <?php echo json_encode($informantNicheMap); ?>;
+     // --- NEW: mapping informant -> deceased names ---
+     const informantDeceasedMap = <?php echo json_encode($informantDeceasedMap); ?>;
+    // --- NEW: mapping nicheID -> deceased names (exact apartment lookup) ---
+    const nicheDeceasedMap = <?php echo json_encode($nicheDeceasedMap); ?>;
       const payeeInput = document.getElementById('formName');
       const aptInput = document.getElementById('formApartmentNo');
       const nicheDropdown = document.getElementById('nicheDropdown');
+     // Deceased input + dropdown
+     const deceasedInput = document.getElementById('formDeceased');
+     const deceasedDropdown = document.getElementById('deceasedDropdown');
+
+    // Helper: show deceased names (single -> fill input, multiple -> show dropdown)
+    function showDeceasedNames(names) {
+      if (!deceasedInput || !deceasedDropdown) return;
+      if (!names || names.length === 0) {
+        deceasedInput.value = '';
+        deceasedDropdown.style.display = 'none';
+        return;
+      }
+      if (names.length === 1) {
+        deceasedInput.value = names[0];
+        deceasedDropdown.style.display = 'none';
+        return;
+      }
+      // multiple names: populate dropdown under deceased input
+      deceasedDropdown.innerHTML = '';
+      names.forEach(function(n) {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        deceasedDropdown.appendChild(opt);
+      });
+      deceasedDropdown.size = Math.min(names.length, 8);
+      // position and show
+      deceasedDropdown.style.display = 'block';
+      deceasedDropdown.style.position = 'absolute';
+      deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
+      deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
+    }
+
+    // Populate deceased by niche first (exact apt match). If none, fallback to informant map using payee name.
+    function populateDeceasedForAptOrPayee(nicheID, payeeName) {
+      // try nicheID exact match
+      const n = (nicheID || '').toString().trim();
+      if (n && nicheDeceasedMap[n] && nicheDeceasedMap[n].length > 0) {
+        showDeceasedNames(nicheDeceasedMap[n]);
+        return;
+      }
+      // fallback: informant/payee -> deceased(s)
+      const pn = (payeeName || '').toString().trim();
+      if (pn && informantDeceasedMap[pn] && informantDeceasedMap[pn].length > 0) {
+        showDeceasedNames(informantDeceasedMap[pn]);
+        return;
+      }
+      // nothing found
+      showDeceasedNames([]);
+    }
 
       payeeInput.addEventListener('change', function() {
         const name = this.value.trim();
@@ -972,17 +1078,69 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         } else {
           nicheDropdown.style.display = 'none';
         }
+
+       // --- NEW: deceased names autofill/dropdown ---
+       const deceasedNames = informantDeceasedMap[name] || [];
+       if (deceasedNames.length === 1) {
+         deceasedInput.value = deceasedNames[0];
+         deceasedDropdown.style.display = 'none';
+       } else if (deceasedNames.length > 1) {
+         deceasedDropdown.innerHTML = '';
+         deceasedNames.forEach(function(dn) {
+           const opt = document.createElement('option');
+           opt.value = dn;
+           opt.textContent = dn;
+           deceasedDropdown.appendChild(opt);
+         });
+         deceasedDropdown.style.display = 'block';
+         deceasedDropdown.style.position = 'absolute';
+         // position relative to deceasedInput
+         deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
+         deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
+         deceasedDropdown.size = Math.min(deceasedNames.length, 6);
+       } else {
+         deceasedDropdown.style.display = 'none';
+       }
+       // Prefer niche-based lookup (if apt is already filled), otherwise fallback to informant mapping
+       const currentApt = (aptInput.value || '').toString().trim();
+       populateDeceasedForAptOrPayee(currentApt, name);
       });
 
       nicheDropdown.addEventListener('change', function() {
         aptInput.value = this.value;
         nicheDropdown.style.display = 'none';
+       // when user selects an apt from the nicheDropdown, populate deceased(s) for that apt
+       populateDeceasedForAptOrPayee(aptInput.value, payeeInput.value);
       });
+
+     deceasedDropdown.addEventListener('change', function() {
+       deceasedInput.value = this.value;
+       deceasedDropdown.style.display = 'none';
+     });
+
+    // When Apt No is manually changed, update deceased accordingly
+    aptInput.addEventListener('change', function() {
+      const val = (this.value || '').toString().trim();
+      populateDeceasedForAptOrPayee(val, payeeInput.value);
+    });
+    aptInput.addEventListener('blur', function() {
+      // also handle blur to catch typed values
+      const val = (this.value || '').toString().trim();
+      populateDeceasedForAptOrPayee(val, payeeInput.value);
+    });
 
       // Hide dropdown if clicking elsewhere
       document.addEventListener('mousedown', function(e) {
         if (!nicheDropdown.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
           nicheDropdown.style.display = 'none';
+        }
+        // niche dropdown
+        if (!nicheDropdown.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
+          nicheDropdown.style.display = 'none';
+        }
+        // deceased dropdown
+        if (!deceasedDropdown.contains(e.target) && e.target !== deceasedInput && e.target !== payeeInput) {
+          deceasedDropdown.style.display = 'none';
         }
       });
 

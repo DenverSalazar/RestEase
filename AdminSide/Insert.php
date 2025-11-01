@@ -15,7 +15,7 @@ $userResult = $conn->query("SELECT first_name, last_name FROM users");
 if ($userResult && $userResult->num_rows > 0) {
     while ($row = $userResult->fetch_assoc()) {
         $fullName = trim($row['first_name'] . ' ' . $row['last_name']);
-        if ($fullName !== '') $informantSuggestions[$fullName] = true;
+        if ($fullName !== '') $informantSuggestions[$fullName] = true; // fixed variable name
     }
 }
 $informantResult = $conn->query("SELECT DISTINCT informantName FROM deceased WHERE informantName IS NOT NULL AND informantName != ''");
@@ -336,21 +336,73 @@ if ($id) {
         // --- Split deceased_name for type New (existing logic continues) ---
         if ($assessment && isset($assessment['type']) && $assessment['type'] === 'New' && !empty($assessment['deceased_name'])) {
             $name = trim($assessment['deceased_name']);
-            // Try to split by space, handle suffix (Jr., Sr., III, etc.)
-            $parts = preg_split('/\s+/', $name);
-            $suffixes = ['JR.', 'SR.', 'III', 'IV', 'JR', 'SR', 'II', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'JR,', 'SR,'];
+            $parts = preg_split('/\s+/', $name, -1, PREG_SPLIT_NO_EMPTY);
+
+            // Known suffixes (compare uppercased without dots)
+            $suffixes = ['JR','SR','III','IV','II','V','VI','VII','VIII','IX','X'];
             $suffix = '';
-            if (count($parts) > 2) {
-                // If last part is a suffix
-                $lastPart = strtoupper(str_replace('.', '', end($parts)));
-                if (in_array($lastPart, $suffixes)) {
+            // Remove suffix if present
+            if (count($parts) >= 2) {
+                $lastClean = strtoupper(str_replace('.', '', $parts[count($parts) - 1]));
+                if (in_array($lastClean, $suffixes, true)) {
                     $suffix = array_pop($parts);
                 }
             }
-            // Assign
-            $parsedAssessmentName['firstName'] = $parts[0] ?? '';
-            $parsedAssessmentName['middleName'] = (count($parts) > 2) ? $parts[1] : '';
-            $parsedAssessmentName['lastName'] = (count($parts) > 2) ? $parts[2] : ($parts[1] ?? '');
+
+            // Detect compound surname patterns (e.g. "de la Cruz", "del Cruz", "Dela Cruz", "van Helsing")
+            $lower = array_map('strtolower', $parts);
+            $n = count($parts);
+            $lastName = '';
+            $givenParts = [];
+            // handle "de la X" (three-token surname)
+            if ($n >= 3 && $lower[$n-3] === 'de' && $lower[$n-2] === 'la') {
+                $lastName = $parts[$n-3] . ' ' . $parts[$n-2] . ' ' . $parts[$n-1];
+                $givenParts = array_slice($parts, 0, $n-3);
+            } else {
+                // common two-token prefixes for compound surnames
+                $prefixes = ['de','del','dela','da','van','von','la','le','mc'];
+                if ($n >= 2 && in_array($lower[$n-2], $prefixes, true)) {
+                    $lastName = $parts[$n-2] . ' ' . $parts[$n-1];
+                    $givenParts = array_slice($parts, 0, $n-2);
+                } else {
+                    // default: last token is surname
+                    if ($n >= 2) {
+                        $lastName = $parts[$n-1];
+                        $givenParts = array_slice($parts, 0, $n-1);
+                    } else {
+                        // single token — treat as first name
+                        $lastName = '';
+                        $givenParts = $parts;
+                    }
+                }
+            }
+
+            // Heuristic: when multiple given tokens exist, treat the LAST given token as middleName
+            // and the preceding tokens (one or more) as firstName.
+            // Example: ["John","Loyd","Abs"] -> firstName="John Loyd", middleName="Abs"
+            $firstName = '';
+            $middleNameAssign = '';
+            $gCount = count($givenParts);
+            if ($gCount === 0) {
+                // no given parts (rare) - leave empty or fallback
+                $firstName = '';
+                $middleNameAssign = '';
+            } elseif ($gCount === 1) {
+                $firstName = $givenParts[0];
+                $middleNameAssign = '';
+            } else {
+                $middleNameAssign = array_pop($givenParts); // last given becomes middle
+                $firstName = trim(implode(' ', $givenParts)); // rest become firstName
+            }
+
+            // Final fallbacks
+            if ($firstName === '' && $lastName === '' && !empty($parts)) {
+                $firstName = $parts[0];
+            }
+
+            $parsedAssessmentName['firstName'] = $firstName;
+            $parsedAssessmentName['middleName'] = $middleNameAssign;
+            $parsedAssessmentName['lastName'] = $lastName;
             $parsedAssessmentName['suffix'] = $suffix;
         }
     }
@@ -669,8 +721,9 @@ if ($dateInternmentPrefill) {
             <div class="form-group" style="position:relative;">
               <label for="suffixDisplay">Suffix</label>
               <div style="position:relative;">
-                <input type="text" id="suffixDisplay" readonly placeholder="Select Suffix" style="padding-right:36px; background:#f8fafc; cursor:pointer; z-index:2; position:relative;" value="<?php echo htmlspecialchars($deceased['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
-                <input type="hidden" id="suffix" name="suffix" value="<?php echo htmlspecialchars($deceased['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
+                <input type="text" id="suffixDisplay" readonly placeholder="Select Suffix" style="padding-right:36px; background:#f8fafc; cursor:pointer; z-index:2; position:relative;"
+                  value="<?php echo htmlspecialchars($deceased['suffix'] ?? $parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
+                <input type="hidden" id="suffix" name="suffix" value="<?php echo htmlspecialchars($deceased['suffix'] ?? $parsedAssessmentName['suffix'] ?? $_POST['suffix'] ?? ''); ?>">
                 <button type="button" id="suffix-dropdown-btn" style="position:absolute;top:50%;right:6px;transform:translateY(-50%);background:transparent;border:none;padding:0;cursor:pointer;z-index:3;">
                   <i class="fas fa-chevron-down" style="font-size:1.1em;color:#888;"></i>
                 </button>

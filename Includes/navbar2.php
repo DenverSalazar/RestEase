@@ -54,39 +54,35 @@ if ($user_id) {
     $result->free();
     $stmt->close();
     // Accepted requests
-    $stmt = $conn->prepare("SELECT id, type, first_name, middle_name, last_name, created_at FROM accepted_request WHERE user_id = ? ORDER BY created_at DESC LIMIT 2");
+    $stmt = $conn->prepare("SELECT 'accepted' AS status, type, first_name, middle_name, last_name, created_at FROM accepted_request WHERE user_id = ? ORDER BY created_at DESC LIMIT 2");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         $latest_notifications[] = [
-            'id' => $row['id'] ?? null,
             'status' => 'accepted',
             'type' => $row['type'],
             'name' => trim($row['first_name'].' '.($row['middle_name']??'').' '.$row['last_name']),
-            'created_at' => $row['created_at'],
-            'is_read' => 0
+            'created_at' => $row['created_at']
         ];
     }
     $stmt->close();
     // Denied requests
-    $stmt = $conn->prepare("SELECT id, type, first_name, middle_name, last_name, created_at FROM denied_request WHERE user_id = ? ORDER BY created_at DESC LIMIT 2");
+    $stmt = $conn->prepare("SELECT 'denied' AS status, type, first_name, middle_name, last_name, created_at FROM denied_request WHERE user_id = ? ORDER BY created_at DESC LIMIT 2");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
         $latest_notifications[] = [
-            'id' => $row['id'] ?? null,
             'status' => 'denied',
             'type' => $row['type'],
             'name' => trim($row['first_name'].' '.($row['middle_name']??'').' '.$row['last_name']),
-            'created_at' => $row['created_at'],
-            'is_read' => 0
+            'created_at' => $row['created_at']
         ];
     }
     $stmt->close();
     // Assessment notifications (map persisted welcome -> 'welcome')
-    $stmt = $conn->prepare("SELECT id, message, link, created_at, is_read FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 3");
+    $stmt = $conn->prepare("SELECT message, link, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 3");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -105,12 +101,10 @@ if ($user_id) {
             $status = 'assessment';
         }
         $latest_notifications[] = [
-            'id'         => $row['id'],
-            'status'     => $status,
-            'message'    => $row['message'],
-            'link'       => $row['link'],
-            'created_at' => $row['created_at'],
-            'is_read'    => intval($row['is_read'])
+            'status'      => $status,
+            'message'     => $row['message'],
+            'link'        => $row['link'],
+            'created_at'  => $row['created_at']
         ];
     }
     $stmt->close();
@@ -130,31 +124,6 @@ if ($user_id) {
     }
     $cntRes->free();
     $cntStmt->close();
-
-    // --- NEW: also include counts from accepted_request & denied_request (admin-triggered notifications)
-    // Simple, safe heuristic: count recent accepted/denied requests for the user (last 30 days)
-    // so admin/automated accepted/denied events contribute to the badge.
-    $daysWindow = 30;
-    $addCount = 0;
-    $stmtA = $conn->prepare("SELECT COUNT(*) AS cnt FROM accepted_request WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)");
-    $stmtA->bind_param("ii", $user_id, $daysWindow);
-    $stmtA->execute();
-    $resA = $stmtA->get_result();
-    if ($r = $resA->fetch_assoc()) $addCount += intval($r['cnt']);
-    $resA->free();
-    $stmtA->close();
-
-    $stmtD = $conn->prepare("SELECT COUNT(*) AS cnt FROM denied_request WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)");
-    $stmtD->bind_param("ii", $user_id, $daysWindow);
-    $stmtD->execute();
-    $resD = $stmtD->get_result();
-    if ($r = $resD->fetch_assoc()) $addCount += intval($r['cnt']);
-    $resD->free();
-    $stmtD->close();
-
-    // Add accepted/denied counts to badge total
-    $new_count += $addCount;
-    // --- END NEW
 
     // allow session override (existing behavior)
     if (isset($_SESSION['notifications_read']) && $_SESSION['notifications_read']) {
@@ -255,13 +224,6 @@ if (!function_exists('re_short_relative_time')) {
 /* Footer */
 .nd-footer { text-align: center; padding: .75rem 1.25rem; background: #f7faff; border-top: 1px solid #e5e9f2; }
 .nd-footer a { color: #4B7BEC; font-weight: 600; text-decoration: none; font-size: .98rem; }
-
-/* NEW: highlight unread notifications with light gray background */
-.nd-item.unread {
-    background: #f5f7fa; /* subtle gray like screenshot */
-    cursor: pointer;
-}
-.nd-item.unread .nd-name { font-weight: 800; } /* slightly bolder for unread */
 </style>
 
 <nav class="custom-navbar position-relative">
@@ -330,6 +292,7 @@ if (!function_exists('re_short_relative_time')) {
                         <?php foreach ($latest_notifications as $notif): ?>
                             <?php
                                 $status = $notif['status'];
+                                // Avatar style + title/name + main text
                                 $avatarClass = 'nd-avatar--welcome';
                                 $avatarIcon  = '<i class="fas fa-smile-beam"></i>';
                                 $titleName   = 'RestEase';
@@ -350,32 +313,23 @@ if (!function_exists('re_short_relative_time')) {
                                     $titleName   = 'Assessment of Fees';
                                     $text        = htmlspecialchars($notif['message'] ?? '');
                                 } elseif ($status === 'expiry') {
+                                    // Expiration Notice: exclamation icon + title change
                                     $avatarClass = 'nd-avatar--expiry';
                                     $avatarIcon  = '<i class="fas fa-exclamation-circle"></i>';
                                     $titleName   = 'Expiration Notice';
                                     $text        = htmlspecialchars($notif['message'] ?? '');
                                 } elseif ($status === 'renewal') {
+                                    // New: renewal reminder
                                     $avatarClass = 'nd-avatar--renewal';
                                     $avatarIcon  = '<i class="fas fa-calendar-alt"></i>';
                                     $titleName   = 'Renewal Reminder';
                                     $text        = htmlspecialchars($notif['message'] ?: 'Your renewal is near.');
                                 }
-
                                 $when   = re_short_relative_time($notif['created_at']);
                                 $href   = isset($notif['link']) ? trim($notif['link']) : '';
-                                $nid    = isset($notif['id']) ? $notif['id'] : '';
-                                $is_read = isset($notif['is_read']) ? intval($notif['is_read']) : 0;
-
-                                // generate onclick to pass both href and notification id.
-                                // For items without a link, clicking still marks that specific item read.
-                                $onclick = ' onclick="handleNotificationClick('
-                                           . ($href !== '' ? ('\'' . htmlspecialchars($href, ENT_QUOTES) . '\'') : "''")
-                                           . ', ' . ($nid !== '' ? ('\'' . htmlspecialchars($nid, ENT_QUOTES) . '\'') : 'null')
-                                           . ');"';
-                                // unread marker class
-                                $unreadClass = $is_read ? '' : ' unread';
+                                $onclick= $href !== '' ? ' onclick="window.location.href=\''. htmlspecialchars($href) .'\';" style="cursor:pointer;"' : '';
                             ?>
-                            <div class="nd-item<?php echo $unreadClass; ?>" data-notif-id="<?php echo htmlspecialchars($nid); ?>" data-is-read="<?php echo $is_read; ?>"<?php echo $onclick; ?>>
+                            <div class="nd-item"<?php echo $onclick; ?>>
                                 <div class="nd-avatar <?php echo $avatarClass; ?>"><?php echo $avatarIcon; ?></div>
                                 <div class="nd-body">
                                     <div class="nd-top">
@@ -406,164 +360,124 @@ function toggleMobileMenu() {
     overlay.classList.toggle('show');
 }
 function toggleNotificationDropdown(e, sourceEl) {
-    e && e.preventDefault && e.preventDefault();
-    e && e.stopPropagation && e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     var dropdown = document.getElementById('notificationDropdown');
-    if (!dropdown) return;
+    var bell = sourceEl || e.currentTarget || e.target || document.getElementById('notificationBell') || document.getElementById('notificationBellMobile');
+    if (!bell) return;
 
-    // compute bell element (explicit sourceEl preferred)
-    var bell = sourceEl || (e && (e.currentTarget || e.target)) || document.getElementById('notificationBell') || document.getElementById('notificationBellMobile');
-
-    // Helper to remove existing document click handler reliably
-    function removeCloseHandler() {
-        if (window._notifCloseHandler) {
-            document.removeEventListener('click', window._notifCloseHandler);
-            window._notifCloseHandler = null;
-        }
-    }
-
-    // Toggle visibility
-    var isOpen = dropdown.style.display === 'block';
-    if (!isOpen) {
-        // Open
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
         dropdown.style.display = 'block';
 
-        // Positioning: mobile (centered) vs desktop (right-aligned)
+        // Adjust dropdown position for mobile vs desktop
         if (window.innerWidth <= 768) {
+            // Use CSS centering (left:50% + translateX) so both sides have same margin
             dropdown.style.left = '50%';
             dropdown.style.right = 'auto';
             dropdown.style.transform = 'translateX(-50%)';
-            // Use viewport-based position for top (document coordinates)
-            var rect = bell && bell.getBoundingClientRect ? bell.getBoundingClientRect() : { bottom: 0 };
-            dropdown.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+            // responsive width is handled by CSS @media rule; ensure top is placed beneath the bell
+            dropdown.style.top = (bell.getBoundingClientRect().bottom + window.scrollY + 8) + 'px';
+            // clear desktop-specific inline right if previously set
             dropdown.style.removeProperty('right');
         } else {
+            // Desktop: keep original right-aligned behavior and clear transform
             dropdown.style.transform = '';
             dropdown.style.left = '';
-            dropdown.style.top = (bell && bell.offsetTop ? (bell.offsetTop + bell.offsetHeight + 8) : (bell.getBoundingClientRect().bottom + 8)) + 'px';
+            dropdown.style.top = (bell.offsetTop + bell.offsetHeight + 8) + 'px';
             dropdown.style.right = '0px';
-            dropdown.style.width = '';
+            dropdown.style.width = ''; // return to default width
         }
 
-        // Ensure any previous handler removed
-        removeCloseHandler();
-
-        // create and store handler so it can be removed later
-        window._notifCloseHandler = function(event) {
-            if (!dropdown.contains(event.target) && event.target !== bell && !(bell && bell.contains && bell.contains(event.target))) {
-                dropdown.style.display = 'none';
-                removeCloseHandler();
-            }
-        };
-
-        // add handler after current event loop to avoid immediate close
         setTimeout(function() {
-            document.addEventListener('click', window._notifCloseHandler);
+            document.addEventListener('click', closeDropdown);
         }, 0);
-
     } else {
-        // Close
         dropdown.style.display = 'none';
-        removeCloseHandler();
+        document.removeEventListener('click', closeDropdown);
+    }
+
+    function closeDropdown(event) {
+        if (!dropdown.contains(event.target) && event.target !== bell && !bell.contains(event.target)) {
+            dropdown.style.display = 'none';
+            document.removeEventListener('click', closeDropdown);
+        }
     }
 }
 
-// Ensure bell elements and avatar get proper listeners on page load, and fetch initial data
-document.addEventListener('DOMContentLoaded', function() {
-    var desktopBell = document.getElementById('notificationBell');
-    var mobileBell = document.getElementById('notificationBellMobile');
+function toggleProfileDropdown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var dropdown = document.getElementById('profileDropdown');
     var avatar = document.getElementById('profileAvatar');
-
-    if (desktopBell) {
-        // remove inline onclick fallback (if any) and attach event listener
-        desktopBell.removeAttribute('onclick');
-        desktopBell.addEventListener('click', function(e){ toggleNotificationDropdown(e, desktopBell); });
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        dropdown.style.display = 'block';
+        var avatarRect = avatar.getBoundingClientRect();
+        dropdown.style.top = (avatar.offsetTop + avatar.offsetHeight + 8 + 'px');
+        dropdown.style.right = '0px';
+        setTimeout(function() {
+            document.addEventListener('click', closeProfileDropdown);
+        }, 0);
+    } else {
+        dropdown.style.display = 'none';
+        document.removeEventListener('click', closeProfileDropdown);
     }
-    if (mobileBell) {
-        mobileBell.removeAttribute('onclick');
-        mobileBell.addEventListener('click', function(e){ toggleNotificationDropdown(e, mobileBell); });
-    }
-    if (avatar) {
-        avatar.removeAttribute('onclick');
-        avatar.addEventListener('click', function(e){ toggleProfileDropdown(e); });
-    }
-
-    // Initial fetch / render
-    try { updateNotificationBadge(); } catch(err){ /* keep UI stable */ }
-    try { updateNotificationDropdown(); } catch(err){ /* keep UI stable */ }
-
-    // Periodic refresh (optional): keep counts and list up-to-date
-    setInterval(function(){
-        try { updateNotificationBadge(); } catch(e){}
-        try { updateNotificationDropdown(); } catch(e){}
-    }, 60000);
-});
-
-// NEW: decrement badge helper (updates desktop and mobile badges)
-function decrementBadge() {
-    var desktopBell = document.getElementById('notificationBell');
-    var mobileBell = document.getElementById('notificationBellMobile');
-
-    function decSpan(parent) {
-        if (!parent) return;
-        var span = parent.querySelector('span');
-        if (!span) return;
-        var n = parseInt(span.textContent || span.innerText || '0', 10);
-        if (isNaN(n)) n = 0;
-        n = Math.max(0, n - 1);
-        if (n === 0) {
-            span.remove();
-        } else {
-            span.textContent = n;
+    function closeProfileDropdown(event) {
+        if (!dropdown.contains(event.target) && event.target !== avatar) {
+            dropdown.style.display = 'none';
+            document.removeEventListener('click', closeProfileDropdown);
         }
     }
-    decSpan(desktopBell);
-    var mb = mobileBell && mobileBell.querySelector('.nbadge');
-    if (mb) {
-        var n2 = parseInt(mb.textContent || '0', 10);
-        if (isNaN(n2)) n2 = 0;
-        n2 = Math.max(0, n2 - 1);
-        if (n2 === 0) mb.remove(); else mb.textContent = n2;
-    }
 }
+function updateNotificationBadge() {
+    fetch('../ClientSide/get_notification_count.php')
+        .then(response => response.json())
+        .then(data => {
+            var desktopBell = document.getElementById('notificationBell');
+            var mobileBell = document.getElementById('notificationBellMobile');
+            if (!desktopBell && !mobileBell) return; // guard
 
-// Updated: mark specific notification read then navigate (if href provided)
-function handleNotificationClick(href, notifId) {
-    // immediately update UI: find nd-item with this notifId and remove unread state
-    try {
-        if (notifId) {
-            var selector = '[data-notif-id="' + String(notifId).replace(/"/g,'') + '"]';
-            var el = document.querySelector(selector);
-            if (el) {
-                if (el.classList.contains('unread')) {
-                    el.classList.remove('unread');
-                    // decrement visible badge
-                    decrementBadge();
-                }
-                el.setAttribute('data-is-read', '1');
+            if (desktopBell) {
+                var span = desktopBell.querySelector('span');
+                if (span) span.remove();
             }
-        }
-    } catch(e){}
-
-    // Try to notify server about this single notification being read.
-    // Attempt POST to existing endpoint with 'id' form field; server may ignore unknown field gracefully.
-    try {
-        var form = new FormData();
-        if (notifId) form.append('id', notifId);
-        fetch('../ClientSide/mark_notifications_read.php', {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: form
-        }).catch(function(){ /* ignore network errors */ });
-    } catch(e){ /* ignore */ }
-
-    // navigate to details (do not block on network)
-    if (href) {
-        window.location.href = href;
-    }
+            if (mobileBell) {
+                var spanm = mobileBell.querySelector('.nbadge');
+                if (spanm) spanm.remove();
+            }
+            if (data && Number(data.count) > 0) {
+                if (desktopBell) {
+                    var span = document.createElement('span');
+                    span.style.position = 'absolute';
+                    span.style.top = '-7px';
+                    span.style.right = '-7px';
+                    span.style.background = '#e74c3c';
+                    span.style.color = '#fff';
+                    span.style.borderRadius = '50%';
+                    span.style.fontSize = '0.7rem';
+                    span.style.padding = '1px 5px';
+                    span.style.fontWeight = '600';
+                    span.style.minWidth = '16px';
+                    span.style.textAlign = 'center';
+                    span.style.lineHeight = '1';
+                    span.style.boxShadow = '0 1px 4px rgba(0,0,0,0.12)';
+                    span.style.zIndex = '2';
+                    span.textContent = data.count;
+                    desktopBell.appendChild(span);
+                }
+                if (mobileBell) {
+                    var spanm = document.createElement('span');
+                    spanm.className = 'nbadge';
+                    spanm.textContent = data.count;
+                    mobileBell.appendChild(spanm);
+                }
+            }
+        })
+        .catch(() => {
+            // swallow network/parse errors to prevent breaking UI
+        });
 }
 
-// Ensure updateNotificationDropdown (dynamic loader) uses same behavior and unread class
+// Real-time notification dropdown update
 function updateNotificationDropdown() {
     fetch('../ClientSide/get_latest_notifications.php')
         .then(response => response.json())
@@ -573,33 +487,64 @@ function updateNotificationDropdown() {
             list.innerHTML = '';
             if (Array.isArray(data) && data.length > 0) {
                 data.forEach(function(notif) {
-                    // determine status & types (existing logic)
-                    // ...existing mapping code...
-                    var id = notif.id || null;
-                    var isRead = (typeof notif.is_read !== 'undefined') ? Number(notif.is_read) : 0;
-                    var unreadClass = isRead ? '' : ' unread';
-                    var item = document.createElement('div');
-                    item.className = 'nd-item' + unreadClass;
-                    if (id) item.setAttribute('data-notif-id', id);
-                    item.setAttribute('data-is-read', isRead ? '1' : '0');
+                    const rawStatus = (notif.status || '').toLowerCase();
+                    // accept both "renewal" and "reminder" from adminside
+                    // prefer explicit expiry detection, but also detect expiry by message content
+                    let status = rawStatus;
+                    if (!status || status === 'assessment') {
+                        const msg = (notif.message || '').toLowerCase();
+                        if (msg.indexOf('expiry') !== -1 || msg.indexOf('expire') !== -1 || msg.indexOf('validity') !== -1) {
+                            status = 'expiry';
+                        }
+                    }
+                    if (status === 'reminder') status = 'renewal';
 
-                    // set cursor & click handler
-                    if (notif.link) {
-                        item.style.cursor = 'pointer';
-                        item.addEventListener('click', function(){ handleNotificationClick(notif.link, id); });
-                    } else {
-                        item.addEventListener('click', function(){ handleNotificationClick('', id); });
+                    let avatarClass = 'nd-avatar--welcome';
+                    let icon  = '<i class="fas fa-smile-beam"></i>';
+                    let title = 'RestEase';
+                    let text  = 'Welcome to RestEase!';
+                    if (status === 'accepted') {
+                        avatarClass = 'nd-avatar--accepted';
+                        icon  = '<i class="fas fa-check"></i>';
+                        title = notif.name || 'Request';
+                        text  = 'accepted your request.';
+                    } else if (status === 'denied') {
+                        avatarClass = 'nd-avatar--denied';
+                        icon  = '<i class="fas fa-times"></i>';
+                        title = notif.name || 'Request';
+                        text  = 'denied your request.';
+                    } else if (status === 'assessment') {
+                        avatarClass = 'nd-avatar--assessment';
+                        icon  = '<i class="fas fa-file-invoice-dollar"></i>';
+                        title = 'Assessment of Fees';
+                        text  = escapeHtml(notif.message || '');
+                    } else if (status === 'expiry') {
+                        avatarClass = 'nd-avatar--expiry';
+                        icon  = '<i class="fas fa-exclamation-circle"></i>';
+                        title = 'Expiration Notice';
+                        text  = escapeHtml(notif.message || '');
+                    } else if (status === 'renewal') {
+                        avatarClass = 'nd-avatar--renewal';
+                        icon  = '<i class="fas fa-calendar-alt"></i>';
+                        title = 'Renewal Reminder';
+                        text  = escapeHtml(notif.message || 'Your renewal is near.');
                     }
 
-                    // innerHTML (use same avatar/title/text mapping from earlier)
+                    const when = reShortRelativeTime(notif.created_at);
+                    const item = document.createElement('div');
+                    item.className = 'nd-item';
+                    if (notif.link) {
+                        item.style.cursor = 'pointer';
+                        item.addEventListener('click', () => { window.location.href = notif.link; });
+                    }
                     item.innerHTML = `
-                        <div class="nd-avatar ${escapeHtml((notif._avatarClass||'nd-avatar--welcome'))}">${notif._icon||''}</div>
+                        <div class="nd-avatar ${avatarClass}">${icon}</div>
                         <div class="nd-body">
                             <div class="nd-top">
-                                <span class="nd-name">${escapeHtml(notif._title || 'RestEase')}</span>
-                                <span class="nd-time">${reShortRelativeTime(notif.created_at||'')}</span>
+                                <span class="nd-name">${escapeHtml(title)}</span>
+                                <span class="nd-time">${when}</span>
                             </div>
-                            <div class="nd-text">${escapeHtml(notif.message || (notif._text||''))}</div>
+                            <div class="nd-text">${text}</div>
                         </div>`;
                     list.appendChild(item);
                 });
@@ -613,9 +558,33 @@ function updateNotificationDropdown() {
         });
 }
 
-// ...existing JS continues ...
-</script>
+// Small helpers for client-side formatting/escaping
+function reShortRelativeTime(iso) {
+    // tolerate "YYYY-mm-dd HH:ii:ss" by replacing space
+    const d = new Date(iso && iso.replace(' ', 'T'));
+    if (isNaN(d)) return '';
+    const diff = Math.max(1, Math.round((Date.now() - d.getTime()) / 1000));
+    if (diff < 3600) return Math.max(1, Math.round(diff / 60)) + 'MIN';
+    if (diff < 86400) return Math.round(diff / 3600) + 'HR';
+    return Math.round(diff / 86400) + 'DY';
+}
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+}
 
-<?php
-// ...existing PHP/HTML/JS below...
-?>
+// Poll every 5 seconds for badge and dropdown
+setInterval(function() {
+    updateNotificationBadge();
+    updateNotificationDropdown();
+}, 5000);
+document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationBadge();
+    updateNotificationDropdown();
+});
+</script>
