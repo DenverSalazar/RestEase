@@ -192,7 +192,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <!-- Turnstile: centered & constrained to match input width -->
                             <div class="mb-3 w-100 recaptcha-fullwidth turnstile-container" aria-hidden="false">
-                                <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>"></div>
+                                <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>" data-theme="light"></div>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">Sign In</button>
