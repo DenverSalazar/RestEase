@@ -29,81 +29,196 @@ $field_errors = [
     'terms' => false
 ];
 
+require 'vendor/autoload.php'; // For PHPMailer
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Add a flag to track verification step
+$show_verification_form = false;
+$verification_error = "";
+$email_sent = false; // already present
+
+// Add: detect GET status for email sent
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['status']) && $_GET['status'] === 'emailsent') {
+    $email_sent = true;
+}
+
+// Only process registration logic on POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $input['first_name'] = trim($_POST['first_name']);
-    $input['last_name'] = trim($_POST['last_name']);
-    $input['email'] = trim($_POST['email']);
-    $input['contact_no'] = trim($_POST['contact_no']);
-    $input['password'] = $_POST['password'];
-    $input['confirm_password'] = $_POST['confirm_password'];
-    $input['terms'] = isset($_POST['terms']);
-
-    // Enforce maximum lengths
-    if (mb_strlen($input['first_name']) > 30) {
-        $register_error = "First name must be 30 characters or fewer.";
-        $field_errors['first_name'] = true;
-    }
-    if (mb_strlen($input['last_name']) > 30) {
-        $register_error = "Last name must be 30 characters or fewer.";
-        $field_errors['last_name'] = true;
-    }
-    if (mb_strlen($input['email']) > 50) {
-        $register_error = "Email must be 50 characters or fewer.";
-        $field_errors['email'] = true;
-    }
-
-    // Basic validation
-    if (!$input['first_name'] || !$input['last_name'] || !$input['email'] || !$input['contact_no'] || !$input['password'] || !$input['confirm_password']) {
-        $register_error = "All fields are required.";
-        foreach ($field_errors as $k => $_) $field_errors[$k] = !$input[$k];
-    } elseif (!preg_match('/^[\p{L} ]+$/u', $input['first_name'])) {
-        // allow letters and spaces (Unicode aware)
-        $register_error = "First name must only contain letters and spaces.";
-        $field_errors['first_name'] = true;
-    } elseif (!preg_match('/^[\p{L} ]+$/u', $input['last_name'])) {
-        // allow letters and spaces (Unicode aware)
-        $register_error = "Last name must only contain letters and spaces.";
-        $field_errors['last_name'] = true;
-    } elseif (!filter_var($input['email'], FILTER_VALIDATE_EMAIL) ||
-              !(preg_match('/@gmail\.com$/', $input['email']) || preg_match('/@yahoo\.com$/', $input['email']))) {
-        $register_error = "Email must be a valid Gmail or Yahoo address.";
-        $field_errors['email'] = true;
-    } elseif (!preg_match('/^09[0-9]{9}$/', $input['contact_no'])) {
-        $register_error = "Contact number must start with 09 and be exactly 11 digits.";
-        $field_errors['contact_no'] = true;
-    } elseif (strlen($input['password']) < 8) {
-        $register_error = "Password must be at least 8 characters long.";
-        $field_errors['password'] = true;
-    } elseif (!preg_match('/[A-Za-z]/', $input['password']) || !preg_match('/[0-9]/', $input['password'])) {
-        $register_error = "Password must contain at least one letter and one number.";
-        $field_errors['password'] = true;
-    } elseif ($input['password'] !== $input['confirm_password']) {
-        $register_error = "Passwords do not match.";
-        $field_errors['confirm_password'] = true;
-    } elseif (!$input['terms']) {
-        $register_error = "You must agree to the Terms & Conditions.";
-        $field_errors['terms'] = true;
-    } else {
-        // Only proceed if no error
-        // Check if email already exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->bind_param("s", $input['email']);
+    // If verification code is submitted
+    if (isset($_POST['verification_code']) && isset($_POST['pending_email'])) {
+        $pending_email = $_POST['pending_email'];
+        $verification_code = $_POST['verification_code'];
+        // Check code in pending_users
+        $stmt = $conn->prepare("SELECT * FROM pending_users WHERE email = ? AND verification_code = ?");
+        $stmt->bind_param("ss", $pending_email, $verification_code);
         $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0) {
-            $register_error = "Email already registered.";
-        } else {
-            // Insert new user
-            $hashed_password = password_hash($input['password'], PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, contact_no, password) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssss", $input['first_name'], $input['last_name'], $input['email'], $input['contact_no'], $hashed_password);
-            if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            // Move user to users table
+            $stmt2 = $conn->prepare("INSERT INTO users (first_name, last_name, email, contact_no, password) VALUES (?, ?, ?, ?, ?)");
+            $stmt2->bind_param("sssss", $row['first_name'], $row['last_name'], $row['email'], $row['contact_no'], $row['password']);
+            if ($stmt2->execute()) {
                 $register_success = true;
+                // Delete from pending_users
+                $stmt3 = $conn->prepare("DELETE FROM pending_users WHERE email = ?");
+                $stmt3->bind_param("s", $pending_email);
+                $stmt3->execute();
             } else {
-                $register_error = "Registration failed. Please try again.";
+                $verification_error = "Registration failed. Please try again.";
             }
+        } else {
+            $verification_error = "Invalid verification code.";
+            $show_verification_form = true;
         }
         $stmt->close();
+    } else {
+        $input['first_name'] = trim($_POST['first_name']);
+        $input['last_name'] = trim($_POST['last_name']);
+        $input['email'] = trim($_POST['email']);
+        $input['contact_no'] = trim($_POST['contact_no']);
+        $input['password'] = $_POST['password'];
+        $input['confirm_password'] = $_POST['confirm_password'];
+        $input['terms'] = isset($_POST['terms']);
+
+        // Enforce maximum lengths
+        if (mb_strlen($input['first_name']) > 30) {
+            $register_error = "First name must be 30 characters or fewer.";
+            $field_errors['first_name'] = true;
+        }
+        if (mb_strlen($input['last_name']) > 30) {
+            $register_error = "Last name must be 30 characters or fewer.";
+            $field_errors['last_name'] = true;
+        }
+        if (mb_strlen($input['email']) > 50) {
+            $register_error = "Email must be 50 characters or fewer.";
+            $field_errors['email'] = true;
+        }
+
+        // Basic validation
+        if (!$input['first_name'] || !$input['last_name'] || !$input['email'] || !$input['contact_no'] || !$input['password'] || !$input['confirm_password']) {
+            $register_error = "All fields are required.";
+            foreach ($field_errors as $k => $_) $field_errors[$k] = !$input[$k];
+        } elseif (!preg_match('/^[\p{L} ]+$/u', $input['first_name'])) {
+            // allow letters and spaces (Unicode aware)
+            $register_error = "First name must only contain letters and spaces.";
+            $field_errors['first_name'] = true;
+        } elseif (!preg_match('/^[\p{L} ]+$/u', $input['last_name'])) {
+            // allow letters and spaces (Unicode aware)
+            $register_error = "Last name must only contain letters and spaces.";
+            $field_errors['last_name'] = true;
+        } elseif (!filter_var($input['email'], FILTER_VALIDATE_EMAIL) ||
+                  !(preg_match('/@gmail\.com$/', $input['email']) || preg_match('/@yahoo\.com$/', $input['email']))) {
+            $register_error = "Email must be a valid Gmail or Yahoo address.";
+            $field_errors['email'] = true;
+        } elseif (!preg_match('/^09[0-9]{9}$/', $input['contact_no'])) {
+            $register_error = "Contact number must start with 09 and be exactly 11 digits.";
+            $field_errors['contact_no'] = true;
+        } elseif (strlen($input['password']) < 8) {
+            $register_error = "Password must be at least 8 characters long.";
+            $field_errors['password'] = true;
+        } elseif (!preg_match('/[A-Za-z]/', $input['password']) || !preg_match('/[0-9]/', $input['password'])) {
+            $register_error = "Password must contain at least one letter and one number.";
+            $field_errors['password'] = true;
+        } elseif ($input['password'] !== $input['confirm_password']) {
+            $register_error = "Passwords do not match.";
+            $field_errors['confirm_password'] = true;
+        } elseif (!$input['terms']) {
+            $register_error = "You must agree to the Terms & Conditions.";
+            $field_errors['terms'] = true;
+        } else {
+            // Only proceed if no error
+            // Check if email already exists in users or pending_users
+            $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt->bind_param("s", $input['email']);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows > 0) {
+                $register_error = "Email already registered.";
+            } else {
+                $stmt2 = $conn->prepare("SELECT id FROM pending_users WHERE email = ?");
+                $stmt2->bind_param("s", $input['email']);
+                $stmt2->execute();
+                $stmt2->store_result();
+                if ($stmt2->num_rows > 0) {
+                    $register_error = "A verification email has already been sent to this address. Please check your inbox.";
+                } else {
+                    // Generate unique token
+                    $verification_token = bin2hex(random_bytes(32));
+                    $hashed_password = password_hash($input['password'], PASSWORD_DEFAULT);
+                    // Store in pending_users
+                    $stmt3 = $conn->prepare("INSERT INTO pending_users (first_name, last_name, email, contact_no, password, verification_token) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt3->bind_param("ssssss", $input['first_name'], $input['last_name'], $input['email'], $input['contact_no'], $hashed_password, $verification_token);
+                    if ($stmt3->execute()) {
+                        // Send email using PHPMailer
+                        $mail = new PHPMailer(true);
+                        try {
+                            $mail->isSMTP();
+                            $mail->Host       = 'smtp.gmail.com';
+                            $mail->SMTPAuth   = true;
+                            $mail->Username   = 'resteasempdo@gmail.com';
+                            $mail->Password   = 'vvkblrlppiflbksu';
+                            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                            $mail->Port       = 587;
+
+                            $mail->setFrom('resteasempdo@gmail.com', 'RestEase');
+                            $mail->addAddress($input['email'], $input['first_name'] . ' ' . $input['last_name']);
+
+                            $verify_link = "http://localhost/RestEase/verify.php?token=$verification_token";
+                            $mail->isHTML(true);
+                            $mail->Subject = 'RestEase Email Verification';
+                            $mail->Body = '
+                                <div style="max-width:480px;margin:0 auto;font-family:Poppins,Arial,sans-serif;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(60,60,60,0.08);padding:32px 24px;">
+                                    <div style="text-align:center;margin-bottom:18px;">
+                                        <img src="https://resteasegarcia.com/assets/re%20logo%20blue.png" alt="RestEase Logo" style="height:48px;margin-bottom:8px;">
+                                        <h2 style="font-weight:600;color:#38d39f;margin:0 0 8px 0;">Verify your email address</h2>
+                                    </div>
+                                    <p style="font-size:1.08rem;color:#222;margin-bottom:24px;">
+                                        Please confirm that you want to use this as your RestEase account email address.<br>
+                                        Once it\'s done you will be able to start using RestEase!
+                                    </p>
+                                    <div style="text-align:center;margin-bottom:24px;">
+                                        <a href="' . $verify_link . '" style="
+                                            display:inline-block;
+                                            padding:16px 32px;
+                                            background:#38d39f;
+                                            color:#fff;
+                                            font-size:1.15rem;
+                                            font-weight:600;
+                                            border-radius:8px;
+                                            text-decoration:none;
+                                            margin-bottom:8px;
+                                            box-shadow:0 2px 8px rgba(60,60,60,0.08);
+                                        ">Verify my email</a>
+                                    </div>
+                                </div>
+                            ';
+                            $mail->send();
+                            // Reset form fields after successful pending registration
+                            $input = [
+                                'first_name' => '',
+                                'last_name' => '',
+                                'email' => '',
+                                'contact_no' => '',
+                                'password' => '',
+                                'confirm_password' => '',
+                                'terms' => false
+                            ];
+                            // Redirect to avoid resubmission on refresh
+                            header("Location: register.php?status=emailsent");
+                            exit();
+                        } catch (Exception $e) {
+                            $register_error = "Verification email could not be sent. Mailer Error: {$mail->ErrorInfo}";
+                        }
+                    } else {
+                        $register_error = "Registration failed. Please try again.";
+                    }
+                    $stmt3->close();
+                }
+                $stmt2->close();
+            }
+            $stmt->close();
+        }
     }
 }
 ?>
@@ -299,9 +414,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                <img src="assets/RE Logo New.png" alt="Logo">
-            </a>
+            <a class="navbar-brand" href="index.php">
+                    <img src="assets/RE Logo New.png" alt="Logo">
+                </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -332,81 +447,102 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="login-form">
                         <h2>Sign Up</h2>
                         <!-- Custom Toast Notification -->
-                        <?php if ($register_success || $register_error): ?>
-                        <div id="customToast" class="custom-toast <?php echo $register_success ? 'success' : 'error'; ?>">
+                        <?php if ($register_success || $register_error || $verification_error || $email_sent): ?>
+                        <?php
+                            $is_verification_sent = $email_sent;
+                            $toast_type = ($register_success || $is_verification_sent) ? 'success' : 'error';
+                        ?>
+                        <div id="customToast" class="custom-toast <?php echo $toast_type; ?>">
                             <div class="toast-icon">
-                                <?php if ($register_success): ?>
+                                <?php if ($register_success || $is_verification_sent): ?>
                                     <i class="fas fa-check-circle"></i>
                                 <?php else: ?>
                                     <i class="fas fa-exclamation-circle"></i>
                                 <?php endif; ?>
                             </div>
                             <div class="toast-message">
-                                <?php if ($register_success): ?>
-                                    Registration successful!
-                                <?php else: ?>
-                                    <?php echo $register_error; ?>
-                                <?php endif; ?>
+                                <?php
+                                if ($register_success) {
+                                    echo "Registration successful!";
+                                } elseif ($email_sent) {
+                                    echo "A verification email has been sent. Please check your inbox.";
+                                } elseif ($register_error) {
+                                    echo $register_error;
+                                } elseif ($verification_error) {
+                                    echo $verification_error;
+                                }
+                                ?>
                             </div>
                             <span class="toast-close" onclick="closeToast()">&times;</span>
                         </div>
                         <?php endif; ?>
                         <!-- End Toast -->
-                        <form method="POST" action="">
-                            <div class="row ">
-                                <div class="col-md-6">
-                                    <input type="text" maxlength="30" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
-                                        placeholder="First name" name="first_name" required
-                                        value="<?php echo htmlspecialchars($input['first_name']); ?>">
+                        <?php if ($show_verification_form): ?>
+                            <form method="POST" action="">
+                                <div class="mb-3">
+                                    <label for="verification_code">Enter the verification code sent to your email:</label>
+                                    <input type="text" class="form-control" name="verification_code" id="verification_code" required>
+                                    <input type="hidden" name="pending_email" value="<?php echo htmlspecialchars($input['email']); ?>">
                                 </div>
-                                <div class="col-md-6">
-                                    <input type="text" maxlength="30" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
-                                        placeholder="Last name" name="last_name" required
-                                        value="<?php echo htmlspecialchars($input['last_name']); ?>">
+                                <button type="submit" class="btn btn-primary w-100">Verify & Complete Registration</button>
+                            </form>
+                        <?php else: ?>
+                            <form method="POST" action="">
+                                <div class="row ">
+                                    <div class="col-md-6">
+                                        <input type="text" maxlength="30" class="form-control <?php if($field_errors['first_name']) echo 'is-invalid'; ?>"
+                                            placeholder="First name" name="first_name" required
+                                            value="<?php echo htmlspecialchars($input['first_name']); ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" maxlength="30" class="form-control <?php if($field_errors['last_name']) echo 'is-invalid'; ?>"
+                                            placeholder="Last name" name="last_name" required
+                                            value="<?php echo htmlspecialchars($input['last_name']); ?>">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <input type="email" maxlength="50" class="form-control <?php if($field_errors['email']) echo 'is-invalid'; ?>"
-                                    placeholder="Email" name="email" required
-                                    value="<?php echo htmlspecialchars($input['email']); ?>">
-                            </div>
-                            <div class="mb-3">
-                                <input type="text" class="form-control <?php if($field_errors['contact_no']) echo 'is-invalid'; ?>"
-                                    placeholder="Contact No." name="contact_no" required
-                                    value="<?php echo htmlspecialchars($input['contact_no']); ?>">
-                            </div>
-                            <div class="mb-3 password-container">
-                                <input type="password" class="form-control <?php if($field_errors['password'])  echo 'is-invalid'; ?>"
-                                    placeholder="Enter your password" id="password" name="password" required autocomplete="off"
-                                    value="<?php echo htmlspecialchars($input['password']); ?>">
-                                <span class="password-toggle">
-                                    <i class="far fa-eye" id="togglePassword"></i>
-                                </span>
-                            </div>
-                            <div class="mb-3 password-container">
-                                <input type="password" class="form-control <?php if($field_errors['confirm_password']) echo 'is-invalid'; ?>"
-                                    placeholder="Confirm password" id="confirmPassword" name="confirm_password" required
-                                    value="<?php echo htmlspecialchars($input['confirm_password']); ?>">
-                                <span class="password-toggle">
-                                    <i class="far fa-eye" id="toggleConfirmPassword"></i>
-                                </span>
-                            </div>
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input <?php if($field_errors['terms']) echo 'is-invalid'; ?>"
-                                    id="terms" name="terms" required <?php if($input['terms']) echo 'checked'; ?>>
-                                <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link" id="openTermsModal">Terms & Conditions</a></label>
-                            </div>
-                            <!-- reCAPTCHA widget -->
-                            <!--
-                            <div class="mb-3 w-100 recaptcha-fullwidth">
-                                <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
-                            </div>
-                            -->
-                            <button type="submit" class="btn btn-primary w-100">Create Account</button>
-                            <p class="signup-text mt-4 text-center">
-                                Already have an account? <a href="login.php">Sign In</a>
-                            </p>
-                        </form>
+                                <div class="mb-3">
+                                    <input type="email" maxlength="50" class="form-control <?php if($field_errors['email']) echo 'is-invalid'; ?>"
+                                        placeholder="Email" name="email" required
+                                        value="<?php echo htmlspecialchars($input['email']); ?>">
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control <?php if($field_errors['contact_no']) echo 'is-invalid'; ?>"
+                                        placeholder="Contact No." name="contact_no" required
+                                        value="<?php echo htmlspecialchars($input['contact_no']); ?>">
+                                </div>
+                                <div class="mb-3 password-container">
+                                    <input type="password" class="form-control <?php if($field_errors['password'])  echo 'is-invalid'; ?>"
+                                        placeholder="Enter your password" id="password" name="password" required autocomplete="off"
+                                        value="<?php echo htmlspecialchars($input['password']); ?>">
+                                    <span class="password-toggle">
+                                        <i class="far fa-eye" id="togglePassword"></i>
+                                    </span>
+                                </div>
+                                <div class="mb-3 password-container">
+                                    <input type="password" class="form-control <?php if($field_errors['confirm_password']) echo 'is-invalid'; ?>"
+                                        placeholder="Confirm password" id="confirmPassword" name="confirm_password" required
+                                        value="<?php echo htmlspecialchars($input['confirm_password']); ?>">
+                                    <span class="password-toggle">
+                                        <i class="far fa-eye" id="toggleConfirmPassword"></i>
+                                    </span>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input <?php if($field_errors['terms']) echo 'is-invalid'; ?>"
+                                        id="terms" name="terms" required <?php if($input['terms']) echo 'checked'; ?>>
+                                    <label class="form-check-label" for="terms">I agree to the <a href="#" class="terms-link" id="openTermsModal">Terms & Conditions</a></label>
+                                </div>
+                                <!-- reCAPTCHA widget -->
+                                <!--
+                                <div class="mb-3 w-100 recaptcha-fullwidth">
+                                    <div class="g-recaptcha" data-sitekey="6LfMVFkrAAAAABQM916moTEIKZre2oCgfqLr_Dlj"></div>
+                                </div>
+                                -->
+                                <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                                <p class="signup-text mt-4 text-center">
+                                    Already have an account? <a href="login.php">Sign In</a>
+                                </p>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -443,16 +579,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 document.getElementById('customToast').style.display = 'none';
             }, 300);
         }
-        <?php if ($register_success || $register_error): ?>
+        <?php if ($register_success || $register_error || $email_sent): ?>
         document.addEventListener('DOMContentLoaded', function() {
             var toast = document.getElementById('customToast');
             toast.style.opacity = '1';
             setTimeout(closeToast, 5000); // Auto-close after 5 seconds
+
+            // Remove ?status=emailsent from URL after showing toast
+            <?php if ($email_sent): ?>
+            if (window.location.search.indexOf('status=emailsent') !== -1) {
+                var url = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, url);
+            }
+            <?php endif; ?>
         });
         <?php endif; ?>
 
         <?php if ($register_success): ?>
-        // Redirect to login.php after 3 seconds if registration is successful
+        // Redirect to login.php after 1 second if registration is successful
         setTimeout(function() {
             window.location.href = "login.php";
         }, 1000);

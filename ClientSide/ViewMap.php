@@ -227,7 +227,7 @@
                 <div class="features-list">
                     <div class="feature-item"><i class="fas fa-check-circle"></i><div><strong>Interactive Map</strong><div class="muted">Search niches, view memorial plaques, and get precise locations.</div></div></div>
                     <div class="feature-item"><i class="fas fa-file-invoice"></i><div><strong>Certificate Management</strong><div class="muted">Generate and print certificates directly from the admin portal.</div></div></div>
-                    <div class="feature-item"><i class="fas fa-bell"></i><div><strong>Renewal Reminders</strong><div class="muted">Automated renewal notices to help families maintain records.</div></div></div>
+                    <div class="feature-item"><i class="fas fa-bell"></i><div><strong>Renewal Reminders</strong><div class="muted">Renewal notices to help families maintain records.</div></div></div>
                     <div class="feature-item"><i class="fas fa-users-cog"></i><div><strong>Secure Admin Tools</strong><div class="muted">Role-based access for staff to manage records safely.</div></div></div>
                 </div>
 

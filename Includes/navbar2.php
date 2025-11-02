@@ -228,7 +228,7 @@ if (!function_exists('re_short_relative_time')) {
 
 <nav class="custom-navbar position-relative">
     <div class="container navbar-top position-relative">
-        <a href="#" class="navbar-brand">
+        <a href="ClientHome.php" class="navbar-brand">
             <img src="../assets/RE Logo New.png" alt="RestEase Logo" style="height: 32px;">
         </a>
 

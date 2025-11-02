@@ -1,4 +1,5 @@
 <?php
+session_start();
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -55,7 +56,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             echo json_encode(['success' => false, 'message' => 'Mailer Error: ' . $mail->ErrorInfo]);
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'Email not found.']);
+        // Set error in session and redirect back
+        $_SESSION['error'] = "Email not found.";
+        header("Location: forgot.php");
+        exit;
     }
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);

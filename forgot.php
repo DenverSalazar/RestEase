@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +53,12 @@
                     <div class="login-form">
                         <h2>Forgot Password</h2>
                         <p class="text-muted">Enter the email address you use to create the account, and we will email the verification code to reset your password.</p>
-                       <form method="POST" action="send_reset_code.php">
+                        <?php if (isset($_SESSION['error'])): ?>
+                            <div class="alert alert-danger" role="alert">
+                                <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+                            </div>
+                        <?php endif; ?>
+                        <form method="POST" action="send_reset_code.php">
                             <div class="mb-3">
                                 <input type="email" name="email" class="form-control" placeholder="Email Address" required>
                             </div>
