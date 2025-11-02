@@ -1,0 +1,344 @@
+/* --- Begin: Import modal and related styles (copied from Ledger.css) --- */
+.import-modal-content {
+  background: #fff;
+  padding: 32px;
+  border-radius: 16px;
+  min-width: 420px;
+  max-width: 90vw;
+  position: relative;
+  box-shadow: 0 12px 48px rgba(44,62,80,0.15);
+  animation: modalSlideIn 0.3s ease-out;
+}
+@keyframes modalSlideIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+.modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.modal-header h3 {
+  margin: 8px 0;
+  font-size: 1.5rem;
+  color: #2d3a4a;
+  font-weight: 600;
+}
+.modal-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+.file-upload-area {
+  border: 2px dashed #d3dbe2;
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background: #f8fafc;
+  margin-bottom: 16px;
+  transition: border-color 0.3s;
+  position: relative;
+}
+.file-upload-area:hover {
+  border-color: #0077b6;
+  background: #caf0f8;
+}
+.file-upload-area i {
+  font-size: 2.5rem;
+  color: #bfc9d1;
+  margin-bottom: 12px;
+  display: block;
+}
+.file-upload-area input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+}
+.file-upload-label {
+  cursor: pointer;
+  display: block;
+}
+.upload-text {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #2d3a4a;
+  margin-bottom: 4px;
+}
+.file-name {
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+}
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #f0f4f8;
+  border-radius: 8px;
+}
+.file-info i {
+  color: #3498db;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.btn-cancel {
+  background: #e4e9ee;
+  color: #2d3a4a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-cancel:hover {
+  background: #d3dbe2;
+}
+.btn-upload {
+  background: #0077b6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.btn-upload:hover {
+  background: #0a5882;
+}
+/* small helpers used by modal buttons in Ledger.css */
+.btn-export,
+.btn-insert,
+button.btn-export,
+button.btn-insert {
+  background: #0077b6 !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.18s;
+}
+.btn-export:hover,
+.btn-insert:hover,
+button.btn-export:hover,
+button.btn-insert:hover {
+  background: #005f8a !important;
+}
+/* --- End: Import modal and related styles --- */
+    /* Load Bernard MT font for CERTIFICATION headings */
+    @font-face {
+      font-family: 'Bernard MT Std Condensed';
+      src: url('../assets/fonts/Bernard MT Std Condensed/Bernard MT Std Condensed.otf') format('opentype');
+      font-display: swap;
+      font-weight: normal;
+      font-style: normal;
+    }
+    /* Load Rockwell Nova Bold for OFFICE OF THE MUNICIPAL MAYOR */
+    @font-face {
+      font-family: 'Rockwell Nova';
+      src: url('../assets/fonts/rockwell-nova/RockwellNova-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --primary-color: #1a1a1a;
+      --sidebar-width: 240px;
+      --header-height: 60px;
+      --border-radius: 8px;
+      --gray-border: #ececec;
+      --gray-table: #f7f8fa;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #fafbfc;
+      margin: 0;
+      color: #222;
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: 12px 40px 80px 60px;
+    }
+    .tab {
+      background: none;
+      border: none;
+      font-size: 1.08rem;
+      padding: 24px 0 12px 0;
+      color: #222;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: border-bottom 0.18s, opacity 0.18s, color 0.18s;
+    }
+    .tab.active {
+      border-bottom: 2.5px solid #506C84;
+      color: #506C84;
+      opacity: 1;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+      padding: 20px 32px 32px 32px;
+      box-sizing: border-box;
+      margin-bottom: 24px;
+    }
+    /* --- Begin Certificate Masterlist Table Design (renamed from cemetery-masterlist-table) --- */
+    .certificate-masterlist-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      margin-bottom: 1rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+    }
+    .certificate-masterlist-table th, .certificate-masterlist-table td {
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 0.82rem;
+      border-bottom: 1px solid #eee;
+      background: #fff;
+      font-family: 'Poppins', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .certificate-masterlist-table th {
+      background: #f7f8fa;
+      font-weight: 500;
+      color: #333;
+      font-size: 0.77rem;
+    }
+    .certificate-masterlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    /* Hide Payee column by default (both header and cells) */
+    .certificate-masterlist-table th[data-col="Payee"],
+    .certificate-masterlist-table td[data-col="Payee"] {
+      display: none !important;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .certificate-masterlist-table th, .certificate-masterlist-table td {
+        font-size: 0.75rem;
+        padding: 6px 6px;
+      }
+    }
+    /* --- End Certificate Masterlist Table Design --- */
+    input[type="text"], input[type="number"], input[type="date"] {
+      border:1px solid #d0d7e2; border-radius:7px; padding:8px 12px; font-size:1.04rem; margin-top:4px; margin-bottom:2px; background:#f7fafd; transition:border 0.18s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
+      border:1.5px solid #506C84; background:#fff; outline:none;
+    }
+    input[readonly] { background-color: #f0f4f8; cursor: not-allowed; }
+    label { margin-bottom:2px; display:block; font-weight:500; }
+    .btn {
+      background:#506C84; color:#fff; border:none; padding:10px 32px; border-radius:8px; font-weight:500; cursor:pointer; transition:background 0.18s;
+    }
+    .btn:hover { background:#39546a; }
+    /* Certification masterlist filter buttons - underline/active style */
+    .cert-filter-btn {
+      border-bottom: 3px solid transparent; /* reserve space so switching doesn't shift layout */
+      padding-bottom: 6px;
+      transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+      background: transparent;
+      color: #222;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 6px 10px;
+      border: 1px solid #e6e9ec;
+      font-weight: 500;
+    }
+    .cert-filter-btn:hover { color: #0b75a8; }
+    .cert-filter-btn.active { border-color: #0077b6; color: #0077b6; font-weight: 600; }
+    /* allow the filter group to wrap on small screens */
+    #certFilters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    @media (max-width: 1100px) {
+      .main-content {
+        min-width: 0;
+        max-width: 100vw;
+        padding: 24px 8px 0 8px;
+      }
+      .card {
+        padding: 16px 8px 16px 8px;
+      }
+      .tab {
+        font-size: 0.98rem;
+        padding: 12px 0 8px 0;
+      }
+    }
+    @media print {
+      /* Try to remove browser header/footer and fit content on one page */
+      @page { size: auto; margin: 0; }
+      html, body { height: 100%; margin: 0; padding: 0; }
+      body * { visibility: hidden !important; }
+      /* Only show certificate preview when printing */
+      #certificatePreview, #certificatePreview * { visibility: visible !important; }
+      /* Layout the certificate to fill the printable area with safe padding */
+      #certificatePreview {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 210mm; /* A4 width; browsers will scale if using Letter */
+        height: 297mm; /* A4 height */
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 16mm; /* printable margin */
+        background: #fff !important;
+        box-shadow: none !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+        page-break-inside: avoid;
+        overflow: hidden;
+      }
+      /* Reduce image size for print */
+      #certificatePreview img { max-height: 88px !important; width: auto !important; }
+      /* Slightly reduce font scaling in print to help fit one page (adjust if needed) */
+      #certificatePreview { font-size: 12px; }
+      /* Hide the on-page print button */
+      .print-btn { display: none !important; }
+      /* If content still slightly overflows, apply a small scale */
+      #certificatePreview[ data-scale="1" ] { transform-origin: top left; transform: scale(0.96); }
+    }

@@ -535,202 +535,202 @@ if ($user) {
            // Certificates data for JS
            var certificates = <?php echo json_encode($certificates); ?>;
            function showCertPreview(idx, doPrint) {
-              var cert = certificates[idx];
-              var actions = [
-                { key: 'DNew', label: 'register the death of', tail: ' and rent CRYPT for five (5) years' },
-                { key: 'DRenew', label: 'renewal of CRYPT of', tail: '' },
-                { key: 'DTransfer', label: 'transfer the remains of', tail: '' },
-                { key: 'DReOpen', label: 're-open the tomb of', tail: '' },
-                { key: 'DReEnter', label: 're-enter the remains of', tail: '' }
-              ];
-              var actionsHtml = '';
-              actions.forEach(function(action, i) {
-                var checked = cert[action.key] === '✔' ? 'checked' : '';
-                var namePart = checked ? ' <strong>' + (cert.NameOfDeceased || '') + '</strong>' : '';
-                var desc = action.label + namePart + action.tail;
-                actionsHtml += '<li style="margin-bottom:12px;"><input type="checkbox" ' + checked + ' disabled style="margin-right:8px;"> ' + desc + '</li>';
-              });
-              var adminName = cert.AdminName ? cert.AdminName.toUpperCase() : '';
-              // Use Bernard font for CERTIFICATION, Rockwell Nova for office title, and layout from admin certificate
-              var html = `
-                <div class="cert-preview-wrapper" id="certPreviewWrapper">
-                  <div class="cert-preview-page">
-                    <button class="cert-close-btn" onclick="closeCertPreview()" aria-label="Close">&times;</button>
-                    <!-- Certificate background image (behind content, covers area, low opacity) -->
-                    <img src="../assets/certbg.png" alt="Certificate Background"
-                         style="position:absolute;top:50%;left:50%;width:70%;height:auto;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:0.22;">
-                    <div style="position:relative;z-index:1;">
-                      <div class="cert-preview-header">
-                        <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon">
-                        <div style="text-align:center;">
-                          <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
-                            Republic of the Philippines<br>
-                            Province of Batangas<br>
-                            MUNICIPALITY OF PADRE GARCIA
-                          </div>
-                          <div class="cert-title">
-                            OFFICE OF THE MUNICIPAL MAYOR
-                          </div>
-                          <hr style="border-top:4px solid #222;margin:12px 0;">
-                          <div class="bernard-title">CERTIFICATION</div>
-                        </div>
-                        <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal">
-                      </div>
-                      <div style="margin-top:12px;display:flex;justify-content:flex-end; padding-right: 40px;">
-                        <span class="mc-no">
-                          MC No. ${cert.MCNo ? cert.MCNo : '<span style="color:#e74c3c;">No data</span>'}
-                        </span>
-                      </div>
-                      <div class="cert-body">
-                        <p>This is to certify that <strong>${cert.InformantName || ''}</strong> of Barangay <strong>${cert.InformantAddress || ''}</strong></p>
-                        <ul style="list-style:none;padding-left:0;">
-                          ${actionsHtml}
-                        </ul>
-                        <p>
-                          Who died last <strong>${cert.DateDied ? cert.DateDied : ''}</strong> and was buried at the Municipal Cemetery.<br>
-                          Issued this <strong>${cert.DatePaid ? cert.DatePaid : ''}</strong> upon the request of Mr./Ms. <strong>${cert.InformantName || ''}</strong> for whatever purpose it may serve.<br>
-                          Apartment No. <strong>${cert.AptNo || ''}</strong>
-                        </p>
-                        <div class="signatures">
-                          <div class="signature-block">
-                            <strong>Recommending Approval:</strong><br><br>
-                            <div style="height:48px;"></div>
-                            <strong>${adminName}</strong><br>
-                            MPDC/ZA
-                          </div>
-                          <div class="signature-block" style="text-align:right;">
-                            <strong>Approved by:</strong><br><br>
-                            <div style="height:48px;"></div>
-                            <strong>ATTY. MARK LESTER G. MANALO</strong><br>
-                            Municipal Administrator
-                          </div>
-                        </div>
-                        <div style="margin-top:28px;">
-                          <strong>OR No.:</strong> ${cert.ORNumber ? cert.ORNumber : '<span style="color:#e74c3c;">No data</span>'}<br>
-                          <strong>Date Paid:</strong> ${cert.DatePaid ? cert.DatePaid : '<span style="color:#e74c3c;">No data</span>'}<br>
-                          <strong>Amount:</strong> ${cert.Amount !== null && cert.Amount !== undefined ? '₱' + parseFloat(cert.Amount).toLocaleString('en-US', {minimumFractionDigits:2}) : '<span style="color:#e74c3c;">No data</span>'}<br>
-                          <strong>Renewal:</strong> ${cert.Validity ? cert.Validity.substr(0,7) : ''}
-                        </div>
-                        <div class="cert-footer">
-                          <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              `;
-              var body = document.getElementById('certPreviewBody');
-              body.innerHTML = html;
+             var cert = certificates[idx];
+             var actions = [
+               { key: 'DNew', label: 'register the death of', tail: ' and rent CRYPT for five (5) years' },
+               { key: 'DRenew', label: 'renewal of CRYPT of', tail: '' },
+               { key: 'DTransfer', label: 'transfer the remains of', tail: '' },
+               { key: 'DReOpen', label: 're-open the tomb of', tail: '' },
+               { key: 'DReEnter', label: 're-enter the remains of', tail: '' }
+             ];
+             var actionsHtml = '';
+             actions.forEach(function(action, i) {
+               var checked = cert[action.key] === '✔' ? 'checked' : '';
+               var namePart = checked ? ' <strong>' + (cert.NameOfDeceased || '') + '</strong>' : '';
+               var desc = action.label + namePart + action.tail;
+               actionsHtml += '<li style="margin-bottom:12px;"><input type="checkbox" ' + checked + ' disabled style="margin-right:8px;"> ' + desc + '</li>';
+             });
+             var adminName = cert.AdminName ? cert.AdminName.toUpperCase() : '';
+             // Use Bernard font for CERTIFICATION, Rockwell Nova for office title, and layout from admin certificate
+             var html = `
+               <div class="cert-preview-wrapper" id="certPreviewWrapper">
+                 <div class="cert-preview-page">
+                   <button class="cert-close-btn" onclick="closeCertPreview()" aria-label="Close">&times;</button>
+                   <!-- Certificate background image (behind content, covers area, low opacity) -->
+                   <img src="../assets/certbg.png" alt="Certificate Background"
+                        style="position:absolute;top:50%;left:50%;width:70%;height:auto;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:0.22;">
+                   <div style="position:relative;z-index:1;">
+                     <div class="cert-preview-header">
+                       <img src="../assets/Logo garcia.png" alt="Padre Garcia Icon">
+                       <div style="text-align:center;">
+                         <div style="font-family:'Times New Roman', Times, serif;font-size:1.15rem;line-height:1.3;margin-bottom:2px;">
+                           Republic of the Philippines<br>
+                           Province of Batangas<br>
+                           MUNICIPALITY OF PADRE GARCIA
+                         </div>
+                         <div class="cert-title">
+                           OFFICE OF THE MUNICIPAL MAYOR
+                         </div>
+                         <hr style="border-top:4px solid #222;margin:12px 0;">
+                         <div class="bernard-title">CERTIFICATION</div>
+                       </div>
+                       <img src="../assets/Seal_of_Batangas.png" alt="Batangas Seal">
+                     </div>
+                     <div style="margin-top:12px;display:flex;justify-content:flex-end; padding-right: 40px;">
+                       <span class="mc-no">
+                         MC No. ${cert.MCNo ? cert.MCNo : '<span style="color:#e74c3c;">No data</span>'}
+                       </span>
+                     </div>
+                     <div class="cert-body">
+                       <p>This is to certify that <strong>${cert.InformantName || ''}</strong> of Barangay <strong>${cert.InformantAddress || ''}</strong></p>
+                       <ul style="list-style:none;padding-left:0;">
+                         ${actionsHtml}
+                       </ul>
+                       <p>
+                         Who died last <strong>${cert.DateDied ? cert.DateDied : ''}</strong> and was buried at the Municipal Cemetery.<br>
+                         Issued this <strong>${cert.DatePaid ? cert.DatePaid : ''}</strong> upon the request of Mr./Ms. <strong>${cert.InformantName || ''}</strong> for whatever purpose it may serve.<br>
+                         Apartment No. <strong>${cert.AptNo || ''}</strong>
+                       </p>
+                       <div class="signatures">
+                         <div class="signature-block">
+                           <strong>Recommending Approval:</strong><br><br>
+                           <div style="height:48px;"></div>
+                           <strong>${adminName}</strong><br>
+                           MPDC/ZA
+                         </div>
+                         <div class="signature-block" style="text-align:right;">
+                           <strong>Approved by:</strong><br><br>
+                           <div style="height:48px;"></div>
+                           <strong>${adminName}</strong><br>
+                           Department Head
+                         </div>
+                       </div>
+                       <div style="margin-top:28px;">
+                         <strong>OR No.:</strong> ${cert.ORNumber ? cert.ORNumber : '<span style="color:#e74c3c;">No data</span>'}<br>
+                         <strong>Date Paid:</strong> ${cert.DatePaid ? cert.DatePaid : '<span style="color:#e74c3c;">No data</span>'}<br>
+                         <strong>Amount:</strong> ${cert.Amount !== null && cert.Amount !== undefined ? '₱' + parseFloat(cert.Amount).toLocaleString('en-US', {minimumFractionDigits:2}) : '<span style="color:#e74c3c;">No data</span>'}<br>
+                         <strong>Renewal:</strong> ${cert.Validity ? cert.Validity.substr(0,7) : ''}
+                       </div>
+                       <div class="cert-footer">
+                         <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             `;
+             var body = document.getElementById('certPreviewBody');
+             body.innerHTML = html;
 
-              // Compute scale so the certificate page fits the viewport as large as possible
-              // but never becomes too small. Do not upscale beyond 1.
-              function adjustScaleForWrapper() {
-                var wrapper = document.getElementById('certPreviewWrapper');
-                if (!wrapper) return;
-                var page = wrapper.querySelector('.cert-preview-page');
-                if (!page) return;
-                // actual page dimensions
-                var pageW = page.offsetWidth;
-                var pageH = page.offsetHeight;
-                // available viewport (leave small padding so close button isn't clipped)
-                var availW = Math.max(window.innerWidth - 24, 200);
-                var availH = Math.max(window.innerHeight - 48, 200);
-                // compute scale that fits both width and height
-                var rawScale = Math.min(availW / pageW, availH / pageH);
-                // clamp scale between minScale and 1
-                var minScale = 0.85; // avoid rendering too small
-                var scale = Math.min(1, Math.max(minScale, rawScale));
-                // apply transform
-                wrapper.style.transform = 'scale(' + scale + ')';
-                wrapper.style.transformOrigin = 'top center';
-                // always center modal content so scaled certificate is visible and not tucked to top
-                var modal = document.getElementById('certPreviewModal');
-                if (modal) {
-                  modal.style.alignItems = 'center';
+             // Compute scale so the certificate page fits the viewport as large as possible
+             // but never becomes too small. Do not upscale beyond 1.
+             function adjustScaleForWrapper() {
+               var wrapper = document.getElementById('certPreviewWrapper');
+               if (!wrapper) return;
+               var page = wrapper.querySelector('.cert-preview-page');
+               if (!page) return;
+               // actual page dimensions
+               var pageW = page.offsetWidth;
+               var pageH = page.offsetHeight;
+               // available viewport (leave small padding so close button isn't clipped)
+               var availW = Math.max(window.innerWidth - 24, 200);
+               var availH = Math.max(window.innerHeight - 48, 200);
+               // compute scale that fits both width and height
+               var rawScale = Math.min(availW / pageW, availH / pageH);
+               // clamp scale between minScale and 1
+               var minScale = 0.85; // avoid rendering too small
+               var scale = Math.min(1, Math.max(minScale, rawScale));
+               // apply transform
+               wrapper.style.transform = 'scale(' + scale + ')';
+               wrapper.style.transformOrigin = 'top center';
+               // always center modal content so scaled certificate is visible and not tucked to top
+               var modal = document.getElementById('certPreviewModal');
+               if (modal) {
+                 modal.style.alignItems = 'center';
+               }
+             }
+             // keep reference so resize listener can reuse the same logic
+             window._adjustCertScale = adjustScaleForWrapper;
+
+            // Show modal BEFORE measuring so offsets/offsetHeight reflect the rendered certificate.
+            var modalEl = document.getElementById('certPreviewModal');
+            modalEl.style.display = 'flex';
+
+            // If printing requested, set up small fallback timer and afterprint handler.
+            var printTimer = null;
+            var afterPrintHandler = null;
+            if (doPrint) {
+              // fallback in case images/events are slow
+              printTimer = setTimeout(function(){ window.print(); }, 1200);
+              afterPrintHandler = function() {
+                // hide modal after printing
+                modalEl.style.display = 'none';
+                try { window.removeEventListener('afterprint', afterPrintHandler); } catch(e){}
+              };
+              window.addEventListener('afterprint', afterPrintHandler);
+            }
+
+            // Call adjust immediately and again after short delays to catch any late rendering.
+            adjustScaleForWrapper();
+            setTimeout(adjustScaleForWrapper, 60);
+            setTimeout(adjustScaleForWrapper, 300);
+
+            // Also wait for images inside the certificate to load, then adjust again and trigger print if requested.
+            (function waitImagesThenAdjust(){
+              var wrapper = document.getElementById('certPreviewWrapper');
+              if (!wrapper) {
+                if (doPrint && printTimer === null) printTimer = setTimeout(function(){ window.print(); }, 800);
+                return;
+              }
+              var page = wrapper.querySelector('.cert-preview-page');
+              if (!page) {
+                if (doPrint && printTimer === null) printTimer = setTimeout(function(){ window.print(); }, 800);
+                return;
+              }
+              var imgs = page.querySelectorAll('img');
+              if (!imgs || imgs.length === 0) {
+                // no images - call print after adjustments
+                adjustScaleForWrapper();
+                if (doPrint) {
+                  clearTimeout(printTimer);
+                  setTimeout(function(){
+                    window.print();
+                  }, 50);
+                }
+                return;
+              }
+              var remaining = imgs.length;
+              function oneDone() {
+                remaining--;
+                if (remaining <= 0) {
+                  // final adjustment after all images settle
+                  adjustScaleForWrapper();
+                  if (doPrint) {
+                    clearTimeout(printTimer);
+                    setTimeout(function(){
+                      window.print();
+                    }, 50);
+                  }
                 }
               }
-              // keep reference so resize listener can reuse the same logic
-              window._adjustCertScale = adjustScaleForWrapper;
-
-             // Show modal BEFORE measuring so offsets/offsetHeight reflect the rendered certificate.
-             var modalEl = document.getElementById('certPreviewModal');
-             modalEl.style.display = 'flex';
-
-             // If printing requested, set up small fallback timer and afterprint handler.
-             var printTimer = null;
-             var afterPrintHandler = null;
-             if (doPrint) {
-               // fallback in case images/events are slow
-               printTimer = setTimeout(function(){ window.print(); }, 1200);
-               afterPrintHandler = function() {
-                 // hide modal after printing
-                 modalEl.style.display = 'none';
-                 try { window.removeEventListener('afterprint', afterPrintHandler); } catch(e){}
-               };
-               window.addEventListener('afterprint', afterPrintHandler);
-             }
-
-             // Call adjust immediately and again after short delays to catch any late rendering.
-             adjustScaleForWrapper();
-             setTimeout(adjustScaleForWrapper, 60);
-             setTimeout(adjustScaleForWrapper, 300);
-
-             // Also wait for images inside the certificate to load, then adjust again and trigger print if requested.
-             (function waitImagesThenAdjust(){
-               var wrapper = document.getElementById('certPreviewWrapper');
-               if (!wrapper) {
-                 if (doPrint && printTimer === null) printTimer = setTimeout(function(){ window.print(); }, 800);
-                 return;
-               }
-               var page = wrapper.querySelector('.cert-preview-page');
-               if (!page) {
-                 if (doPrint && printTimer === null) printTimer = setTimeout(function(){ window.print(); }, 800);
-                 return;
-               }
-               var imgs = page.querySelectorAll('img');
-               if (!imgs || imgs.length === 0) {
-                 // no images - call print after adjustments
-                 adjustScaleForWrapper();
-                 if (doPrint) {
-                   clearTimeout(printTimer);
-                   setTimeout(function(){
-                     window.print();
-                   }, 50);
-                 }
-                 return;
-               }
-               var remaining = imgs.length;
-               function oneDone() {
-                 remaining--;
-                 if (remaining <= 0) {
-                   // final adjustment after all images settle
-                   adjustScaleForWrapper();
-                   if (doPrint) {
-                     clearTimeout(printTimer);
-                     setTimeout(function(){
-                       window.print();
-                     }, 50);
-                   }
-                 }
-               }
-               imgs.forEach(function(img){
-                 if (img.complete) {
-                   oneDone();
-                 } else {
-                   img.addEventListener('load', oneDone, { once: true });
-                   img.addEventListener('error', oneDone, { once: true });
-                 }
-               });
-             })();
-           }
-           function closeCertPreview() {
-             document.getElementById('certPreviewModal').style.display = 'none';
-           }
-           // Re-adjust scale on orientation/resize while modal open
-           window.addEventListener('resize', function(){
-             if (typeof window._adjustCertScale === 'function') window._adjustCertScale();
-           });
-         </script>
+              imgs.forEach(function(img){
+                if (img.complete) {
+                  oneDone();
+                } else {
+                  img.addEventListener('load', oneDone, { once: true });
+                  img.addEventListener('error', oneDone, { once: true });
+                }
+              });
+            })();
+          }
+          function closeCertPreview() {
+            document.getElementById('certPreviewModal').style.display = 'none';
+          }
+          // Re-adjust scale on orientation/resize while modal open
+          window.addEventListener('resize', function(){
+            if (typeof window._adjustCertScale === 'function') window._adjustCertScale();
+          });
+        </script>
        <?php endif; ?>
      </div>
    </div>

@@ -455,7 +455,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Redirect to login.php after 3 seconds if registration is successful
         setTimeout(function() {
             window.location.href = "login.php";
-        }, 2500);
+        }, 1000);
         <?php endif; ?>
 
         // Terms & Conditions Modal Logic
