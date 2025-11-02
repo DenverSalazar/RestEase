@@ -5,6 +5,64 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php"); // Adjust the path if needed
     exit;
 }
+
+// Cloudflare Turnstile keys (replace with your keys)
+$turnstile_sitekey = '0x4AAAAAAB9DMwi4JEs-E7Dk';
+$turnstile_secret  = '0x4AAAAAAB9DM0HH3_jtHziIMzaFQztRwcA';
+
+$successMsg = $_SESSION['successMsg'] ?? '';
+$errorMsg = $_SESSION['errorMsg'] ?? '';
+unset($_SESSION['successMsg'], $_SESSION['errorMsg']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $contact = trim($_POST['contact'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+    $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
+
+    // Cloudflare Turnstile verification function
+    function verify_turnstile($token, $secret, $remoteip = null) {
+        if (empty($token) || empty($secret)) return false;
+        $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        $post = ['secret' => $secret, 'response' => $token];
+        if ($remoteip) $post['remoteip'] = $remoteip;
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $resp = curl_exec($ch);
+        curl_close($ch);
+        $obj = json_decode($resp);
+        return ($obj && !empty($obj->success));
+    }
+
+    if (!$name) {
+        $_SESSION['errorMsg'] = 'Name is required.';
+    } elseif (!$contact) {
+        $_SESSION['errorMsg'] = 'Contact is required.';
+    } elseif (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['errorMsg'] = 'Valid email is required.';
+    } elseif (!$message) {
+        $_SESSION['errorMsg'] = 'Message is required.';
+    } elseif (empty($turnstile_response) || !verify_turnstile($turnstile_response, $turnstile_secret, $_SERVER['REMOTE_ADDR'] ?? '')) {
+        $_SESSION['errorMsg'] = 'Please complete the Cloudflare verification before submitting.';
+    } else {
+        // Send email (use PHPMailer if available, or mail())
+        // For demo, use PHP mail()
+        $to = 'resteasempdo@gmail.com';
+        $subject = 'Client Contact Form Submission';
+        $body = "Name: $name\nContact: $contact\nEmail: $email\nMessage:\n$message";
+        $headers = "From: $email\r\n";
+        if (mail($to, $subject, $body, $headers)) {
+            $_SESSION['successMsg'] = 'Your message has been sent successfully!';
+        } else {
+            $_SESSION['errorMsg'] = 'Message could not be sent. Please try again later.';
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -22,6 +80,8 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="../css/navbar.css">
     <link rel="stylesheet" href="../css/footer.css">
     <link rel="stylesheet" href="../css/clientcontact-us.css">
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
    <?php include '../Includes/navbar2.php'; ?>
@@ -42,20 +102,34 @@ if (!isset($_SESSION['user_id'])) {
                     <h2>Get In Touch</h2>
                     <p class="mb-4">Connect with us for more information or assistance. Whether you have concerns, suggestions, or need help, we're just a message away!</p>
                     
-                    <form>
+                    <?php if ($successMsg): ?>
+                        <div class="alert alert-success"><?php echo $successMsg; ?></div>
+                    <?php elseif ($errorMsg): ?>
+                        <div class="alert alert-danger"><?php echo $errorMsg; ?></div>
+                    <?php endif; ?>
+
+                    <form method="POST" id="contactForm" novalidate>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Name">
+                                <input type="text" class="form-control" name="name" placeholder="Name" required>
+                                <div class="invalid-feedback">Name is required.</div>
                             </div>
                             <div class="col-md-6">
-                                <input type="text" class="form-control" placeholder="Contact">
+                                <input type="text" class="form-control" name="contact" placeholder="Contact" required>
+                                <div class="invalid-feedback">Contact is required.</div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <input type="email" class="form-control" placeholder="Email Address">
+                            <input type="email" class="form-control" name="email" placeholder="Email Address" required>
+                            <div class="invalid-feedback">Valid email is required.</div>
                         </div>
                         <div class="mb-3">
-                            <textarea class="form-control" rows="6" placeholder="Message"></textarea>
+                            <textarea class="form-control" name="message" rows="6" placeholder="Message" required></textarea>
+                            <div class="invalid-feedback">Message is required.</div>
+                        </div>
+                        <!-- Cloudflare Turnstile widget -->
+                        <div class="mb-3 w-100 turnstile-container" aria-hidden="false">
+                            <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>" data-theme="light"></div>
                         </div>
                         <button type="submit" class="submit-btn">Submit</button>
                     </form>
@@ -125,5 +199,39 @@ if (!isset($_SESSION['user_id'])) {
     <?php include '../Includes/footer-client.php'; ?>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Client-side validation
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        let valid = true;
+        const form = e.target;
+        if (!form.name.value.trim()) {
+            form.name.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.name.classList.remove('is-invalid');
+        }
+        if (!form.contact.value.trim()) {
+            form.contact.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.contact.classList.remove('is-invalid');
+        }
+        if (!form.email.value.trim() || !form.email.value.match(/^[^@]+@[^@]+\.[^@]+$/)) {
+            form.email.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.email.classList.remove('is-invalid');
+        }
+        if (!form.message.value.trim()) {
+            form.message.classList.add('is-invalid');
+            valid = false;
+        } else {
+            form.message.classList.remove('is-invalid');
+        }
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+    </script>
 </body>
 </html>

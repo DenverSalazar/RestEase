@@ -17,9 +17,9 @@
     <!-- Navbar (same as index.html) -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="assets/RE Logo New.png" alt="Logo">
-            </a>
+            <a class="navbar-brand" href="index.php">
+                    <img src="assets/RE Logo New.png" alt="Logo">
+                </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -75,17 +75,17 @@
         <div class="container">
             <h2>Who we are</h2>
             <div class="main-description">
-                <p>RestEase is an innovative online ossuary vault management system designed to streamline record-keeping, certificate issuance, and renewal processes for the Municipal Planning and Development Offices of Padre Garcia, Batangas. It simplifies tracking vaults, renewals, and documents while providing a front-view vault mapping feature for easy reference without the need for real-world tracking.</p>
+                <p>RestEase is an innovative online niche management system designed to streamline record-keeping, certificate issuance, and renewal processes for the Municipal Planning and Development Offices of Padre Garcia, Batangas. It simplifies tracking niches, renewals, and documents while providing a 2d mapping feature for easy reference.</p>
             </div>
 
             <div class="mission-vision">
                 <div class="our-mission">
                     <h3>Our Mission</h3>
-                    <p>Our mission is to modernize ossuary vault management by offering a digital platform that enhances organization, transparency, and accessibility. We aim to simplify vault tracking, document management, and renewal processes while ensuring families can easily locate and honor their loved ones.</p>
+                    <p>Our mission is to modernize ossuary niche management by offering a digital platform that enhances organization, transparency, and accessibility. We aim to simplify niche tracking, document management, and renewal processes while ensuring families can easily locate and honor their loved ones.</p>
                 </div>
                 <div class="our-vision">
                     <h3>Our Vision</h3>
-                    <p>We envision a future where cemetery and vault management is seamlessly digital, reducing administrative burdens while preserving historical and cultural records. RestEase aspires to be the leading ossuary vault management system, bringing innovation, efficiency, and peace of mind to local governments and communities.</p>
+                    <p>We envision a future where cemetery and niche management is seamlessly digital, reducing administrative burdens while preserving historical and cultural records. RestEase aspires to be the leading niche management system, bringing innovation, efficiency, and peace of mind to local governments and communities.</p>
                 </div>
             </div>
         </div>
@@ -98,15 +98,15 @@
             <div class="divider"></div>
             
             <div class="content-section">
-                <p>RestEase provides a comprehensive digital solution for managing ossuary vault records, ensuring efficient tracking, documentation, and certificate issuance. Our system is designed to support local government offices in handling cemetery operations with ease and precision.
+                <p>RestEase provides a comprehensive digital solution for managing niche records, ensuring efficient tracking, documentation, and certificate issuance. Our system is designed to support local government offices in handling cemetery operations with ease and precision.
                 </p>
             </div>
 
             <div class="content-section">
                <ul>
-                <li>Digitally map and organize ossuary vaults for efficient management.</li>
-                <li>Automate the issuance and renewal of niches certificates.</li>
-                <li>Offer a user-friendly interface for the public to search for vaults.</li>
+                <li>Digitally map and organize niches for efficient management.</li>
+                <li>Implement issuance and renewal of niches certificates.</li>
+                <li>Offer a user-friendly interface for the public to search for niches.</li>
                 <li>Improve record security and accuracy through a centralized database.</li>
                </ul>
             </div>
@@ -114,7 +114,7 @@
             <h3>Building a Future of Efficient Memorial Management</h3><br>
             <div class="content-section">
                 <p>
-                    RestEase is committed to transforming how cemetery and ossuary vault records are managed. By integrating modern technology into traditional processes, we eliminate inefficiencies and ensure that every record is well-documented, easily accessible, and securely stored. Our system is designed not only to assist administrators but also to provide families with a seamless way to locate and honor their loved ones without the hassle of manual record searching. As we continue to innovate, RestEase aims to set the standard for digital cemetery management—making memorial record-keeping simpler, more transparent, and future-ready for generations to come.</p>
+                    RestEase is committed to transforming how cemetery and niche records are managed. By integrating modern technology into traditional processes, we eliminate inefficiencies and ensure that every record is well-documented, easily accessible, and securely stored. Our system is designed not only to assist administrators but also to provide families with a seamless way to locate and honor their loved ones without the hassle of manual record searching. As we continue to innovate, RestEase aims to set the standard for digital cemetery management—making memorial record-keeping simpler, more transparent, and future-ready for generations to come.</p>
             </div>
         </div>
     </section>

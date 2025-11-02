@@ -5,6 +5,10 @@ require 'vendor/autoload.php';      // PHPMailer via Composer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Cloudflare Turnstile keys (replace with your keys)
+$turnstile_sitekey = '0x4AAAAAAB9DMwi4JEs-E7Dk';
+$turnstile_secret  = '0x4AAAAAAB9DM0HH3_jtHziIMzaFQztRwcA';
+
 $successMsg = $_SESSION['successMsg'] ?? '';
 $errorMsg = $_SESSION['errorMsg'] ?? '';
 unset($_SESSION['successMsg'], $_SESSION['errorMsg']);
@@ -15,6 +19,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contact = trim($_POST['contact'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $message = trim($_POST['message'] ?? '');
+    $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
+
+    // Cloudflare Turnstile verification function
+    function verify_turnstile($token, $secret, $remoteip = null) {
+        if (empty($token) || empty($secret)) return false;
+        $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        $post = ['secret' => $secret, 'response' => $token];
+        if ($remoteip) $post['remoteip'] = $remoteip;
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $resp = curl_exec($ch);
+        curl_close($ch);
+        $obj = json_decode($resp);
+        return ($obj && !empty($obj->success));
+    }
 
     if (!$name) {
         $_SESSION['errorMsg'] = 'Name is required.';
@@ -24,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['errorMsg'] = 'Valid email is required.';
     } elseif (!$message) {
         $_SESSION['errorMsg'] = 'Message is required.';
+    } elseif (empty($turnstile_response) || !verify_turnstile($turnstile_response, $turnstile_secret, $_SERVER['REMOTE_ADDR'] ?? '')) {
+        $_SESSION['errorMsg'] = 'Please complete the Cloudflare verification before submitting.';
     } else {
         // Send email via PHPMailer
         $mail = new PHPMailer(true);
@@ -80,6 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </style>
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
     <section class="hero scroll-animate fade-up">
@@ -90,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">
+                <a class="navbar-brand" href="index.php">
                     <img src="assets/RE Logo New.png" alt="Logo">
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </nav>
         <div class="hero-content">
             <h1 class="fade-in-up delay-1">RestEase: Web-Based Cemetery Records & <br> Certificate Management of Padre Garcia Batangas</h1>
-            <p class="fade-in-up delay-2">Designed for managing cemetery apartment records and certificates in Padre Garcia, Batangas. It simplifies tracking niche, renewals, and documents. The system also includes a front-view niche mapping for easy reference without real-world tracking.</p>
+            <p class="fade-in-up delay-2">Designed for managing cemetery apartment records and certificates in Padre Garcia, Batangas. It simplifies tracking niche, renewals, and documents.</p>
             <div class="btn-container mb-5 fade-in-up delay-3">
-                <a href="login.php" class="btn btn-primary btn-custom">Reserve Now</a>
+                <a href="login.php" class="btn btn-primary btn-custom">Request Now</a>
                 <a href="#explore-restease" class="btn btn-dark btn-custom">Explore</a>
             </div>
         </div>
@@ -118,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-center"><b>Associated By:</b></p>
             <div class="footer-icons d-flex justify-content-center align-items-center flex-wrap gap-4">
                 <img src="assets/Logo garcia.png" alt="Logo 1" style="height: 52px; width: auto;">
-                <img src="assets/RestLogo.webp" alt="Logo 3" style="height: 60px; width: auto;">
+                <img src="assets/re logo blue.png" alt="Logo 3" style="height: 60px; width: auto;">
                    <img src="assets/BSU Logo.png" alt="Logo 3" style="height: 53px; width: auto;">
                       <img src="assets/Seal_of_Batangas.png" alt="Logo 3" style="height: 53px; width: auto;">
             </div>
@@ -136,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-md-6">
                     <h2 class="section-title">Who we are</h2>
                     <p class="section-description" style="text-align: justify;">
-                        RestEase is a web-based Cemetery Records and Certificate Management System designed for the Municipal Planning and Development Office (MPDO) of Padre Garcia, Batangas. The system was created to modernize cemetery operations by shifting from manual, paper-based processes to a digital platform that ensures organized record management, efficient niche tracking, and automated renewal reminders.
+                        RestEase is a web-based Cemetery Records and Certificate Management System designed for the Municipal Planning and Development Office (MPDO) of Padre Garcia, Batangas. The system was created to modernize cemetery operations by shifting from manual, paper-based processes to a digital platform that ensures organized record management, efficient niche tracking, and renewal reminders.
                     </p>
                     <a href="about-us.php" class="btn btn-primary btn-read-more">Read More</a>
                 </div>
@@ -191,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
                             <p class="service-description" style="text-align: center;">
-                                Our automated notification system keeps families informed by sending timely alerts for certificate renewals, updates, and important announcements—ensuring no deadlines are missed.
+                                Our notification system keeps families informed by sending timely alerts for certificate renewals, updates, and important announcements—ensuring no deadlines are missed.
                             </p>
                         </div>
                     </div>
@@ -219,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="explore-carousel-text" style="text-align: justify; cursor: pointer;">
                                    RestEase is more than just a record management system, it’s a modern digital solution built to simplify and improve cemetery operations in Padre Garcia. Through its web-based platform, users can easily access burial records, request certificates, and track renewal schedules without the hassle of paperwork.
 
-The system provides a secure and transparent way to manage cemetery information, ensuring that data remains accurate and protected. Families can locate niches, receive automated renewal notifications, and access important updates online, while administrators benefit from organized records and faster processing. </p>
+The system provides a secure and transparent way to manage cemetery information, ensuring that data remains accurate and protected. Families can locate niches, receive renewal notifications, and access important updates online, while administrators benefit from organized records and faster processing. </p>
                             </div>
                         </div>
                     </div>
@@ -269,6 +294,10 @@ The system provides a secure and transparent way to manage cemetery information,
                         <div class="mb-3">
                             <textarea class="form-control" name="message" rows="6" placeholder="Message" required></textarea>
                             <div class="invalid-feedback">Message is required.</div>
+                        </div>
+                        <!-- Cloudflare Turnstile widget -->
+                        <div class="mb-3 w-100 turnstile-container" aria-hidden="false">
+                            <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>" data-theme="light"></div>
                         </div>
                         <button type="submit" class="submit-btn">Submit</button>
                     </form>
@@ -431,5 +460,23 @@ The system provides a secure and transparent way to manage cemetery information,
         }
     });
     </script>
+    <style>
+        /* Turnstile alignment: center and constrain so it lines up with inputs */
+        .turnstile-container {
+            max-width: 420px;
+            margin: 8px auto 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .turnstile-container .cf-turnstile {
+            display: inline-flex !important;
+            justify-content: center;
+            align-items: center;
+        }
+        @media (max-width: 480px) {
+            .turnstile-container { max-width: 100%; padding: 0 12px; }
+        }
+    </style>
 </body>
 </html>

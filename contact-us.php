@@ -5,6 +5,10 @@ require 'vendor/autoload.php';      // PHPMailer via Composer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Cloudflare Turnstile keys (replace with your keys)
+$turnstile_sitekey = '0x4AAAAAAB9DMwi4JEs-E7Dk';
+$turnstile_secret  = '0x4AAAAAAB9DM0HH3_jtHziIMzaFQztRwcA';
+
 $successMsg = $_SESSION['successMsg'] ?? '';
 $errorMsg = $_SESSION['errorMsg'] ?? '';
 unset($_SESSION['successMsg'], $_SESSION['errorMsg']);
@@ -15,6 +19,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contact = trim($_POST['contact'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $message = trim($_POST['message'] ?? '');
+    $turnstile_response = $_POST['cf-turnstile-response'] ?? '';
+
+    // Cloudflare Turnstile verification function
+    function verify_turnstile($token, $secret, $remoteip = null) {
+        if (empty($token) || empty($secret)) return false;
+        $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        $post = ['secret' => $secret, 'response' => $token];
+        if ($remoteip) $post['remoteip'] = $remoteip;
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $resp = curl_exec($ch);
+        curl_close($ch);
+        $obj = json_decode($resp);
+        return ($obj && !empty($obj->success));
+    }
 
     if (!$name) {
         $_SESSION['errorMsg'] = 'Name is required.';
@@ -24,6 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['errorMsg'] = 'Valid email is required.';
     } elseif (!$message) {
         $_SESSION['errorMsg'] = 'Message is required.';
+    } elseif (empty($turnstile_response) || !verify_turnstile($turnstile_response, $turnstile_secret, $_SERVER['REMOTE_ADDR'] ?? '')) {
+        $_SESSION['errorMsg'] = 'Please complete the Cloudflare verification before submitting.';
     } else {
         // Send email via PHPMailer
         $mail = new PHPMailer(true);
@@ -66,14 +89,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/contact-us.css">
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <img src="assets/RE Logo New.png" alt="Logo">
-            </a>
+            <a class="navbar-brand" href="index.php">
+                    <img src="assets/RE Logo New.png" alt="Logo">
+                </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -128,6 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="mb-3">
                             <textarea class="form-control" name="message" rows="6" placeholder="Message" required></textarea>
                             <div class="invalid-feedback">Message is required.</div>
+                        </div>
+                        <!-- Cloudflare Turnstile widget -->
+                        <div class="mb-3 w-100 turnstile-container" aria-hidden="false">
+                            <div class="cf-turnstile" data-sitekey="<?php echo htmlspecialchars($turnstile_sitekey); ?>" data-theme="light"></div>
                         </div>
                         <button type="submit" class="submit-btn">Submit</button>
                     </form>
@@ -234,5 +263,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
     </script>
+    <style>
+        /* Turnstile alignment: center and constrain so it lines up with inputs */
+        .turnstile-container {
+            max-width: 420px;
+            margin: 8px auto 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .turnstile-container .cf-turnstile {
+            display: inline-flex !important;
+            justify-content: center;
+            align-items: center;
+        }
+        @media (max-width: 480px) {
+            .turnstile-container { max-width: 100%; padding: 0 12px; }
+        }
+    </style>
 </body>
 </html>

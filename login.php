@@ -112,9 +112,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                <img src="assets/RE Logo New.png" alt="Logo">
-            </a>
+            <a class="navbar-brand" href="index.php">
+                    <img src="assets/RE Logo New.png" alt="Logo">
+                </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
