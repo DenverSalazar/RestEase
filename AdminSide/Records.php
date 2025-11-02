@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['admin_id'])) {
-    header("Location: ../AdminLogin.php");
+    header("Location: ../login.php");
     exit;
 }
 ?>
@@ -142,30 +142,40 @@ if (!isset($_SESSION['admin_id'])) {
             include_once '../Includes/db.php';
             if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
 
-            // --- New code: fetch top-10 upcoming validity expiries (validity = dateInternment + 5 years) ---
-            $expiringIds = [];
-            $today = date('Y-m-d');
-            $expSql = "SELECT id, DATE_ADD(dateInternment, INTERVAL 5 YEAR) AS validity
-                       FROM deceased
-                       WHERE dateInternment IS NOT NULL
-                         AND dateInternment != ''
-                         AND dateInternment != '0000-00-00'
-                         AND DATE_ADD(dateInternment, INTERVAL 5 YEAR) >= ?
-                       ORDER BY validity ASC
-                       LIMIT 10";
-            if ($stmtExp = $conn->prepare($expSql)) {
-                $stmtExp->bind_param('s', $today);
-                $stmtExp->execute();
-                $resExp = $stmtExp->get_result();
-                while ($r = $resExp->fetch_assoc()) {
-                    $expiringIds[intval($r['id'])] = true;
-                }
-                $stmtExp->close();
-            }
-            // --- End new code ---
+            // --- Sync deceased.validity with latest ledger.validity for renewals ---
+$syncSql = "
+  UPDATE deceased d
+  JOIN (
+    SELECT ApartmentNo, MAX(Validity) AS max_validity
+    FROM ledger
+    WHERE Description = 'Renewal' AND Validity IS NOT NULL AND Validity != ''
+    GROUP BY ApartmentNo
+  ) l ON d.nicheID = l.ApartmentNo
+  SET d.validity = l.max_validity
+";
+$conn->query($syncSql);
+
+// --- Update validity column for all deceased records (only if not renewed) ---
+$updateSql = "
+  UPDATE deceased d
+  LEFT JOIN (
+    SELECT ApartmentNo
+    FROM ledger
+    WHERE Description = 'Renewal'
+    GROUP BY ApartmentNo
+  ) l ON d.nicheID = l.ApartmentNo
+  SET d.validity = 
+    CASE 
+      WHEN l.ApartmentNo IS NULL
+        AND d.dateInternment IS NOT NULL AND d.dateInternment != '' AND d.dateInternment != '0000-00-00'
+      THEN DATE_ADD(d.dateInternment, INTERVAL 5 YEAR)
+      ELSE d.validity
+    END
+";
+$conn->query($updateSql);
 
             // Fetch all records (no pagination/search/filter)
-            $result = $conn->query("SELECT id, nicheID, lastName, firstName, middleName, suffix, age, born, residency, informantName, dateDied, dateInternment FROM deceased");
+            $result = $conn->query("SELECT id, nicheID, lastName, firstName, middleName, suffix, age, born, residency, informantName, dateDied, dateInternment, validity FROM deceased");
             if ($result && $result->num_rows > 0) {
               while ($row = $result->fetch_assoc()) {
                 // Compose name: LastName, FirstName MiddleInitial. Suffix
@@ -185,18 +195,8 @@ if (!isset($_SESSION['admin_id'])) {
                 $informant = htmlspecialchars($row['informantName']);
                 $dateDied = htmlspecialchars($row['dateDied']);
                 $dateInternment = htmlspecialchars($row['dateInternment']);
-
-                // Calculate validity date (5 years from internment)
-                $validityDate = '';
-                if (!empty($row['dateInternment']) && $row['dateInternment'] !== '0000-00-00') {
-                  try {
-                    $internmentDateObj = new DateTime($row['dateInternment']);
-                    $internmentDateObj->modify('+5 years');
-                    $validityDate = $internmentDateObj->format('Y-m-d');
-                  } catch (Exception $e) {
-                    $validityDate = '';
-                  }
-                }
+                // Use validity field (already updated above)
+                $validityDate = (!empty($row['validity']) && $row['validity'] !== '0000-00-00') ? htmlspecialchars($row['validity']) : '';
 
                 // Add color effect for expired and upcoming expiry (within 1 year)
                 $validityCell = $validityDate;

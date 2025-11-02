@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['admin_id'])) {
-    header("Location: ../AdminLogin.php");
+    header("Location: ../login.php");
     exit;
 }
 ?>
@@ -59,7 +59,7 @@ if ($deceasedResult && $deceasedResult->num_rows > 0) {
 // --- NEW: Mapping nicheID -> deceased names for exact apartment lookup ---
 $nicheDeceasedMap = [];
 $nicheDeceasedResult = $conn->query("
-  SELECT nicheID, firstName, middleName, lastName
+  SELECT nicheID, firstName, middleName, lastName, suffix
   FROM deceased
   WHERE nicheID IS NOT NULL AND nicheID != ''
     AND (firstName IS NOT NULL OR lastName IS NOT NULL)
@@ -71,10 +71,27 @@ if ($nicheDeceasedResult && $nicheDeceasedResult->num_rows > 0) {
         if (!empty($row['firstName'])) $parts[] = trim($row['firstName']);
         if (!empty($row['middleName'])) $parts[] = trim($row['middleName']);
         if (!empty($row['lastName'])) $parts[] = trim($row['lastName']);
+        if (!empty($row['suffix'])) $parts[] = trim($row['suffix']);
         $dname = trim(implode(' ', $parts));
         if ($nid !== '' && $dname !== '') {
             if (!isset($nicheDeceasedMap[$nid])) $nicheDeceasedMap[$nid] = [];
             if (!in_array($dname, $nicheDeceasedMap[$nid])) $nicheDeceasedMap[$nid][] = $dname;
+        }
+    }
+}
+
+// --- Mapping informant/payee names to validity (from deceased table) ---
+$informantValidityMap = [];
+$validityResult = $conn->query("SELECT informantName, validity FROM deceased WHERE informantName IS NOT NULL AND informantName != '' AND validity IS NOT NULL AND validity != ''");
+if ($validityResult && $validityResult->num_rows > 0) {
+    while ($row = $validityResult->fetch_assoc()) {
+        $name = trim($row['informantName']);
+        $validity = trim($row['validity']);
+        if ($name !== '' && $validity !== '') {
+            // If multiple, keep the latest validity (by string compare, assuming date format)
+            if (!isset($informantValidityMap[$name]) || $validity > $informantValidityMap[$name]) {
+                $informantValidityMap[$name] = $validity;
+            }
         }
     }
 }
@@ -97,18 +114,33 @@ if (
     $validity = $_POST['Validity'];
     $description = $_POST['Description'];
     $datePaid = isset($_POST['DatePaid']) ? $_POST['DatePaid'] : null;
+
     if ($id) {
         // Update existing (include DeceasedName)
         $stmt = $conn->prepare("UPDATE ledger SET ApartmentNo=?, Payee=?, DeceasedName=?, Amount=?, ORNumber=?, MCNo=?, Validity=?, Description=?, DatePaid=? WHERE id=?");
         $stmt->bind_param('sssdsssssi', $apartmentNo, $payee, $deceasedName, $amount, $orNumber, $mcNo, $validity, $description, $datePaid, $id);
         $stmt->execute();
         $stmt->close();
+        // --- Also update validity in deceased table if ApartmentNo matches nicheID and it's a Renewal ---
+        if ($description === 'Renewal') {
+            $stmt2 = $conn->prepare("UPDATE deceased SET validity = ? WHERE nicheID = ?");
+            $stmt2->bind_param('ss', $validity, $apartmentNo);
+            $stmt2->execute();
+            $stmt2->close();
+        }
     } else {
         // Insert new (include DeceasedName)
         $stmt = $conn->prepare("INSERT INTO ledger (ApartmentNo, Payee, DeceasedName, Amount, ORNumber, MCNo, Validity, Description, DatePaid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param('sssdsssss', $apartmentNo, $payee, $deceasedName, $amount, $orNumber, $mcNo, $validity, $description, $datePaid);
         $stmt->execute();
         $stmt->close();
+        // --- Also update validity in deceased table if ApartmentNo matches nicheID and it's a Renewal ---
+        if ($description === 'Renewal') {
+            $stmt2 = $conn->prepare("UPDATE deceased SET validity = ? WHERE nicheID = ?");
+            $stmt2->bind_param('ss', $validity, $apartmentNo);
+            $stmt2->execute();
+            $stmt2->close();
+        }
     }
     $showLedgerSuccessModal = true;
     // Do NOT redirect or echo JS alert here
@@ -151,10 +183,7 @@ if ($entry_id && !$ledgerEntry) {
 <?php
 $apartment = isset($_GET['apartment']) ? htmlspecialchars($_GET['apartment']) : '';
 $informant = isset($_GET['informant']) ? htmlspecialchars($_GET['informant']) : '';
-$validity = isset($_GET['validity']) ? htmlspecialchars($_GET['validity']) : '';
-if (!$validity) {
-  $validity = date('Y-m-d', strtotime('+5 years'));
-}
+$validity = ''; // Always empty at first
 $orNumber = '';
 $mcNumber = '';
 // Do NOT auto-generate ORNumber anymore so it can be entered manually.
@@ -362,27 +391,23 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formDescription" style="font-weight:500;">Description / Type</label>
-            <input
-              type="text"
+            <select
               id="formDescription"
               name="Description"
-              list="descOptions"
               required
-              placeholder="Description"
               style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;"
-              value="<?php echo htmlspecialchars($ledgerEntry['Description'] ?? ''); ?>"
             >
-            <datalist id="descOptions">
-              <option value="New">
-              <option value="Renewal">
-              <option value="ReOpen">
-              <option value="Transfer">
-              <option value="Full Payment">
-            </datalist>
+              <option value="" disabled selected>Select Type</option>
+              <option value="New" <?php if (($ledgerEntry['Description'] ?? '') === 'New') echo 'selected'; ?>>New</option>
+              <option value="Renewal" <?php if (($ledgerEntry['Description'] ?? '') === 'Renewal') echo 'selected'; ?>>Renewal</option>
+              <option value="ReOpen" <?php if (($ledgerEntry['Description'] ?? '') === 'ReOpen') echo 'selected'; ?>>ReOpen</option>
+              <option value="Transfer" <?php if (($ledgerEntry['Description'] ?? '') === 'Transfer') echo 'selected'; ?>>Transfer</option>
+              <option value="Full Payment" <?php if (($ledgerEntry['Description'] ?? '') === 'Full Payment') echo 'selected'; ?>>Full Payment</option>
+            </select>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formValidity" style="font-weight:500;">Validity</label>
-            <input type="date" id="formValidity" name="Validity" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['Validity'] ?? $validity); ?>">
+            <input type="date" id="formValidity" name="Validity" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="">
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formORNumber" style="font-weight:500;">OR Number</label>
@@ -390,7 +415,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formMCNo" style="font-weight:500;">MC No.</label>
-            <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#f3f4f6;font-size:1rem;"
+            <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;"
               value="<?php echo isset($ledgerEntry['MCNo']) && $ledgerEntry['MCNo'] !== null ? htmlspecialchars($ledgerEntry['MCNo']) : htmlspecialchars($mcNumber); ?>">
           </div>
         </div>
@@ -942,7 +967,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           if (!response.ok) throw new Error('Network response was not ok');
           return response.text();
         })
-        .then(data => {
+        .then (data => {
           // Remove rows from table
           checked.forEach(cb => {
             const row = cb.closest('tr');
@@ -996,47 +1021,51 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <script>
       // --- Autofill Apt No. with dropdown if multiple nicheIDs for Payee ---
       const informantNicheMap = <?php echo json_encode($informantNicheMap); ?>;
-     // --- NEW: mapping informant -> deceased names ---
-     const informantDeceasedMap = <?php echo json_encode($informantDeceasedMap); ?>;
-    // --- NEW: mapping nicheID -> deceased names (exact apartment lookup) ---
-    const nicheDeceasedMap = <?php echo json_encode($nicheDeceasedMap); ?>;
+      // --- NEW: mapping informant -> deceased names ---
+      const informantDeceasedMap = <?php echo json_encode($informantDeceasedMap); ?>;
+      // --- NEW: mapping nicheID -> deceased names (exact apartment lookup) ---
+      const nicheDeceasedMap = <?php echo json_encode($nicheDeceasedMap); ?>;
+      // --- NEW: mapping informant/payee -> validity ---
+      const informantValidityMap = <?php echo json_encode($informantValidityMap); ?>;
       const payeeInput = document.getElementById('formName');
       const aptInput = document.getElementById('formApartmentNo');
       const nicheDropdown = document.getElementById('nicheDropdown');
-     // Deceased input + dropdown
-     const deceasedInput = document.getElementById('formDeceased');
-     const deceasedDropdown = document.getElementById('deceasedDropdown');
+      // Deceased input + dropdown
+      const deceasedInput = document.getElementById('formDeceased');
+      const deceasedDropdown = document.getElementById('deceasedDropdown');
+      // Validity input
+      const validityInput = document.getElementById('formValidity');
 
-    // Helper: show deceased names (single -> fill input, multiple -> show dropdown)
-    function showDeceasedNames(names) {
-      if (!deceasedInput || !deceasedDropdown) return;
-      if (!names || names.length === 0) {
-        deceasedInput.value = '';
-        deceasedDropdown.style.display = 'none';
-        return;
+      // Helper: show deceased names (single -> fill input, multiple -> show dropdown)
+      function showDeceasedNames(names) {
+        if (!deceasedInput || !deceasedDropdown) return;
+        if (!names || names.length === 0) {
+          deceasedInput.value = '';
+          deceasedDropdown.style.display = 'none';
+          return;
+        }
+        if (names.length === 1) {
+          deceasedInput.value = names[0];
+          deceasedDropdown.style.display = 'none';
+          return;
+        }
+        // multiple names: populate dropdown under deceased input
+        deceasedDropdown.innerHTML = '';
+        names.forEach(function(n) {
+          const opt = document.createElement('option');
+          opt.value = n;
+          opt.textContent = n;
+          deceasedDropdown.appendChild(opt);
+        });
+        deceasedDropdown.size = Math.min(names.length, 8);
+        // position and show
+        deceasedDropdown.style.display = 'block';
+        deceasedDropdown.style.position = 'absolute';
+        deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
+        deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
       }
-      if (names.length === 1) {
-        deceasedInput.value = names[0];
-        deceasedDropdown.style.display = 'none';
-        return;
-      }
-      // multiple names: populate dropdown under deceased input
-      deceasedDropdown.innerHTML = '';
-      names.forEach(function(n) {
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = n;
-        deceasedDropdown.appendChild(opt);
-      });
-      deceasedDropdown.size = Math.min(names.length, 8);
-      // position and show
-      deceasedDropdown.style.display = 'block';
-      deceasedDropdown.style.position = 'absolute';
-      deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
-      deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
-    }
 
-    // Populate deceased by niche first (exact apt match). If none, fallback to informant map using payee name.
+    // Populate deceased by niche first (exact apt match). If none, fallback to informant mapping using payee name.
     function populateDeceasedForAptOrPayee(nicheID, payeeName) {
       // try nicheID exact match
       const n = (nicheID || '').toString().trim();
@@ -1079,31 +1108,38 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           nicheDropdown.style.display = 'none';
         }
 
-       // --- NEW: deceased names autofill/dropdown ---
-       const deceasedNames = informantDeceasedMap[name] || [];
-       if (deceasedNames.length === 1) {
-         deceasedInput.value = deceasedNames[0];
-         deceasedDropdown.style.display = 'none';
-       } else if (deceasedNames.length > 1) {
-         deceasedDropdown.innerHTML = '';
-         deceasedNames.forEach(function(dn) {
-           const opt = document.createElement('option');
-           opt.value = dn;
-           opt.textContent = dn;
-           deceasedDropdown.appendChild(opt);
-         });
-         deceasedDropdown.style.display = 'block';
-         deceasedDropdown.style.position = 'absolute';
-         // position relative to deceasedInput
-         deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
-         deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
-         deceasedDropdown.size = Math.min(deceasedNames.length, 6);
-       } else {
-         deceasedDropdown.style.display = 'none';
-       }
-       // Prefer niche-based lookup (if apt is already filled), otherwise fallback to informant mapping
-       const currentApt = (aptInput.value || '').toString().trim();
-       populateDeceasedForAptOrPayee(currentApt, name);
+        // --- NEW: deceased names autofill/dropdown ---
+        const deceasedNames = informantDeceasedMap[name] || [];
+        if (deceasedNames.length === 1) {
+          deceasedInput.value = deceasedNames[0];
+          deceasedDropdown.style.display = 'none';
+        } else if (deceasedNames.length > 1) {
+          deceasedDropdown.innerHTML = '';
+          deceasedNames.forEach(function(dn) {
+            const opt = document.createElement('option');
+            opt.value = dn;
+            opt.textContent = dn;
+            deceasedDropdown.appendChild(opt);
+          });
+          deceasedDropdown.style.display = 'block';
+          deceasedDropdown.style.position = 'absolute';
+          // position relative to deceasedInput
+          deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
+          deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
+          deceasedDropdown.size = Math.min(deceasedNames.length, 6);
+        } else {
+          deceasedDropdown.style.display = 'none';
+        }
+        // Prefer niche-based lookup (if apt is already filled), otherwise fallback to informant mapping
+        const currentApt = (aptInput.value || '').toString().trim();
+        populateDeceasedForAptOrPayee(currentApt, name);
+
+        // --- NEW: autofill validity ---
+        if (informantValidityMap[name]) {
+          validityInput.value = informantValidityMap[name];
+        } else {
+          validityInput.value = '';
+        }
       });
 
       nicheDropdown.addEventListener('change', function() {
@@ -1169,6 +1205,29 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       });
       amountInput.addEventListener('blur', function() {
         this.value = formatPesoAmount(this.value);
+      });
+
+      // --- Add 5 years to Validity if Renewal is chosen ---
+      const descriptionInput = document.getElementById('formDescription');
+      descriptionInput.addEventListener('change', function() {
+        // If Renewal is chosen and validity exists, add 5 years and autofill
+        if (this.value === 'Renewal' && validityInput.value) {
+          const oldDate = validityInput.value;
+          // Only add if valid date
+          if (/^\d{4}-\d{2}-\d{2}$/.test(oldDate)) {
+            const d = new Date(oldDate);
+            d.setFullYear(d.getFullYear() + 5);
+            // Format as yyyy-mm-dd
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            validityInput.value = `${yyyy}-${mm}-${dd}`;
+          }
+        }
+        // If not Renewal, clear validity field (optional UX)
+        else if (this.value !== 'Renewal') {
+          validityInput.value = '';
+        }
       });
     </script>
     <!-- ...existing code... -->

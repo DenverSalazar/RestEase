@@ -1,4 +1,14 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: ../login.php"); // Adjust the path if needed
+    exit;
+}
+?>
+
 <?php include '../Includes/navbar2.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

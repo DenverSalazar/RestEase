@@ -1,12 +1,10 @@
 <?php
 session_start();
-header('Content-Type: application/json');
-
-// Require admin session
 if (!isset($_SESSION['admin_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    header("Location: ../login.php");
     exit;
 }
+header('Content-Type: application/json');
 
 // Include DB (adjust path if your includes are elsewhere)
 include_once '../Includes/db.php';
