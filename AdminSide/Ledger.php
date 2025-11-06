@@ -361,15 +361,16 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           <div style="display:flex;flex-direction:column;gap:8px;position:relative;">
             <label for="formApartmentNo" style="font-weight:500;">Apt No.</label>
             <input type="text" id="formApartmentNo" name="ApartmentNo" placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
-            <!-- NicheID dropdown (hidden by default) -->
-            <select id="nicheDropdown"></select>
+            <!-- NicheID matches container (hidden by default) - renders items like deceasedMatches -->
+            <div id="nicheMatches" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:6px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem; box-shadow:0 6px 18px rgba(0,0,0,0.06); max-height:260px; overflow:auto;"></div>
           </div>
 
           <!-- Row 2: Deceased Name (left) | Amount (right) [same line] -->
           <div style="display:flex;flex-direction:column;gap:6px;position:relative;">
             <label for="formDeceased" style="font-weight:500;">Deceased Name</label>
             <input type="text" id="formDeceased" name="DeceasedName" placeholder="Deceased Name" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DeceasedName'] ?? ''); ?>" autocomplete="off">
-            <select id="deceasedDropdown" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem;"></select>
+            <!-- New: container for multiple-match suggestions (hidden until needed) -->
+            <div id="deceasedMatches" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:6px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem; box-shadow:0 6px 18px rgba(0,0,0,0.06); max-height:260px; overflow:auto;"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formAmount" style="font-weight:500;">Amount</label>
@@ -1021,166 +1022,261 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     <script>
       // --- Autofill Apt No. with dropdown if multiple nicheIDs for Payee ---
       const informantNicheMap = <?php echo json_encode($informantNicheMap); ?>;
-      // --- NEW: mapping informant -> deceased names ---
       const informantDeceasedMap = <?php echo json_encode($informantDeceasedMap); ?>;
-      // --- NEW: mapping nicheID -> deceased names (exact apartment lookup) ---
       const nicheDeceasedMap = <?php echo json_encode($nicheDeceasedMap); ?>;
-      // --- NEW: mapping informant/payee -> validity ---
       const informantValidityMap = <?php echo json_encode($informantValidityMap); ?>;
       const payeeInput = document.getElementById('formName');
       const aptInput = document.getElementById('formApartmentNo');
-      const nicheDropdown = document.getElementById('nicheDropdown');
-      // Deceased input + dropdown
       const deceasedInput = document.getElementById('formDeceased');
-      const deceasedDropdown = document.getElementById('deceasedDropdown');
-      // Validity input
+      const deceasedMatches = document.getElementById('deceasedMatches');
+      const nicheMatches = document.getElementById('nicheMatches');
       const validityInput = document.getElementById('formValidity');
 
-      // Helper: show deceased names (single -> fill input, multiple -> show dropdown)
+      // Helper: case-insensitive safe lookup for maps (returns array or value)
+      function getArrayForInformant(map, name) {
+        if (!name || !map) return [];
+        if (map[name]) return map[name];
+        const lower = name.toLowerCase();
+        for (const k in map) {
+          if (Object.prototype.hasOwnProperty.call(map, k) && String(k).toLowerCase() === lower) {
+            return map[k];
+          }
+        }
+        return [];
+      }
+      function getValueForInformant(map, name) {
+        if (!name || !map) return '';
+        if (map[name]) return map[name];
+        const lower = name.toLowerCase();
+        for (const k in map) {
+          if (Object.prototype.hasOwnProperty.call(map, k) && String(k).toLowerCase() === lower) {
+            return map[k];
+          }
+        }
+        return '';
+      }
+
+      // Helper: render deceased matches (single -> fill input, multiple -> show list)
       function showDeceasedNames(names) {
-        if (!deceasedInput || !deceasedDropdown) return;
+        if (!deceasedInput || !deceasedMatches) return;
+        // nothing found -> clear
         if (!names || names.length === 0) {
-          deceasedInput.value = '';
-          deceasedDropdown.style.display = 'none';
+          deceasedMatches.innerHTML = '';
+          deceasedMatches.style.display = 'none';
           return;
         }
+        // single -> fill and hide list
         if (names.length === 1) {
           deceasedInput.value = names[0];
-          deceasedDropdown.style.display = 'none';
+          deceasedMatches.innerHTML = '';
+          deceasedMatches.style.display = 'none';
           return;
         }
-        // multiple names: populate dropdown under deceased input
-        deceasedDropdown.innerHTML = '';
-        names.forEach(function(n) {
-          const opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = n;
-          deceasedDropdown.appendChild(opt);
+        // multiple -> build selectable list, but expand duplicate names into per-niche rows
+        deceasedMatches.innerHTML = '';
+        const entries = [];
+        names.forEach(function(dname) {
+          // try to find which niche(s) this deceased appears in
+          let aps = [];
+          try {
+            aps = Object.keys(nicheDeceasedMap).filter(function(k) {
+              return Array.isArray(nicheDeceasedMap[k]) && nicheDeceasedMap[k].indexOf(dname) !== -1;
+            });
+          } catch (e) { aps = []; }
+          // if no niche info, keep a single general entry
+          if (!aps || aps.length === 0) {
+            entries.push({ name: dname, niche: '' });
+          } else {
+            // create one entry per niche so same-name/different-niche shows separately
+            aps.forEach(function(ap) {
+              entries.push({ name: dname, niche: ap });
+            });
+          }
         });
-        deceasedDropdown.size = Math.min(names.length, 8);
+        // Render entries
+        entries.forEach(function(entry) {
+          const item = document.createElement('div');
+          item.className = 'deceased-match-item';
+          item.style.cssText = 'padding:8px 10px;cursor:pointer;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;';
+          const left = document.createElement('div');
+          // show name and small niche meta if available
+          left.innerHTML = '<strong style="display:block;">' + escapeHtml(entry.name) + '</strong>';
+          if (entry.niche) {
+            left.innerHTML += '<div style="font-size:0.85rem;color:#6b7280;margin-top:4px;">' + escapeHtml(entry.niche) + '</div>';
+          }
+          const right = document.createElement('div');
+          right.style.cssText = 'font-size:0.85rem;color:#506C84;';
+          right.textContent = 'Select';
+          item.appendChild(left);
+          item.appendChild(right);
+          item.dataset.name = entry.name;
+          item.dataset.niche = entry.niche || '';
+          // click: choose this deceased; if niche present, also set apt input for clarity
+          item.addEventListener('click', function() {
+            deceasedInput.value = this.dataset.name || '';
+            // populate Apt No if niche known
+            try {
+              if (this.dataset.niche && aptInput) aptInput.value = this.dataset.niche;
+            } catch (e) { /* ignore */ }
+            deceasedMatches.style.display = 'none';
+            deceasedMatches.innerHTML = '';
+          });
+          // hover style
+          item.addEventListener('mouseenter', function(){ this.style.background = '#f6fbff'; });
+          item.addEventListener('mouseleave', function(){ this.style.background = 'transparent'; });
+          deceasedMatches.appendChild(item);
+        });
         // position and show
-        deceasedDropdown.style.display = 'block';
-        deceasedDropdown.style.position = 'absolute';
-        deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
-        deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
+        deceasedMatches.style.display = 'block';
+        const rect = deceasedInput.getBoundingClientRect();
+        deceasedMatches.style.left = (deceasedInput.offsetLeft) + 'px';
+        deceasedMatches.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
+        deceasedMatches.style.minWidth = Math.max(220, deceasedInput.offsetWidth) + 'px';
       }
 
-    // Populate deceased by niche first (exact apt match). If none, fallback to informant mapping using payee name.
-    function populateDeceasedForAptOrPayee(nicheID, payeeName) {
-      // try nicheID exact match
-      const n = (nicheID || '').toString().trim();
-      if (n && nicheDeceasedMap[n] && nicheDeceasedMap[n].length > 0) {
-        showDeceasedNames(nicheDeceasedMap[n]);
-        return;
+      // small helper to escape inserted text (innerHTML usage above)
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; });
       }
-      // fallback: informant/payee -> deceased(s)
-      const pn = (payeeName || '').toString().trim();
-      if (pn && informantDeceasedMap[pn] && informantDeceasedMap[pn].length > 0) {
-        showDeceasedNames(informantDeceasedMap[pn]);
-        return;
-      }
-      // nothing found
-      showDeceasedNames([]);
-    }
+ 
+     // Populate deceased by niche first (exact apt match). If none, fallback to informant mapping using payee name.
+     // New behavior: only display deceased that are related to the given payee/informant.
+     function populateDeceasedForAptOrPayee(nicheID, payeeName) {
+        const n = (nicheID || '').toString().trim();
+        const pn = (payeeName || '').toString().trim();
 
+        // Step A: collect deceased names known for the payee (case-insensitive lookup)
+        const payeeDeceased = getArrayForInformant(informantDeceasedMap, pn); // [] if none
+
+        // If we have a niche specific lookup
+        if (n) {
+          const nicheNames = (nicheDeceasedMap[n] && Array.isArray(nicheDeceasedMap[n])) ? nicheDeceasedMap[n] : [];
+
+          // If payee has known deceased names, only show intersection (names in this niche that belong to payee)
+          if (payeeDeceased && payeeDeceased.length > 0) {
+            const intersection = nicheNames.filter(name => payeeDeceased.indexOf(name) !== -1);
+            if (intersection.length > 0) {
+              showDeceasedNames(intersection);
+              return;
+            }
+            // No intersection: the user explicitly asked that we show only deceased related to that payee.
+            // So show payeeDeceased (even if they aren't listed under this niche), rather than showing unrelated niche occupants.
+            showDeceasedNames(payeeDeceased);
+            return;
+          }
+
+          // If no payee mapping available, fall back to showing niche occupants (old behavior)
+          showDeceasedNames(nicheNames);
+          return;
+        }
+
+        // No niche provided: show only deceased associated with the payee (if any)
+        if (payeeDeceased && payeeDeceased.length > 0) {
+          showDeceasedNames(payeeDeceased);
+          return;
+        }
+
+        // Nothing found
+        showDeceasedNames([]);
+      }
+
+      // Adjust payee input handler to use case-insensitive lookups and the updated populate function
       payeeInput.addEventListener('change', function() {
         const name = this.value.trim();
-        const nicheIDs = informantNicheMap[name] || [];
-        if (nicheIDs.length === 1) {
-          aptInput.value = nicheIDs[0];
-          nicheDropdown.style.display = 'none';
-        } else if (nicheIDs.length > 1) {
-          // Populate dropdown
-          nicheDropdown.innerHTML = '';
-          nicheIDs.forEach(function(nicheID) {
-            const option = document.createElement('option');
-            option.value = nicheID;
-            option.textContent = nicheID;
-            nicheDropdown.appendChild(option);
-          });
-          // Position dropdown below Apt No. input
-          nicheDropdown.style.display = 'block';
-          nicheDropdown.style.position = 'absolute';
-          nicheDropdown.style.left = aptInput.offsetLeft + 'px';
-          nicheDropdown.style.top = (aptInput.offsetTop + aptInput.offsetHeight + 2) + 'px';
-          nicheDropdown.size = Math.min(nicheIDs.length, 6);
-        } else {
-          nicheDropdown.style.display = 'none';
+        // use case-insensitive lookup for nicheIDs too
+        let nicheIDs = [];
+        if (name) {
+          if (informantNicheMap[name]) nicheIDs = informantNicheMap[name];
+          else {
+            const lower = name.toLowerCase();
+            for (const k in informantNicheMap) {
+              if (Object.prototype.hasOwnProperty.call(informantNicheMap, k) && String(k).toLowerCase() === lower) {
+                nicheIDs = informantNicheMap[k];
+                break;
+              }
+            }
+          }
         }
 
-        // --- NEW: deceased names autofill/dropdown ---
-        const deceasedNames = informantDeceasedMap[name] || [];
-        if (deceasedNames.length === 1) {
-          deceasedInput.value = deceasedNames[0];
-          deceasedDropdown.style.display = 'none';
-        } else if (deceasedNames.length > 1) {
-          deceasedDropdown.innerHTML = '';
-          deceasedNames.forEach(function(dn) {
-            const opt = document.createElement('option');
-            opt.value = dn;
-            opt.textContent = dn;
-            deceasedDropdown.appendChild(opt);
+        if (nicheIDs.length === 1) {
+          aptInput.value = nicheIDs[0];
+          if (nicheMatches) { nicheMatches.style.display = 'none'; nicheMatches.innerHTML = ''; }
+        } else if (nicheIDs.length > 1) {
+          // Populate nicheMatches with clickable rows showing "NicheID + DeceasedName"
+          if (!nicheMatches) return;
+          nicheMatches.innerHTML = '';
+          const listWrap = document.createElement('div');
+          listWrap.style.cssText = 'background:#fff;border-radius:8px;padding:6px;max-height:240px;overflow:auto;';
+          nicheIDs.forEach(function(nicheID) {
+            const names = (nicheDeceasedMap[nicheID] && Array.isArray(nicheDeceasedMap[nicheID])) ? nicheDeceasedMap[nicheID] : [];
+            let label = nicheID;
+            if (names.length > 0) {
+              label += ' ' + names[0];
+              if (names.length > 1) label += ' +' + (names.length - 1);
+            }
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:8px 10px;cursor:pointer;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;';
+            row.innerHTML = '<div style="font-size:0.95rem;color:#111;">' + escapeHtml(label) + '</div><div style="font-size:0.85rem;color:#506C84;">Select</div>';
+            row.dataset.value = nicheID;
+            if (names.length) row.dataset.deceased = names.join('|');
+            row.addEventListener('click', function() {
+              aptInput.value = this.dataset.value || '';
+              nicheMatches.style.display = 'none';
+              nicheMatches.innerHTML = '';
+              // When user selects a niche, populate deceased suggestions for that apt — filtered by current payee
+              populateDeceasedForAptOrPayee(aptInput.value, payeeInput.value);
+            });
+            row.addEventListener('mouseenter', function(){ this.style.background = '#f6fbff'; });
+            row.addEventListener('mouseleave', function(){ this.style.background = 'transparent'; });
+            listWrap.appendChild(row);
           });
-          deceasedDropdown.style.display = 'block';
-          deceasedDropdown.style.position = 'absolute';
-          // position relative to deceasedInput
-          deceasedDropdown.style.left = deceasedInput.offsetLeft + 'px';
-          deceasedDropdown.style.top = (deceasedInput.offsetTop + deceasedInput.offsetHeight + 6) + 'px';
-          deceasedDropdown.size = Math.min(deceasedNames.length, 6);
+          nicheMatches.appendChild(listWrap);
+          // Position and show
+          nicheMatches.style.display = 'block';
+          nicheMatches.style.position = 'absolute';
+          nicheMatches.style.left = aptInput.offsetLeft + 'px';
+          nicheMatches.style.top = (aptInput.offsetTop + aptInput.offsetHeight + 2) + 'px';
+          nicheMatches.style.minWidth = Math.max(220, aptInput.offsetWidth) + 'px';
         } else {
-          deceasedDropdown.style.display = 'none';
+          if (nicheMatches) { nicheMatches.style.display = 'none'; nicheMatches.innerHTML = ''; }
         }
+
+        // Deceased names: use case-insensitive lookup for informant -> deceased
+        const deceasedNames = getArrayForInformant(informantDeceasedMap, name);
+        showDeceasedNames(deceasedNames);
+
         // Prefer niche-based lookup (if apt is already filled), otherwise fallback to informant mapping
         const currentApt = (aptInput.value || '').toString().trim();
         populateDeceasedForAptOrPayee(currentApt, name);
 
-        // --- NEW: autofill validity ---
-        if (informantValidityMap[name]) {
-          validityInput.value = informantValidityMap[name];
-        } else {
-          validityInput.value = '';
-        }
+        // Validity: apply if present (case-insensitive lookup)
+        const validity = getValueForInformant(informantValidityMap, name);
+        validityInput.value = validity || '';
       });
 
-      nicheDropdown.addEventListener('change', function() {
-        aptInput.value = this.value;
-        nicheDropdown.style.display = 'none';
-       // when user selects an apt from the nicheDropdown, populate deceased(s) for that apt
-       populateDeceasedForAptOrPayee(aptInput.value, payeeInput.value);
-      });
-
-     deceasedDropdown.addEventListener('change', function() {
-       deceasedInput.value = this.value;
-       deceasedDropdown.style.display = 'none';
+      // When Apt No is manually changed, update deceased accordingly
+     aptInput.addEventListener('change', function() {
+             const val = (this.value || '').toString().trim();
+       populateDeceasedForAptOrPayee(val, payeeInput.value);
      });
-
-    // When Apt No is manually changed, update deceased accordingly
-    aptInput.addEventListener('change', function() {
-      const val = (this.value || '').toString().trim();
-      populateDeceasedForAptOrPayee(val, payeeInput.value);
-    });
-    aptInput.addEventListener('blur', function() {
-      // also handle blur to catch typed values
-      const val = (this.value || '').toString().trim();
-      populateDeceasedForAptOrPayee(val, payeeInput.value);
-    });
-
-      // Hide dropdown if clicking elsewhere
+     aptInput.addEventListener('blur', function() {
+       // also handle blur to catch typed values
+       const val = (this.value || '').toString().trim();
+       populateDeceasedForAptOrPayee(val, payeeInput.value);
+     });
+ 
+      // Hide dropdowns if clicking elsewhere
       document.addEventListener('mousedown', function(e) {
-        if (!nicheDropdown.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
-          nicheDropdown.style.display = 'none';
+        if (nicheMatches && !nicheMatches.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
+          nicheMatches.style.display = 'none';
         }
-        // niche dropdown
-        if (!nicheDropdown.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
-          nicheDropdown.style.display = 'none';
-        }
-        // deceased dropdown
-        if (!deceasedDropdown.contains(e.target) && e.target !== deceasedInput && e.target !== payeeInput) {
-          deceasedDropdown.style.display = 'none';
+        // deceased matches container
+        if (deceasedMatches && !deceasedMatches.contains(e.target) && e.target !== deceasedInput && e.target !== payeeInput) {
+          deceasedMatches.style.display = 'none';
         }
       });
-
-      // --- Amount field auto-format with commas ---
+ 
+       // --- Amount field auto-format with commas ---
       const amountInput = document.getElementById('formAmount');
       function formatPesoAmount(value) {
         // Remove non-numeric except dot
