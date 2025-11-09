@@ -1184,4 +1184,31 @@
   });
 })();
   </script>
+<!-- inject canonical localStorage.systemNotifs so header can compute unread reliably -->
+<script>
+(function(){
+  try {
+    var combined = [];
+
+    // server arrays (these are the same vars used by the tab's JS)
+    (window.systemNotifs || []).forEach(function(n){
+      combined.push({ id: 'sys_' + (n.id || ''), name: n.name || '', created_at: n.created_at || '' });
+    });
+    (window.newRequestNotifs || []).forEach(function(n){
+      combined.push({ id: 'nreq_' + (n.id || ''), name: n.name || '', created_at: n.created_at || '' });
+    });
+    (window.newUserNotifs || []).forEach(function(n){
+      combined.push({ id: 'usr_' + (n.id || ''), name: n.name || '', created_at: n.created_at || '' });
+    });
+
+    // store for header script to read; header expects localStorage.systemNotifs to be a JSON array
+    try { localStorage.setItem('systemNotifs', JSON.stringify(combined)); } catch(e){ /* ignore quota/disabled storage */ }
+
+    // immediately ask header to update the bell on this same page (updateNotifBellCount was exposed by header.php)
+    if (window.updateNotifBellCount && typeof window.updateNotifBellCount === 'function') {
+      try { window.updateNotifBellCount(); } catch(e) {}
+    }
+  } catch(e){}
+})();
+</script>
 </div></div>

@@ -91,11 +91,13 @@ $adminProfilePic = resolveProfilePicUrl($adminProfilePic, $appBase);
       <!-- notification bell placed to the left of the avatar; use generated settings URL -->
       <button class="notif-bell" aria-label="Notifications" title="Notifications"
         onclick="window.location.href='<?php echo htmlspecialchars($settingsUrl, ENT_QUOTES); ?>';"
-        style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;">
-        <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
-        <!-- numeric unread badge (reduced size, circular, centered) -->
+        style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;overflow:visible;">
+        <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;position:relative;z-index:1;"></i>
+        <!-- small red dot for unread indicator (no number) -->
         <span id="notifBellCount"
-              style="display:none;position:absolute;top:-8px;right:-8px;background:#e74c3c;color:#fff;font-size:0.6rem;font-weight:700;padding:0;line-height:14px;width:14px;height:14px;border-radius:50%;min-width:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;z-index:3;">
+              aria-hidden="true"
+              title="You have unread notifications"
+              style="display:none;position:absolute;top:-6px;right:-6px;transform:none;background:#e74c3c;width:10px;height:10px;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.12);z-index:10000;pointer-events:none;border:2px solid #fff;line-height:0;">
         </span>
       </button>
       <img src="<?php echo htmlspecialchars($adminProfilePic, ENT_QUOTES); ?>" alt="Profile" class="profile-avatar">
@@ -171,14 +173,34 @@ $adminProfilePic = resolveProfilePicUrl($adminProfilePic, $appBase);
     var el = document.getElementById('notifBellCount');
     if (!el) return;
     var count = getUnreadCountFromLocalStorage();
+
     if (count > 0) {
-      el.textContent = count > 99 ? '99+' : String(count);
-      el.style.display = '';
+      // show small dot; keep text empty
+      el.textContent = '';
+      el.style.display = 'block';
+      el.style.width = '10px';
+      el.style.height = '10px';
+      el.style.padding = '0';
+      el.style.opacity = '1';
+      el.style.top = '-6px';
+      el.style.right = '-6px';
+      el.style.transform = 'none';
+      el.style.background = '#e74c3c';
+      el.setAttribute('aria-hidden', 'false');
+      el.setAttribute('aria-label', count + ' unread notifications');
+      console.debug && console.debug('notif dot shown, count=', count);
     } else {
       el.textContent = '';
       el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
+      el.removeAttribute('aria-label');
+      console.debug && console.debug('notif dot hidden');
     }
   }
+
+  // Expose a global helper so other scripts (same window) can request an immediate bell update.
+  // Other pages will call window.updateNotifBellCount() after they write/update localStorage.systemNotifs.
+  window.updateNotifBellCount = updateBellCount;
 
   // Update on load
   if (document.readyState === 'loading') {
@@ -193,7 +215,7 @@ $adminProfilePic = resolveProfilePicUrl($adminProfilePic, $appBase);
       updateBellCount();
       return;
     }
-    if (e.key === 'systemNotifs' || e.key.startsWith('notif_read_')) {
+    if (e.key === 'systemNotifs' || e.key.startsWith('notif_read_') || e.key.startsWith('notif_archived_') || e.key.startsWith('notif_deleted_') || e.key.startsWith('notif_fav_')) {
       updateBellCount();
     }
   });

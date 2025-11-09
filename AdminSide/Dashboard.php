@@ -1129,9 +1129,11 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
          onclick="window.location.href='<?php echo htmlspecialchars($settingsUrl, ENT_QUOTES); ?>';"
         style="background:transparent;border:none;padding:0;margin-right:8px;cursor:pointer;color:inherit;position:relative;">
         <i class="fa-solid fa-bell" style="font-size:1.05rem;color:inherit;"></i>
-        <!-- numeric unread badge (small, circular) -->
+        <!-- changed: small red dot (no number) for dashboard bell -->
         <span id="notifBellCountDashboard"
-              style="display:none;position:absolute;top:-8px;right:-8px;background:#e74c3c;color:#fff;font-size:0.6rem;font-weight:700;padding:0;line-height:14px;width:14px;height:14px;border-radius:50%;min-width:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;z-index:3;">
+              aria-hidden="true"
+              title="You have unread notifications"
+              style="display:none;position:absolute;top:-6px;right:-6px;background:#e74c3c;width:10px;height:10px;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.12);z-index:1000;pointer-events:none;border:2px solid #fff;line-height:0;">
         </span>
       </button>
           <img src="<?php echo htmlspecialchars($adminProfilePic); ?>" alt="Profile" class="profile-avatar">
@@ -1203,12 +1205,22 @@ for ($y = 1900; $y <= intval(date('Y')); $y++) {
         var el = document.getElementById('notifBellCountDashboard');
         if (!el) return;
         var count = getUnreadCountFromLocalStorage();
+
         if (count > 0) {
-          el.textContent = count > 99 ? '99+' : String(count);
-          el.style.display = '';
+          // show small red dot (no numeric text)
+          el.textContent = '';
+          el.style.display = 'block';
+          el.style.width = '10px';
+          el.style.height = '10px';
+          el.style.padding = '0';
+          el.style.opacity = '1';
+          el.setAttribute('aria-hidden', 'false');
+          el.setAttribute('aria-label', count + ' unread notifications');
         } else {
           el.textContent = '';
           el.style.display = 'none';
+          el.setAttribute('aria-hidden', 'true');
+          el.removeAttribute('aria-label');
         }
       }
 

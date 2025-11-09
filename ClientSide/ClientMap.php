@@ -145,10 +145,79 @@ while ($row = $result->fetch_assoc()) {
     .search-suggestion-name { flex:1; text-align:left; font-weight:600; }
     .search-suggestion-meta { color:#6b7280; font-size:0.95rem; }
     @media (max-width:720px) {
-      /* keep some side padding on small screens so input isn't edge-to-edge */
-      .search-input-wrapper { padding-left: 12px; padding-right: 12px; }
-      .search-suggestions { left: 0; right: 0; width: 100%; }
-    }
+  /* keep some side padding on small screens so input isn't edge-to-edge */
+  .search-input-wrapper {
+    padding-left: 12px;
+    padding-right: 12px;
+    box-sizing: border-box;
+    position: relative; /* for absolute icon positioning */
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  /* Make the input a touch-friendly pill */
+  .search-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 44px;
+    padding: 10px 16px 10px 44px; /* left padding to accommodate icon */
+    border-radius: 999px;
+    border: 1px solid rgba(229,231,235,1); /* subtle border */
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(2,6,23,0.06);
+    font-size: 16px;
+    outline: none;
+  }
+  .search-input:focus {
+    border-color: rgba(59,130,246,0.9);
+    box-shadow: 0 8px 30px rgba(59,130,246,0.08);
+  }
+
+  /* Position the search icon inside the pill on the left */
+  .search-input-icon {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 18px;
+    pointer-events: none; /* doesn't block clicks/typing */
+    z-index: 13001;
+  }
+
+  /* Suggestions dropdown should align with the pill and be easy to tap */
+  .search-suggestions {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 12px;   /* align with wrapper padding */
+    right: 12px;  /* make it full-width with small margins */
+    width: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(2,6,23,0.12);
+    z-index: 13000;
+    overflow: auto;
+    max-height: 320px;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+
+  /* Slightly larger tappable suggestion items on mobile */
+  .search-suggestion-item {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  .search-suggestion-item .search-suggestion-meta {
+    font-size: 0.9rem;
+  }
+
+  /* Ensure suggestions hidden until needed */
+  .search-suggestions[style*="display:none"] {
+    display: none !important;
+  }
+}
   </style>
   <script>
     // Pass PHP deceased data to JS

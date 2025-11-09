@@ -251,38 +251,38 @@ $stmt->close();
                     <div class="row g-3" id="deceasedInfoFields">
                         <div class="col-md-6">
                             <label for="first_name" class="form-label">First Name</label>
-                            <input type="text" id="first_name" name="first_name" class="form-control" required>
+                            <input type="text" id="first_name" name="first_name" class="form-control" placeholder="First Name" required>
                         </div>
                         <div class="col-md-6">
                             <label for="middle_name" class="form-label">Middle Name</label>
-                            <input type="text" id="middle_name" name="middle_name" class="form-control">
+                            <input type="text" id="middle_name" name="middle_name" class="form-control" placeholder="Middle Name">
                         </div>
                         <div class="col-md-6">
                             <label for="last_name" class="form-label">Last Name</label>
-                            <input type="text" id="last_name" name="last_name" class="form-control" required>
+                            <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Last Name" required>
                         </div>
                         <div class="col-md-6">
                             <label for="suffix" class="form-label">Suffix</label>
-                            <input type="text" id="suffix" name="suffix" class="form-control" placeholder="e.g. Jr, Sr, III">
+                            <input type="text" id="suffix" name="suffix" class="form-control" placeholder="Suffix (e.g. Jr, Sr, III)">
                         </div>
                         <div class="col-md-6">
                             <label for="dob" class="form-label">Date of Birth</label>
-                            <input type="date" id="dob" name="dob" class="form-control" required>
+                            <input type="date" id="dob" name="dob" class="form-control" placeholder="Date of Birth" required>
                         </div>
                         <div class="col-md-6">
                             <label for="dod" class="form-label">Date Died</label>
-                            <input type="date" id="dod" name="dod" class="form-control" required>
+                            <input type="date" id="dod" name="dod" class="form-control" placeholder="Date Died" required>
                         </div>
                         <div class="col-md-6">
                             <label for="age_display" class="form-label">Age</label>
                             <!-- Visible but not editable -->
-                            <input type="number" id="age_display" class="form-control" required disabled>
+                            <input type="number" id="age_display" class="form-control" placeholder="Age" required disabled>
                             <!-- Hidden field that actually submits -->
                             <input type="hidden" id="age" name="age">
                         </div>
                         <div class="col-md-6">
                             <label for="date_internment" class="form-label">Date of Internment</label>
-                            <input type="date" id="date_internment" name="date_internment" class="form-control" required>
+                            <input type="date" id="date_internment" name="date_internment" class="form-control" placeholder="Date of Internment" required>
                         </div>
                         <div class="col-md-6">
                             <label for="residency" class="form-label">Residency</label>
