@@ -1438,6 +1438,8 @@ function fetchAndUpdateClientRequestsTable() {
             avatarHtml = `<div class="avatar-img avatar-google avatar-color-${colorIndex}" style="display:inline-flex;">${initials}</div>`;
           }
 
+
+
           const requestDate = row.created_at ? row.created_at.substring(0, 10) : 'N/A';
           tbody.innerHTML += `
             <tr data-request-date="${requestDate}">
@@ -1495,11 +1497,6 @@ function crc32(str) {
   }
   return (crc ^ (-1)) >>> 0;
 }
-
-// Start polling every 5 seconds
-document.addEventListener('DOMContentLoaded', function() {
-  setInterval(fetchAndUpdateClientRequestsTable, 5000);
-});
     </script>
   </main>
 

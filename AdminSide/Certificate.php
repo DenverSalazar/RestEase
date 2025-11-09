@@ -39,7 +39,7 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
 
     // Search by: normalized full name LIKE, exact first+last (case-insensitive), or nicheID exact
     $stmt = $conn->prepare("
-        SELECT id, firstName, middleName, lastName, suffix, residency, nicheID, dateDied, informantName, dateInternment
+        SELECT id, firstName, middleName, lastName, suffix, residency, nicheID, dateDied, informantName, dateInternment, validity
         FROM deceased
         WHERE LOWER(CONCAT_WS(' ', firstName, middleName, lastName, suffix)) LIKE ?
            OR (LOWER(firstName) = ? AND LOWER(lastName) = ?)
@@ -52,6 +52,23 @@ if (isset($_GET['get_deceased_info']) && strlen($_GET['get_deceased_info']) > 0)
         $stmt->execute();
         $res = $stmt->get_result();
         while ($r = $res->fetch_assoc()) {
+            // Add fallback for validity if not present in deceased table
+            if (!isset($r['validity']) || $r['validity'] === null) {
+                // Try to get validity from certification table by deceased name or nicheID
+                $validity = '';
+                $certStmt = $conn->prepare("SELECT Validity FROM certification WHERE (NameOfDeceased = ? OR AptNo = ?) AND Validity IS NOT NULL AND Validity != '' ORDER BY id DESC LIMIT 1");
+                if ($certStmt) {
+                    $certStmt->bind_param('ss', $nameNorm, $r['nicheID']);
+                    $certStmt->execute();
+                    $certRes = $certStmt->get_result();
+                    if ($certRes && $certRes->num_rows > 0) {
+                        $certRow = $certRes->fetch_assoc();
+                        $validity = $certRow['Validity'];
+                    }
+                    $certStmt->close();
+                }
+                $r['validity'] = $validity;
+            }
             $results[] = $r;
         }
         $stmt->close();
@@ -92,7 +109,16 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
     $dateInternment = $cert['DateInternment'];
     $orNo = htmlspecialchars($cert['ORNumber']);
     $datePaid = htmlspecialchars($cert['DatePaid']);
-    $amount = $cert['Amount'] !== null ? '₱' . number_format($cert['Amount'], 2) : '';
+    // --- FIX: Ensure $cert['Amount'] is numeric before formatting, just like in generation ---
+    $amount = '';
+    if (isset($cert['Amount']) && $cert['Amount'] !== null && $cert['Amount'] !== '') {
+        $amountValue = preg_replace('/[^\d.\-]/', '', $cert['Amount']); // Remove any non-numeric except dot and minus
+        if (is_numeric($amountValue)) {
+            $amount = '₱' . number_format((float)$amountValue, 2);
+        } else {
+            $amount = htmlspecialchars($cert['Amount']); // fallback: show as is
+        }
+    }
     $mc_no = htmlspecialchars($cert['MCNo']);
     $validity = htmlspecialchars($cert['Validity']);
     $adminNameSaved = htmlspecialchars($cert['AdminName'] ?? '');
@@ -235,11 +261,15 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
             </div>
           </div>
 
-          <div style="margin-top:28px;">
-            <strong>OR No.:</strong> <?php echo $orNo ?: '<span style="color:#e74c3c;">No data</span>'; ?><br>
-            <strong>Date Paid:</strong> <?php echo $datePaid ?: '<span style="color:#e74c3c;">No data</span>'; ?><br>
-            <strong>Amount:</strong> <?php echo $amount ?: '<span style="color:#e74c3c;">No data</span>'; ?><br>
-            <strong>Renewal:</strong> <?php echo strtoupper(date('M-Y', strtotime($validity))); ?>
+          <div style="margin-top:30px;">
+            <strong>OR No.:</strong> <?php echo $orNo !== '' ? htmlspecialchars($orNo) : '<span style="color:#e74c3c;">No data</span>'; ?><br>
+            <strong>Date Paid:</strong> <?php echo $datePaid !== '' ? htmlspecialchars($datePaid) : '<span style="color:#e74c3c;">No data</span>'; ?><br>
+            <strong>Amount:</strong> <?php echo $amount !== '' ? $amount : '<span style="color:#e74c3c;">No data</span>'; ?><br>
+            <strong>Renewal:</strong>
+            <?php
+            // Use the value from the validity field for Renewal, just like in generation
+            echo $validity ? strtoupper(date('M-Y', strtotime($validity))) : '<span style="color:#e74c3c;">No data</span>';
+            ?>
           </div>
 
           <div class="cert-footer">
@@ -350,18 +380,13 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         <!-- Certificate Details Section -->
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:8px;">Certificate Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
-          <div>
+          
+        <div>
             <label>Validity:</label>
-            <?php
-              $renewal = '';
-              if (isset($_POST['date'])) {
-                $renewal = date('Y-m-d', strtotime($_POST['date'].' +5 years'));
-              } else {
-                $renewal = date('Y-m-d', strtotime('+5 years'));
-              }
-            ?>
-            <input type="date" name="renewal" value="<?php echo $renewal; ?>" readonly style="width:90%;">
-          </div>
+            <input type="date" name="renewal" id="validityField"
+                value="<?php echo isset($_POST['renewal']) ? htmlspecialchars($_POST['renewal']) : ''; ?>"
+                readonly style="width:90%;">
+        </div>
           <div>
             <label>Department Head Name:</label>
             <input type="text" name="admin_name" id="adminNameField"
@@ -573,7 +598,11 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
                 <strong>Date Paid:</strong> <?php echo $datePaid !== '' ? htmlspecialchars($datePaid) : '<span style="color:#e74c3c;">No data</span>'; ?><br>
                 <strong>Amount:</strong> <?php echo $amount !== '' ? '₱' . number_format($amount, 2) : '<span style="color:#e74c3c;">No data</span>'; ?><br>
                 <strong>Renewal:</strong>
-                <?php echo strtoupper(date('M-Y', strtotime($renewal))); ?>
+                <?php
+                // Use the value from the validity field for Renewal
+                $renewal = isset($_POST['renewal']) ? $_POST['renewal'] : '';
+                echo $renewal ? strtoupper(date('M-Y', strtotime($renewal))) : '<span style="color:#e74c3c;">No data</span>';
+                ?>
               </div>
               <div style="margin-top:30px; text-align:center;">
                 <img src="../assets/certfooter.png" alt="Certificate Footer" style="max-width:100%;height:auto;">
@@ -942,7 +971,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           if (!response.ok) throw new Error('Network response was not ok');
           return response.text();
         })
-        .then(data => {
+        .then (data => {
           // Remove rows from table
           checked.forEach(cb => {
             const row = cb.closest('tr');
@@ -1014,6 +1043,13 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         let valid = true;
         const nameField = document.getElementById('nameField');
         const deceasedField = document.getElementById('deceasedField');
+        const apartmentField = document.getElementById('apartmentField');
+        const barangayField = document.getElementById('barangayField');
+        const dateDiedField = document.getElementById('dateDiedField');
+        const dateField = document.querySelector('input[name="date"]');
+        const adminNameField = document.getElementById('adminNameField');
+        const validityField = document.getElementById('validityField');
+        const actions = document.querySelectorAll('input[name="actions[]"]:checked');
         const nameRegex = /^[A-Za-z\s]+$/;
 
         // Validate Name
@@ -1028,10 +1064,50 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           showWarning('nameWarning', false);
         }
 
+        // Simple required field validation
+        function markInvalid(field) {
+          field.style.border = '2px solid #e74c3c';
+          field.style.background = '#fff0f0';
+        }
+        function markValid(field) {
+          field.style.border = '';
+          field.style.background = '';
+        }
+
+        if (!deceasedField.value.trim()) { markInvalid(deceasedField); valid = false; } else { markValid(deceasedField); }
+        if (!dateDiedField.value.trim()) { markInvalid(dateDiedField); valid = false; } else { markValid(dateDiedField); }
+        if (!apartmentField.value.trim()) { markInvalid(apartmentField); valid = false; } else { markValid(apartmentField); }
+        if (!barangayField.value.trim()) { markInvalid(barangayField); valid = false; } else { markValid(barangayField); }
+        if (!nameField.value.trim()) { markInvalid(nameField); valid = false; }
+        if (!dateField.value.trim()) { markInvalid(dateField); valid = false; } else { markValid(dateField); }
+        if (!adminNameField.value.trim()) { markInvalid(adminNameField); valid = false; } else { markValid(adminNameField); }
+        // Validity field: same validation as DateDied
+        if (!validityField.value.trim()) { markInvalid(validityField); valid = false; } else { markValid(validityField); }
+        if (actions.length === 0) {
+          showWarningToast('Please select at least one Certificate Action.');
+          valid = false;
+        }
+
         if (!valid) {
           e.preventDefault();
         }
       });
+
+      // --- Toast for warnings ---
+      function showWarningToast(msg) {
+        let toast = document.getElementById('warningToast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'warningToast';
+          toast.style.cssText = 'position:fixed;top:32px;right:32px;z-index:10001;background:#f7b731;color:#222;padding:14px 24px;border-radius:8px;box-shadow:0 4px 16px rgba(247,183,49,0.18);font-size:1.05rem;font-weight:500;display:flex;align-items:center;gap:10px;min-width:220px;';
+          toast.innerHTML = '<span style="font-size:1.3rem;"><i class="fas fa-exclamation-triangle"></i></span><span id="warningToastMsg"></span><button id="warningToastClose" style="background:none;border:none;color:#222;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>';
+          document.body.appendChild(toast);
+          document.getElementById('warningToastClose').onclick = function() { toast.style.display = 'none'; };
+        }
+        document.getElementById('warningToastMsg').textContent = msg;
+        toast.style.display = 'flex';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+      }
 
       // Certificate Masterlist Filter Logic
       (function() {
@@ -1241,11 +1317,14 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           .then(res => res.json())
           .then(data => {
             if (!data) return;
-            if (data.dateDied) document.getElementById('dateDiedField').value = data.dateDied;
-            if (data.nicheID) document.getElementById('apartmentField').value = data.nicheID;
-            if (data.residency) document.getElementById('barangayField').value = data.residency;
-            if (data.informantName) document.getElementById('nameField').value = data.informantName;
-            if (data.dateInternment) document.getElementById('dateInternmentField').value = data.dateInternment;
+            // If multiple, pick first for autofill
+            const d = Array.isArray(data) ? data[0] : data;
+            if (d.dateDied) document.getElementById('dateDiedField').value = d.dateDied;
+            if (d.nicheID) document.getElementById('apartmentField').value = d.nicheID;
+            if (d.residency) document.getElementById('barangayField').value = d.residency;
+            if (d.informantName) document.getElementById('nameField').value = d.informantName;
+            if (d.dateInternment && document.getElementById('dateInternmentField')) document.getElementById('dateInternmentField').value = d.dateInternment;
+            if (d.validity && document.getElementById('validityField')) document.getElementById('validityField').value = d.validity;
           });
       });
 
@@ -1257,6 +1336,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         const apartmentField = document.getElementById('apartmentField');
         const barangayField = document.getElementById('barangayField');
         const nameField = document.getElementById('nameField');
+        const validityField = document.getElementById('validityField');
 
         function clearMatches() {
           matchesEl.innerHTML = '';
@@ -1285,7 +1365,8 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
                   if (d.nicheID) apartmentField.value = d.nicheID;
                   if (d.residency) barangayField.value = d.residency;
                   if (d.informantName) nameField.value = d.informantName;
-                  if (d.dateInternment) document.getElementById('dateInternmentField').value = d.dateInternment;
+                  if (d.dateInternment && document.getElementById('dateInternmentField')) document.getElementById('dateInternmentField').value = d.dateInternment;
+                  if (d.validity && validityField) validityField.value = d.validity;
                   clearMatches();
                   return;
                 }
@@ -1305,7 +1386,8 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
                     if (item.nicheID) apartmentField.value = item.nicheID;
                     if (item.residency) barangayField.value = item.residency;
                     if (item.informantName) nameField.value = item.informantName;
-                    if (item.dateInternment) document.getElementById('dateInternmentField').value = item.dateInternment;
+                    if (item.dateInternment && document.getElementById('dateInternmentField')) document.getElementById('dateInternmentField').value = item.dateInternment;
+                    if (item.validity && validityField) validityField.value = item.validity;
                     clearMatches();
                   });
                   listWrap.appendChild(row);

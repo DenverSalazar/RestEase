@@ -307,7 +307,74 @@ $username = isset($user['first_name'], $user['last_name']) ? $user['first_name']
         </section>
     </div> 
 
+    
+    <!-- FAQ Section -->
+    <div class="container" id="faqSection" style="margin-top:48px; margin-bottom:32px;">
+        <div class="portal-title mb-1" style="font-size:1.45rem;font-weight:500;">Frequently Asked Questions (FAQs)</div>
+        <div class="portal-desc mb-4" style="color:#444;font-size:1.04rem;">
+            Learn more about RestEase and how it helps you manage cemetery-related needs online.
+        </div>
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faq1">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1" aria-expanded="true" aria-controls="faqCollapse1">
+                        What is RestEase and how does it work?
+                    </button>
+                </h2>
+                <div id="faqCollapse1" class="accordion-collapse collapse show" aria-labelledby="faq1" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        RestEase is an online platform designed to help clients manage cemetery-related services in Padre Garcia, Batangas. It provides digital access to niche management, certificate services, records, and request tracking, making the process easier and more transparent for users.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faq2">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2" aria-expanded="false" aria-controls="faqCollapse2">
+                        What are the main functions available in my portal?
+                    </button>
+                </h2>
+                <div id="faqCollapse2" class="accordion-collapse collapse" aria-labelledby="faq2" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        The portal offers four main functions:
+                        <ul style="margin-top:8px;">
+                            <li><b>Submit Request:</b> Send requests for services or updates, such as new niche applications, transfers, or document requests.</li>
+                            <li><b>Records:</b> Access and review cemetery and client records securely online.</li>
+                            <li><b>Certificate:</b> View and manage your issued or renewal certificates for niche ownership and related services.</li>
+                            <li><b>Track Status:</b> Monitor the progress of your requests and receive updates from the admin team.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faq3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3" aria-expanded="false" aria-controls="faqCollapse3">
+                        How do I use the Cemetery Mapping feature?
+                    </button>
+                </h2>
+                <div id="faqCollapse3" class="accordion-collapse collapse" aria-labelledby="faq3" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        The Cemetery Mapping feature lets you explore an interactive map of the municipal cemetery. You can locate burial plots, view grave details, and navigate the area easily. Just click "View Cemetery Maps" to get started.
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faq4">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse4" aria-expanded="false" aria-controls="faqCollapse4">
+                        Who can I contact for help or support?
+                    </button>
+                </h2>
+                <div id="faqCollapse4" class="accordion-collapse collapse" aria-labelledby="faq4" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        For assistance, you can reach out to the Padre Garcia Municipal Cemetery office or use the contact options provided in the platform's footer. The admin team is ready to help with any concerns or questions.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End FAQ Section -->
+
     <?php include '../Includes/footer-client.php'; ?>
+    
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
