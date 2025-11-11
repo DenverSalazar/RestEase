@@ -1410,7 +1410,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       }
 
       document.getElementById('ledgerForm').addEventListener('submit', function(e) {
-        // Get required fields except Apt No.
+        // Get required fields including Apt No.
         const payee = payeeInput.value.trim();
         const deceased = deceasedInput.value.trim();
         const amount = amountInput.value.trim();
@@ -1418,10 +1418,12 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         const description = document.getElementById('formDescription').value.trim();
         const validity = validityInput.value.trim();
         const orNumber = document.getElementById('formORNumber').value.trim();
+        const aptNo = aptInput.value.trim();
 
-        // List of required field elements
+        // List of required field elements (now includes Apt No., Amount, Description/Type)
         const requiredFields = [
           { el: payeeInput, val: payee },
+          { el: aptInput, val: aptNo },
           { el: deceasedInput, val: deceased },
           { el: amountInput, val: amount },
           { el: document.getElementById('formDatePaid'), val: datePaid },
