@@ -96,25 +96,6 @@ if ($validityResult && $validityResult->num_rows > 0) {
     }
 }
 
-// --- Mapping deceased name + nicheID to validity (for autofill) ---
-$deceasedValidityMap = [];
-$validityResult = $conn->query("SELECT nicheID, firstName, middleName, lastName, suffix, validity FROM deceased WHERE nicheID IS NOT NULL AND nicheID != '' AND validity IS NOT NULL AND validity != ''");
-if ($validityResult && $validityResult->num_rows > 0) {
-    while ($row = $validityResult->fetch_assoc()) {
-        $nid = trim($row['nicheID']);
-        $parts = [];
-        if (!empty($row['firstName'])) $parts[] = trim($row['firstName']);
-        if (!empty($row['middleName'])) $parts[] = trim($row['middleName']);
-        if (!empty($row['lastName'])) $parts[] = trim($row['lastName']);
-        if (!empty($row['suffix'])) $parts[] = trim($row['suffix']);
-        $dname = trim(implode(' ', $parts));
-        $validity = trim($row['validity']);
-        if ($nid !== '' && $dname !== '' && $validity !== '') {
-            $deceasedValidityMap[$nid . '|' . $dname] = $validity;
-        }
-    }
-}
-
 // Handle Ledger Form Submission (Insert or Update)
 $showLedgerSuccessModal = false;
 if (
@@ -133,19 +114,6 @@ if (
     $validity = $_POST['Validity'];
     $description = $_POST['Description'];
     $datePaid = isset($_POST['DatePaid']) ? $_POST['DatePaid'] : null;
-
-    // --- Always add 5 years for Renewal ---
-    if ($description === 'Renewal') {
-        $newValidity = '';
-        if (!empty($validity)) {
-            $dt = DateTime::createFromFormat('Y-m-d', $validity);
-            if ($dt) {
-                $dt->modify('+5 years');
-                $newValidity = $dt->format('Y-m-d');
-            }
-        }
-        $validity = $newValidity;
-    }
 
     if ($id) {
         // Update existing (include DeceasedName)
@@ -242,63 +210,59 @@ if (!$apartment && !$informant && !$ledgerEntry) {
   <link rel="stylesheet" href="../css/header.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
   <style>
-    /* Ledger filter button boxed style + active underline (matches Certification Masterlist) */
-    #ledgerFilters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .ledger-filter-btn {
-      display:inline-block;
-      border:1px solid #e6e9ec;
-      background:#fff;
-      color:#222;
-      padding:6px 10px;
-      border-radius:8px;
-      font-weight:500;
-      cursor:pointer;
-      transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s;
-      /* reserve underline space so layout doesn't jump when active */
-      box-sizing: border-box;
-      /* border-bottom-width: 3px;
-      border-bottom-style: solid;
-      border-bottom-color: transparent; */
-    }
-    .ledger-filter-btn:hover {
-      color:#0b75a8;
-      box-shadow: 0 1px 4px rgba(11,117,168,0.06);
-    }
-    .ledger-filter-btn.active {
-      color:#0077b6;
-      border-color:#0077b6 !important; /* override any inline borders */
-      font-weight:600;
-      /* emphasize active state */
-      box-shadow: 0 4px 12px rgba(0,119,182,0.06);
-      background: #fff;
-    }
-    /* Dropdown styles for filter */
-    .ledger-filter-dropdown {
-      display:none;
-      position:absolute;
-      right:0;
-      top:calc(100% + 8px);
-      background:#fff;
-      border-radius:8px;
-      box-shadow:0 6px 20px rgba(11,117,168,0.08);
-      padding:8px;
-      z-index:1200;
-      min-width:160px;
-    }
-    .ledger-filter-item {
-      width:100%;
-      text-align:left;
-      padding:8px 10px;
-      border-radius:6px;
-      border:none;
-      background:transparent;
-      cursor:pointer;
-      transition: background 0.12s ease;
-    }
-    .ledger-filter-item:hover {
-      background:#f1f9ff;
-    }
-  </style>
+	/* Ledger filter button boxed style + active underline (matches Certification Masterlist) */
+	#ledgerFilters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+	.ledger-filter-btn {
+	  display:inline-block;
+	  border:1px solid #e6e9ec;
+	  background:#fff;
+	  color:#222;
+	  padding:6px 10px;
+	  border-radius:8px;
+	  font-weight:400; /* changed to normal */
+	  cursor:pointer;
+	  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s;
+	  box-sizing: border-box;
+	}
+	.ledger-filter-btn:hover {
+	  color:#0b75a8;
+	  box-shadow: 0 1px 4px rgba(11,117,168,0.06);
+	}
+	.ledger-filter-btn.active {
+	  color:#0077b6;
+	  border-color:#0077b6 !important;
+	  font-weight:400; /* ensure not bold when active */
+	  box-shadow: 0 4px 12px rgba(0,119,182,0.06);
+	  background: #fff;
+	}
+	/* Dropdown styles for filter */
+	.ledger-filter-dropdown {
+	  display:none;
+	  position:absolute;
+	  right:0;
+	  top:calc(100% + 8px);
+	  background:#fff;
+	  border-radius:8px;
+	  box-shadow:0 6px 20px rgba(11,117,168,0.08);
+	  padding:8px;
+	  z-index:1200;
+	  min-width:160px;
+	}
+	.ledger-filter-item {
+	  width:100%;
+	  text-align:left;
+	  padding:8px 10px;
+	  border-radius:6px;
+	  border:none;
+	  background:transparent;
+	  cursor:pointer;
+	  transition: background 0.12s ease;
+	  font-weight:400; /* ensure dropdown items not bold */
+	}
+	.ledger-filter-item:hover {
+	  background:#f1f9ff;
+	}
+</style>
 </head>
 <body>
   <!-- Sidebar -->
@@ -486,9 +450,9 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
         </div>
         <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
-          <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <!-- <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-file-import"></i> Import Data
-          </button>
+          </button> -->
           <button id="exportExcelBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-file-excel"></i> Export Data
           </button>
@@ -517,13 +481,29 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                   <input type="checkbox" id="ledgerSelectAllCheckbox" style="display:inline-block;vertical-align:middle;">
                 </th>
                 <style>
-                  /* Remove badge color styles for Description */
-                  /* Active (filled) state */
-                  .ledger-filter-btn.active.badge-green { background:#059669;color:#fff;border-color:#059669; box-shadow:0 6px 20px rgba(5,150,105,0.06); }
-                  .ledger-filter-btn.active.badge-blue { background:#075985;color:#fff;border-color:#075985; box-shadow:0 6px 20px rgba(7,89,133,0.06); }
-                  .ledger-filter-btn.active.badge-yellow { background:#b45309;color:#fff;border-color:#b45309; box-shadow:0 6px 20px rgba(180,83,9,0.06); }
-                  .ledger-filter-btn.active.badge-purple { background:#6b21a8;color:#fff;border-color:#6b21a8; box-shadow:0 6px 20px rgba(107,33,168,0.06); }
-                  .ledger-filter-btn.active.badge-default { background:#374151;color:#fff;border-color:#374151; box-shadow:0 6px 20px rgba(55,65,81,0.06); }
+                  /* Match filter buttons to status badge colors (neutralized: transparent bg, black text) */
+                  .ledger-filter-btn.badge-green,
+                  .ledger-filter-btn.badge-blue,
+                  .ledger-filter-btn.badge-yellow,
+                  .ledger-filter-btn.badge-purple,
+                  .ledger-filter-btn.badge-default {
+                    color: #000; /* black text */
+                    border-color: #e6e9ec;
+                    background: transparent;
+                    font-weight:400; /* normal */
+                  }
+                  /* Active state: keep emphasis with normal weight, no filled color or heavy shadow */
+                  .ledger-filter-btn.active.badge-green,
+                  .ledger-filter-btn.active.badge-blue,
+                  .ledger-filter-btn.active.badge-yellow,
+                  .ledger-filter-btn.active.badge-purple,
+                  .ledger-filter-btn.active.badge-default {
+                    background: transparent;
+                    color: #000;
+                    border-color: #bfc8d1;
+                    font-weight:400; /* normal */
+                    box-shadow: none;
+                  }
                 </style>
               </tr>
             </thead>
@@ -569,8 +549,8 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     echo '<td>' . $datePaid . '</td>';
     // Amount
     echo '<td style="font-weight:600;">' . $amountFmt . '</td>';
-    // Description (remove badge, show normal font)
-    echo '<td>' . $badgeText . '</td>';
+    // Description (status badge)
+    echo '<td><span class="status-badge ' . $badgeClass . '">' . $badgeText . '</span></td>';
     // OR Number (moved between Description and Validity)
     echo '<td style="color:#000000;">' . ($orderNo !== '' ? '#' . $orderNo : '&mdash;') . '</td>';
     // Validity
@@ -606,8 +586,14 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         </div>
       </form>
       <style>
-        /* Remove status-badge and badge color styles for Description */
-        .status-badge, .badge-green, .badge-blue, .badge-yellow, .badge-purple, .badge-default { display:none !important; }
+        /* Avatar and badge styles for Payment Details */
+        .avatar { font-family: 'Poppins',sans-serif; }
+        .status-badge { display:inline-block;padding:6px 10px;border-radius:999px;font-weight:400;font-size:0.87rem;background:transparent;color:#000;border:1px solid transparent; }
+        .badge-green { background: transparent; color: #000; }
+        .badge-blue { background: transparent; color: #000; }
+        .badge-yellow { background: transparent; color: #000; }
+        .badge-purple { background: transparent; color: #000; }
+        .badge-default { background: transparent; color: #000; }
         /* Table row hover */
         #paymentDetailsTable tbody tr:hover { background:#fbfdff; }
         /* Selection checkbox larger and visible */
@@ -1045,7 +1031,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
       const informantNicheMap = <?php echo json_encode($informantNicheMap); ?>;
       const informantDeceasedMap = <?php echo json_encode($informantDeceasedMap); ?>;
       const nicheDeceasedMap = <?php echo json_encode($nicheDeceasedMap); ?>;
-      const deceasedValidityMap = <?php echo json_encode($deceasedValidityMap); ?>;
+      const informantValidityMap = <?php echo json_encode($informantValidityMap); ?>;
       const payeeInput = document.getElementById('formName');
       const aptInput = document.getElementById('formApartmentNo');
       const deceasedInput = document.getElementById('formDeceased');
@@ -1077,75 +1063,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         return '';
       }
 
-      // Helper: get validity by deceased name and apt no (case-insensitive)
-      function getValidityForDeceased(nicheID, deceasedName) {
-        if (!nicheID || !deceasedName || !deceasedValidityMap) return '';
-        const key = nicheID.trim() + '|' + deceasedName.trim();
-        if (deceasedValidityMap[key]) return deceasedValidityMap[key];
-        // Try case-insensitive match
-        const lowerKey = key.toLowerCase();
-        for (const k in deceasedValidityMap) {
-          if (String(k).toLowerCase() === lowerKey) return deceasedValidityMap[k];
-        }
-        return '';
-      }
-
-      // --- Auto-fill Validity based on chosen Deceased Name and Apt No ---
-      function autofillValidityByDeceasedAndApt() {
-        const nicheID = aptInput.value.trim();
-        const deceasedName = deceasedInput.value.trim();
-        const validity = getValidityForDeceased(nicheID, deceasedName);
-        if (validityInput) validityInput.value = validity || '';
-      }
-
-      // --- Auto-fill Validity based on payee name (legacy, remove if not needed)
-      function autofillValidity(payeeName) {
-        // Look up validity by payee/informant name (case-insensitive)
-        const validity = getValueForInformant(informantValidityMap, payeeName);
-        if (validityInput) validityInput.value = validity || '';
-      }
-
-      // --- Populate deceased names based on niche ID or payee name ---
-      // New behavior: only display deceased that are related to the given payee/informant.
-     function populateDeceasedForAptOrPayee(nicheID, payeeName) {
-        const n = (nicheID || '').toString().trim();
-        const pn = (payeeName || '').toString().trim();
-
-        // Step A: collect deceased names known for the payee (case-insensitive lookup)
-        const payeeDeceased = getArrayForInformant(informantDeceasedMap, pn); // [] if none
-
-        // If we have a niche specific lookup
-        if (n) {
-          const nicheNames = (nicheDeceasedMap[n] && Array.isArray(nicheDeceasedMap[n])) ? nicheDeceasedMap[n] : [];
-
-          // If payee has known deceased names, only show intersection (names in this niche that belong to payee)
-          if (payeeDeceased && payeeDeceased.length > 0) {
-            const intersection = nicheNames.filter(name => payeeDeceased.indexOf(name) !== -1);
-            if (intersection.length > 0) {
-              showDeceasedNames(intersection);
-              return;
-            }
-            // No intersection: the user explicitly asked that we show only deceased related to that payee.
-            // So show payeeDeceased (even if they aren't listed under this niche), rather than showing unrelated niche occupants.
-            showDeceasedNames(payeeDeceased);
-            return;
-          }
-
-          // If no payee mapping available, fall back to showing niche occupants (old behavior)
-          showDeceasedNames(nicheNames);
-          return;
-        }
-
-        // No niche provided: show only deceased associated with the payee (if any)
-        if (payeeDeceased && payeeDeceased.length > 0) {
-          showDeceasedNames(payeeDeceased);
-          return;
-        }
-
-        // Nothing found
-        showDeceasedNames([]);
-      }
-
       // Helper: render deceased matches (single -> fill input, multiple -> show list)
       function showDeceasedNames(names) {
         if (!deceasedInput || !deceasedMatches) return;
@@ -1160,8 +1077,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           deceasedInput.value = names[0];
           deceasedMatches.innerHTML = '';
           deceasedMatches.style.display = 'none';
-          // Autofill validity when deceased is chosen
-          autofillValidityByDeceasedAndApt();
           return;
         }
         // multiple -> build selectable list, but expand duplicate names into per-niche rows
@@ -1212,9 +1127,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             } catch (e) { /* ignore */ }
             deceasedMatches.style.display = 'none';
             deceasedMatches.innerHTML = '';
-            // Autofill validity when deceased is chosen
-
-            autofillValidityByDeceasedAndApt();
           });
           // hover style
           item.addEventListener('mouseenter', function(){ this.style.background = '#f6fbff'; });
@@ -1330,6 +1242,9 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           nicheMatches.style.display = 'block';
           nicheMatches.style.position = 'absolute';
           nicheMatches.style.left = aptInput.offsetLeft + 'px';
+          nicheMatches.style.top
+          nicheMatches.style.position = 'absolute';
+          nicheMatches.style.left = aptInput.offsetLeft + 'px';
           nicheMatches.style.top = (aptInput.offsetTop + aptInput.offsetHeight + 2) + 'px';
           nicheMatches.style.minWidth = Math.max(220, aptInput.offsetWidth) + 'px';
         } else {
@@ -1343,18 +1258,23 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         // Prefer niche-based lookup (if apt is already filled), otherwise fallback to informant mapping
         const currentApt = (aptInput.value || '').toString().trim();
         populateDeceasedForAptOrPayee(currentApt, name);
+
+        // Validity: apply if present (case-insensitive lookup)
+        const validity = getValueForInformant(informantValidityMap, name);
+        validityInput.value = validity || '';
       });
 
       // When Apt No is manually changed, update deceased accordingly
-      aptInput.addEventListener('change', function() {
-        const val = (this.value || '').toString().trim();
-        populateDeceasedForAptOrPayee(val, payeeInput.value);
-      });
-      aptInput.addEventListener('blur', function() {
-        const val = (this.value || '').toString().trim();
-        populateDeceasedForAptOrPayee(val, payeeInput.value);
-      });
-
+     aptInput.addEventListener('change', function() {
+             const val = (this.value || '').toString().trim();
+       populateDeceasedForAptOrPayee(val, payeeInput.value);
+     });
+     aptInput.addEventListener('blur', function() {
+       // also handle blur to catch typed values
+       const val = (this.value || '').toString().trim();
+       populateDeceasedForAptOrPayee(val, payeeInput.value);
+     });
+ 
       // Hide dropdowns if clicking elsewhere
       document.addEventListener('mousedown', function(e) {
         if (nicheMatches && !nicheMatches.contains(e.target) && e.target !== aptInput && e.target !== payeeInput) {
@@ -1393,75 +1313,28 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         this.value = formatPesoAmount(this.value);
       });
 
-      // --- Validation: prevent submit if required fields are empty except Apt No ---
-      // Toast notification element
-      let ledgerToast = document.getElementById('ledgerToast');
-      if (!ledgerToast) {
-        ledgerToast = document.createElement('div');
-        ledgerToast.id = 'ledgerToast';
-        ledgerToast.style.cssText = 'display:none;position:fixed;top:24px;right:32px;z-index:10001;background:#e74c3c;color:#fff;padding:14px 28px;border-radius:8px;box-shadow:0 4px 16px rgba(231,76,60,0.15);font-size:1.08rem;font-weight:500;';
-        document.body.appendChild(ledgerToast);
-      }
-
-      function showLedgerToast(msg) {
-        ledgerToast.textContent = msg;
-        ledgerToast.style.display = 'block';
-        setTimeout(() => { ledgerToast.style.display = 'none'; }, 2600);
-      }
-
-      document.getElementById('ledgerForm').addEventListener('submit', function(e) {
-        // Get required fields including Apt No.
-        const payee = payeeInput.value.trim();
-        const deceased = deceasedInput.value.trim();
-        const amount = amountInput.value.trim();
-        const datePaid = document.getElementById('formDatePaid').value.trim();
-        const description = document.getElementById('formDescription').value.trim();
-        const validity = validityInput.value.trim();
-        const orNumber = document.getElementById('formORNumber').value.trim();
-        const aptNo = aptInput.value.trim();
-
-        // List of required field elements (now includes Apt No., Amount, Description/Type)
-        const requiredFields = [
-          { el: payeeInput, val: payee },
-          { el: aptInput, val: aptNo },
-          { el: deceasedInput, val: deceased },
-          { el: amountInput, val: amount },
-          { el: document.getElementById('formDatePaid'), val: datePaid },
-          { el: document.getElementById('formDescription'), val: description },
-          { el: validityInput, val: validity },
-          { el: document.getElementById('formORNumber'), val: orNumber }
-        ];
-
-        let hasError = false;
-        requiredFields.forEach(f => {
-          if (!f.val) {
-            f.el.style.boxShadow = '0 0 0 2px #e74c3c';
-            f.el.style.borderColor = '#e74c3c';
-            hasError = true;
-          } else {
-            f.el.style.boxShadow = '';
-            f.el.style.borderColor = '';
+      // --- Add 5 years to Validity if Renewal is chosen ---
+      const descriptionInput = document.getElementById('formDescription');
+      descriptionInput.addEventListener('change', function() {
+        // If Renewal is chosen and validity exists, add 5 years and autofill
+        if (this.value === 'Renewal' && validityInput.value) {
+          const oldDate = validityInput.value;
+          // Only add if valid date
+          if (/^\d{4}-\d{2}-\d{2}$/.test(oldDate)) {
+            const d = new Date(oldDate);
+            d.setFullYear(d.getFullYear() + 5);
+            // Format as yyyy-mm-dd
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            validityInput.value = `${yyyy}-${mm}-${dd}`;
           }
-        });
-
-        if (hasError) {
-          showLedgerToast('Please fill in all required fields');
-          e.preventDefault();
-          return false;
         }
-        // Allow submit
+        // If not Renewal, clear validity field (optional UX)
+        else if (this.value !== 'Renewal') {
+          validityInput.value = '';
+        }
       });
-
-      // Remove red glow on input
-      ['input', 'change', 'blur'].forEach(evt => {
-        document.getElementById('ledgerForm').addEventListener(evt, function(e) {
-          if (e.target && e.target.style) {
-            e.target.style.boxShadow = '';
-            e.target.style.borderColor = '';
-          }
-        }, true);
-      });
-
     </script>
     <!-- ...existing code... -->
 </body>
@@ -1480,7 +1353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_a
   exit; // For AJAX, no redirect
 }
 ?>
-
+<!-- last -->
 
 
 

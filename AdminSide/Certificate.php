@@ -656,9 +656,9 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
 
         <!-- Button set placed to the right of the search bar -->
         <div style="display:flex;gap:10px;align-items:center;">
-          <button id="certImportBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <!-- <button id="certImportBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-file-import"></i> Import Data
-          </button>
+          </button> -->
           <button id="certExportBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-file-excel"></i> Export Data
           </button>

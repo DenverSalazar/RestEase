@@ -98,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $diedDate = new DateTime($dateDied);
     if ($diedDate <= $bornDate) {
       $errors[] = "Date died must be after born date.";
-      $fieldErrors['dateDied'] = "Date died must be after born date.";
     }
   }
 
@@ -107,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $internmentDate = new DateTime($dateInternment);
     if ($internmentDate < $diedDate) {
       $errors[] = "Date of internment cannot be before date died.";
-      $fieldErrors['dateInternment'] = "Date of internment cannot be before date died.";
     }
   }
 
@@ -696,10 +694,7 @@ if ($dateInternmentPrefill) {
             <div class="form-group">
               <label for="firstName">First Name</label>
               <input type="text" id="firstName" name="firstName" placeholder="First Name"
-                value="<?php echo htmlspecialchars(
-                  $_POST['firstName'] ?? 
-                  ($deceased['firstName'] ?? ($parsedAssessmentName['firstName'] ?? ($assessment['deceased_name'] ?? '')))
-                ); ?>"
+                value="<?php echo htmlspecialchars($deceased['firstName'] ?? ($parsedAssessmentName['firstName'] ?? ($assessment['deceased_name'] ?? $_POST['firstName'] ?? ''))); ?>"
                 class="<?php echo isset($fieldErrors['firstName']) ? 'input-error' : ''; ?>">
               <?php if (isset($fieldErrors['firstName'])): ?>
                 <div class="field-error"><?php echo $fieldErrors['firstName']; ?></div>
@@ -708,20 +703,14 @@ if ($dateInternmentPrefill) {
             <div class="form-group">
               <label for="middleName">Middle Name</label>
               <input type="text" id="middleName" name="middleName" placeholder="Middle Name"
-                value="<?php echo htmlspecialchars(
-                  $_POST['middleName'] ?? 
-                  ($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? ''))
-                ); ?>"
+                value="<?php echo htmlspecialchars($deceased['middleName'] ?? ($parsedAssessmentName['middleName'] ?? $_POST['middleName'] ?? '')); ?>"
                 class="<?php echo isset($fieldErrors['middleName']) ? 'input-error' : ''; ?>">
               <?php /* Middle Name is now optional, so don't show error */ ?>
             </div>
             <div class="form-group">
               <label for="lastName">Last Name</label>
               <input type="text" id="lastName" name="lastName" placeholder="Last Name"
-                value="<?php echo htmlspecialchars(
-                  $_POST['lastName'] ?? 
-                  ($deceased['lastName'] ?? ($parsedAssessmentName['lastName'] ?? ''))
-                ); ?>"
+                value="<?php echo htmlspecialchars($deceased['lastName'] ?? ($parsedAssessmentName['lastName'] ?? $_POST['lastName'] ?? '')); ?>"
                 class="<?php echo isset($fieldErrors['lastName']) ? 'input-error' : ''; ?>">
               <?php if (isset($fieldErrors['lastName'])): ?>
                 <div class="field-error"><?php echo $fieldErrors['lastName']; ?></div>
@@ -1003,6 +992,64 @@ if ($dateInternmentPrefill) {
         });
       }
     })();
+
+    // --- Prevent sidebar navigation during insert ---
+    document.addEventListener('DOMContentLoaded', function() {
+      // Find all sidebar links
+      var sidebar = document.querySelector('.sidebar');
+      if (sidebar) {
+        var sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(function(link) {
+          // Only intercept if not the current page
+          if (!link.classList.contains('active')) {
+            link.addEventListener('click', function(e) {
+              e.preventDefault();
+              showSidebarBlockModal(link.href);
+            });
+          }
+        });
+      }
+    });
+
+    // Modal for blocking sidebar navigation
+    function showSidebarBlockModal(targetHref) {
+      // Create modal if not exists
+      if (!document.getElementById('sidebarBlockModal')) {
+        var modal = document.createElement('div');
+        modal.id = 'sidebarBlockModal';
+        modal.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(44,62,80,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+          <div style="background:#fff;padding:32px 28px 24px 28px;border-radius:12px;box-shadow:0 8px 32px rgba(44,62,80,0.18);max-width:370px;width:90%;text-align:center;position:relative;">
+            <h2 style="margin:0 0 12px 0;font-size:1.25rem;color:#e74c3c;font-weight:600;letter-spacing:0.5px;">
+              <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>Complete or Cancel First
+            </h2>
+            <p style="color:#2d3a4a;margin-bottom:24px;font-size:1rem;line-height:1.5;">
+              Please complete the insertion or click "Back" to cancel before navigating to another section.
+            </p>
+            <button id="sidebarBlockCloseBtn" style="background:#e74c3c;color:#fff;padding:8px 24px;border-radius:7px;border:none;font-weight:500;font-size:1rem;cursor:pointer;">OK</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('sidebarBlockCloseBtn').onclick = function() {
+          modal.style.display = 'none';
+        };
+        modal.onclick = function(e) {
+          if (e.target === modal) modal.style.display = 'none';
+        };
+      } else {
+        document.getElementById('sidebarBlockModal').style.display = 'flex';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    // Get nicheID from URL
+    var params = new URLSearchParams(window.location.search);
+    var nicheID = params.get('nicheID');
+    if (nicheID) {
+        var aptField = document.getElementById('apartmentNo'); // <-- use lowercase 'a'
+        if (aptField) aptField.value = nicheID;
+    }
+});
   </script>
   <script>
 (function() {

@@ -155,6 +155,25 @@ $syncSql = "
 ";
 $conn->query($syncSql);
 
+// --- Update validity column for all deceased records (only if not renewed) ---
+$updateSql = "
+  UPDATE deceased d
+  LEFT JOIN (
+    SELECT ApartmentNo
+    FROM ledger
+    WHERE Description = 'Renewal'
+    GROUP BY ApartmentNo
+  ) l ON d.nicheID = l.ApartmentNo
+  SET d.validity = 
+    CASE 
+      WHEN l.ApartmentNo IS NULL
+        AND d.dateInternment IS NOT NULL AND d.dateInternment != '' AND d.dateInternment != '0000-00-00'
+      THEN DATE_ADD(d.dateInternment, INTERVAL 5 YEAR)
+      ELSE d.validity
+    END
+";
+$conn->query($updateSql);
+
             // Fetch all records (no pagination/search/filter)
             $result = $conn->query("SELECT id, nicheID, lastName, firstName, middleName, suffix, age, born, residency, informantName, dateDied, dateInternment, validity FROM deceased");
             if ($result && $result->num_rows > 0) {
