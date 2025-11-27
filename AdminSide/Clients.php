@@ -88,7 +88,7 @@ if (!isset($_SESSION['admin_id'])) {
                   $name = trim($firstName . ' ' . $lastName);
                   $email = htmlspecialchars($row['email'] ?? '');
                   $contact = htmlspecialchars($row['contact_no'] ?? '');
-                  $walkinDate = htmlspecialchars($row['walkin_date'] ? date('Y-m-d', strtotime($row['walkin_date'])) : 'N/A');
+                  $walkinDate = $row['walkin_date'] ? date('Y-m-d', strtotime($row['walkin_date'])) : '';
 
                   // No profile pictures stored in walkin_clients by design — render initials avatar
                   $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
@@ -99,16 +99,24 @@ if (!isset($_SESSION['admin_id'])) {
                   // Simple status for walk-in records
                   $statusHtml = '<span style="background:#f0f4f8;color:#223;background-clip:padding-box;padding:4px 12px;border-radius:6px;font-size:0.95em;color:#123456;">Walk-in</span>';
 
-                  echo "<tr data-registration-date='$walkinDate'>
+                  // Fallbacks for missing data
+                  $displayName = $name !== '' ? $name : 'No data';
+                  $displayEmail = $email !== '' ? $email : 'No data';
+                  $displayContact = $contact !== '' ? $contact : 'No data';
+                  $displayWalkinDate = $walkinDate !== '' ? htmlspecialchars($walkinDate) : 'No data';
+
+                  echo "<tr data-registration-date='$displayWalkinDate'>
                     <td style='white-space: nowrap;'>
-                        $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:8px; display:inline-block;\">$name</span>
+                        $avatarHtml<span class=\"client-name\" style=\"vertical-align:middle; margin-left:8px; display:inline-block;\">$displayName</span>
                     </td>
-                    <td>$email</td>
-                    <td>$contact</td>
-                    <td>$walkinDate</td>
+                    <td>$displayEmail</td>
+                    <td>$displayContact</td>
+                    <td>$displayWalkinDate</td>
                     <td>$statusHtml</td>
                 </tr>";
               }
+          } else {
+              echo "<tr><td colspan='5' style='text-align:center;'>No data</td></tr>";
           }
           ?>
           </tbody>
