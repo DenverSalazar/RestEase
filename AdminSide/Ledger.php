@@ -344,7 +344,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <!-- Section: Basic Information -->
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;">Basic Information</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 32px;margin-bottom:18px;">
-          <!-- Row 1: Payee (left) | Apt No. (right) -->
+          <!-- Payee Name (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formName" style="font-weight:500;">Payee Name</label>
             <input type="text" id="formName" name="Payee" required placeholder="<?php echo $informant ? $informant : 'Name'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['Payee'] ?? $informant); ?>" autocomplete="off" list="payeeNameList">
@@ -354,20 +354,21 @@ if (!$apartment && !$informant && !$ledgerEntry) {
               <?php endforeach; ?>
             </datalist>
           </div>
+          <!-- Apt No. (NOT required) -->
           <div style="display:flex;flex-direction:column;gap:8px;position:relative;">
             <label for="formApartmentNo" style="font-weight:500;">Apt No.</label>
             <input type="text" id="formApartmentNo" name="ApartmentNo" placeholder="<?php echo $apartment ? $apartment : 'e.g. A-101'; ?>" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['ApartmentNo'] ?? $apartment); ?>">
             <!-- NicheID matches container (hidden by default) - renders items like deceasedMatches -->
             <div id="nicheMatches" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:6px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem; box-shadow:0 6px 18px rgba(0,0,0,0.06); max-height:260px; overflow:auto;"></div>
           </div>
-
-          <!-- Row 2: Deceased Name (left) | Amount (right) [same line] -->
+          <!-- Deceased Name (required) -->
           <div style="display:flex;flex-direction:column;gap:6px;position:relative;">
             <label for="formDeceased" style="font-weight:500;">Deceased Name</label>
-            <input type="text" id="formDeceased" name="DeceasedName" placeholder="Deceased Name" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DeceasedName'] ?? ''); ?>" autocomplete="off">
+            <input type="text" id="formDeceased" name="DeceasedName" required placeholder="Deceased Name" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DeceasedName'] ?? ''); ?>" autocomplete="off">
             <!-- New: container for multiple-match suggestions (hidden until needed) -->
             <div id="deceasedMatches" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:1200; min-width:220px; padding:6px; border:1px solid #d1d5db; border-radius:8px; background:#fff; font-size:1rem; box-shadow:0 6px 18px rgba(0,0,0,0.06); max-height:260px; overflow:auto;"></div>
           </div>
+          <!-- Amount (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formAmount" style="font-weight:500;">Amount</label>
             <div style="position:relative;">
@@ -375,17 +376,17 @@ if (!$apartment && !$informant && !$ledgerEntry) {
               <input type="text" id="formAmount" name="Amount" required placeholder="0.00" style="width:104%;box-sizing:border-box;padding-left:28px;padding-right:12px;padding-top:10px;padding-bottom:10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo isset($ledgerEntry['Amount']) ? number_format($ledgerEntry['Amount'], 2) : ''; ?>">
             </div>
           </div>
-
-          <!-- Row 3: Date Paid (left) | (right kept empty or for future fields) -->
+          <!-- Date Paid (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formDatePaid" style="font-weight:500;">Date Paid</label>
-            <input type="date" id="formDatePaid" name="DatePaid" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DatePaid'] ?? ''); ?>">
+            <input type="date" id="formDatePaid" name="DatePaid" required style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="<?php echo htmlspecialchars($ledgerEntry['DatePaid'] ?? ''); ?>">
           </div>
           <div></div>
         </div>
         <!-- Section: Details -->
         <div style="font-weight:600;font-size:1.08rem;margin-bottom:18px;margin-top:18px;">Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
+          <!-- Description / Type (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formDescription" style="font-weight:500;">Description / Type</label>
             <select
@@ -402,17 +403,20 @@ if (!$apartment && !$informant && !$ledgerEntry) {
               <option value="Full Payment" <?php if (($ledgerEntry['Description'] ?? '') === 'Full Payment') echo 'selected'; ?>>Full Payment</option>
             </select>
           </div>
+          <!-- Validity (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formValidity" style="font-weight:500;">Validity</label>
-            <input type="date" id="formValidity" name="Validity" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="">
+            <input type="date" id="formValidity" name="Validity" required style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:1rem;" value="">
           </div>
+          <!-- OR Number (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formORNumber" style="font-weight:500;">OR Number</label>
-            <input type="text" id="formORNumber" name="ORNumber" placeholder="Official Receipt No." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;" value="<?php echo isset($ledgerEntry['ORNumber']) ? htmlspecialchars($ledgerEntry['ORNumber']) : htmlspecialchars($orNumber); ?>">
+            <input type="text" id="formORNumber" name="ORNumber" required placeholder="Official Receipt No." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;" value="<?php echo isset($ledgerEntry['ORNumber']) ? htmlspecialchars($ledgerEntry['ORNumber']) : htmlspecialchars($orNumber); ?>" maxlength="8" pattern="\d{8}" title="OR Number must be 8 digits">
           </div>
+          <!-- MC No. (required) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <label for="formMCNo" style="font-weight:500;">MC No.</label>
-            <input type="text" id="formMCNo" name="MCNo" placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;"
+            <input type="text" id="formMCNo" name="MCNo" required placeholder="MC No. (optional)" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;"
               value="<?php echo isset($ledgerEntry['MCNo']) && $ledgerEntry['MCNo'] !== null ? htmlspecialchars($ledgerEntry['MCNo']) : htmlspecialchars($mcNumber); ?>">
           </div>
         </div>
@@ -450,9 +454,10 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           <input type="text" id="ledger-search-input" placeholder="Search Payment Details" style="font-family:'Poppins',sans-serif;">
         </div>
         <div style="display:flex;gap:10px;align-items:center;margin-left:18px;">
-          <!-- <button id="importExcelBtn" style="background:#caf0f8;color:#222;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <i class="fas fa-file-import"></i> Import Data
-          </button> -->
+          <!-- Add Generate Report button (green) -->
+          <button id="generateReportBtn" style="background:#27ae60;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <i class="fas fa-file-alt"></i> Generate Report
+          </button>
           <button id="exportExcelBtn" style="background:#0077b6;color:#fff;border:none;padding:8px 18px;border-radius:7px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-file-excel"></i> Export Data
           </button>
@@ -524,12 +529,16 @@ if (!$apartment && !$informant && !$ledgerEntry) {
                   else if (strpos($descNorm, 'fullpayment') === 0 || strpos($descNorm, 'fullpay') === 0) $token = 'fullpayment';
                   else $token = $descNorm; // fallback (won't match filters)
                   // Build small avatar (first letter) and status badge per description token
-                  $payee = htmlspecialchars($row['Payee']);
-                  $orderNo = htmlspecialchars($row['ORNumber']);
-                  $datePaid = htmlspecialchars($row['DatePaid']);
-                  $amountFmt = '₱' . number_format($row['Amount'], 2);
+                  $aptNo = isset($row['ApartmentNo']) && trim($row['ApartmentNo']) !== '' ? htmlspecialchars($row['ApartmentNo']) : 'No Data';
+                  $payee = isset($row['Payee']) && trim($row['Payee']) !== '' ? htmlspecialchars($row['Payee']) : 'No Data';
+                  $deceased = isset($row['DeceasedName']) && trim($row['DeceasedName']) !== '' ? htmlspecialchars($row['DeceasedName']) : 'No Data';
+                  $datePaid = isset($row['DatePaid']) && trim($row['DatePaid']) !== '' ? htmlspecialchars($row['DatePaid']) : 'No Data';
+                  $amountFmt = isset($row['Amount']) && $row['Amount'] !== '' ? '₱' . number_format($row['Amount'], 2) : 'No Data';
+                  $badgeText = isset($row['Description']) && trim($row['Description']) !== '' ? htmlspecialchars($row['Description']) : 'No Data';
+                  $orderNo = isset($row['ORNumber']) && trim($row['ORNumber']) !== '' ? '#' . htmlspecialchars($row['ORNumber']) : 'No Data';
+                  $validity = isset($row['Validity']) && trim($row['Validity']) !== '' ? htmlspecialchars($row['Validity']) : 'No Data';
+                  $mcNo = isset($row['MCNo']) && trim($row['MCNo']) !== '' ? htmlspecialchars($row['MCNo']) : 'No Data';
                   // Status badge color mapping
-                  $badgeText = htmlspecialchars($row['Description']);
                   $badgeClass = 'badge-default';
                   if ($token === 'new' || $token === 'fullpayment') $badgeClass = 'badge-green';
                   else if ($token === 'renewal') $badgeClass = 'badge-blue';
@@ -538,13 +547,13 @@ if (!$apartment && !$informant && !$ledgerEntry) {
 
     echo '<tr data-type="' . htmlspecialchars($token) . '">';
     // Apartment No. (moved to first column)
-    echo '<td style="color:#000000;">' . htmlspecialchars($row['ApartmentNo'] ?? '') . '</td>';
+    echo '<td style="color:#000000;">' . $aptNo . '</td>';
     // Customer (name)
     echo '<td style="display:flex;flex-direction:column;">';
     echo '<span style="font-weight:600;">' . $payee . '</span>';
     echo '</td>';
     // Deceased (from ledger.DeceasedName)
-    echo '<td style="color:#000000;">' . htmlspecialchars($row['DeceasedName'] ?? '') . '</td>';
+    echo '<td style="color:#000000;">' . $deceased . '</td>';
     // Date Paid
     echo '<td>' . $datePaid . '</td>';
     // Amount
@@ -552,11 +561,11 @@ if (!$apartment && !$informant && !$ledgerEntry) {
     // Description (status badge)
     echo '<td><span class="status-badge ' . $badgeClass . '">' . $badgeText . '</span></td>';
     // OR Number (moved between Description and Validity)
-    echo '<td style="color:#000000;">' . ($orderNo !== '' ? '#' . $orderNo : '&mdash;') . '</td>';
+    echo '<td style="color:#000000;">' . $orderNo . '</td>';
     // Validity
-    echo '<td>' . htmlspecialchars($row['Validity']) . '</td>';
+    echo '<td>' . $validity . '</td>';
     // MC No.
-    echo '<td>' . (isset($row['MCNo']) && $row['MCNo'] !== null ? htmlspecialchars($row['MCNo']) : '') . '</td>';
+    echo '<td>' . $mcNo . '</td>';
           // Action column (edit / insert / more)
           $apt = trim($row['ApartmentNo'] ?? '');
           if ($apt !== '') {
@@ -624,18 +633,147 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         <button id="ledgerCloseNotificationBtn" style="background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer;margin-left:12px;">&times;</button>
       </div>
     </div>
-    <style>
-      @media (max-width: 900px) {
-        #ledgerInfoSection {
-          max-width: 100vw !important;
-          padding: 24px 8px 24px 8px !important;
+    <!-- Generate Report Modal -->
+    <div id="reportModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(44,62,80,0.18);align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(60,60,60,0.18),0 1.5px 6px rgba(0,0,0,0.08);padding:32px 32px 24px 32px;min-width:340px;max-width:95vw;text-align:center;position:relative;">
+        <div style="font-size:1.3rem;font-weight:600;margin-bottom:18px;">Generate Income Report</div>
+        <div style="margin-bottom:18px;">
+          <label for="reportDateFilter" style="font-weight:500;margin-bottom:8px;display:block;">Select Date Range</label>
+          <select id="reportDateFilter" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+          </select>
+        </div>
+        <div id="reportDateInputs" style="margin-bottom:18px;">
+          <!-- Dynamic date inputs will be rendered here -->
+        </div>
+        <!-- Description Type Checkbox Filter -->
+        <div style="margin-bottom:18px;">
+          <label style="font-weight:500;margin-bottom:8px;display:block;">Filter by Description Type</label>
+          <div id="reportDescTypes" style="display:flex;flex-wrap:wrap;gap:12px;">
+            <label><input type="checkbox" value="All" id="desc-type-all"> All</label>
+            <label><input type="checkbox" value="New" class="desc-type-checkbox"> New</label>
+            <label><input type="checkbox" value="Renewal" class="desc-type-checkbox"> Renewal</label>
+            <label><input type="checkbox" value="ReOpen" class="desc-type-checkbox"> ReOpen</label>
+            <label><input type="checkbox" value="Transfer" class="desc-type-checkbox"> Transfer</label>
+            <label><input type="checkbox" value="Full Payment" class="desc-type-checkbox"> Full Payment</label>
+          </div>
+        </div>
+        <button id="reportGenerateBtn" style="background:#27ae60;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;">Generate</button>
+        <button id="reportCloseBtn" style="background:#95a5a6;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:500;font-size:1rem;margin-left:12px;">Close</button>
+        <div id="reportResult" style="margin-top:24px;font-size:1.08rem;color:#222;font-weight:500;"></div>
+      </div>
+    </div>
+
+    <script>
+      // --- Generate Report Modal Logic ---
+      const reportModal = document.getElementById('reportModal');
+      const generateReportBtn = document.getElementById('generateReportBtn');
+      const reportCloseBtn = document.getElementById('reportCloseBtn');
+      const reportDateFilter = document.getElementById('reportDateFilter');
+      const reportDateInputs = document.getElementById('reportDateInputs');
+      const reportGenerateBtn = document.getElementById('reportGenerateBtn');
+      const reportResult = document.getElementById('reportResult');
+
+      // Show modal
+      generateReportBtn.addEventListener('click', function() {
+        reportModal.style.display = 'flex';
+        renderDateInputs();
+        reportResult.textContent = '';
+      });
+
+      // Close modal
+      reportCloseBtn.addEventListener('click', function() {
+        reportModal.style.display = 'none';
+      });
+      reportModal.addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+      });
+
+      // Render date inputs based on filter
+      function renderDateInputs() {
+        const filter = reportDateFilter.value;
+        let html = '';
+        if (filter === 'week') {
+          html = `
+            <label style="font-weight:500;">Select Week:</label>
+            <input type="week" id="reportWeekInput" style="width:95%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+          `;
+        } else if (filter === 'month') {
+          html = `
+            <label style="font-weight:500;">Select Month:</label>
+            <input type="month" id="reportMonthInput" style="width:95%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+          `;
+        } else if (filter === 'year') {
+          html = `
+            <label style="font-weight:500;">Select Year:</label>
+            <input type="number" id="reportYearInput" min="2000" max="2100" value="${new Date().getFullYear()}" style="width:95%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:1rem;">
+          `;
         }
-        #ledgerInfoSection form > div[style*="grid-template-columns"] {
-          grid-template-columns:1fr !important;
-          gap:18px 0 !important;
-        }
+        reportDateInputs.innerHTML = html;
       }
-    </style>
+      reportDateFilter.addEventListener('change', renderDateInputs);
+
+      // Description Type "All" checkbox logic
+      const descTypeAll = document.getElementById('desc-type-all');
+      const descTypeCheckboxes = document.querySelectorAll('.desc-type-checkbox');
+      descTypeAll.addEventListener('change', function() {
+        if (this.checked) {
+          descTypeCheckboxes.forEach(cb => {
+            cb.checked = true;
+            cb.disabled = true;
+          });
+        } else {
+          descTypeCheckboxes.forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+          });
+        }
+      });
+      descTypeCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+          // If any unchecked, uncheck "All"
+          if (!this.checked) descTypeAll.checked = false;
+          // If all checked, check "All"
+          if ([...descTypeCheckboxes].every(c => c.checked)) {
+            descTypeAll.checked = true;
+            descTypeCheckboxes.forEach(c => c.disabled = true);
+          }
+        });
+      });
+
+      // Generate report logic
+      reportGenerateBtn.addEventListener('click', function() {
+        const filter = reportDateFilter.value;
+        let param = '', value = '';
+        if (filter === 'week') {
+          const weekVal = document.getElementById('reportWeekInput').value;
+          if (!weekVal) { reportResult.textContent = 'Please select a week.'; return; }
+          param = 'week';
+          value = weekVal;
+        } else if (filter === 'month') {
+          const monthVal = document.getElementById('reportMonthInput').value;
+          if (!monthVal) { reportResult.textContent = 'Please select a month.'; return; }
+          param = 'month';
+          value = monthVal;
+        } else if (filter === 'year') {
+          const yearVal = document.getElementById('reportYearInput').value;
+          if (!yearVal) { reportResult.textContent = 'Please enter a year.'; return; }
+          param = 'year';
+          value = yearVal;
+        }
+        if (!param || !value) { reportResult.textContent = 'Invalid date range.'; return; }
+        // Get selected description types from checkboxes
+        let selectedTypes = [];
+        if (descTypeAll.checked) {
+          selectedTypes = ['All'];
+        } else {
+          selectedTypes = Array.from(document.querySelectorAll('.desc-type-checkbox:checked')).map(cb => cb.value);
+        }
+        window.location.href = `generateReport.php?filter=${encodeURIComponent(param)}&value=${encodeURIComponent(value)}&types=${encodeURIComponent(selectedTypes.join(','))}`;
+      });
+    </script>
     <!-- Success Popup Modal for Ledger Information submission -->
     <?php if ($showLedgerSuccessModal): ?>
 <!-- Compact ClientsRequest-style success notification (top-right) -->
@@ -1069,6 +1207,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
         // nothing found -> clear
         if (!names || names.length === 0) {
           deceasedMatches.innerHTML = '';
+
           deceasedMatches.style.display = 'none';
           return;
         }
@@ -1080,6 +1219,7 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           return;
         }
         // multiple -> build selectable list, but expand duplicate names into per-niche rows
+
         deceasedMatches.innerHTML = '';
         const entries = [];
         names.forEach(function(dname) {
@@ -1242,9 +1382,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
           nicheMatches.style.display = 'block';
           nicheMatches.style.position = 'absolute';
           nicheMatches.style.left = aptInput.offsetLeft + 'px';
-          nicheMatches.style.top
-          nicheMatches.style.position = 'absolute';
-          nicheMatches.style.left = aptInput.offsetLeft + 'px';
           nicheMatches.style.top = (aptInput.offsetTop + aptInput.offsetHeight + 2) + 'px';
           nicheMatches.style.minWidth = Math.max(220, aptInput.offsetWidth) + 'px';
         } else {
@@ -1330,10 +1467,6 @@ if (!$apartment && !$informant && !$ledgerEntry) {
             validityInput.value = `${yyyy}-${mm}-${dd}`;
           }
         }
-        // If not Renewal, clear validity field (optional UX)
-        else if (this.value !== 'Renewal') {
-          validityInput.value = '';
-        }
       });
     </script>
     <!-- ...existing code... -->
@@ -1351,6 +1484,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ids']) && is_a
   $stmt->execute();
   $conn->close();
   exit; // For AJAX, no redirect
+}
+
+// --- Handle AJAX report request ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+  $input = json_decode(file_get_contents('php://input'), true);
+  if (isset($input['report']) && !empty($input['start']) && !empty($input['end'])) {
+    include_once '../Includes/db.php';
+    $start = $conn->real_escape_string($input['start']);
+    $end = $conn->real_escape_string($input['end']);
+    $sql = "SELECT SUM(Amount) as total FROM ledger WHERE DatePaid >= '$start' AND DatePaid <= '$end'";
+    $result = $conn->query($sql);
+    $total = 0;
+    if ($result && $row = $result->fetch_assoc()) {
+      $total = floatval($row['total']);
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['total' => $total]);
+    exit;
+  }
 }
 ?>
 <!-- last -->

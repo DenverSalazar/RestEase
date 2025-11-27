@@ -337,7 +337,9 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div>
             <label>Deceased Name:</label>
-            <input type="text" name="deceased" id="deceasedField" value="<?php echo isset($_POST['deceased']) ? htmlspecialchars($_POST['deceased']) : ''; ?>" style="width:90%;" autocomplete="off" list="deceasedNameSuggestions">
+            <input type="text" name="deceased" id="deceasedField"
+              value="<?php echo isset($_POST['deceased']) ? htmlspecialchars($_POST['deceased']) : ''; ?>"
+              style="width:90%;" autocomplete="off" list="deceasedNameSuggestions" required>
             <datalist id="deceasedNameSuggestions">
               <?php foreach ($deceasedNameSuggestions as $suggestion): ?>
                 <option value="<?php echo htmlspecialchars($suggestion); ?>"></option>
@@ -350,17 +352,23 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           </div>
           <div>
             <label>Date Died:</label>
-            <input type="date" name="date_died" id="dateDiedField" value="<?php echo isset($_POST['date_died']) ? htmlspecialchars($_POST['date_died']) : ''; ?>" style="width:90%;">
+            <input type="date" name="date_died" id="dateDiedField"
+              value="<?php echo isset($_POST['date_died']) ? htmlspecialchars($_POST['date_died']) : ''; ?>"
+              style="width:90%;" required>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div>
             <label>Apartment No.:</label>
-            <input type="text" name="apartment" id="apartmentField" value="<?php echo isset($_POST['apartment']) ? htmlspecialchars($_POST['apartment']) : ''; ?>" required style="width:90%;">
+            <input type="text" name="apartment" id="apartmentField"
+              value="<?php echo isset($_POST['apartment']) ? htmlspecialchars($_POST['apartment']) : ''; ?>"
+              required style="width:90%;">
           </div>
           <div>
             <label>Barangay:</label>
-            <input type="text" name="barangay" id="barangayField" value="<?php echo isset($_POST['barangay']) ? htmlspecialchars($_POST['barangay']) : ''; ?>" required style="width:90%;">
+            <input type="text" name="barangay" id="barangayField"
+              value="<?php echo isset($_POST['barangay']) ? htmlspecialchars($_POST['barangay']) : ''; ?>"
+              required style="width:90%;">
           </div>
         </div>
         <!-- Personal Information Section -->
@@ -368,12 +376,16 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 32px;">
           <div>
             <label>Payee Name:</label>
-            <input type="text" name="name" id="nameField" value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>" required style="width:90%;">
+            <input type="text" name="name" id="nameField"
+              value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>"
+              required style="width:90%;">
             <div id="nameWarning" style="display:none;color:#e74c3c;font-size:0.98rem;margin-top:2px;">Name must not contain numbers or symbols.</div>
           </div>
           <div>
             <label>Date Issued:</label>
-            <input type="date" name="date" value="<?php echo isset($_POST['date']) ? htmlspecialchars($_POST['date']) : date('Y-m-d'); ?>" required style="width:90%;">
+            <input type="date" name="date"
+              value="<?php echo isset($_POST['date']) ? htmlspecialchars($_POST['date']) : date('Y-m-d'); ?>"
+              required style="width:90%;">
           </div>
         </div>
         <hr style="margin:24px 0 18px 0; border:0; border-top:1px solid #ececec;">
@@ -385,7 +397,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
             <label>Validity:</label>
             <input type="date" name="renewal" id="validityField"
                 value="<?php echo isset($_POST['renewal']) ? htmlspecialchars($_POST['renewal']) : ''; ?>"
-                readonly style="width:90%;">
+                style="width:90%;" required>
         </div>
           <div>
             <label>Department Head Name:</label>
@@ -647,6 +659,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           </div>
         </div>
       </div>
+   
       <!-- Custom Search Bar (like clientsrequest.php, magnifying glass inside, no clear button) -->
       <div style="margin-bottom:18px;display:flex;align-items:center;gap:8px;justify-content:space-between;">
         <div style="display:flex;align-items:center;background:#fff;border-radius:10px;border:1.5px solid #d0d7e2;padding:0 16px;height:40px;box-shadow:0 1px 4px rgba(60,72,88,0.03);min-width:320px;max-width:420px;">
@@ -665,7 +678,22 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           <button id="certDeleteBtn" type="button" style="background:#e74c3c;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;">
             <i class="fas fa-trash"></i> Delete
           </button>
+          
         </div>
+      </div>
+         <!-- Show entries filter -->
+      <div style="margin-bottom:12px;">
+        <label for="certEntriesLength" style="font-weight:500;font-size:1rem;">
+          Show
+          <select id="certEntriesLength" style="margin:0 6px;">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="-1">All</option>
+          </select>
+          entries
+        </label>
       </div>
       <div class="clients-table-container" style="overflow-x:auto;">
         <form id="certDeleteForm" method="post" style="margin:0;">
@@ -1054,35 +1082,37 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
 
         // Validate Name
         if (!nameRegex.test(nameField.value.trim())) {
-          nameField.style.border = '2px solid #e74c3c';
-          nameField.style.background = '#fff0f0';
+          // Remove red border/background
+          // nameField.style.border = '2px solid #e74c3c';
+          // nameField.style.background = '#fff0f0';
           showWarning('nameWarning', true);
           valid = false;
         } else {
-          nameField.style.border = '';
-          nameField.style.background = '';
+          // nameField.style.border = '';
+          // nameField.style.background = '';
           showWarning('nameWarning', false);
         }
 
         // Simple required field validation
-        function markInvalid(field) {
-          field.style.border = '2px solid #e74c3c';
-          field.style.background = '#fff0f0';
-        }
-        function markValid(field) {
-          field.style.border = '';
-          field.style.background = '';
-        }
+        // Remove markInvalid/markValid visual changes
+        // function markInvalid(field) {
+        //   field.style.border = '2px solid #e74c3c';
+        //   field.style.background = '#fff0f0';
+        // }
+        // function markValid(field) {
+        //   field.style.border = '';
+        //   field.style.background = '';
+        // }
 
-        if (!deceasedField.value.trim()) { markInvalid(deceasedField); valid = false; } else { markValid(deceasedField); }
-        if (!dateDiedField.value.trim()) { markInvalid(dateDiedField); valid = false; } else { markValid(dateDiedField); }
-        if (!apartmentField.value.trim()) { markInvalid(apartmentField); valid = false; } else { markValid(apartmentField); }
-        if (!barangayField.value.trim()) { markInvalid(barangayField); valid = false; } else { markValid(barangayField); }
-        if (!nameField.value.trim()) { markInvalid(nameField); valid = false; }
-        if (!dateField.value.trim()) { markInvalid(dateField); valid = false; } else { markValid(dateField); }
-        if (!adminNameField.value.trim()) { markInvalid(adminNameField); valid = false; } else { markValid(adminNameField); }
+        if (!deceasedField.value.trim()) { valid = false; }
+        if (!dateDiedField.value.trim()) { valid = false; }
+        if (!apartmentField.value.trim()) { valid = false; }
+        if (!barangayField.value.trim()) { valid = false; }
+        if (!nameField.value.trim()) { valid = false; }
+        if (!dateField.value.trim()) { valid = false; }
+        if (!adminNameField.value.trim()) { valid = false; }
         // Validity field: same validation as DateDied
-        if (!validityField.value.trim()) { markInvalid(validityField); valid = false; } else { markValid(validityField); }
+        if (!validityField.value.trim()) { valid = false; }
         if (actions.length === 0) {
           showWarningToast('Please select at least one Certificate Action.');
           valid = false;
@@ -1125,7 +1155,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
           searching: true,
           ordering: true,
           info: true,
-          lengthChange: true,
+          lengthChange: false, // hide default DataTables length menu
           pageLength: 10,
           // ensure info & paginate are rendered so we can move them to external wrapper
           dom: 'rtip',
@@ -1140,6 +1170,12 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
             const paginate = $('#certificate-masterlist-table_paginate').detach();
             externalWrapper.empty().append(info).append(paginate);
           }
+        });
+
+        // Show entries filter logic
+        document.getElementById('certEntriesLength').addEventListener('change', function() {
+          var val = parseInt(this.value, 10);
+          certMasterlistDT.page.len(val === -1 ? certMasterlistDT.data().length : val).draw();
         });
 
         // Custom search bar logic
@@ -1235,7 +1271,7 @@ if (isset($_GET['view_cert']) && is_numeric($_GET['view_cert'])) {
               e.stopPropagation();
               const open = dropdown.style.display === 'block';
               dropdown.style.display = open ? 'none' : 'block';
-              this.setAttribute('aria-expanded', open ? 'false' : 'true');
+              this.setAttribute('aria-expanded', open ? 'false': 'true');
             });
           }
 
