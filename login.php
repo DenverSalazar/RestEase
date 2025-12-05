@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($stmt->num_rows == 1) {
             $stmt->bind_result($admin_id, $hashed_password);
             $stmt->fetch();
-            if (password_verify($password, $hashed_password)) {
+            if (!is_null($hashed_password) && password_verify($password, $hashed_password)) {
                 $_SESSION['admin_id'] = $admin_id;
                 header("Location: AdminSide/Dashboard.php");
                 exit;
@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->fetch();
                 if ($user_status === 'disabled') {
                     $login_error = "Your account has been disabled. Please contact support.";
-                } elseif (password_verify($password, $hashed_password)) {
+                } elseif (!is_null($hashed_password) && password_verify($password, $hashed_password)) {
                     $_SESSION['user_id'] = $user_id;
                     header("Location: ClientSide/ClientHome.php");
                     exit;
