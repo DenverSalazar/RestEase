@@ -46,15 +46,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     // Only proceed if no error
     if (!$login_error) {
-        // Try admin login first
-        $stmt = $conn->prepare("SELECT id, password FROM admin_accounts WHERE email = ?");
+        // Try admin login first - now check status
+        $stmt = $conn->prepare("SELECT id, password, status FROM admin_accounts WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
         if ($stmt->num_rows == 1) {
-            $stmt->bind_result($admin_id, $hashed_password);
+            $stmt->bind_result($admin_id, $hashed_password, $admin_status);
             $stmt->fetch();
-            if (!is_null($hashed_password) && password_verify($password, $hashed_password)) {
+            if ($admin_status === 'disabled') {
+                $login_error = "Your account has been disabled. Please contact the system administrator.";
+            } elseif (!is_null($hashed_password) && password_verify($password, $hashed_password)) {
                 $_SESSION['admin_id'] = $admin_id;
                 header("Location: AdminSide/Dashboard.php");
                 exit;
@@ -170,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input type="email" class="form-control" placeholder="Email" id="email" name="email" required
                                     value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES); ?>">
                                 <div class="invalid-feedback" id="emailError" style="display:none;">
-                                    Email must end with @yahoo.com, @gmail.com, or @restease.com.
+                                    Email must end with @yahoo.com, @gmail.com, @padregarcia.gov.ph, or @restease.com.
                                 </div>
                             </div>
                             <div class="mb-3 password-container">
@@ -278,7 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Email validation function
         function validateEmail(email) {
-            return email.endsWith('@yahoo.com') || email.endsWith('@gmail.com') || email.endsWith('@restease.com');
+            return email.endsWith('@yahoo.com') || email.endsWith('@gmail.com') || email.endsWith('@padregarcia.gov.ph') || email.endsWith('@restease.com');
         }
 
         let attemptedSubmit = false;

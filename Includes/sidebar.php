@@ -87,7 +87,7 @@ $mapping_dropdown_open = in_array($current_page, $mapping_pages);
      
       <a href="Clients.php" class="nav-item<?php if(in_array($current_page, $clients_pages)) echo ' active'; ?>">
         <i class="fas fa-users"></i>
-        Clients
+        Users
       </a>
       <a href="ClientsRequest.php" class="nav-item<?php if(in_array($current_page, $request_pages)) echo ' active'; ?>">
         <i class="fas fa-spinner"></i>
