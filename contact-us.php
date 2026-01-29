@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['errorMsg'] = 'Please complete the Cloudflare verification before submitting.';
     } else {
         // Send email via PHPMailer
+        /*
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
@@ -70,6 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $_SESSION['errorMsg'] = 'Message could not be sent. Please try again later.';
         }
+        */
+        // Optionally, set a message indicating email sending is disabled
+        $_SESSION['errorMsg'] = 'Message sending is currently disabled.';
     }
     header('Location: ' . $_SERVER['REQUEST_URI']);
     exit;
